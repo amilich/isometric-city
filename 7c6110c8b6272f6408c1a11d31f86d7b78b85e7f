@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +116[0],+139[0],+148[0],+1342[0],+1344-1350[0],+1352-1356[0],+1569-1570[1] -116[0],-139[0],-148[0],-1342[0],-1572-1573[1]
+
+Conversations:
+
+[0]: 75d9ed77-0682-4809-9e16-60dc0eff2005; Make escape key deselect element; composer-1;
+[1]: 99172b13-b967-4210-ab43-22318aebb0f0; Use images from public assets directory; claude-4.5-opus-high-thinking;

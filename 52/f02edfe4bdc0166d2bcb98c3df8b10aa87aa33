@@ -2,10 +2,11 @@ AI Notes:
 
 src/components/buildings/IsometricBuildings.tsx: +63[0]
 src/components/Game.tsx: +210[0],+471[0],+1080[0],+1684[0],+2061[0],+2268[0] -210[0],-471[0],-1080[0],-1684[0],-2061[0],-2268[0]
-src/context/GameContext.tsx: +51[0],+83-102[0] -51[0]
+src/context/GameContext.tsx: +51[0],+83-90[0],+91-94[1],+95-98[0],+99[1],+100-101[0],+102[1] -51[0]
 src/lib/simulation.ts: +644[0],+746[0],+1110[0],+1314[0] -644[0],-746[0],-1110[0],-1314[0]
 src/types/game.ts: +33[0],+60[0],+90[0],+252[0] -33[0],-60[0],-90[0],-252[0]
 
 Conversations:
 
 [0]: bd64846c-fda4-4671-a836-9f27b82dee7c; bd64846c; unknown;
+[1]: 0d191273-a2d6-4a28-b3ff-a06d32771463; Add export and paste game state feature; claude-4.5-opus-high-thinking;

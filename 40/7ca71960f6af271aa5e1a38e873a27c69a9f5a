@@ -6,4 +6,4 @@ src/lib/renderConfig.ts: +82-85[0],+87[0] -82-84[0]
 Conversations:
 
 [0]: aea77957-b76d-410c-8a6f-c9d7708dfbf7; Adjust sprite test view padding; composer-1;
-[1]: fdf5db8d-617b-4f46-a03d-2d72f2e39834; Filter colors close to background; composer-1;
+[1]: 28621b7b-dde8-4bda-b9c7-1f079b4f22f9; Issue with water sprite visibility; composer-1;

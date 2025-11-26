@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +49[1],+63[1] -49[1],-63[1]
+src/components/Game.tsx: +53[0],+925-926[0],+1130[0],+1155-1161[0],+1163-1170[0],+1172-1175[0],+1177-1178[0],+1180-1184[0],+1186-1191[0],+1193-1199[0],+1201-1203[0],+1205-1211[0],+2041[1],+2061[1],+2417[0] -924[0],-1999[1],-2355[0]
+
+Conversations:
+
+[0]: fa9099e1-03d3-4064-98ba-b97f26c4103e; Add WASD camera movement; gpt-5.1-codex-max;
+[1]: bd64846c-fda4-4671-a836-9f27b82dee7c; Scale down the tennis court dimensions; composer-1;

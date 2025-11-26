@@ -1,0 +1,11 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +22[0],+42[0],+58[0] -41[0]
+src/components/Game.tsx: +208[0],+469[0],+1077[0],+1617-1618[0],+1901[0],+1903-1904[0],+1921[0] -208[0],-469[0],-1616-1617[0],-1900[0]
+src/context/GameContext.tsx: +51[0]
+src/lib/simulation.ts: +618[0],+719[0],+1144-1145[0] -1142-1143[0]
+src/types/game.ts: +33[0],+59[0],+88[0],+249[0]
+
+Conversations:
+
+[0]: 13e88005-7571-4c01-8787-233123164d1a; Ensure mansion asset is imported; composer-1;

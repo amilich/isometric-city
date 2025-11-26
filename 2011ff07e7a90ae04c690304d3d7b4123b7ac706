@@ -6,9 +6,9 @@ src/lib/renderConfig.ts: +1-3[0],+5-13[0],+14[5],+16-48[0],+50-53[0],+55-56[0],+
 
 Conversations:
 
-[0]: 240f8971-3c91-47a6-ba9a-ae02b71fbfe4; Implement new tile rendering method; claude-4.5-opus-high-thinking;
-[1]: 7fdc0939-ba3f-4b09-8489-1e58340dd5f4; Fixing sprite placement issues; claude-4.5-opus-high-thinking;
-[2]: 74a24022-4619-4169-be6c-46311be47789; Add adaptable sidewalks to road rendering; claude-4.5-opus-high-thinking;
-[3]: 912172d2-c67c-4d63-baa0-c1ac35346fc9; Adjust asset positions in the scene; claude-4.5-opus-high-thinking;
+[0]: 240f8971-3c91-47a6-ba9a-ae02b71fbfe4; 240f8971; unknown;
+[1]: 7fdc0939-ba3f-4b09-8489-1e58340dd5f4; 7fdc0939; unknown;
+[2]: 74a24022-4619-4169-be6c-46311be47789; 74a24022; unknown;
+[3]: 912172d2-c67c-4d63-baa0-c1ac35346fc9; 912172d2; unknown;
 [4]: 37e77927-6d1f-4641-869c-011e8c495997; Tab Request 37e77927; unknown;
-[5]: 5fa2e999-e12b-443c-9616-6bc01def0860; Adjust tile asset offsets; claude-4.5-opus-high-thinking;
+[5]: 5fa2e999-e12b-443c-9616-6bc01def0860; 5fa2e999; unknown;

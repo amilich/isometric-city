@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +17-21[0],+23-26[0],+29[0],+33[1],+38[2],+45[1],+47[0],+49[0],+54[0],+55[1],+61[0],+63[0],+67[0],+69[1],+70[0],+71-72[1],+903[1]
+
+Conversations:
+
+[0]: fa6d27cf-7393-41b8-be79-e70edc25b2e1; Create a sim city game in Next.js; gpt-5.1-codex-max-xhigh;
+[1]: 6e806a5e-8c86-43b4-a535-16a1e80e92ce; Create a sim city game in Next.js; claude-4.5-opus-high-thinking;
+[2]: 89d5267b-5a73-4399-b803-a9c0850fa493; Build a sim city game in nextjs; claude-4.5-opus-high-thinking;

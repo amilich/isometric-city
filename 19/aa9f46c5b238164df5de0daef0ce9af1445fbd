@@ -1,0 +1,13 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +42[2],+68[2],+85-86[2],+88[2],+142[2],+1056[2] -42[2],-68[2],-85[2],-87[2],-141[2],-1055[2]
+src/components/Game.tsx: +2520[0],+2522-2525[0],+2621-2624[0] -2520[0],-2536[1],-2619-2622[0]
+src/lib/renderConfig.ts: +95[2],+107[2] -106[2]
+src/lib/simulation.ts: +1141[2] -1141[2]
+src/types/game.ts: +90[2] -90[2]
+
+Conversations:
+
+[0]: 10f1e852-20e1-4918-aad5-265fe137c23e; Shift airport position downward; composer-1;
+[1]: 5c7a5cee-7c95-4efc-8ec6-298c2651aa6c; Tab Request 5c7a5cee; unknown;
+[2]: 67c48de3-0503-4472-b2e2-a7fd6ebe6eb9; Shift university tile layout; composer-1;

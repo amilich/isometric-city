@@ -27,6 +27,8 @@ import {
   AdvisorIcon,
   AlertIcon,
   InfoIcon,
+  BudgetIcon,
+  SettingsIcon,
 } from './ui/Icons';
 
 // Import shadcn components
@@ -178,14 +180,14 @@ function Sidebar() {
         <div className="grid grid-cols-5 gap-1">
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   onClick={() => setActivePanel(activePanel === 'budget' ? 'none' : 'budget')}
                   variant={activePanel === 'budget' ? 'default' : 'ghost'}
-                  size="sm"
+                  size="icon-sm"
                   className="w-full"
                 >
-                  Budget
+                  <BudgetIcon size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Budget</TooltipContent>
@@ -194,14 +196,14 @@ function Sidebar() {
           
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   onClick={() => setActivePanel(activePanel === 'statistics' ? 'none' : 'statistics')}
                   variant={activePanel === 'statistics' ? 'default' : 'ghost'}
-                  size="sm"
+                  size="icon-sm"
                   className="w-full"
                 >
-                  Stats
+                  <ChartIcon size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Statistics</TooltipContent>
@@ -210,14 +212,14 @@ function Sidebar() {
           
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   onClick={() => setActivePanel(activePanel === 'advisors' ? 'none' : 'advisors')}
                   variant={activePanel === 'advisors' ? 'default' : 'ghost'}
-                  size="sm"
+                  size="icon-sm"
                   className="w-full"
                 >
-                  Advice
+                  <AdvisorIcon size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Advisors</TooltipContent>
@@ -226,14 +228,14 @@ function Sidebar() {
           
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   onClick={() => setActivePanel(activePanel === 'achievements' ? 'none' : 'achievements')}
                   variant={activePanel === 'achievements' ? 'default' : 'ghost'}
-                  size="sm"
+                  size="icon-sm"
                   className="w-full"
                 >
-                  Awards
+                  <TrophyIcon size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Achievements</TooltipContent>
@@ -242,14 +244,14 @@ function Sidebar() {
           
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button
                   onClick={() => setActivePanel(activePanel === 'settings' ? 'none' : 'settings')}
                   variant={activePanel === 'settings' ? 'default' : 'ghost'}
-                  size="sm"
+                  size="icon-sm"
                   className="w-full"
                 >
-                  Settings
+                  <SettingsIcon size={16} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Settings</TooltipContent>
@@ -1320,7 +1322,7 @@ function CoverageRangeOverlay({
 }
 
 // Isometric Grid Component with drag support
-function IsometricGrid({ overlayMode }: { overlayMode: OverlayMode }) {
+function IsometricGrid({ overlayMode, selectedTile, setSelectedTile }: { overlayMode: OverlayMode; selectedTile: { x: number; y: number } | null; setSelectedTile: (tile: { x: number; y: number } | null) => void }) {
   const { state, placeAtTile } = useGame();
   const containerRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState({ x: 620, y: 160 });
@@ -1328,7 +1330,6 @@ function IsometricGrid({ overlayMode }: { overlayMode: OverlayMode }) {
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
-  const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [lastPlacedTile, setLastPlacedTile] = useState<{ x: number; y: number } | null>(null);
   
@@ -1341,19 +1342,6 @@ function IsometricGrid({ overlayMode }: { overlayMode: OverlayMode }) {
   
   const supportsDrag = ['road', 'bulldoze', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'].includes(selectedTool);
   
-  // Handle ESC key to deselect tile
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedTile) {
-        setSelectedTile(null);
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [selectedTile]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
@@ -1515,17 +1503,19 @@ function IsometricGrid({ overlayMode }: { overlayMode: OverlayMode }) {
                 'house_small', 'house_medium', 'apartment_low', 'apartment_high', 'mansion',
                 'shop_small', 'shop_medium', 'office_low', 'office_high', 'mall',
                 'factory_small', 'factory_medium', 'factory_large', 'warehouse',
-                'fire_station', 'hospital', 'park', 'police_station', 'school',
+                'fire_station', 'hospital', 'park', 'police_station', 'school', 'university',
                 'water_tower', 'power_plant', 'stadium'
               ];
               
-              // Multi-tile building sizes
-              const buildingSizes: Record<string, number> = {
-                'power_plant': 2,
-                'stadium': 3,
-                'airport': 4,
+              // Multi-tile building sizes (width x height)
+              const buildingSizes: Record<string, { width: number; height: number }> = {
+                'power_plant': { width: 2, height: 2 },
+                'stadium': { width: 3, height: 3 },
+                'university': { width: 3, height: 2 },
+                'airport': { width: 4, height: 4 },
               };
-              const tileSize = buildingSizes[buildingType] || 1;
+              const buildingSize = buildingSizes[buildingType] || { width: 1, height: 1 };
+              const tileSize = Math.max(buildingSize.width, buildingSize.height);
               
               // For image-based buildings, use a consistent height based on tile size
               const buildingHeights: Record<string, number> = {
@@ -1551,7 +1541,7 @@ function IsometricGrid({ overlayMode }: { overlayMode: OverlayMode }) {
                 'fire_station': TILE_HEIGHT * 1.5,
                 'hospital': TILE_HEIGHT * 1.5,
                 'school': TILE_HEIGHT * 1.5,
-                'university': TILE_HEIGHT * 1.8, // SVG fallback
+                'university': TILE_HEIGHT * 3, // 3x2 building
                 'park': TILE_HEIGHT * 1.5,
                 'stadium': TILE_HEIGHT * 4.5, // 3x3 building
                 'airport': TILE_HEIGHT * 6, // 4x4 building
@@ -1577,7 +1567,7 @@ function IsometricGrid({ overlayMode }: { overlayMode: OverlayMode }) {
                     left: screenX,
                     top: screenY - heightOffset,
                     // Multi-tile buildings use bottom-right corner for z-index
-                    zIndex: (x + tileSize - 1) + (y + tileSize - 1) + 1000, // Higher z-index for buildings layer
+                    zIndex: (x + buildingSize.width - 1) + (y + buildingSize.height - 1) + 1000, // Higher z-index for buildings layer
                     transform: isHovered ? 'translateY(-2px)' : undefined,
                     filter: tile.building.onFire ? 'brightness(1.3) saturate(1.5)' : isHovered ? 'brightness(1.05)' : undefined,
                   }}
@@ -1745,8 +1735,9 @@ function OverlayModeToggle({
 
 // Main Game Component
 export default function Game() {
-  const { state } = useGame();
+  const { state, setTool, setActivePanel } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
+  const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   
   // Auto-enable overlay when selecting utility tools
   useEffect(() => {
@@ -1756,6 +1747,31 @@ export default function Game() {
       setOverlayMode('water');
     }
   }, [state.selectedTool]);
+  
+  // Handle ESC key to deselect everything
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Close any open panels
+        if (state.activePanel !== 'none') {
+          setActivePanel('none');
+        }
+        // Deselect selected tile
+        else if (selectedTile) {
+          setSelectedTile(null);
+        }
+        // Reset tool to select if something else is selected
+        else if (state.selectedTool !== 'select') {
+          setTool('select');
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [state.activePanel, state.selectedTool, selectedTile, setActivePanel, setTool]);
   
   return (
     <TooltipProvider>
@@ -1768,7 +1784,7 @@ export default function Game() {
           <TopBar />
           <StatsPanel />
           <div className="flex-1 relative">
-            <IsometricGrid overlayMode={overlayMode} />
+            <IsometricGrid overlayMode={overlayMode} selectedTile={selectedTile} setSelectedTile={setSelectedTile} />
             <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
             <MiniMap />
           </div>

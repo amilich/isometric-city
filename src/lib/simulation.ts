@@ -67,22 +67,23 @@ function perlinNoise(x: number, y: number, seed: number, octaves: number = 4): n
   return total / maxValue;
 }
 
-// Generate small contiguous lake regions
+// Generate 2-3 large, round lakes
 function generateLakes(grid: Tile[][], size: number, seed: number): void {
   // Use noise to find potential lake centers - look for low points
   const lakeNoise = (x: number, y: number) => perlinNoise(x, y, seed + 1000, 3);
   
   // Find lake seed points (local minimums in noise)
-  const lakeCenters: { x: number; y: number }[] = [];
-  const minDistFromEdge = 3;
-  const minDistBetweenLakes = 6;
+  const lakeCenters: { x: number; y: number; noise: number }[] = [];
+  const minDistFromEdge = 8;
+  const minDistBetweenLakes = size * 0.25; // Keep lakes well separated
   
+  // Collect all potential lake centers
   for (let y = minDistFromEdge; y < size - minDistFromEdge; y++) {
     for (let x = minDistFromEdge; x < size - minDistFromEdge; x++) {
       const noiseVal = lakeNoise(x, y);
       
       // Check if this is a good lake center (low noise value)
-      if (noiseVal < 0.35) {
+      if (noiseVal < 0.3) {
         // Check distance from other lake centers
         let tooClose = false;
         for (const center of lakeCenters) {
@@ -93,35 +94,52 @@ function generateLakes(grid: Tile[][], size: number, seed: number): void {
           }
         }
         
-        if (!tooClose && Math.random() < 0.15) { // Random chance to spawn lake
-          lakeCenters.push({ x, y });
+        if (!tooClose) {
+          lakeCenters.push({ x, y, noise: noiseVal });
         }
       }
     }
   }
   
-  // Grow lakes from each center using flood fill with size limit
-  for (const center of lakeCenters) {
-    const lakeSize = 3 + Math.floor(Math.random() * 6); // 3-8 tiles per lake
+  // Sort by noise value (lowest first) and pick 2-3 best candidates
+  lakeCenters.sort((a, b) => a.noise - b.noise);
+  const numLakes = 2 + Math.floor(Math.random() * 2); // 2 or 3 lakes
+  const selectedCenters = lakeCenters.slice(0, Math.min(numLakes, lakeCenters.length));
+  
+  // Grow lakes from each center using radial expansion for rounder shapes
+  for (const center of selectedCenters) {
+    // Target size: 15-30 tiles for bigger lakes
+    const targetSize = 15 + Math.floor(Math.random() * 16);
     const lakeTiles: { x: number; y: number }[] = [{ x: center.x, y: center.y }];
-    const candidates: { x: number; y: number }[] = [];
+    const candidates: { x: number; y: number; dist: number; noise: number }[] = [];
     
     // Add initial neighbors as candidates
-    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
     for (const [dx, dy] of directions) {
       const nx = center.x + dx;
       const ny = center.y + dy;
       if (nx >= minDistFromEdge && nx < size - minDistFromEdge && 
           ny >= minDistFromEdge && ny < size - minDistFromEdge) {
-        candidates.push({ x: nx, y: ny });
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const noise = lakeNoise(nx, ny);
+        candidates.push({ x: nx, y: ny, dist, noise });
       }
     }
     
-    // Grow lake by adding adjacent tiles
-    while (lakeTiles.length < lakeSize && candidates.length > 0) {
-      // Pick a random candidate (weighted towards lower noise values for organic shapes)
-      candidates.sort((a, b) => lakeNoise(a.x, a.y) - lakeNoise(b.x, b.y));
-      const pickIndex = Math.floor(Math.random() * Math.min(3, candidates.length));
+    // Grow lake by adding adjacent tiles, prioritizing:
+    // 1. Closer to center (for rounder shape)
+    // 2. Lower noise values (for organic shape)
+    while (lakeTiles.length < targetSize && candidates.length > 0) {
+      // Sort by distance from center first, then noise
+      candidates.sort((a, b) => {
+        if (Math.abs(a.dist - b.dist) < 0.5) {
+          return a.noise - b.noise; // If similar distance, prefer lower noise
+        }
+        return a.dist - b.dist; // Prefer closer tiles for rounder shape
+      });
+      
+      // Pick from top candidates (closest/lowest noise)
+      const pickIndex = Math.floor(Math.random() * Math.min(5, candidates.length));
       const picked = candidates.splice(pickIndex, 1)[0];
       
       // Check if already in lake
@@ -130,7 +148,7 @@ function generateLakes(grid: Tile[][], size: number, seed: number): void {
       // Check if tile is valid (not already water from another lake)
       if (grid[picked.y][picked.x].building.type === 'water') continue;
       
-      lakeTiles.push(picked);
+      lakeTiles.push({ x: picked.x, y: picked.y });
       
       // Add new neighbors as candidates
       for (const [dx, dy] of directions) {
@@ -140,7 +158,9 @@ function generateLakes(grid: Tile[][], size: number, seed: number): void {
             ny >= minDistFromEdge && ny < size - minDistFromEdge &&
             !lakeTiles.some(t => t.x === nx && t.y === ny) &&
             !candidates.some(c => c.x === nx && c.y === ny)) {
-          candidates.push({ x: nx, y: ny });
+          const dist = Math.sqrt((nx - center.x) ** 2 + (ny - center.y) ** 2);
+          const noise = lakeNoise(nx, ny);
+          candidates.push({ x: nx, y: ny, dist, noise });
         }
       }
     }
@@ -296,7 +316,7 @@ function createAchievements(): Achievement[] {
   ];
 }
 
-export function createInitialGameState(size: number = 28, cityName: string = 'New City'): GameState {
+export function createInitialGameState(size: number = 120, cityName: string = 'New City'): GameState {
   const grid = generateTerrain(size);
 
   return {
@@ -971,16 +991,17 @@ export function simulateTick(state: GameState): GameState {
   };
 }
 
-// Building sizes for multi-tile buildings
-const BUILDING_SIZES: Partial<Record<BuildingType, number>> = {
-  power_plant: 2,
-  stadium: 3,
-  airport: 4,
+// Building sizes for multi-tile buildings (width x height)
+const BUILDING_SIZES: Partial<Record<BuildingType, { width: number; height: number }>> = {
+  power_plant: { width: 2, height: 2 },
+  stadium: { width: 3, height: 3 },
+  university: { width: 3, height: 2 },
+  airport: { width: 4, height: 4 },
 };
 
 // Get the size of a building (how many tiles it spans)
-export function getBuildingSize(buildingType: BuildingType): number {
-  return BUILDING_SIZES[buildingType] || 1;
+export function getBuildingSize(buildingType: BuildingType): { width: number; height: number } {
+  return BUILDING_SIZES[buildingType] || { width: 1, height: 1 };
 }
 
 // Check if a multi-tile building can be placed at the given position
@@ -988,17 +1009,18 @@ function canPlaceMultiTileBuilding(
   grid: Tile[][],
   x: number,
   y: number,
-  size: number,
+  width: number,
+  height: number,
   gridSize: number
 ): boolean {
   // Check bounds
-  if (x + size > gridSize || y + size > gridSize) {
+  if (x + width > gridSize || y + height > gridSize) {
     return false;
   }
   
   // Check all tiles are available (grass or empty, not water)
-  for (let dy = 0; dy < size; dy++) {
-    for (let dx = 0; dx < size; dx++) {
+  for (let dy = 0; dy < height; dy++) {
+    for (let dx = 0; dx < width; dx++) {
       const tile = grid[y + dy]?.[x + dx];
       if (!tile) return false;
       if (tile.building.type === 'water') return false;
@@ -1038,9 +1060,9 @@ export function placeBuilding(
   } else if (buildingType) {
     const size = getBuildingSize(buildingType);
     
-    if (size > 1) {
+    if (size.width > 1 || size.height > 1) {
       // Multi-tile building - check if we can place it
-      if (!canPlaceMultiTileBuilding(newGrid, x, y, size, state.gridSize)) {
+      if (!canPlaceMultiTileBuilding(newGrid, x, y, size.width, size.height, state.gridSize)) {
         return state; // Can't place here
       }
       
@@ -1050,8 +1072,8 @@ export function placeBuilding(
       
       // Mark other tiles as part of this building (using a special marker)
       // We'll use '_part' suffix conceptually - store reference to origin
-      for (let dy = 0; dy < size; dy++) {
-        for (let dx = 0; dx < size; dx++) {
+      for (let dy = 0; dy < size.height; dy++) {
+        for (let dx = 0; dx < size.width; dx++) {
           if (dx === 0 && dy === 0) continue; // Skip origin
           // Clear these tiles but don't place a visible building
           // They are "occupied" by the main building

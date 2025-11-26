@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { GameProvider } from '@/context/GameContext';
 import Game from '@/components/Game';
@@ -181,7 +180,6 @@ export default function HomePage() {
   const [showGame, setShowGame] = useState(false);
   const [showNewGame, setShowNewGame] = useState(false);
   const [cityName, setCityName] = useState('New City');
-  const [gridSize, setGridSize] = useState(28);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check for existing game on mount and auto-load if exists
@@ -433,23 +431,6 @@ export default function HomePage() {
                 onChange={(e) => setCityName(e.target.value)}
                 placeholder="Enter city name..."
               />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Map Size</Label>
-                <span className="text-sm text-muted-foreground">{gridSize} x {gridSize}</span>
-              </div>
-              <Slider
-                value={[gridSize]}
-                onValueChange={(value) => setGridSize(value[0])}
-                min={20}
-                max={40}
-                step={4}
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Small</span>
-                <span>Large</span>
-              </div>
             </div>
           </div>
           <div className="flex justify-end gap-3">

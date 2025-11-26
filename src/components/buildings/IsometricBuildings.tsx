@@ -12,56 +12,57 @@ interface BuildingProps {
 }
 
 // Mapping of building types to their PNG image paths and size multipliers
-const BUILDING_IMAGES: Partial<Record<BuildingType, { src: string; tileSize: number }>> = {
+const BUILDING_IMAGES: Partial<Record<BuildingType, { src: string; tileWidth: number; tileHeight: number }>> = {
   // Residential buildings (1x1)
-  house_small: { src: '/assets/buildings/residential.png', tileSize: 1 },
-  house_medium: { src: '/assets/buildings/residential.png', tileSize: 1 },
-  apartment_low: { src: '/assets/buildings/residential.png', tileSize: 1 },
-  apartment_high: { src: '/assets/buildings/residential.png', tileSize: 1 },
-  mansion: { src: '/assets/buildings/residential.png', tileSize: 1 },
+  house_small: { src: '/assets/buildings/residential.png', tileWidth: 1, tileHeight: 1 },
+  house_medium: { src: '/assets/buildings/residential.png', tileWidth: 1, tileHeight: 1 },
+  apartment_low: { src: '/assets/buildings/residential.png', tileWidth: 1, tileHeight: 1 },
+  apartment_high: { src: '/assets/buildings/residential.png', tileWidth: 1, tileHeight: 1 },
+  mansion: { src: '/assets/buildings/residential.png', tileWidth: 1, tileHeight: 1 },
   // Commercial buildings (1x1)
-  shop_small: { src: '/assets/buildings/commercial.png', tileSize: 1 },
-  shop_medium: { src: '/assets/buildings/commercial.png', tileSize: 1 },
-  office_low: { src: '/assets/buildings/commercial.png', tileSize: 1 },
-  office_high: { src: '/assets/buildings/commercial.png', tileSize: 1 },
-  mall: { src: '/assets/buildings/commercial.png', tileSize: 1 },
+  shop_small: { src: '/assets/buildings/commercial.png', tileWidth: 1, tileHeight: 1 },
+  shop_medium: { src: '/assets/buildings/commercial.png', tileWidth: 1, tileHeight: 1 },
+  office_low: { src: '/assets/buildings/commercial.png', tileWidth: 1, tileHeight: 1 },
+  office_high: { src: '/assets/buildings/commercial.png', tileWidth: 1, tileHeight: 1 },
+  mall: { src: '/assets/buildings/commercial.png', tileWidth: 1, tileHeight: 1 },
   // Industrial buildings (1x1)
-  factory_small: { src: '/assets/buildings/industrial.png', tileSize: 1 },
-  factory_medium: { src: '/assets/buildings/industrial.png', tileSize: 1 },
-  factory_large: { src: '/assets/buildings/industrial.png', tileSize: 1 },
-  warehouse: { src: '/assets/buildings/industrial.png', tileSize: 1 },
+  factory_small: { src: '/assets/buildings/industrial.png', tileWidth: 1, tileHeight: 1 },
+  factory_medium: { src: '/assets/buildings/industrial.png', tileWidth: 1, tileHeight: 1 },
+  factory_large: { src: '/assets/buildings/industrial.png', tileWidth: 1, tileHeight: 1 },
+  warehouse: { src: '/assets/buildings/industrial.png', tileWidth: 1, tileHeight: 1 },
   // Service buildings (1x1)
-  fire_station: { src: '/assets/buildings/fire_station.png', tileSize: 1 },
-  hospital: { src: '/assets/buildings/hospital.png', tileSize: 1 },
-  park: { src: '/assets/buildings/park.png', tileSize: 1 },
-  police_station: { src: '/assets/buildings/police_station.png', tileSize: 1 },
-  school: { src: '/assets/buildings/school.png', tileSize: 1 },
+  fire_station: { src: '/assets/buildings/fire_station.png', tileWidth: 1, tileHeight: 1 },
+  hospital: { src: '/assets/buildings/hospital.png', tileWidth: 1, tileHeight: 1 },
+  park: { src: '/assets/buildings/park.png', tileWidth: 1, tileHeight: 1 },
+  police_station: { src: '/assets/buildings/police_station.png', tileWidth: 1, tileHeight: 1 },
+  school: { src: '/assets/buildings/school.png', tileWidth: 1, tileHeight: 1 },
+  university: { src: '/assets/buildings/university.png', tileWidth: 3, tileHeight: 2 },
   // Utilities
-  water_tower: { src: '/assets/buildings/watertower.png', tileSize: 1 },
-  power_plant: { src: '/assets/buildings/powerplant.png', tileSize: 2 },
+  water_tower: { src: '/assets/buildings/watertower.png', tileWidth: 1, tileHeight: 1 },
+  power_plant: { src: '/assets/buildings/powerplant.png', tileWidth: 2, tileHeight: 2 },
   // Special buildings
-  stadium: { src: '/assets/buildings/stadium.png', tileSize: 3 },
+  stadium: { src: '/assets/buildings/stadium.png', tileWidth: 3, tileHeight: 3 },
 };
 
 // Image-based building component
 const ImageBuilding: React.FC<{
   src: string;
   size?: number;
-  tileSize?: number; // How many tiles this building spans (1, 2, 3, etc.)
+  tileWidth?: number; // How many tiles wide this building spans
+  tileHeight?: number; // How many tiles tall this building spans
   alt: string;
-}> = ({ src, size = 64, tileSize = 1, alt }) => {
+}> = ({ src, size = 64, tileWidth = 1, tileHeight = 1, alt }) => {
   // Calculate image dimensions based on tile size
   // For multi-tile buildings, scale the image accordingly
-  const scaledSize = size * tileSize;
-  const imageSize = scaledSize * 1.8;
-  const height = getTileHeight(size);
-  const scaledHeight = height * tileSize;
+  const scaledWidth = size * tileWidth;
+  const scaledHeight = getTileHeight(size) * tileHeight;
+  const imageSize = Math.max(scaledWidth, scaledHeight) * 1.8;
   
   return (
     <div 
       style={{ 
         position: 'relative',
-        width: scaledSize,
+        width: scaledWidth,
         height: scaledHeight + imageSize * 0.5,
         display: 'flex',
         alignItems: 'flex-end',
@@ -863,44 +864,6 @@ export const School: React.FC<BuildingProps> = ({ size = TILE_WIDTH }) => {
   );
 };
 
-// University
-export const University: React.FC<BuildingProps> = ({ size = TILE_WIDTH }) => {
-  const w = size;
-  const h = getTileHeight(w);
-  const buildingH = h * 1.3;
-  const domeH = h * 0.5;
-  const totalH = h + buildingH + domeH;
-  const groundY = buildingH + domeH;
-  
-  return (
-    <svg width={w} height={totalH} viewBox={`0 0 ${w} ${totalH}`} style={{ display: 'block' }}>
-      {/* Ground */}
-      <polygon points={`${w/2},${groundY} ${w},${groundY + h/2} ${w/2},${totalH} 0,${groundY + h/2}`} fill="#4a7c3f" stroke="#2d4a26" strokeWidth={0.5} />
-      {/* Building */}
-      <IsometricBox w={w * 0.9} h={h * 0.9} depth={buildingH} topColor="#8D6E63" leftColor="#795548" rightColor="#A1887F" yOffset={domeH} />
-      {/* Dome */}
-      <ellipse cx={w * 0.45} cy={domeH} rx={w * 0.18} ry={h * 0.12} fill="#5D4037" stroke="#3E2723" strokeWidth={0.5} />
-      <path d={`M ${w * 0.27} ${domeH} Q ${w * 0.45} ${-domeH * 0.3} ${w * 0.63} ${domeH}`} fill="#6D4C41" stroke="#4E342E" strokeWidth={0.5} />
-      <circle cx={w * 0.45} cy={-3} r={4} fill="#FFC107" stroke="#FF8F00" strokeWidth={0.5} />
-      {/* Columns (simplified) */}
-      {[0.5, 0.58, 0.66, 0.74].map((xFrac, i) => (
-        <rect key={i} x={w * xFrac} y={domeH + buildingH * 0.4} width={3} height={buildingH * 0.55} fill="#A1887F" stroke="#8D6E63" strokeWidth={0.3} />
-      ))}
-      {/* Pediment */}
-      <polygon points={`${w * 0.48},${domeH + buildingH * 0.4} ${w * 0.6},${domeH + buildingH * 0.25} ${w * 0.76},${domeH + buildingH * 0.4}`} fill="#8D6E63" stroke="#5D4037" strokeWidth={0.5} />
-      {/* Windows */}
-      {[0.5, 0.7].map((yFrac, i) => (
-        <g key={i}>
-          <rect x={w * 0.52} y={domeH + buildingH * yFrac} width={w * 0.06} height={buildingH * 0.12} fill="#FFF9C4" stroke="#5D4037" strokeWidth={0.3} />
-          <rect x={w * 0.62} y={domeH + buildingH * yFrac} width={w * 0.06} height={buildingH * 0.12} fill="#FFF9C4" stroke="#5D4037" strokeWidth={0.3} />
-          <rect x={w * 0.72} y={domeH + buildingH * yFrac} width={w * 0.06} height={buildingH * 0.12} fill="#FFF9C4" stroke="#5D4037" strokeWidth={0.3} />
-        </g>
-      ))}
-      {/* Entrance */}
-      <rect x={w * 0.12} y={domeH + buildingH * 0.65} width={w * 0.12} height={buildingH * 0.3} fill="#5D4037" />
-    </svg>
-  );
-};
 
 // Park
 export const Park: React.FC<BuildingProps> = ({ size = TILE_WIDTH }) => {
@@ -1030,7 +993,7 @@ export const BuildingRenderer: React.FC<{
     // Check if we have a PNG image for this building type
     const imageConfig = BUILDING_IMAGES[buildingType];
     if (imageConfig) {
-      return <ImageBuilding src={imageConfig.src} size={size} tileSize={imageConfig.tileSize} alt={buildingType} />;
+      return <ImageBuilding src={imageConfig.src} size={size} tileWidth={imageConfig.tileWidth} tileHeight={imageConfig.tileHeight} alt={buildingType} />;
     }
     
     // Fallback to SVG-based buildings for types without images
@@ -1058,8 +1021,6 @@ export const BuildingRenderer: React.FC<{
         return <PowerPlant size={size} />;
       case 'water_tower':
         return <WaterTower size={size} />;
-      case 'university':
-        return <University size={size} />;
       case 'stadium':
         return <Mall size={size} powered={powered} />; // Placeholder
       case 'airport':

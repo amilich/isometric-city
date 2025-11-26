@@ -105,7 +105,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (saved) {
       return saved;
     }
-    return createInitialGameState(28, 'IsoCity');
+    return createInitialGameState(120, 'IsoCity');
   });
   
   const [hasExistingGame, setHasExistingGame] = useState(false);
@@ -240,7 +240,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const newGame = useCallback((name?: string, size?: number) => {
     clearGameState(); // Clear saved state when starting fresh
-    const fresh = createInitialGameState(size ?? 28, name || 'IsoCity');
+    const fresh = createInitialGameState(size ?? 120, name || 'IsoCity');
     setState(fresh);
   }, []);
 

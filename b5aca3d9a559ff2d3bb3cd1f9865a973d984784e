@@ -1,8 +1,9 @@
 AI Notes:
 
 src/components/Game.tsx: +1159[0],+1264-1268[0],+1273[0],+1276[0],+1279-1280[0],+1854-1856[0]
-src/lib/simulation.ts: +1090-1097[0]
+src/lib/simulation.ts: +1090-1095[0],+1096-1097[1]
 
 Conversations:
 
 [0]: 7f4efcda-5870-4e83-ab7b-f0bde777ec6d; Missing white tiles in hospital; composer-1;
+[1]: 20c0c5c5-3757-4a14-8fca-d81f9be23c07; Adjust building development near roads; gpt-5.1-codex-fast;

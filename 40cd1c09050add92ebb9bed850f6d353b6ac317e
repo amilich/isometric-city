@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/Game.tsx: +121[0],+1090-1102[1],+1132-1136[1],+1139-1145[1],+1150-1155[1],+1157-1168[1] -121[0],-1118-1120[1],-1123-1133[1]
+src/types/game.ts: +38-39[0],+89[0],+249[1] -38[0]
+
+Conversations:
+
+[0]: 5a01012a-2343-42d1-9ee2-907340887574; Add a 3x3 asset for space program; composer-1;
+[1]: a9e33dda-888f-4474-94e3-efd4e34110b6; Fix power plant rendering issue; gpt-5.1-codex-fast;

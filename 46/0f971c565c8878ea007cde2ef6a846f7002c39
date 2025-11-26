@@ -5,5 +5,5 @@ src/components/Game.tsx: +2279[0],+2283-2285[0],+2288[0],+2290-2295[0],+2297-230
 Conversations:
 
 [0]: 5a46775a-4000-4376-b6ee-8b017bb93e1e; Fix sidewalk and beach rendering bug; composer-1;
-[1]: 53cb887b-bd76-45e4-bcbb-225c429e669d; Disable view overlay on reload; composer-1;
+[1]: f921b5a7-7ab6-4ec3-90f1-d8989591fcb2; Shift and scale space program; composer-1;
 [2]: 86916958-a251-4890-973e-b50517f2d83f; Fix and round outside corners; claude-4.5-opus-high-thinking;

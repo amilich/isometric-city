@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/Game.tsx: +1238[0] -1238[0]
+src/lib/simulation.ts: +686[1],+1362-1365[2],+1387-1397[2] -686[1]
+
+Conversations:
+
+[0]: 1cf46b63-3a21-4f81-9837-ba47691afcfc; Extend the lifespan of cars; composer-1;
+[1]: ea84de73-ac55-4d1c-8ee3-578728242b8a; Concerns about low industrial demand; composer-1;
+[2]: 2a090b8f-6ee1-4e58-bfe1-dd75021ed23a; Restrictions on water tower placement; composer-1;

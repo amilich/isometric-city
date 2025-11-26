@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +33-34[0],+36[0],+49[0] -46[0]
+src/components/Game.tsx: +1088[0],+1090[0],+1904[0],+1912-1914[0] -1902[0]
+
+Conversations:
+
+[0]: 13e88005-7571-4c01-8787-233123164d1a; Ensure mansion asset is imported; composer-1;

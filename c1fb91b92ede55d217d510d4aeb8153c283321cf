@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/Game.tsx: +315[0] -315[0]
+src/lib/simulation.ts: +461-474[1],+477-479[1],+481-485[1],+487-489[1],+491[1],+493-495[1],+497[1],+499[1],+503-506[1] -461-462[1],-464-468[1]
+
+Conversations:
+
+[0]: 57dff8da-899c-49bf-8159-56b54151a43c; Fix play button icon design; composer-1;
+[1]: 20c0c5c5-3757-4a14-8fca-d81f9be23c07; Adjust building development near roads; gpt-5.1-codex-fast;

@@ -5,7 +5,7 @@ export const USE_TILE_RENDERER = true;
 // Sprite sheet configuration
 export const SPRITE_SHEET = {
   // Path to the sprite sheet
-  src: '/assets/sprites.png',
+  src: '/assets/sprites3.png',
   // Number of columns in the sprite sheet (5 columns confirmed)
   cols: 5,
   // Number of rows - using 6 because: 5 main rows + partial 6th row means
@@ -67,7 +67,7 @@ export const SPRITE_ORDER = [
   'warehouse',
   'factory_small',
   'factory_medium',
-  'factory_large',
+  'museum',
 ] as const;
 
 // ============================================================================
@@ -126,6 +126,7 @@ export const BUILDING_TO_SPRITE: Record<string, string> = {
   water_tower: 'water_tower',
   // Special buildings
   stadium: 'stadium',
+  museum: 'museum',
   space_program: 'space_program',
   // Nature
   tree: 'tree',

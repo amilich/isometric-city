@@ -267,6 +267,16 @@ export function PlaneIcon({ size = 18, className }: IconProps) {
   );
 }
 
+export function MuseumIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <path {...baseStroke} d="M4 20h16v-2H4z" />
+      <path {...baseStroke} d="M6 18V8l6-4 6 4v10" />
+      <path {...baseStroke} d="M8 12h2M14 12h2M10 16h4" />
+    </svg>
+  );
+}
+
 function ZoneIcon({ color, size = 18, className }: IconProps & { color: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
@@ -294,6 +304,7 @@ export const ToolIcons: Partial<Record<Tool, React.FC<IconProps>>> = {
   power_plant: PowerIcon,
   water_tower: WaterIcon,
   stadium: TrophyIcon,
+  museum: MuseumIcon,
   airport: PlaneIcon,
 };
 

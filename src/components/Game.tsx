@@ -210,7 +210,7 @@ const Sidebar = React.memo(function Sidebar() {
     'SERVICES': ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[],
     'PARKS': ['park', 'park_large', 'tennis'] as Tool[],
     'UTILITIES': ['power_plant', 'water_tower'] as Tool[],
-    'SPECIAL': ['stadium', 'airport', 'space_program'] as Tool[],
+    'SPECIAL': ['stadium', 'museum', 'airport', 'space_program'] as Tool[],
   }), []);
   
   return (
@@ -2477,6 +2477,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile }: {
         imageSrc = BUILDING_IMAGES[buildingType];
         if (buildingType === 'power_plant') sizeMultiplier = 2.25;
         else if (buildingType === 'stadium') sizeMultiplier = 1.372;
+        else if (buildingType === 'museum') sizeMultiplier = 1.372;
         else if (buildingType === 'space_program') sizeMultiplier = 2.94;
         else if (buildingType === 'university') sizeMultiplier = 2.8;
         else if (buildingType === 'hospital') sizeMultiplier = 2.25;
@@ -2503,6 +2504,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile }: {
         if (buildingType === 'power_plant') drawY += h * 0.35;
         if (buildingType === 'school') drawY += h * 0.4;
         if (buildingType === 'stadium') drawY += h * 1.0;
+        if (buildingType === 'museum') drawY += h * 1.0;
         if (buildingType === 'space_program') drawY += h * 1.0;
         if (buildingType === 'park_large') drawY += h * 1.1;
         if (buildingType === 'water_tower') drawY -= h * 0.1;

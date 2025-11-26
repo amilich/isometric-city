@@ -1082,6 +1082,8 @@ export const BuildingRenderer: React.FC<{
         return <WaterTower size={size} />;
       case 'stadium':
         return <Mall size={size} powered={powered} />; // Placeholder
+      case 'museum':
+        return <Mall size={size} powered={powered} />; // Placeholder
       case 'airport':
         return <FactoryLarge size={size} level={5} powered={powered} />; // Placeholder
       default:

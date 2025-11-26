@@ -37,6 +37,7 @@ export type BuildingType =
   | 'water_tower'
   // Special
   | 'stadium'
+  | 'museum'
   | 'airport'
   | 'space_program';
 
@@ -62,6 +63,7 @@ export type Tool =
   | 'power_plant'
   | 'water_tower'
   | 'stadium'
+  | 'museum'
   | 'airport'
   | 'space_program';
 
@@ -92,6 +94,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   power_plant: { name: 'Power Plant', cost: 3000, description: 'Generate electricity (2x2)', size: 2 },
   water_tower: { name: 'Water Tower', cost: 1000, description: 'Provide water', size: 1 },
   stadium: { name: 'Stadium', cost: 5000, description: 'Major entertainment (3x3)', size: 3 },
+  museum: { name: 'Museum', cost: 4000, description: 'Cultural attraction (3x3)', size: 3 },
   airport: { name: 'Airport', cost: 10000, description: 'Connect to the world (4x4)', size: 4 },
   space_program: { name: 'Space Program', cost: 15000, description: 'Reach for the stars (3x3)', size: 3 },
 };
@@ -254,6 +257,7 @@ export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: num
   power_plant: { maxPop: 0, maxJobs: 30, pollution: 30, landValue: -20 },
   water_tower: { maxPop: 0, maxJobs: 5, pollution: 0, landValue: 5 },
   stadium: { maxPop: 0, maxJobs: 50, pollution: 5, landValue: 40 },
+  museum: { maxPop: 0, maxJobs: 40, pollution: 0, landValue: 45 },
   airport: { maxPop: 0, maxJobs: 200, pollution: 20, landValue: 50 },
   space_program: { maxPop: 0, maxJobs: 150, pollution: 5, landValue: 80 },
 };

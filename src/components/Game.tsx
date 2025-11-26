@@ -476,7 +476,7 @@ const MiniMap = React.memo(function MiniMap() {
   }, [grid, gridSize]);
   
   return (
-    <Card className="absolute bottom-4 right-4 p-3 shadow-lg bg-card/90 border-border/70">
+    <Card className="absolute bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
         Minimap
       </div>
@@ -1081,6 +1081,7 @@ const BUILDING_IMAGES: Record<string, string> = {
   power_plant: '/assets/buildings/powerplant.png',
   stadium: '/assets/buildings/stadium.png',
   tree: '/assets/buildings/trees.png',
+  house_medium: '/assets/buildings/house_medium.png',
 };
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
@@ -1822,7 +1823,9 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile }: {
     let imageSrc: string | null = null;
     let sizeMultiplier = 1.8; // Default size for buildings
     
-    if (['house_small', 'house_medium', 'apartment_low', 'apartment_high', 'mansion'].includes(buildingType)) {
+    if (buildingType === 'house_medium') {
+      imageSrc = BUILDING_IMAGES.house_medium;
+    } else if (['house_small', 'apartment_low', 'apartment_high', 'mansion'].includes(buildingType)) {
       imageSrc = BUILDING_IMAGES.residential;
     } else if (['shop_small', 'shop_medium', 'office_low', 'office_high', 'mall'].includes(buildingType)) {
       imageSrc = BUILDING_IMAGES.commercial;
@@ -2153,7 +2156,7 @@ export default function Game() {
         <div className="flex-1 flex flex-col">
           <TopBar />
           <StatsPanel />
-          <div className="flex-1 relative">
+          <div className="flex-1 relative overflow-visible">
             <CanvasIsometricGrid overlayMode={overlayMode} selectedTile={selectedTile} setSelectedTile={setSelectedTile} />
             <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
             <MiniMap />

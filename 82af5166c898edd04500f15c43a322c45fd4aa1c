@@ -6,6 +6,6 @@ src/lib/simulation.ts: +461-475[0],+477-489[0],+491-492[0],+593[2],+602[2],+685-
 
 Conversations:
 
-[0]: 9647c983-32cb-4a37-a7b2-1bf03546eebd; Control inversion and building mechanics issues; claude-4.5-opus-high-thinking;
-[1]: 74a24022-4619-4169-be6c-46311be47789; Add adaptable sidewalks to road rendering; claude-4.5-opus-high-thinking;
-[2]: d6ae06c8-c84a-4ed8-a85a-4da72cb48cee; Scale down stadium asset by 30%; composer-1;
+[0]: 9647c983-32cb-4a37-a7b2-1bf03546eebd; 9647c983; unknown;
+[1]: 74a24022-4619-4169-be6c-46311be47789; 74a24022; unknown;
+[2]: d6ae06c8-c84a-4ed8-a85a-4da72cb48cee; d6ae06c8; unknown;

@@ -1,5 +1,6 @@
 AI Notes:
 
+src/components/Game.tsx: +1102[0]
 src/lib/renderConfig.ts: +95[0],+98[0],+292[0],+295[0] -97[0],-293[0]
 
 Conversations:

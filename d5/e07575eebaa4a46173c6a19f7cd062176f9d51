@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +68[0] -68[0]
+src/components/Game.tsx: +2852[0],+2854[0] -2852[0],-2854[0]
+
+Conversations:
+
+[0]: dfe73dd1-f62f-4ee8-b368-fc4f11303aff; Adjust interface elements and overlays; composer-1;

@@ -1,7 +1,8 @@
 AI Notes:
 
-src/components/Game.tsx: +1463[0],+1611[0],+1712-1717[0] -1463[0],-1611[0],-1712-1715[0]
+src/components/Game.tsx: +1463[0],+1611[0],+1712-1716[0],+1717[1] -1463[0],-1611[0],-1712-1715[0]
 
 Conversations:
 
 [0]: 13e88005-7571-4c01-8787-233123164d1a; Ensure mansion asset is imported; composer-1;
+[1]: fa9099e1-03d3-4064-98ba-b97f26c4103e; Add WASD camera movement; gpt-5.1-codex-max;

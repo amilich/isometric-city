@@ -1,0 +1,11 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +57[1] -57[1]
+src/components/Game.tsx: +54[0],+56-67[0],+69-74[0],+76-81[0],+83[0],+85-93[0],+95-100[0],+102-107[0],+109-111[0],+113-116[0],+118-125[0],+127-140[0],+1261-1267[0],+1269-1272[0],+1274-1276[0],+1278-1287[0],+1289-1290[0],+1305-1306[0],+1312-1313[0],+1582[1],+1606-1607[1],+1608-1611[0] -1186[0]
+src/lib/simulation.ts: +1035[1]
+src/types/game.ts: +83[1] -83[1]
+
+Conversations:
+
+[0]: 7f4efcda-5870-4e83-ab7b-f0bde777ec6d; Missing white tiles in hospital; composer-1;
+[1]: cde1ddac-dd16-4fb5-9737-45fe33e249c7; Adjust school asset dimensions and position; composer-1;

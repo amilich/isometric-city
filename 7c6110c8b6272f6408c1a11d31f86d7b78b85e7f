@@ -1,10 +1,10 @@
 AI Notes:
 
-src/components/Game.tsx: +116[0],+139[0],+148[0],+1342[0],+1344[0],+1345[1],+1346-1348[0],+1349-1350[2],+1352-1354[0],+1355[2],+1356[0],+1569-1570[3] -116[0],-139[0],-148[1],-1342[0],-1572-1573[1]
+src/components/Game.tsx: +116[0],+139[0],+148[0],+1342[0],+1344[0],+1345[1],+1346-1348[0],+1349-1350[2],+1352-1354[0],+1355[2],+1356[0],+1569-1570[3] -116[0],-139[0],-148[1],-1342[0],-1572-1573[2]
 
 Conversations:
 
 [0]: 75d9ed77-0682-4809-9e16-60dc0eff2005; 75d9ed77; unknown;
 [1]: f49b0af2-3d4c-46c4-81a7-24df560061c8; Revamp app design with bold aesthetics; claude-4.5-opus-high-thinking;
-[2]: 4b577bf0-ea83-4b7e-a245-759c54ae93eb; Fix lake rendering for new cities; composer-1;
+[2]: ed3eeb73-93e3-4dc1-9f7a-4d4bbd17ce24; Implement drag feature for zoning grids; claude-4.5-sonnet-thinking;
 [3]: 99172b13-b967-4210-ab43-22318aebb0f0; 99172b13; unknown;

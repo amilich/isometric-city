@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +1089[0],+1092[0],+1111-1113[0] -1089[0],-1092[0],-1111-1112[0]
+src/lib/renderConfig.ts: +86[0]
+
+Conversations:
+
+[0]: aea77957-b76d-410c-8a6f-c9d7708dfbf7; Adjust sprite test view padding; composer-1;

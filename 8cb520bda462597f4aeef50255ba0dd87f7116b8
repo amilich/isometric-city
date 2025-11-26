@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/Game.tsx: +208-209[0],+470[0],+1078[0],+1623[0],+1998[0] -208[0],-469[0],-1621[0]
+src/context/GameContext.tsx: +51[0]
+src/lib/simulation.ts: +644[0],+746[0],+1110[0],+1314[0] -644[0],-1312[0]
+src/types/game.ts: +33[0],+60[0],+89-90[0],+252[0] -87[0]
+
+Conversations:
+
+[0]: 6a0bf8b6-c610-4a0f-b7a2-377fd4445257; Update building growth logic; gpt-5.1-codex-max;

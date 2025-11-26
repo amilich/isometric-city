@@ -1,18 +1,11 @@
 AI Notes:
 
-src/components/buildings/IsometricBuildings.tsx: +22[3],+42[3],+44-48[3],+51[3],+63-64[3],+86-87[3],+109-128[3],+1055[3] -41[3],-43-47[3],-50[3],-62-63[3],-85[3],-1033[3]
-src/components/Game.tsx: +1097-1099[0],+1427-1428[1],+1429[2],+1431-1433[1],+1434[3],+1657-1660[3],+1662-1665[3],+1667-1668[3],+1670-1682[3],+1723-1724[3],+2119[4],+2123[1],+2124[5],+2125[4],+2126-2128[5],+2129-2133[4],+2134[3],+2135-2136[6],+2137[3],+2138-2139[7],+2140[3],+2141-2142[8],+2143-2146[3],+2147[7],+2148[9],+2149[3],+2158[1],+2161-2162[1],+2163[4],+2165[10],+2169[1] -1684[3],-2073[5],-2084[2],-2087[2],-2090[2],-2093[2]
+src/components/buildings/IsometricBuildings.tsx: +22[1],+42[1],+44-48[1],+51[1],+63-64[1],+86-87[1],+109-128[1],+1055[1] -41[1],-43-47[1],-50[1],-62-63[1],-85[1],-1033[1]
+src/components/Game.tsx: +33[0],+1097-1099[2],+1424-1434[0],+1657-1660[1],+1662-1665[1],+1667-1668[1],+1670-1675[1],+1676-1680[0],+1681[1],+1682[0],+1723-1724[1],+2065-2066[0],+2071[0],+2075[0],+2079[0],+2082[0],+2085[0],+2089[0],+2093[0],+2096[0],+2099[0],+2102[0],+2118-2121[0],+2123-2149[0],+2151-2154[0],+2156-2165[0],+2167-2169[0] -1420-1422[0],-1684[1],-2025[0],-2067-2071[0],-2073-2095[0]
+src/lib/renderConfig.ts: +1-3[0],+5-14[0],+16-48[0],+50-53[0],+55-56[0],+58-64[0]
 
 Conversations:
 
-[0]: 37e77927-6d1f-4641-869c-011e8c495997; Tab Request 37e77927; unknown;
-[1]: f49b0af2-3d4c-46c4-81a7-24df560061c8; Revamp app design with bold aesthetics; claude-4.5-opus-high-thinking;
-[2]: c6c65224-c2ba-4a94-ac61-b3dd1fc3d0f4; Add fire/police overlay views; composer-1;
-[3]: 912172d2-c67c-4d63-baa0-c1ac35346fc9; Adjust asset positions in the scene; claude-4.5-opus-high-thinking;
-[4]: a9e33dda-888f-4474-94e3-efd4e34110b6; Fix power plant rendering issue; gpt-5.1-codex-fast;
-[5]: 6db1a7d9-b4c8-4868-91d1-bef3c156e293; Adjust asset placement in power plant; composer-1;
-[6]: cde1ddac-dd16-4fb5-9737-45fe33e249c7; Adjust school asset dimensions and position; composer-1;
-[7]: 7f4efcda-5870-4e83-ab7b-f0bde777ec6d; Missing white tiles in hospital; composer-1;
-[8]: 13e88005-7571-4c01-8787-233123164d1a; Ensure mansion asset is imported; composer-1;
-[9]: 4ea6299b-da33-438b-a7c4-515a4f1cb85c; Water tower positioning suggestions; composer-1;
-[10]: 4b577bf0-ea83-4b7e-a245-759c54ae93eb; Fix lake rendering for new cities; composer-1;
+[0]: 240f8971-3c91-47a6-ba9a-ae02b71fbfe4; Implement new tile rendering method; claude-4.5-opus-high-thinking;
+[1]: 912172d2-c67c-4d63-baa0-c1ac35346fc9; Adjust asset positions in the scene; claude-4.5-opus-high-thinking;
+[2]: 37e77927-6d1f-4641-869c-011e8c495997; Tab Request 37e77927; unknown;

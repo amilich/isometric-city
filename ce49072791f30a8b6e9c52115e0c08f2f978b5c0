@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +14-31[0],+36-40[0],+80-84[0],+91[0],+100-101[0],+103-104[0] -17-21[0],-61[0],-68[0],-77-78[0]
+src/components/Game.tsx: +1467-1469[0],+1473[0],+1479[0],+1486-1487[0] -1467[0],-1471[0],-1484-1485[0]
+
+Conversations:
+
+[0]: a9e33dda-888f-4474-94e3-efd4e34110b6; Fix power plant rendering issue; gpt-5.1-codex-fast;

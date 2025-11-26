@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/Game.tsx: +1947-1948[0],+1950[0],+1982[0],+2280-2281[0],+2287-2290[0],+2452-2453[0],+2459-2462[0] -1950[0],-1951[1],-2005[0],-2006[2]
+
+Conversations:
+
+[0]: 28621b7b-dde8-4bda-b9c7-1f079b4f22f9; Issue with water sprite visibility; composer-1;
+[1]: 10f1e852-20e1-4918-aad5-265fe137c23e; Shift airport position downward; composer-1;
+[2]: f49b0af2-3d4c-46c4-81a7-24df560061c8; f49b0af2; unknown;

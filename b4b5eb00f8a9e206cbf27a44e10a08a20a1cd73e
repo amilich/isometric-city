@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/Game.tsx: +1184-1191[0],+1203-1207[0] -1184-1189[0]
+
+Conversations:
+
+[0]: a9e33dda-888f-4474-94e3-efd4e34110b6; Fix power plant rendering issue; gpt-5.1-codex-fast;

@@ -6,5 +6,5 @@ src/components/Game.tsx: +53[0],+925-926[0],+1130[0],+1155-1160[0],+1161[1],+116
 Conversations:
 
 [0]: fa9099e1-03d3-4064-98ba-b97f26c4103e; Add WASD camera movement; gpt-5.1-codex-max;
-[1]: 91528fb6-3506-4e51-8644-63e857ba30c4; Fix asset scaling and placement issues; claude-4.5-opus-high-thinking;
+[1]: 7fdc0939-ba3f-4b09-8489-1e58340dd5f4; Fixing sprite placement issues; claude-4.5-opus-high-thinking;
 [2]: bd64846c-fda4-4671-a836-9f27b82dee7c; Scale down the tennis court dimensions; composer-1;

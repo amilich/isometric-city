@@ -5,4 +5,4 @@ src/components/Game.tsx: +1463[0],+1611[0],+1712-1716[0],+1717[1] -1463[0],-1611
 Conversations:
 
 [0]: 13e88005-7571-4c01-8787-233123164d1a; Ensure mansion asset is imported; composer-1;
-[1]: 7fdc0939-ba3f-4b09-8489-1e58340dd5f4; Fixing sprite placement issues; claude-4.5-opus-high-thinking;
+[1]: 91528fb6-3506-4e51-8644-63e857ba30c4; Fix asset scaling and placement issues; claude-4.5-opus-high-thinking;

@@ -5,6 +5,6 @@ src/components/Game.tsx: +53[0],+925-926[0],+1130[0],+1155-1160[0],+1161[1],+116
 
 Conversations:
 
-[0]: fa9099e1-03d3-4064-98ba-b97f26c4103e; Add WASD camera movement; gpt-5.1-codex-max;
-[1]: 74a24022-4619-4169-be6c-46311be47789; Add adaptable sidewalks to road rendering; claude-4.5-opus-high-thinking;
-[2]: bd64846c-fda4-4671-a836-9f27b82dee7c; Scale down the tennis court dimensions; composer-1;
+[0]: fa9099e1-03d3-4064-98ba-b97f26c4103e; fa9099e1; unknown;
+[1]: 74a24022-4619-4169-be6c-46311be47789; 74a24022; unknown;
+[2]: bd64846c-fda4-4671-a836-9f27b82dee7c; bd64846c; unknown;

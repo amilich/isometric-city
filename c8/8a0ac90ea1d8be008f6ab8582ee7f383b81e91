@@ -2,12 +2,13 @@ AI Notes:
 
 src/components/Game.tsx: -2185-2190[0]
 src/context/GameContext.tsx: -84[0],-90[0],-98[0],-100-107[0],-110-115[0],-118-119[0],-147[0],-152-157[0],-192[0],-197[0],-217[0],-263-267[0],-271-272[0]
-src/lib/renderConfig.ts: +85[1] -161-166[0]
-src/lib/simulation.ts: +1037[2],+1041[2],+1196-1199[3],+1211-1212[3] -1037[2],-1041[2],-1196-1199[3],-1211-1212[3]
+src/lib/renderConfig.ts: +85[1] -161-164[0],-165[2],-166[0]
+src/lib/simulation.ts: +1037[3],+1041[3],+1196-1199[4],+1211-1212[4] -1037[3],-1041[3],-1196-1199[4],-1211-1212[4]
 
 Conversations:
 
 [0]: 079182dc-9b49-461b-ad73-11cda09cd110; Remove debug and fetch log statements; claude-4.5-opus-high-thinking;
 [1]: 44bedb0f-01b5-4f50-a4ca-172434ea2e4c; Tennis courts elevation adjustment; composer-1;
-[2]: a6caf88e-1b15-4abb-a42f-56d98dfbfc34; Fires happen too often; claude-4.5-opus-high-thinking;
-[3]: 3a6744f9-b642-4a74-a1fd-061be1fb9bf9; Stacking industrial assets for efficiency; claude-4.5-opus-high-thinking;
+[2]: 01d0526e-989b-48e7-93a8-eea07eaeac08; Adjust sprite logic for multiple images; claude-4.5-opus-high-thinking;
+[3]: a6caf88e-1b15-4abb-a42f-56d98dfbfc34; Fires happen too often; claude-4.5-opus-high-thinking;
+[4]: 3a6744f9-b642-4a74-a1fd-061be1fb9bf9; Stacking industrial assets for efficiency; claude-4.5-opus-high-thinking;

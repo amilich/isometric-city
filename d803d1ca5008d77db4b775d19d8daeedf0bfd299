@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +31[0],+38[0] -37[0]
+src/components/Game.tsx: +1084[0],+1826-1828[0] -1825[0]
+
+Conversations:
+
+[0]: 57dff8da-899c-49bf-8159-56b54151a43c; Fix play button icon design; composer-1;

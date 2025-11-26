@@ -1,0 +1,14 @@
+AI Notes:
+
+src/components/buildings/IsometricBuildings.tsx: +1085-1086[0]
+src/components/Game.tsx: +213[0],+2480[0],+2507[0] -213[0]
+src/components/ui/Icons.tsx: +270-278[0],+307[0]
+src/context/GameContext.tsx: +58[0]
+src/lib/renderConfig.ts: +70[0],+129[0] -8[1],-70[0]
+src/lib/simulation.ts: +1140[0]
+src/types/game.ts: +40[0],+66[0],+97[0],+260[0]
+
+Conversations:
+
+[0]: fe6dae9d-b6da-41bf-82b7-284c65952725; Add museum asset to layout; composer-1;
+[1]: 01d0526e-989b-48e7-93a8-eea07eaeac08; Adjust sprite logic for multiple images; claude-4.5-opus-high-thinking;

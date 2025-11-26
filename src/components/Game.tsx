@@ -1253,13 +1253,85 @@ function SettingsPanel() {
   );
 }
 
-// Background color to filter
-const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
-// Color distance threshold - pixels within this distance will be made transparent
-const COLOR_THRESHOLD = 180; // Adjust this value to be more/less aggressive (increased from 10 for better filtering)
+// Color distance threshold for flood-fill background removal
+// This can be lower than before (30-50) because we use connectivity-based filtering
+// which is much more robust than per-pixel color matching
+const COLOR_THRESHOLD = 50;
+
+// Edge cleanup threshold - higher than main threshold to catch anti-aliased edges
+// Only applied to pixels directly adjacent to already-transparent pixels
+const EDGE_CLEANUP_THRESHOLD = 200;
+
+// Number of edge cleanup passes - more passes = more aggressive edge removal
+const EDGE_CLEANUP_PASSES = 4;
 
 /**
- * Filters colors close to the background color from an image, making them transparent
+ * Samples border pixels to detect the background color dynamically.
+ * This makes the algorithm work with any uniform background color.
+ */
+function detectBackgroundColor(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number
+): { r: number; g: number; b: number } {
+  const samples: { r: number; g: number; b: number }[] = [];
+
+  const getPixel = (x: number, y: number) => {
+    const idx = (y * width + x) * 4;
+    return { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
+  };
+
+  // Sample corners
+  samples.push(getPixel(0, 0));
+  samples.push(getPixel(width - 1, 0));
+  samples.push(getPixel(0, height - 1));
+  samples.push(getPixel(width - 1, height - 1));
+
+  // Sample along edges (every 10% of the edge)
+  for (let i = 1; i < 10; i++) {
+    const xPos = Math.floor((width - 1) * (i / 10));
+    const yPos = Math.floor((height - 1) * (i / 10));
+    samples.push(getPixel(xPos, 0)); // Top edge
+    samples.push(getPixel(xPos, height - 1)); // Bottom edge
+    samples.push(getPixel(0, yPos)); // Left edge
+    samples.push(getPixel(width - 1, yPos)); // Right edge
+  }
+
+  // Average the samples to get the background color
+  const sum = samples.reduce(
+    (acc, p) => ({ r: acc.r + p.r, g: acc.g + p.g, b: acc.b + p.b }),
+    { r: 0, g: 0, b: 0 }
+  );
+
+  return {
+    r: Math.round(sum.r / samples.length),
+    g: Math.round(sum.g / samples.length),
+    b: Math.round(sum.b / samples.length),
+  };
+}
+
+/**
+ * Calculates squared color distance (faster than sqrt for comparisons)
+ */
+function colorDistanceSquared(
+  r1: number, g1: number, b1: number,
+  r2: number, g2: number, b2: number
+): number {
+  const dr = r1 - r2;
+  const dg = g1 - g2;
+  const db = b1 - b2;
+  return dr * dr + dg * dg + db * db;
+}
+
+/**
+ * Filters background color from an image using flood-fill from edges.
+ * This approach only removes pixels that are:
+ * 1. Similar to the detected background color
+ * 2. Connected to the image border through other background-colored pixels
+ *
+ * This prevents removing sprite pixels that happen to be similar to the background
+ * (like red fire trucks on a red background) because they're not connected to the edges.
+ *
  * @param img The source image to process
  * @param threshold Maximum color distance to consider as background (default: COLOR_THRESHOLD)
  * @returns A new HTMLImageElement with filtered colors made transparent
@@ -1267,60 +1339,178 @@ const COLOR_THRESHOLD = 180; // Adjust this value to be more/less aggressive (in
 function filterBackgroundColor(img: HTMLImageElement, threshold: number = COLOR_THRESHOLD): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     try {
-      console.log('Starting background color filtering...', { 
-        imageSize: `${img.naturalWidth || img.width}x${img.naturalHeight || img.height}`,
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+
+      console.log('Starting flood-fill background removal...', {
+        imageSize: `${width}x${height}`,
         threshold,
-        backgroundColor: BACKGROUND_COLOR
       });
-      
+
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      
+      canvas.width = width;
+      canvas.height = height;
+
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         reject(new Error('Could not get canvas context'));
         return;
       }
-      
+
       // Draw the original image to the canvas
       ctx.drawImage(img, 0, 0);
-      
+
       // Get image data
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
-      
-      console.log(`Processing ${data.length / 4} pixels...`);
-      
-      // Process each pixel
-      let filteredCount = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        // Calculate color distance using Euclidean distance in RGB space
-        const distance = Math.sqrt(
-          Math.pow(r - BACKGROUND_COLOR.r, 2) +
-          Math.pow(g - BACKGROUND_COLOR.g, 2) +
-          Math.pow(b - BACKGROUND_COLOR.b, 2)
-        );
-        
-        // If the color is close to the background color, make it transparent
-        if (distance <= threshold) {
-          data[i + 3] = 0; // Set alpha to 0 (transparent)
-          filteredCount++;
+
+      // Detect background color from border pixels
+      const bgColor = detectBackgroundColor(data, width, height);
+      console.log('Detected background color:', bgColor);
+
+      // Threshold squared for faster comparison
+      const thresholdSquared = threshold * threshold;
+
+      // Track visited pixels
+      const visited = new Uint8Array(width * height);
+
+      // BFS queue for flood fill - stores pixel indices
+      const queue: number[] = [];
+
+      // Helper to check if a pixel is within threshold of background
+      const isBackground = (idx: number): boolean => {
+        const r = data[idx * 4];
+        const g = data[idx * 4 + 1];
+        const b = data[idx * 4 + 2];
+        return colorDistanceSquared(r, g, b, bgColor.r, bgColor.g, bgColor.b) <= thresholdSquared;
+      };
+
+      // Initialize queue with border pixels that match background color
+      // Top and bottom edges
+      for (let x = 0; x < width; x++) {
+        const topIdx = x;
+        const bottomIdx = (height - 1) * width + x;
+        if (isBackground(topIdx) && !visited[topIdx]) {
+          queue.push(topIdx);
+          visited[topIdx] = 1;
+        }
+        if (isBackground(bottomIdx) && !visited[bottomIdx]) {
+          queue.push(bottomIdx);
+          visited[bottomIdx] = 1;
         }
       }
-      
+
+      // Left and right edges
+      for (let y = 0; y < height; y++) {
+        const leftIdx = y * width;
+        const rightIdx = y * width + (width - 1);
+        if (isBackground(leftIdx) && !visited[leftIdx]) {
+          queue.push(leftIdx);
+          visited[leftIdx] = 1;
+        }
+        if (isBackground(rightIdx) && !visited[rightIdx]) {
+          queue.push(rightIdx);
+          visited[rightIdx] = 1;
+        }
+      }
+
+      console.log(`Starting flood fill with ${queue.length} border pixels...`);
+
+      // Flood fill using BFS
+      let filteredCount = 0;
+      while (queue.length > 0) {
+        const idx = queue.shift()!;
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+
+        // Make this pixel transparent
+        data[idx * 4 + 3] = 0;
+        filteredCount++;
+
+        // Check 4-connected neighbors (up, down, left, right)
+        const neighbors = [
+          y > 0 ? idx - width : -1, // up
+          y < height - 1 ? idx + width : -1, // down
+          x > 0 ? idx - 1 : -1, // left
+          x < width - 1 ? idx + 1 : -1, // right
+        ];
+
+        for (const neighborIdx of neighbors) {
+          if (neighborIdx >= 0 && !visited[neighborIdx] && isBackground(neighborIdx)) {
+            visited[neighborIdx] = 1;
+            queue.push(neighborIdx);
+          }
+        }
+      }
+
       // Debug: log filtering results
-      const totalPixels = data.length / 4;
+      const totalPixels = width * height;
       const percentage = filteredCount > 0 ? ((filteredCount / totalPixels) * 100).toFixed(2) : '0.00';
-      console.log(`Filtered ${filteredCount} pixels (${percentage}%) from sprite sheet`);
-      
+      console.log(`Flood-fill removed ${filteredCount} pixels (${percentage}%) from sprite sheet`);
+
+      // Edge cleanup pass: remove anti-aliased edges that are still close to background color
+      // This pass only affects pixels that are adjacent to already-transparent pixels
+      const edgeThresholdSquared = EDGE_CLEANUP_THRESHOLD * EDGE_CLEANUP_THRESHOLD;
+      let edgeCleanupCount = 0;
+
+      // We need to iterate multiple times to erode the edge progressively
+      // Each pass removes one layer of edge pixels
+      for (let pass = 0; pass < EDGE_CLEANUP_PASSES; pass++) {
+        const pixelsToRemove: number[] = [];
+
+        for (let idx = 0; idx < totalPixels; idx++) {
+          // Skip if already transparent
+          if (data[idx * 4 + 3] === 0) continue;
+
+          const x = idx % width;
+          const y = Math.floor(idx / width);
+
+          // Check 8-connected neighbors for transparency
+          const neighbors8 = [
+            y > 0 ? idx - width : -1, // up
+            y < height - 1 ? idx + width : -1, // down
+            x > 0 ? idx - 1 : -1, // left
+            x < width - 1 ? idx + 1 : -1, // right
+            (y > 0 && x > 0) ? idx - width - 1 : -1, // up-left
+            (y > 0 && x < width - 1) ? idx - width + 1 : -1, // up-right
+            (y < height - 1 && x > 0) ? idx + width - 1 : -1, // down-left
+            (y < height - 1 && x < width - 1) ? idx + width + 1 : -1, // down-right
+          ];
+
+          // Count transparent neighbors
+          let transparentNeighbors = 0;
+          for (const neighborIdx of neighbors8) {
+            if (neighborIdx >= 0 && data[neighborIdx * 4 + 3] === 0) {
+              transparentNeighbors++;
+            }
+          }
+
+          // If at least one neighbor is transparent, this is an edge pixel
+          if (transparentNeighbors >= 1) {
+            const r = data[idx * 4];
+            const g = data[idx * 4 + 1];
+            const b = data[idx * 4 + 2];
+            const distSq = colorDistanceSquared(r, g, b, bgColor.r, bgColor.g, bgColor.b);
+
+            // If close enough to background color, mark for removal
+            if (distSq <= edgeThresholdSquared) {
+              pixelsToRemove.push(idx);
+            }
+          }
+        }
+
+        // Remove marked pixels
+        for (const idx of pixelsToRemove) {
+          data[idx * 4 + 3] = 0;
+          edgeCleanupCount++;
+        }
+      }
+
+      console.log(`Edge cleanup removed ${edgeCleanupCount} additional pixels`);
+
       // Put the modified image data back
       ctx.putImageData(imageData, 0, 0);
-      
+
       // Create a new image from the processed canvas
       const filteredImg = new Image();
       filteredImg.onload = () => {

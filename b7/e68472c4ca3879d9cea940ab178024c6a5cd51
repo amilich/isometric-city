@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +24[0],+1102[0],+1619[0],+1621[0],+1641[0],+3088[0],+3150[0] -1101[0],-1618[0],-1620[0],-3087[0]
+src/components/ui/Icons.tsx: +158-165[0]
+
+Conversations:
+
+[0]: dfe73dd1-f62f-4ee8-b368-fc4f11303aff; Adjust interface elements and overlays; composer-1;

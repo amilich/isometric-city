@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +1159[0],+1264-1268[0],+1273[0],+1276[0],+1279-1280[0],+1854-1856[0]
+src/lib/simulation.ts: +1090-1097[0]
+
+Conversations:
+
+[0]: 7f4efcda-5870-4e83-ab7b-f0bde777ec6d; Missing white tiles in hospital; composer-1;

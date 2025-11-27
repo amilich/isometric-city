@@ -1,11 +1,12 @@
 AI Notes:
 
-src/components/Game.tsx: +3111[0],+3114[0],+3116-3119[0],+3121[0],+4233-4235[0],+4237-4241[0],+4243[0] -3111[0],-3114[0],-4225[0]
+src/components/Game.tsx: +3111[0],+3114[0],+3116-3118[0],+3119[1],+3121[0],+4233-4235[0],+4237-4240[0],+4241[1],+4243[0] -3111[0],-3114[0],-4225[0]
 src/context/GameContext.tsx: +130-139[0],+515-524[0]
 src/lib/renderConfig.ts: +15-16[0],+154[0]
-src/lib/simulation.ts: +476-477[0],+480-481[0],+493[0],+609-612[0],+789-794[0],+796-798[0],+800-802[0],+1273-1286[0]
+src/lib/simulation.ts: +476-477[0],+480-481[0],+493[0],+609-611[0],+612[1],+789-794[0],+796-798[0],+800-801[0],+802[1],+1273-1282[0],+1283[1],+1284-1285[0],+1286[1]
 src/types/game.ts: +124[0]
 
 Conversations:
 
 [0]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; Add construction mechanic with new sprite; claude-4.5-opus-high-thinking;
+[1]: b804e07f-2ac5-497b-8b80-6ea3bac042dc; Investigate building development zones; claude-4.5-opus-high-thinking;

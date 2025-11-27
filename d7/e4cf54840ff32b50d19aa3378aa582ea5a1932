@@ -6,4 +6,4 @@ src/lib/renderConfig.ts: +120-121[0],+292-293[0]
 Conversations:
 
 [0]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
-[1]: c9c3dfad-5969-4c38-b601-5fc81cd0b116; Add airplane mechanics to city simulation; claude-4.5-opus-high-thinking;
+[1]: 195e30ee-6947-4351-8f4c-c009213a3427; Improve game performance and asset cleanup; claude-4.5-opus-high-thinking;

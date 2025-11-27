@@ -6,6 +6,7 @@ export type BuildingType =
   | 'water'
   | 'road'
   | 'tree'
+  | 'hill'
   // Residential
   | 'house_small'
   | 'house_medium'
@@ -220,6 +221,8 @@ export interface Tile {
   crime: number;
   traffic: number;
   hasSubway: boolean;
+  isHilly: boolean; // True if this tile was originally hilly terrain
+  isFlagged: boolean; // True if a building was placed on hilly terrain (tiles are flagged)
 }
 
 export interface Stats {
@@ -350,6 +353,7 @@ export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: num
   empty: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
   grass: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
   water: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 5 },
+  hill: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
   road: { maxPop: 0, maxJobs: 0, pollution: 2, landValue: 0 },
   tree: { maxPop: 0, maxJobs: 0, pollution: -5, landValue: 2 },
   house_small: { maxPop: 6, maxJobs: 0, pollution: 0, landValue: 10 },

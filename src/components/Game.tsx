@@ -4809,7 +4809,8 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     };
     const buildingQueue: BuildingDraw[] = [];
     const waterQueue: BuildingDraw[] = [];
-    const roadQueue: BuildingDraw[] = []; // Roads drawn above water
+    const hillQueue: BuildingDraw[] = []; // Hills drawn above water, below roads
+    const roadQueue: BuildingDraw[] = []; // Roads drawn above water and hills
     const beachQueue: BuildingDraw[] = [];
     const baseTileQueue: BuildingDraw[] = [];
     const greenBaseTileQueue: BuildingDraw[] = [];
@@ -5256,14 +5257,15 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         'mountain_lodge', 'mountain_trailhead'];
       const isPark = allParkTypes.includes(tile.building.type) ||
                      (tile.building.type === 'empty' && isPartOfParkBuilding(tile.x, tile.y));
-      // Check if this is a building (not grass, empty, water, road, tree, or parks)
+      // Check if this is a building (not grass, empty, water, road, tree, hill, or parks)
       // Also check if it's part of a multi-tile building footprint
       const isDirectBuilding = !isPark &&
         tile.building.type !== 'grass' &&
         tile.building.type !== 'empty' &&
         tile.building.type !== 'water' &&
         tile.building.type !== 'road' &&
-        tile.building.type !== 'tree';
+        tile.building.type !== 'tree' &&
+        tile.building.type !== 'hill';
       const isPartOfBuilding = tile.building.type === 'empty' && isPartOfMultiTileBuilding(tile.x, tile.y);
       const isBuilding = isDirectBuilding || isPartOfBuilding;
       
@@ -5275,6 +5277,12 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         leftColor = '#1d4ed8';
         rightColor = '#3b82f6';
         strokeColor = '#1e3a8a';
+      } else if (tile.building.type === 'hill') {
+        // Grey mountain peaks for hilly terrain
+        topColor = '#6b7280';
+        leftColor = '#4b5563';
+        rightColor = '#9ca3af';
+        strokeColor = '#374151';
       } else if (tile.building.type === 'road') {
         topColor = '#4a4a4a';
         leftColor = '#3a3a3a';
@@ -6118,7 +6126,12 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
           const depth = x + y + size.width + size.height - 2;
           waterQueue.push({ screenX, screenY, tile, depth });
         }
-        // Roads go to their own queue (drawn above water)
+        // Hills go to their own queue (drawn above water, below roads)
+        else if (tile.building.type === 'hill') {
+          const depth = x + y;
+          hillQueue.push({ screenX, screenY, tile, depth });
+        }
+        // Roads go to their own queue (drawn above water and hills)
         else if (tile.building.type === 'road') {
           const depth = x + y;
           roadQueue.push({ screenX, screenY, tile, depth });
@@ -6128,9 +6141,13 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
                  isAdjacentToWater(x, y)) {
           beachQueue.push({ screenX, screenY, tile, depth: x + y });
         }
-        // Other buildings go to regular building queue
+        // Other buildings go to regular building queue (exclude hills, water, roads)
         else {
-          const isBuilding = tile.building.type !== 'grass' && tile.building.type !== 'empty';
+          const isBuilding = tile.building.type !== 'grass' && 
+                             tile.building.type !== 'empty' &&
+                             tile.building.type !== 'hill' &&
+                             tile.building.type !== 'water' &&
+                             tile.building.type !== 'road';
           if (isBuilding) {
             const size = getBuildingSize(tile.building.type);
             const depth = x + y + size.width + size.height - 2;
@@ -6146,7 +6163,8 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
             ? tile.building.type !== 'water'  // For subway mode, show all non-water tiles
             : (tile.building.type !== 'grass' &&
                tile.building.type !== 'water' &&
-               tile.building.type !== 'road'));
+               tile.building.type !== 'road' &&
+               tile.building.type !== 'hill'));
         if (showOverlay) {
           overlayQueue.push({ screenX, screenY, tile });
         }
@@ -6188,7 +6206,15 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     
     ctx.restore(); // Remove clipping after drawing water
     
-    // Draw roads (above water, needs full redraw including base tile)
+    // Draw hills (above water, below roads)
+    hillQueue
+      .sort((a, b) => a.depth - b.depth)
+      .forEach(({ tile, screenX, screenY }) => {
+        // Hills are already drawn as base tiles, but we can add mountain peak details here if needed
+        // For now, the base tile rendering is sufficient
+      });
+    
+    // Draw roads (above water and hills, needs full redraw including base tile)
     roadQueue
       .sort((a, b) => a.depth - b.depth)
       .forEach(({ tile, screenX, screenY }) => {

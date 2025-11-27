@@ -422,10 +422,26 @@ function generateTerrain(size: number): { grid: Tile[][]; waterBodies: WaterBody
   // Combine all water bodies
   const waterBodies = [...lakeBodies, ...oceanBodies];
   
-  // Fourth pass: add scattered trees (avoiding water)
+  // Fourth pass: add hilly terrain with mountain peaks (avoiding water)
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      if (grid[y][x].building.type === 'water') continue; // Don't place trees on water
+      if (grid[y][x].building.type === 'water') continue; // Don't place hills on water
+      
+      // Use noise to generate hilly terrain - higher values create mountain peaks
+      const hillNoise = perlinNoise(x * 0.15, y * 0.15, seed + 3000, 4);
+      const isHill = hillNoise > 0.65; // Threshold for hilly terrain
+      
+      if (isHill) {
+        grid[y][x].building = createBuilding('hill');
+        grid[y][x].isHilly = true;
+      }
+    }
+  }
+  
+  // Fifth pass: add scattered trees (avoiding water and hills)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (grid[y][x].building.type === 'water' || grid[y][x].building.type === 'hill') continue; // Don't place trees on water or hills
       
       const treeNoise = perlinNoise(x * 2, y * 2, seed + 500, 2);
       const isTree = treeNoise > 0.72 && Math.random() > 0.65;
@@ -548,11 +564,13 @@ function createTile(x: number, y: number, buildingType: BuildingType = 'grass'):
     crime: 0,
     traffic: 0,
     hasSubway: false,
+    isHilly: buildingType === 'hill',
+    isFlagged: false,
   };
 }
 
 // Building types that don't require construction (already complete when placed)
-const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'tree'];
+const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'tree', 'hill'];
 
 function createBuilding(type: BuildingType): Building {
   // Buildings that don't require construction start at 100% complete
@@ -777,9 +795,9 @@ function canSpawnMultiTileBuilding(
       if (!tile) return false;
       // Must be in the same zone
       if (tile.zone !== zone) return false;
-      // Can only spawn on grass or trees
+      // Can only spawn on grass, trees, or hills
       // NOT 'empty' - those are placeholders for existing multi-tile buildings
-      if (tile.building.type !== 'grass' && tile.building.type !== 'tree') {
+      if (tile.building.type !== 'grass' && tile.building.type !== 'tree' && tile.building.type !== 'hill') {
         return false;
       }
     }
@@ -916,10 +934,13 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
             for (let dx = 0; dx < size.width; dx++) {
               const clearTile = grid[y + dy]?.[x + dx];
               if (clearTile) {
+                const wasHilly = clearTile.isHilly;
                 const clearedBuilding = createBuilding('grass');
                 clearedBuilding.powered = services.power[y + dy]?.[x + dx] ?? false;
                 clearedBuilding.watered = services.water[y + dy]?.[x + dx] ?? false;
                 clearTile.building = clearedBuilding;
+                clearTile.isHilly = wasHilly; // Preserve hilly status
+                clearTile.isFlagged = false; // Clear flag
               }
             }
           }
@@ -1513,9 +1534,11 @@ export function simulateTick(state: GameState): GameState {
         const origin = findBuildingOrigin(newGrid, x, y, size);
         if (!origin) {
           // This is an orphaned 'empty' tile - reset it to grass
+          // Preserve hilly status
           tile.building = createBuilding('grass');
           tile.building.powered = services.power[y][x];
           tile.building.watered = services.water[y][x];
+          tile.isFlagged = false; // Clear flag
         }
       }
 
@@ -1558,8 +1581,11 @@ export function simulateTick(state: GameState): GameState {
           tile.building.fireProgress += 1;
           if (tile.building.fireProgress >= 100) {
             // Building destroyed
+            const wasHilly = tile.isHilly;
             tile.building = createBuilding('grass');
             tile.zone = 'none';
+            tile.isHilly = wasHilly; // Preserve hilly status
+            tile.isFlagged = false; // Clear flag
           }
         }
       }
@@ -1750,15 +1776,15 @@ function canPlaceMultiTileBuilding(
     return false;
   }
 
-  // Check all tiles are available (grass or tree only - not water, roads, or existing buildings)
+  // Check all tiles are available (grass, tree, or hill only - not water, roads, or existing buildings)
   // NOTE: 'empty' tiles are placeholders from multi-tile buildings, so we can't build on them
   // without first bulldozing the entire parent building
   for (let dy = 0; dy < height; dy++) {
     for (let dx = 0; dx < width; dx++) {
       const tile = grid[y + dy]?.[x + dx];
       if (!tile) return false;
-      // Can only build on grass or trees - roads must be bulldozed first
-      if (tile.building.type !== 'grass' && tile.building.type !== 'tree') {
+      // Can only build on grass, trees, or hills - roads must be bulldozed first
+      if (tile.building.type !== 'grass' && tile.building.type !== 'tree' && tile.building.type !== 'hill') {
         return false;
       }
     }
@@ -1912,6 +1938,10 @@ function applyBuildingFootprint(
   for (let dy = 0; dy < size.height; dy++) {
     for (let dx = 0; dx < size.width; dx++) {
       const cell = grid[originY + dy][originX + dx];
+      // Flag tiles that were originally hilly
+      if (cell.isHilly) {
+        cell.isFlagged = true;
+      }
       if (dx === 0 && dy === 0) {
         cell.building = createBuilding(buildingType);
         cell.building.level = level;
@@ -1977,8 +2007,11 @@ export function placeBuilding(
             const clearX = origin.originX + dx;
             const clearY = origin.originY + dy;
             if (clearX < state.gridSize && clearY < state.gridSize) {
+              const wasHilly = newGrid[clearY][clearX].isHilly;
               newGrid[clearY][clearX].building = createBuilding('grass');
               newGrid[clearY][clearX].zone = 'none';
+              newGrid[clearY][clearX].isHilly = wasHilly; // Preserve hilly status
+              newGrid[clearY][clearX].isFlagged = false; // Clear flag
             }
           }
         }
@@ -1988,13 +2021,16 @@ export function placeBuilding(
           return state;
         }
         // De-zoning resets to grass
+        const wasHilly = newGrid[y][x].isHilly;
         newGrid[y][x].zone = 'none';
         newGrid[y][x].building = createBuilding('grass');
+        newGrid[y][x].isHilly = wasHilly; // Preserve hilly status
+        newGrid[y][x].isFlagged = false; // Clear flag
       }
     } else {
-      // Can't zone over existing buildings (only allow zoning on grass, tree, or road)
+      // Can't zone over existing buildings (only allow zoning on grass, tree, road, or hill)
       // NOTE: 'empty' tiles are part of multi-tile buildings, so we can't zone them either
-      const allowedTypesForZoning: BuildingType[] = ['grass', 'tree', 'road'];
+      const allowedTypesForZoning: BuildingType[] = ['grass', 'tree', 'road', 'hill'];
       if (!allowedTypesForZoning.includes(tile.building.type)) {
         return state; // Can't zone over existing building or part of multi-tile building
       }
@@ -2016,6 +2052,7 @@ export function placeBuilding(
     
     if (size.width > 1 || size.height > 1) {
       // Multi-tile building - check if we can place it
+      // Allow placing on hills as well
       if (!canPlaceMultiTileBuilding(newGrid, x, y, size.width, size.height, state.gridSize)) {
         return state; // Can't place here
       }
@@ -2029,9 +2066,13 @@ export function placeBuilding(
       // Can't place on water, existing buildings, or 'empty' tiles (part of multi-tile buildings)
       // Note: 'road' is included here so roads can extend over existing roads,
       // but non-road buildings are already blocked from roads by the check above
-      const allowedTypes: BuildingType[] = ['grass', 'tree', 'road'];
+      const allowedTypes: BuildingType[] = ['grass', 'tree', 'road', 'hill'];
       if (!allowedTypes.includes(tile.building.type)) {
         return state; // Can't place on existing building or part of multi-tile building
+      }
+      // Flag tile if it was originally hilly
+      if (tile.isHilly) {
+        newGrid[y][x].isFlagged = true;
       }
       newGrid[y][x].building = createBuilding(buildingType);
       newGrid[y][x].zone = 'none';
@@ -2117,16 +2158,22 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
         const clearX = origin.originX + dx;
         const clearY = origin.originY + dy;
         if (clearX < state.gridSize && clearY < state.gridSize) {
+          const wasHilly = newGrid[clearY][clearX].isHilly;
           newGrid[clearY][clearX].building = createBuilding('grass');
           newGrid[clearY][clearX].zone = 'none';
+          newGrid[clearY][clearX].isHilly = wasHilly; // Preserve hilly status
+          newGrid[clearY][clearX].isFlagged = false; // Clear flag when bulldozed
           // Don't remove subway when bulldozing surface buildings
         }
       }
     }
   } else {
     // Single tile bulldoze
+    const wasHilly = newGrid[y][x].isHilly;
     newGrid[y][x].building = createBuilding('grass');
     newGrid[y][x].zone = 'none';
+    newGrid[y][x].isHilly = wasHilly; // Preserve hilly status
+    newGrid[y][x].isFlagged = false; // Clear flag when bulldozed
     // Don't remove subway when bulldozing surface buildings
   }
 

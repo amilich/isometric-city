@@ -1,13 +1,14 @@
 AI Notes:
 
-src/components/Game.tsx: +3111[0],+3114[0],+3116-3118[0],+3119[1],+3121[0],+4233[0],+4234[1],+4235[0],+4237-4240[0],+4241[1],+4243[0] -3111[0],-3114[0],-4225[0]
-src/context/GameContext.tsx: +130-135[0],+136-139[2],+515-520[0],+521-524[2]
+src/components/Game.tsx: +3111[0],+3114[0],+3116-3118[0],+3119[1],+3121[0],+4233[0],+4234[2],+4235[0],+4237-4240[0],+4241[1],+4243[0] -3111[0],-3114[0],-4225[0]
+src/context/GameContext.tsx: +130-135[0],+136-139[1],+515-520[0],+521-524[1]
 src/lib/renderConfig.ts: +15-16[0],+154[0]
-src/lib/simulation.ts: +476-477[0],+480-481[0],+493[0],+609-610[0],+611-612[1],+789-794[0],+796[0],+797-798[1],+800[0],+801-802[1],+1273-1274[0],+1275-1276[2],+1277-1282[0],+1283[1],+1284-1285[0],+1286[1]
+src/lib/simulation.ts: +476-477[0],+480-481[0],+493[0],+609-610[0],+611[2],+612[3],+789-794[0],+796[0],+797-798[2],+800[0],+801[2],+802[3],+1273-1274[0],+1275-1276[1],+1277-1282[0],+1283[3],+1284-1285[0],+1286[3]
 src/types/game.ts: +124[0]
 
 Conversations:
 
 [0]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; 323593a2; unknown;
-[1]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
-[2]: 2058aea1-6709-4765-b9cd-14ccfc478036; Remove time clock from top bar; claude-4.5-opus-high-thinking;
+[1]: 2058aea1-6709-4765-b9cd-14ccfc478036; Remove time clock from top bar; claude-4.5-opus-high-thinking;
+[2]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
+[3]: 212bb374-70f3-4f76-a5e3-09ff6f1d0291; Shift subway station asset position; claude-4.5-opus-high-thinking;

@@ -1,0 +1,11 @@
+AI Notes:
+
+src/components/Game.tsx: +533[0],+4894-4895[1] -521-526[0],-540-544[0],-4906[1]
+src/context/GameContext.tsx: +130-133[0],+523-526[0]
+src/lib/simulation.ts: +576[0],+980-981[0],+1036-1040[0],+1043-1045[0],+1397-1398[0],+1401-1404[0],+1406[0],+1475-1479[0],+1481-1482[0],+1562[0] -979[0],-1035-1037[0],-1389-1390[0],-1393-1394[0],-1463-1464[0]
+src/types/game.ts: +245[0]
+
+Conversations:
+
+[0]: 2058aea1-6709-4765-b9cd-14ccfc478036; Remove time clock from top bar; claude-4.5-opus-high-thinking;
+[1]: 2d044b3d-463d-4277-8875-bf2733734d84; Tab Request 2d044b3d; unknown;

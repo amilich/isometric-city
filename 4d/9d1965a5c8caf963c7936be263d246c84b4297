@@ -1,7 +1,7 @@
 AI Notes:
 
 src/components/Game.tsx: +3121-3124[0],+4239[0],+4242-4243[0],+4245-4246[0],+4250-4251[0],+4317-4318[0],+4321-4327[0] -4234[0],-4237[0]
-src/context/GameContext.tsx: +137-140[0],+526-529[0]
+src/context/GameContext.tsx: +137-139[0],+140[1],+526-528[0],+529[1]
 src/lib/renderConfig.ts: +17-18[0],+117[0],+122[0],+175[0],+258[0],+263[0]
 src/lib/simulation.ts: +494[0],+615-618[0],+810-815[0],+817-819[0],+821-837[0],+839-845[0],+847-852[0],+854-855[0],+857-858[0],+860-866[0],+1263-1282[0],+1284-1294[0],+1590[0],+1592-1596[0]
 src/types/game.ts: +125[0]
@@ -9,3 +9,4 @@ src/types/game.ts: +125[0]
 Conversations:
 
 [0]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
+[1]: 2058aea1-6709-4765-b9cd-14ccfc478036; Remove time clock from top bar; claude-4.5-opus-high-thinking;

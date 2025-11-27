@@ -60,6 +60,69 @@ import { VinnieDialog } from '@/components/VinnieDialog';
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.60;
 const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
+const MAX_HILL_HEIGHT = 8;
+
+type HillShading = {
+  top: string;
+  left: string;
+  right: string;
+  stroke: string;
+};
+
+const HILL_BASE_COLORS: HillShading = {
+  top: '#4a7c3f',
+  left: '#3d6634',
+  right: '#5a8f4f',
+  stroke: '#2d4a26',
+};
+
+const HILL_PEAK_COLORS: HillShading = {
+  top: '#cfd4da',
+  left: '#9ea3a9',
+  right: '#e5e7eb',
+  stroke: '#6b7280',
+};
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const normalized = hex.replace('#', '');
+  const bigint = parseInt(normalized, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+}
+
+function rgbToHex({ r, g, b }: { r: number; g: number; b: number }): string {
+  const toHex = (value: number) => value.toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function blendHex(colorA: string, colorB: string, t: number): string {
+  const a = hexToRgb(colorA);
+  const b = hexToRgb(colorB);
+  return rgbToHex({
+    r: Math.round(a.r + (b.r - a.r) * t),
+    g: Math.round(a.g + (b.g - a.g) * t),
+    b: Math.round(a.b + (b.b - a.b) * t),
+  });
+}
+
+const HILL_COLOR_STEPS: HillShading[] = Array.from({ length: MAX_HILL_HEIGHT }, (_, idx) => {
+  const factor = (idx + 1) / MAX_HILL_HEIGHT;
+  return {
+    top: blendHex(HILL_BASE_COLORS.top, HILL_PEAK_COLORS.top, factor),
+    left: blendHex(HILL_BASE_COLORS.left, HILL_PEAK_COLORS.left, factor),
+    right: blendHex(HILL_BASE_COLORS.right, HILL_PEAK_COLORS.right, factor),
+    stroke: blendHex(HILL_BASE_COLORS.stroke, HILL_PEAK_COLORS.stroke, factor),
+  };
+});
+
+function getHillColors(height: number): HillShading {
+  const index = Math.min(MAX_HILL_HEIGHT, Math.max(1, Math.round(height))) - 1;
+  return HILL_COLOR_STEPS[index];
+}
+
 const KEY_PAN_SPEED = 520; // Pixels per second for keyboard panning
 
 type CarDirection = 'north' | 'east' | 'south' | 'west';
@@ -1988,6 +2051,21 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
     parks: null,
     parksConstruction: null,
   });
+  const availableTabs = [
+    { id: 'main', label: 'Main', available: !!spriteSheets.main },
+    { id: 'construction', label: 'Construction', available: !!spriteSheets.construction },
+    { id: 'abandoned', label: 'Abandoned', available: !!spriteSheets.abandoned },
+    { id: 'dense', label: 'High Density', available: !!spriteSheets.dense },
+    { id: 'parks', label: 'Parks', available: !!spriteSheets.parks },
+    { id: 'parksConstruction', label: 'Parks Construction', available: !!spriteSheets.parksConstruction },
+  ].filter(tab => tab.available);
+  const resolvedActiveTab = useMemo(() => {
+    if (availableTabs.length === 0) {
+      return activeTab;
+    }
+    const exists = availableTabs.some(tab => tab.id === activeTab);
+    return exists ? activeTab : availableTabs[0].id;
+  }, [availableTabs, activeTab]);
   
   // Load all sprite sheets from current pack
   useEffect(() => {
@@ -2023,7 +2101,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
   // Draw sprite test grid
   useEffect(() => {
     const canvas = canvasRef.current;
-    const spriteSheet = spriteSheets[activeTab];
+    const spriteSheet = spriteSheets[resolvedActiveTab];
     if (!canvas || !spriteSheet) return;
     
     const ctx = canvas.getContext('2d', { 
@@ -2051,7 +2129,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
     let sheetCols = currentSpritePack.cols;
     let sheetRows = currentSpritePack.rows;
     
-    if (activeTab === 'main') {
+    if (resolvedActiveTab === 'main') {
       // Main sprite sheet - use spriteOrder
       currentSpritePack.spriteOrder.forEach((spriteKey, index) => {
         const buildingType = Object.entries(currentSpritePack.buildingToSprite).find(
@@ -2062,7 +2140,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           itemsToRender.push({ label: spriteKey, coords, index });
         }
       });
-    } else if (activeTab === 'construction' && currentSpritePack.constructionSrc) {
+    } else if (resolvedActiveTab === 'construction' && currentSpritePack.constructionSrc) {
       // Construction sprite sheet - same layout as main
       currentSpritePack.spriteOrder.forEach((spriteKey, index) => {
         const buildingType = Object.entries(currentSpritePack.buildingToSprite).find(
@@ -2073,7 +2151,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           itemsToRender.push({ label: `${spriteKey} (construction)`, coords, index });
         }
       });
-    } else if (activeTab === 'abandoned' && currentSpritePack.abandonedSrc) {
+    } else if (resolvedActiveTab === 'abandoned' && currentSpritePack.abandonedSrc) {
       // Abandoned sprite sheet - same layout as main
       currentSpritePack.spriteOrder.forEach((spriteKey, index) => {
         const buildingType = Object.entries(currentSpritePack.buildingToSprite).find(
@@ -2084,7 +2162,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           itemsToRender.push({ label: `${spriteKey} (abandoned)`, coords, index });
         }
       });
-    } else if (activeTab === 'dense' && currentSpritePack.denseSrc && currentSpritePack.denseVariants) {
+    } else if (resolvedActiveTab === 'dense' && currentSpritePack.denseSrc && currentSpritePack.denseVariants) {
       // Dense sprite sheet - use denseVariants mapping
       sheetCols = currentSpritePack.cols;
       sheetRows = currentSpritePack.rows;
@@ -2101,7 +2179,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           });
         });
       });
-    } else if (activeTab === 'parks' && currentSpritePack.parksSrc && currentSpritePack.parksBuildings) {
+    } else if (resolvedActiveTab === 'parks' && currentSpritePack.parksSrc && currentSpritePack.parksBuildings) {
       // Parks sprite sheet - use parksBuildings mapping
       sheetCols = currentSpritePack.parksCols || currentSpritePack.cols;
       sheetRows = currentSpritePack.parksRows || currentSpritePack.rows;
@@ -2116,7 +2194,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           coords: { sx, sy, sw: tileWidth, sh: tileHeight },
         });
       });
-    } else if (activeTab === 'parksConstruction' && currentSpritePack.parksConstructionSrc && currentSpritePack.parksBuildings) {
+    } else if (resolvedActiveTab === 'parksConstruction' && currentSpritePack.parksConstructionSrc && currentSpritePack.parksBuildings) {
       // Parks construction sprite sheet - same layout as parks
       sheetCols = currentSpritePack.parksCols || currentSpritePack.cols;
       sheetRows = currentSpritePack.parksRows || currentSpritePack.rows;
@@ -2217,32 +2295,16 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
         ctx.fillText(`[${item.index}]`, baseX, baseY + tileH + 26 + labelLines.length * 10);
       }
     });
-  }, [spriteSheets, activeTab, currentSpritePack]);
+  }, [spriteSheets, resolvedActiveTab, currentSpritePack, activeTab]);
   
-  const availableTabs = [
-    { id: 'main', label: 'Main', available: !!spriteSheets.main },
-    { id: 'construction', label: 'Construction', available: !!spriteSheets.construction },
-    { id: 'abandoned', label: 'Abandoned', available: !!spriteSheets.abandoned },
-    { id: 'dense', label: 'High Density', available: !!spriteSheets.dense },
-    { id: 'parks', label: 'Parks', available: !!spriteSheets.parks },
-    { id: 'parksConstruction', label: 'Parks Construction', available: !!spriteSheets.parksConstruction },
-  ].filter(tab => tab.available);
-  
-  // Set first available tab if current tab is not available
-  useEffect(() => {
-    if (availableTabs.length > 0 && !availableTabs.find(t => t.id === activeTab)) {
-      setActiveTab(availableTabs[0].id);
-    }
-  }, [availableTabs, activeTab]);
-  
-  const currentSheetInfo = activeTab === 'main' ? currentSpritePack.src :
-                          activeTab === 'construction' ? currentSpritePack.constructionSrc :
-                          activeTab === 'abandoned' ? currentSpritePack.abandonedSrc :
-                          activeTab === 'dense' ? currentSpritePack.denseSrc :
-                          activeTab === 'parksConstruction' ? currentSpritePack.parksConstructionSrc :
+  const currentSheetInfo = resolvedActiveTab === 'main' ? currentSpritePack.src :
+                          resolvedActiveTab === 'construction' ? currentSpritePack.constructionSrc :
+                          resolvedActiveTab === 'abandoned' ? currentSpritePack.abandonedSrc :
+                          resolvedActiveTab === 'dense' ? currentSpritePack.denseSrc :
+                          resolvedActiveTab === 'parksConstruction' ? currentSpritePack.parksConstructionSrc :
                           currentSpritePack.parksSrc;
   
-  const gridInfo = (activeTab === 'parks' || activeTab === 'parksConstruction') && currentSpritePack.parksCols && currentSpritePack.parksRows
+  const gridInfo = (resolvedActiveTab === 'parks' || resolvedActiveTab === 'parksConstruction') && currentSpritePack.parksCols && currentSpritePack.parksRows
     ? `${currentSpritePack.parksCols}x${currentSpritePack.parksRows}`
     : `${currentSpritePack.cols}x${currentSpritePack.rows}`;
   
@@ -2256,7 +2318,7 @@ function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={resolvedActiveTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
             {availableTabs.map(tab => (
               <TabsTrigger key={tab.id} value={tab.id} className="text-xs">
@@ -5597,6 +5659,8 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       let leftColor = '#3d6634';
       let rightColor = '#5a8f4f';
       let strokeColor = '#2d4a26';
+      const hillHeight = tile.terrainHeight ?? 0;
+      const isHillTile = hillHeight > 0 && (tile.building.type === 'grass' || tile.building.type === 'empty');
 
       // These get grey bases: baseball_stadium, community_center, swimming_pool, office_building_small
       const allParkTypes = ['park', 'park_large', 'tennis', 'basketball_courts', 'playground_small',
@@ -5621,7 +5685,13 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       // ALL buildings get grey/concrete base tiles (except parks which stay green)
       const hasGreyBase = isBuilding && !isPark;
       
-      if (tile.building.type === 'water') {
+      if (isHillTile) {
+        const hillColors = getHillColors(hillHeight);
+        topColor = hillColors.top;
+        leftColor = hillColors.left;
+        rightColor = hillColors.right;
+        strokeColor = hillColors.stroke;
+      } else if (tile.building.type === 'water') {
         topColor = '#2563eb';
         leftColor = '#1d4ed8';
         rightColor = '#3b82f6';
@@ -5741,8 +5811,16 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       let leftColor = '#3d6634';
       let rightColor = '#5a8f4f';
       let strokeColor = '#2d4a26';
+      const hillHeight = tile.terrainHeight ?? 0;
+      const isHillTile = hillHeight > 0;
       
-      if (tile.zone === 'residential') {
+      if (isHillTile) {
+        const hillColors = getHillColors(hillHeight);
+        topColor = hillColors.top;
+        leftColor = hillColors.left;
+        rightColor = hillColors.right;
+        strokeColor = hillColors.stroke;
+      } else if (tile.zone === 'residential') {
         topColor = '#2d5a2d';
         leftColor = '#1d4a1d';
         rightColor = '#3d6a3d';

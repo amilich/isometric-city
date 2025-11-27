@@ -215,6 +215,7 @@ export interface Tile {
   y: number;
   zone: ZoneType;
   building: Building;
+  terrainHeight: number;
   landValue: number;
   pollution: number;
   crime: number;

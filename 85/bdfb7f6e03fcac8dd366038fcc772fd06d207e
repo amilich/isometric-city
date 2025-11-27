@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: -8458-8558[0]
+src/components/ui/card.tsx: +12[0] -12[0]
+
+Conversations:
+
+[0]: 31672e72-63c9-4611-9f5d-2a6156e57d2a; Hide desktop overlay on mobile; claude-4.5-opus-high-thinking;

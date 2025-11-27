@@ -1,8 +1,9 @@
 AI Notes:
 
-src/components/Game.tsx: +3722[0],+3725-3735[0],+3738[0],+3741-3744[0],+5171-5172[0],+5174-5178[0],+5182[0],+5184[0] -3722[0],-3725[0],-3728[0],-3731-3733[0],-5162[0],-5164[0]
+src/components/Game.tsx: +3722[0],+3725-3734[0],+3735[1],+3738[0],+3741-3744[0],+5171-5172[0],+5174-5177[0],+5178[1],+5182[0],+5184[0] -3722[0],-3725[0],-3728[0],-3731-3733[0],-5162[0],-5164[0]
 src/lib/renderConfig.ts: +266[0],+505[0]
 
 Conversations:
 
 [0]: 920d9d5a-64b1-4baa-9202-b574611a9015; Design new marina game mechanics; claude-4.5-opus-high-thinking;
+[1]: 22b066bb-47c2-4172-9a74-083b28b8222f; Add boats mechanic and swap marina dimensions; claude-4.5-opus-high-thinking;

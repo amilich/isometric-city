@@ -1,11 +1,9 @@
 AI Notes:
 
-src/components/Game.tsx: +2008-2010[0],+2011-2013[1],+2014[2],+2015[1],+2016[3],+2017[1],+2018[3],+2023[0],+2030-2034[0],+2035[3],+2048[0],+2054-2057[0],+2058-2059[3],+2061[0],+2062-2064[1],+2065[2],+2066[1],+2067[3],+2068[0] -2030[4],-2032[4]
+src/components/Game.tsx: +2008-2010[0],+2011-2013[1],+2014[2],+2015[1],+2016[2],+2017[1],+2018[2],+2023[0],+2030-2034[0],+2035[2],+2048[0],+2054-2057[0],+2058-2059[2],+2061[0],+2062-2064[1],+2065[2],+2066[1],+2067[2],+2068[0] -2030[2],-2032[2]
 
 Conversations:
 
 [0]: 8530061e-f1c6-4bd3-9f9f-28ca786b8e30; Add emergency vehicle mechanics; claude-4.5-opus-high-thinking;
 [1]: 743537a1-cd5b-4c38-a99b-074881c0ca8a; Add subway station mechanic to game; claude-4.5-opus-high-thinking;
-[2]: a7430a0f-09e2-4a74-b846-aed9f019d4d3; Add query param for sprite test view; composer-1;
-[3]: 915b0d22-00f6-4b1c-8cb3-d7735e9f2789; Scale down buildings in sprites_red_water_new; composer-1;
-[4]: 8abb97c8-f8b1-448f-a0f9-71bccb698911; Adjust vertical offsets for building sprites; composer-1;
+[2]: 2f3069bd-a123-43d9-a39d-0ac146de7ab6; Fix variable access error in Game.tsx; composer-1;

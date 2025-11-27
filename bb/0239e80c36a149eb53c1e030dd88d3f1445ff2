@@ -1,6 +1,6 @@
 AI Notes:
 
-src/components/Game.tsx: +13[0],+333[0],+368[0],+372[0],+1594[0],+1962-1968[0],+1969[1],+1970[0],+1971[1],+1994-2000[0],+2001[1],+2002[0],+2047-2053[0],+2054[1],+2078[0],+2670-2671[0],+2674-2678[0],+2749-2754[0],+2755[1],+4032-4040[0],+4077-4080[0],+4081[2],+4082[1] -366[0],-370[0],-1592[0],-2639-2641[0]
+src/components/Game.tsx: +13[0],+333[0],+368[0],+372[0],+1594[0],+1962-1966[0],+1967[1],+1968[0],+1969[1],+1970[0],+1971[1],+1994-1998[0],+1999[1],+2000[0],+2001[1],+2002[0],+2047-2053[0],+2054[1],+2078[0],+2670-2671[0],+2674-2678[0],+2749-2752[0],+2753[1],+2754[0],+2755[1],+4032-4040[0],+4077-4080[0],+4081[2],+4082[1] -366[0],-370[0],-1592[0],-2639-2641[0]
 src/components/ui/Icons.tsx: +289-304[0],+306-318[0],+333[0],+347[0]
 src/context/GameContext.tsx: +17[0],+70[0],+376-381[0],+383-384[0],+386-390[0]
 src/lib/renderConfig.ts: +79[0],+97[3],+137-138[0],+186[0],+203[3],+236[0],+284[0],+301[3],+334[0] -79[0],-183[0],-279[0]
@@ -10,7 +10,7 @@ src/types/game.ts: +38-39[0],+52[0],+68[0],+85[0],+101[0],+129[0],+270[0]
 Conversations:
 
 [0]: 743537a1-cd5b-4c38-a99b-074881c0ca8a; Add subway station mechanic to game; claude-4.5-opus-high-thinking;
-[1]: 77bcf63b-a978-45e4-8ca6-d4faa6c84798; Scale down the stadium by 30%; composer-1;
+[1]: 8abb97c8-f8b1-448f-a0f9-71bccb698911; Adjust vertical offsets for building sprites; composer-1;
 [2]: 60de5d90-062d-4d67-b90c-fb5f9a185f62; Clear overlays on reload; claude-4.5-opus-high-thinking;
 [3]: 207d7407-bbe0-47fa-a2b8-b50c055ac36b; Adjust police station position; claude-4.5-opus-high-thinking;
 [4]: 07cb52cf-27ce-4540-a460-24f40709d22c; Improve ocean rendering for new city; claude-4.5-opus-high-thinking;

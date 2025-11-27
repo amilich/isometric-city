@@ -9,6 +9,7 @@ import {
   Tool,
   TOOL_INFO,
   ZoneType,
+  AdjacentCity,
 } from '@/types/game';
 import {
   bulldozeTile,
@@ -45,6 +46,7 @@ type GameContextValue = {
   currentSpritePack: SpritePack;
   availableSpritePacks: SpritePack[];
   setSpritePack: (packId: string) => void;
+  connectToCity: (cityId: string) => void;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -108,6 +110,13 @@ function loadGameState(): GameState | null {
         // Migrate selectedTool if it's park_medium
         if (parsed.selectedTool === 'park_medium') {
           parsed.selectedTool = 'park_large';
+        }
+        // Add new fields if missing (for old saves)
+        if (!parsed.adjacentCities) {
+          parsed.adjacentCities = [];
+        }
+        if (!parsed.waterBodies) {
+          parsed.waterBodies = [];
         }
         return parsed as GameState;
       } else {
@@ -438,6 +447,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return JSON.stringify(state);
   }, [state]);
 
+  const connectToCity = useCallback((cityId: string) => {
+    setState((prev) => ({
+      ...prev,
+      adjacentCities: prev.adjacentCities.map(c => 
+        c.id === cityId ? { ...c, connected: true } : c
+      ),
+      notifications: [
+        {
+          id: `connection-${Date.now()}`,
+          title: 'City Connected!',
+          description: `Connected to ${prev.adjacentCities.find(c => c.id === cityId)?.name || 'city'}`,
+          icon: 'road',
+          timestamp: Date.now(),
+        },
+        ...prev.notifications.slice(0, 9),
+      ],
+    }));
+  }, []);
+
   const value: GameContextValue = {
     state,
     setTool,
@@ -456,6 +484,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     currentSpritePack,
     availableSpritePacks: SPRITE_PACKS,
     setSpritePack,
+    connectToCity,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -830,6 +830,23 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
       if (Math.random() < clearingChance) {
         // Clear the abandoned building - revert to zoned grass
         // This allows natural redevelopment when demand recovers
+        // For multi-tile buildings, clear the entire footprint to avoid orphaned 'empty' tiles
+        const size = getBuildingSize(building.type);
+        if (size.width > 1 || size.height > 1) {
+          // Clear all tiles in the footprint
+          for (let dy = 0; dy < size.height; dy++) {
+            for (let dx = 0; dx < size.width; dx++) {
+              const clearTile = grid[y + dy]?.[x + dx];
+              if (clearTile) {
+                const clearedBuilding = createBuilding('grass');
+                clearedBuilding.powered = services.power[y + dy]?.[x + dx] ?? false;
+                clearedBuilding.watered = services.water[y + dy]?.[x + dx] ?? false;
+                clearTile.building = clearedBuilding;
+              }
+            }
+          }
+        }
+        // Return grass for the origin tile
         const clearedBuilding = createBuilding('grass');
         clearedBuilding.powered = building.powered;
         clearedBuilding.watered = building.watered;
@@ -1412,6 +1429,18 @@ export function simulateTick(state: GameState): GameState {
         // (handled by checking constructionProgress in service coverage calculation)
       }
 
+      // Cleanup orphaned 'empty' tiles (from bugs in abandoned building clearing, etc.)
+      // These should be reset to grass so buildings can grow there again
+      if (tile.building.type === 'empty') {
+        const origin = findBuildingOrigin(newGrid, x, y, size);
+        if (!origin) {
+          // This is an orphaned 'empty' tile - reset it to grass
+          tile.building = createBuilding('grass');
+          tile.building.powered = services.power[y][x];
+          tile.building.watered = services.water[y][x];
+        }
+      }
+
       // Check for road access and grow buildings in zones
       if (tile.zone !== 'none' && tile.building.type === 'grass') {
         const roadAccess = hasRoadAccess(newGrid, x, y, size);
@@ -1629,23 +1658,21 @@ function canPlaceMultiTileBuilding(
   if (x + width > gridSize || y + height > gridSize) {
     return false;
   }
-  
-  // Check all tiles are available (grass, tree, or road - not water or existing buildings)
+
+  // Check all tiles are available (grass or tree only - not water, roads, or existing buildings)
   // NOTE: 'empty' tiles are placeholders from multi-tile buildings, so we can't build on them
   // without first bulldozing the entire parent building
   for (let dy = 0; dy < height; dy++) {
     for (let dx = 0; dx < width; dx++) {
       const tile = grid[y + dy]?.[x + dx];
       if (!tile) return false;
-      if (tile.building.type === 'water') return false;
-      // Can only build on grass, trees, or roads
-      // 'empty' tiles are part of existing multi-tile buildings
-      if (tile.building.type !== 'grass' && tile.building.type !== 'tree' && tile.building.type !== 'road') {
+      // Can only build on grass or trees - roads must be bulldozed first
+      if (tile.building.type !== 'grass' && tile.building.type !== 'tree') {
         return false;
       }
     }
   }
-  
+
   return true;
 }
 
@@ -1837,48 +1864,56 @@ export function placeBuilding(
     }
   }
 
-  // Can't place parks or tennis courts on roads
-  if ((buildingType === 'park' || buildingType === 'park_large' || buildingType === 'tennis') && tile.building.type === 'road') {
-    return state;
-  }
-
-  // Can't place water tower (or other utilities) on roads
-  if (buildingType === 'water_tower' && tile.building.type === 'road') {
+  // Only roads can be placed on roads - all other buildings require clearing the road first
+  if (buildingType && buildingType !== 'road' && tile.building.type === 'road') {
     return state;
   }
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
 
   if (zone !== null) {
-    // Can't zone over existing buildings (only allow zoning on grass, tree, or road)
-    // NOTE: 'empty' tiles are part of multi-tile buildings, so we can't zone them either
-    const allowedTypesForZoning: BuildingType[] = ['grass', 'tree', 'road'];
-    if (!allowedTypesForZoning.includes(tile.building.type)) {
-      return state; // Can't zone over existing building or part of multi-tile building
-    }
-    
-    // Setting zone
-    newGrid[y][x].zone = zone;
+    // De-zoning (zone === 'none') can work on any zoned tile/building
+    // Regular zoning can only be applied to grass, tree, or road tiles
     if (zone === 'none') {
-      // De-zoning resets to grass
-      newGrid[y][x].building = createBuilding('grass');
+      // Check if this tile is part of a multi-tile building (handles both origin and 'empty' tiles)
+      const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
+      
+      if (origin) {
+        // Dezone the entire multi-tile building
+        const size = getBuildingSize(origin.buildingType);
+        for (let dy = 0; dy < size.height; dy++) {
+          for (let dx = 0; dx < size.width; dx++) {
+            const clearX = origin.originX + dx;
+            const clearY = origin.originY + dy;
+            if (clearX < state.gridSize && clearY < state.gridSize) {
+              newGrid[clearY][clearX].building = createBuilding('grass');
+              newGrid[clearY][clearX].zone = 'none';
+            }
+          }
+        }
+      } else {
+        // Single tile - can only dezone tiles that actually have a zone
+        if (tile.zone === 'none') {
+          return state;
+        }
+        // De-zoning resets to grass
+        newGrid[y][x].zone = 'none';
+        newGrid[y][x].building = createBuilding('grass');
+      }
+    } else {
+      // Can't zone over existing buildings (only allow zoning on grass, tree, or road)
+      // NOTE: 'empty' tiles are part of multi-tile buildings, so we can't zone them either
+      const allowedTypesForZoning: BuildingType[] = ['grass', 'tree', 'road'];
+      if (!allowedTypesForZoning.includes(tile.building.type)) {
+        return state; // Can't zone over existing building or part of multi-tile building
+      }
+      // Setting zone
+      newGrid[y][x].zone = zone;
     }
   } else if (buildingType) {
     const size = getBuildingSize(buildingType);
     
     if (size.width > 1 || size.height > 1) {
-      // Can't place utility buildings (like power_plant) on roads
-      if (buildingType === 'power_plant') {
-        for (let dy = 0; dy < size.height; dy++) {
-          for (let dx = 0; dx < size.width; dx++) {
-            const checkTile = newGrid[y + dy]?.[x + dx];
-            if (checkTile && checkTile.building.type === 'road') {
-              return state; // Can't place utility building on roads
-            }
-          }
-        }
-      }
-      
       // Multi-tile building - check if we can place it
       if (!canPlaceMultiTileBuilding(newGrid, x, y, size.width, size.height, state.gridSize)) {
         return state; // Can't place here
@@ -1887,6 +1922,8 @@ export function placeBuilding(
     } else {
       // Single tile building - check if tile is available
       // Can't place on water, existing buildings, or 'empty' tiles (part of multi-tile buildings)
+      // Note: 'road' is included here so roads can extend over existing roads,
+      // but non-road buildings are already blocked from roads by the check above
       const allowedTypes: BuildingType[] = ['grass', 'tree', 'road'];
       if (!allowedTypes.includes(tile.building.type)) {
         return state; // Can't place on existing building or part of multi-tile building

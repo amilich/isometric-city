@@ -188,9 +188,12 @@ export function MobileToolbar({ onOpenPanel }: MobileToolbarProps) {
     }
   };
 
-  const handleToolSelect = (tool: Tool) => {
+  const handleToolSelect = (tool: Tool, closeMenu: boolean = false) => {
     setTool(tool);
     setExpandedCategory(null);
+    if (closeMenu) {
+      setShowMenu(false);
+    }
   };
 
   return (
@@ -339,7 +342,7 @@ export function MobileToolbar({ onOpenPanel }: MobileToolbarProps) {
                               variant={selectedTool === tool ? 'default' : 'ghost'}
                               className="w-full justify-start gap-3 h-11"
                               disabled={!canAfford && info.cost > 0}
-                              onClick={() => handleToolSelect(tool)}
+                              onClick={() => handleToolSelect(tool, true)}
                             >
                               <span className="text-muted-foreground">
                                 {QuickToolIcons[tool] || <div className="w-5 h-5" />}

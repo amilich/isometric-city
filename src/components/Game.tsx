@@ -668,7 +668,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 // Canvas-based Minimap - Memoized
-const MiniMap = React.memo(function MiniMap() {
+const MiniMap = React.memo(function MiniMap({ onNavigate }: { onNavigate?: (gridX: number, gridY: number) => void }) {
   const { state } = useGame();
   const { grid, gridSize } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -712,6 +712,29 @@ const MiniMap = React.memo(function MiniMap() {
       }
     }
   }, [grid, gridSize]);
+
+  const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onNavigate) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    
+    const size = 140;
+    const scale = size / gridSize;
+    
+    const gridX = Math.floor(clickX / scale);
+    const gridY = Math.floor(clickY / scale);
+    
+    // Clamp to valid grid coordinates
+    const clampedX = Math.max(0, Math.min(gridSize - 1, gridX));
+    const clampedY = Math.max(0, Math.min(gridSize - 1, gridY));
+    
+    onNavigate(clampedX, clampedY);
+  }, [onNavigate, gridSize]);
   
   return (
     <Card className="absolute bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70">
@@ -722,7 +745,8 @@ const MiniMap = React.memo(function MiniMap() {
         ref={canvasRef}
         width={140}
         height={140}
-        className="block rounded-md border border-border/60"
+        className="block rounded-md border border-border/60 cursor-pointer"
+        onClick={handleClick}
       />
       <div className="mt-2 grid grid-cols-4 gap-1 text-[8px]">
         <div className="flex items-center gap-1">
@@ -1741,11 +1765,13 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
-function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false }: { 
-  overlayMode: OverlayMode; 
-  selectedTile: { x: number; y: number } | null; 
+function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete }: {
+  overlayMode: OverlayMode;
+  selectedTile: { x: number; y: number } | null;
   setSelectedTile: (tile: { x: number; y: number } | null) => void;
   isMobile?: boolean;
+  navigationTarget?: { x: number; y: number } | null;
+  onNavigationComplete?: () => void;
 }) {
   const { state, placeAtTile, connectToCity, currentSpritePack } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, hour } = state;
@@ -4286,16 +4312,21 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
               const tileWidth = Math.floor(sheetWidth / activePack.cols);
               const tileHeight = Math.floor(sheetHeight / activePack.rows);
               let sourceY = useDenseVariant.row * tileHeight;
+              let sourceH = tileHeight;
               // For mall dense variants (rows 2-3), shift source Y down to avoid capturing
               // content from the row above that bleeds into the cell boundary
               if (buildingType === 'mall') {
                 sourceY += tileHeight * 0.12; // Shift down ~12% to avoid row above
               }
+              // For apartment_high dense variants, add a bit more height to avoid cutoff at bottom
+              if (buildingType === 'apartment_high') {
+                sourceH = tileHeight * 1.05; // Add 5% more height at bottom
+              }
               coords = {
                 sx: useDenseVariant.col * tileWidth,
                 sy: sourceY,
                 sw: tileWidth,
-                sh: tileHeight,
+                sh: sourceH,
               };
             } else {
               // getSpriteCoords handles building type to sprite key mapping
@@ -4374,6 +4405,10 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
               if (buildingType === 'apartment_high' && isDenseVariant) {
                 scaleMultiplier *= 0.92;
               }
+              // Apply abandoned-specific scale if building is abandoned and has custom scale
+              if (isAbandoned && activePack.abandonedScales && buildingType in activePack.abandonedScales) {
+                scaleMultiplier *= activePack.abandonedScales[buildingType];
+              }
               // Apply global scale from sprite pack if available
               const globalScale = activePack.globalScale ?? 1;
               const destWidth = w * 1.2 * scaleMultiplier * globalScale;
@@ -4400,11 +4435,17 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
                 // Single-tile sprites also need push (sprites have transparent bottom padding)
                 verticalPush = destHeight * 0.15;
               }
-              // Use construction-specific offset if building is under construction and one is defined
-              // Check building-type-specific offsets first, then fall back to sprite-key offsets
+              // Use state-specific offset if available, then fall back to building-type or sprite-key offsets
+              // Priority: construction > abandoned > dense > building-type > sprite-key
               let extraOffset = 0;
               if (isUnderConstruction && activePack.constructionVerticalOffsets && spriteKey && spriteKey in activePack.constructionVerticalOffsets) {
                 extraOffset = activePack.constructionVerticalOffsets[spriteKey] * h;
+              } else if (isAbandoned && activePack.abandonedVerticalOffsets && buildingType in activePack.abandonedVerticalOffsets) {
+                // Abandoned buildings may need different positioning than normal
+                extraOffset = activePack.abandonedVerticalOffsets[buildingType] * h;
+              } else if (isDenseVariant && activePack.denseVerticalOffsets && buildingType in activePack.denseVerticalOffsets) {
+                // Dense variants may need different positioning than normal
+                extraOffset = activePack.denseVerticalOffsets[buildingType] * h;
               } else if (activePack.buildingVerticalOffsets && buildingType in activePack.buildingVerticalOffsets) {
                 // Building-type-specific offset (for buildings sharing sprites but needing different positioning)
                 extraOffset = activePack.buildingVerticalOffsets[buildingType] * h;
@@ -5109,7 +5150,34 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
     };
   }, [getMapBounds, canvasSize.width, canvasSize.height]);
-  
+
+  // Handle minimap navigation - center the view on the target tile
+  useEffect(() => {
+    if (!navigationTarget) return;
+    
+    // Convert grid coordinates to screen coordinates
+    const { screenX, screenY } = gridToScreen(navigationTarget.x, navigationTarget.y, 0, 0);
+    
+    // Calculate offset to center this position on the canvas
+    const centerX = canvasSize.width / 2;
+    const centerY = canvasSize.height / 2;
+    
+    const newOffset = {
+      x: centerX - screenX * zoom,
+      y: centerY - screenY * zoom,
+    };
+    
+    // Clamp and set the new offset - this is a legitimate use case for responding to navigation requests
+    const bounds = getMapBounds(zoom, canvasSize.width, canvasSize.height);
+    setOffset({ // eslint-disable-line
+      x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, newOffset.x)),
+      y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
+    });
+    
+    // Signal that navigation is complete
+    onNavigationComplete?.();
+  }, [navigationTarget, zoom, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isPanning) {
       const newOffset = {
@@ -5622,6 +5690,7 @@ export default function Game() {
   const { state, setTool, setActivePanel, addMoney, addNotification } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
+  const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const isInitialMount = useRef(true);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
@@ -5739,6 +5808,184 @@ export default function Game() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [state.activePanel, state.selectedTool, selectedTile, setActivePanel, setTool, overlayMode]);
+
+  // Debug logging for zone growth issues
+  useEffect(() => {
+    if (!selectedTile) return;
+    
+    const tile = state.grid[selectedTile.y]?.[selectedTile.x];
+    if (!tile) return;
+    
+    // Only log for zoned tiles
+    if (tile.zone === 'none') return;
+    
+    const { x, y } = selectedTile;
+    const gridSize = state.gridSize;
+    const grid = state.grid;
+    const services = state.services;
+    
+    // Check all growth conditions
+    const hasPower = services.power[y]?.[x] ?? false;
+    const hasWater = services.water[y]?.[x] ?? false;
+    const buildingType = tile.building.type;
+    const isEmptyZone = buildingType === 'grass';
+    const isMultiTilePlaceholder = buildingType === 'empty';
+    
+    // Building sizes for multi-tile buildings (must match simulation.ts)
+    const BUILDING_SIZES: Record<string, { width: number; height: number }> = {
+      stadium: { width: 4, height: 4 },
+      airport: { width: 4, height: 4 },
+      amusement_park: { width: 4, height: 4 },
+      university: { width: 3, height: 3 },
+      hospital: { width: 3, height: 3 },
+      power_plant: { width: 2, height: 2 },
+      space_program: { width: 3, height: 3 },
+      park_large: { width: 3, height: 3 },
+      mansion: { width: 2, height: 2 },
+      apartment_low: { width: 2, height: 2 },
+      apartment_high: { width: 2, height: 2 },
+      office_low: { width: 2, height: 2 },
+      office_high: { width: 2, height: 2 },
+      mall: { width: 3, height: 3 },
+      factory_medium: { width: 2, height: 2 },
+      factory_large: { width: 3, height: 3 },
+      warehouse: { width: 2, height: 2 },
+      city_hall: { width: 2, height: 2 },
+    };
+    
+    const getBuildingSize = (type: string) => BUILDING_SIZES[type] || { width: 1, height: 1 };
+    
+    // If this is an 'empty' tile (part of multi-tile building), find the origin
+    // Must verify the building's footprint actually covers this tile
+    const findOrigin = (): { originX: number; originY: number; buildingType: string; size: { width: number; height: number } } | null => {
+      if (!isMultiTilePlaceholder) return null;
+      
+      // Search nearby tiles to find the origin (up to 4 tiles away for 4x4 buildings)
+      for (let dy = 0; dy < 4; dy++) {
+        for (let dx = 0; dx < 4; dx++) {
+          const checkX = x - dx;
+          const checkY = y - dy;
+          if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
+            const checkTile = grid[checkY][checkX];
+            if (checkTile.building.type !== 'empty' &&
+                checkTile.building.type !== 'grass' &&
+                checkTile.building.type !== 'water' &&
+                checkTile.building.type !== 'road' &&
+                checkTile.building.type !== 'tree') {
+              const size = getBuildingSize(checkTile.building.type);
+              // Verify this building's footprint actually includes our tile
+              if (x >= checkX && x < checkX + size.width &&
+                  y >= checkY && y < checkY + size.height) {
+                return { originX: checkX, originY: checkY, buildingType: checkTile.building.type, size };
+              }
+            }
+          }
+        }
+      }
+      return null;
+    };
+    
+    // Check road access (simplified version of hasRoadAccess from simulation.ts)
+    const checkRoadAccess = (): { hasAccess: boolean; reason: string } => {
+      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      const visited = new Set<string>();
+      const queue: { x: number; y: number; dist: number }[] = [{ x, y, dist: 0 }];
+      visited.add(`${x},${y}`);
+      const maxDistance = 8;
+      const startZone = tile.zone;
+      
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (current.dist >= maxDistance) continue;
+        
+        for (const [dx, dy] of directions) {
+          const nx = current.x + dx;
+          const ny = current.y + dy;
+          const key = `${nx},${ny}`;
+          
+          if (visited.has(key)) continue;
+          if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) continue;
+          
+          visited.add(key);
+          const neighbor = grid[ny][nx];
+          
+          if (neighbor.building.type === 'road') {
+            return { hasAccess: true, reason: `Found road at (${nx}, ${ny}), distance ${current.dist + 1}` };
+          }
+          
+          if (neighbor.zone === startZone && 
+              (neighbor.building.type === 'grass' || neighbor.building.type === 'tree')) {
+            queue.push({ x: nx, y: ny, dist: current.dist + 1 });
+          }
+        }
+      }
+      
+      return { hasAccess: false, reason: `No road found within ${maxDistance} tiles through same zone` };
+    };
+    
+    // Check if building can spawn (for multi-tile buildings)
+    const checkCanSpawn = (): { canSpawn: boolean; reason: string } => {
+      if (!isEmptyZone) {
+        return { canSpawn: false, reason: 'Tile already has a building' };
+      }
+      
+      // Check for smallest building in zone (1x1)
+      // Residential starts with house_small (1x1), commercial with shop_small (1x1), industrial with factory_small (1x1)
+      return { canSpawn: true, reason: 'Space available for 1x1 building' };
+    };
+    
+    const roadCheck = checkRoadAccess();
+    const spawnCheck = checkCanSpawn();
+    
+    // Build diagnostic message
+    const issues: string[] = [];
+    if (!isEmptyZone && !isMultiTilePlaceholder) issues.push(`Has building (${buildingType})`);
+    if (!hasPower) issues.push('No power');
+    if (!hasWater) issues.push('No water');
+    if (!roadCheck.hasAccess) issues.push(`No road access: ${roadCheck.reason}`);
+    if (!spawnCheck.canSpawn && isEmptyZone) issues.push(spawnCheck.reason);
+    
+    console.group(`🏗️ Zone Diagnostic: (${x}, ${y}) - ${tile.zone}`);
+    
+    // Special handling for 'empty' placeholder tiles
+    if (isMultiTilePlaceholder) {
+      const origin = findOrigin();
+      if (origin) {
+        console.log(`✅ This tile is part of a multi-tile building`);
+        console.log(`   Origin: (${origin.originX}, ${origin.originY})`);
+        console.log(`   Building type: ${origin.buildingType} (${origin.size.width}x${origin.size.height})`);
+      } else {
+        console.log(`🐛 BUG: ORPHANED 'empty' TILE DETECTED!`);
+        console.log(`   This tile has type 'empty' but no valid parent building found.`);
+        console.log(`   This prevents new buildings from growing here.`);
+        console.log(`   Cause: Likely from partial building demolition, abandonment cleanup, or a bug.`);
+        console.log(`   Fix: Bulldoze this tile to reset it to grass.`);
+      }
+      console.groupEnd();
+      return;
+    }
+    
+    console.log(`Building: ${buildingType}${isEmptyZone ? ' (empty zone - can grow)' : ''}`);
+    console.log(`Power: ${hasPower ? '✅' : '❌'}`);
+    console.log(`Water: ${hasWater ? '✅' : '❌'}`);
+    console.log(`Road Access: ${roadCheck.hasAccess ? '✅' : '❌'} - ${roadCheck.reason}`);
+    if (isEmptyZone) {
+      console.log(`Can Spawn: ${spawnCheck.canSpawn ? '✅' : '❌'} - ${spawnCheck.reason}`);
+    }
+    
+    if (isEmptyZone && issues.length === 0) {
+      console.log(`✅ All conditions met! Building should grow (5% chance per tick)`);
+    } else if (isEmptyZone) {
+      console.log(`❌ Issues preventing growth:`, issues);
+    } else {
+      console.log(`ℹ️ Tile has existing building - checking evolution conditions`);
+      const demand = state.stats.demand;
+      const zoneDemand = tile.zone === 'residential' ? demand.residential :
+                        tile.zone === 'commercial' ? demand.commercial : demand.industrial;
+      console.log(`Zone demand: ${zoneDemand}`);
+    }
+    console.groupEnd();
+  }, [selectedTile, state.grid, state.gridSize, state.services, state.stats.demand]);
 
   // Handle cheat code triggers
   useEffect(() => {
@@ -5864,9 +6111,15 @@ export default function Game() {
           <TopBar />
           <StatsPanel />
           <div className="flex-1 relative overflow-visible">
-            <CanvasIsometricGrid overlayMode={overlayMode} selectedTile={selectedTile} setSelectedTile={setSelectedTile} />
+            <CanvasIsometricGrid 
+              overlayMode={overlayMode} 
+              selectedTile={selectedTile} 
+              setSelectedTile={setSelectedTile}
+              navigationTarget={navigationTarget}
+              onNavigationComplete={() => setNavigationTarget(null)}
+            />
             <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
-            <MiniMap />
+            <MiniMap onNavigate={(x, y) => setNavigationTarget({ x, y })} />
           </div>
         </div>
         

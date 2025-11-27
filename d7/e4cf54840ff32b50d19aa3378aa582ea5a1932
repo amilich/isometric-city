@@ -6,4 +6,4 @@ src/lib/renderConfig.ts: +120-121[0],+292-293[0]
 Conversations:
 
 [0]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
-[1]: 212bb374-70f3-4f76-a5e3-09ff6f1d0291; Shift subway station asset position; claude-4.5-opus-high-thinking;
+[1]: c9c3dfad-5969-4c38-b601-5fc81cd0b116; Add airplane mechanics to city simulation; claude-4.5-opus-high-thinking;

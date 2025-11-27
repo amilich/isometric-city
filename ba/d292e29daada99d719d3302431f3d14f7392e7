@@ -1,0 +1,8 @@
+AI Notes:
+
+src/lib/renderConfig.ts: +252[0],+255[1],+275[0],+278[0],+491[0],+494[1],+514[0],+517[0] -252[0],-491[0]
+
+Conversations:
+
+[0]: d90614cc-14e2-4713-8b10-0c114940692c; Adjust stadium and pool positions; composer-1;
+[1]: 252834ef-c245-4113-b926-9b6b04144d0b; Add new assets to parks section; claude-4.5-opus-high-thinking;

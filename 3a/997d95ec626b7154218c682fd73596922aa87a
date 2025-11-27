@@ -8,7 +8,7 @@ src/hooks/useCheatCodes.ts: +1[5],+3[5],+5-9[5],+11-12[5],+14-19[5],+21-24[5],+2
 Conversations:
 
 [0]: 77e1d9e2-594d-4bdf-b2c2-fe97ea8e7fcf; 77e1d9e2; unknown;
-[1]: 171e2440-44dc-45b9-95bb-e758b8d73613; Triple the number of cars; claude-4.5-opus-high-thinking;
+[1]: 8a0dc2bd-5fe7-49c2-bb0f-679c1954289d; Add buildings to new asset sheet; claude-4.5-opus-high-thinking;
 [2]: 111db73a-f984-4f4a-8c0d-a85717023cce; 111db73a; unknown;
 [3]: b804e07f-2ac5-497b-8b80-6ea3bac042dc; b804e07f; unknown;
 [4]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; Add construction mechanic with new sprite; claude-4.5-opus-high-thinking;

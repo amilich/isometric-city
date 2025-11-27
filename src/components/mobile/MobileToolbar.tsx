@@ -332,9 +332,61 @@ export function MobileToolbar({ onOpenPanel }: MobileToolbarProps) {
             className="absolute bottom-20 left-2 right-2 max-h-[70vh] overflow-hidden rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-3 border-b border-border flex items-center justify-between">
-              <span className="font-semibold text-sm">Build Menu</span>
-              <span className="text-muted-foreground text-xs font-mono">${stats.money.toLocaleString()}</span>
+            {/* City Management at top with funds */}
+            <div className="p-3 border-b border-border">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                  City Management
+                </div>
+                <span className="text-muted-foreground text-xs font-mono">${stats.money.toLocaleString()}</span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-full flex-col gap-1"
+                  onClick={() => { onOpenPanel('budget'); setShowMenu(false); }}
+                >
+                  <BudgetIcon size={18} />
+                  <span className="text-[9px]">Budget</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-full flex-col gap-1"
+                  onClick={() => { onOpenPanel('statistics'); setShowMenu(false); }}
+                >
+                  <ChartIcon size={18} />
+                  <span className="text-[9px]">Stats</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-full flex-col gap-1"
+                  onClick={() => { onOpenPanel('advisors'); setShowMenu(false); }}
+                >
+                  <AdvisorIcon size={18} />
+                  <span className="text-[9px]">Advisors</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-full flex-col gap-1"
+                  onClick={() => { onOpenPanel('achievements'); setShowMenu(false); }}
+                >
+                  <TrophyIcon size={18} />
+                  <span className="text-[9px]">Awards</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-full flex-col gap-1"
+                  onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
+                >
+                  <SettingsIcon size={18} />
+                  <span className="text-[9px]">Settings</span>
+                </Button>
+              </div>
             </div>
 
             <ScrollArea className="h-[50vh]">
@@ -347,7 +399,6 @@ export function MobileToolbar({ onOpenPanel }: MobileToolbarProps) {
                       className="w-full justify-start gap-3 h-12"
                       onClick={() => handleCategoryClick(category)}
                     >
-                      <span className="text-muted-foreground">{CategoryIcons[category]}</span>
                       <span className="flex-1 text-left font-medium">{category}</span>
                       <svg
                         className={`w-4 h-4 transition-transform ${expandedCategory === category ? 'rotate-180' : ''}`}
@@ -392,60 +443,6 @@ export function MobileToolbar({ onOpenPanel }: MobileToolbarProps) {
                     )}
                   </div>
                 ))}
-
-                {/* Panels section */}
-                <div className="pt-2 mt-2 border-t border-border">
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider px-3 py-2">
-                    City Management
-                  </div>
-                  <div className="grid grid-cols-5 gap-2 px-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-full flex-col gap-1"
-                      onClick={() => { onOpenPanel('budget'); setShowMenu(false); }}
-                    >
-                      <BudgetIcon size={18} />
-                      <span className="text-[9px]">Budget</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-full flex-col gap-1"
-                      onClick={() => { onOpenPanel('statistics'); setShowMenu(false); }}
-                    >
-                      <ChartIcon size={18} />
-                      <span className="text-[9px]">Stats</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-full flex-col gap-1"
-                      onClick={() => { onOpenPanel('advisors'); setShowMenu(false); }}
-                    >
-                      <AdvisorIcon size={18} />
-                      <span className="text-[9px]">Advisors</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-full flex-col gap-1"
-                      onClick={() => { onOpenPanel('achievements'); setShowMenu(false); }}
-                    >
-                      <TrophyIcon size={18} />
-                      <span className="text-[9px]">Awards</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-full flex-col gap-1"
-                      onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
-                    >
-                      <SettingsIcon size={18} />
-                      <span className="text-[9px]">Settings</span>
-                    </Button>
-                  </div>
-                </div>
               </div>
             </ScrollArea>
           </Card>

@@ -1051,11 +1051,11 @@ const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: {
         
         // Check for elevation first (hilly terrain shows as grey)
         const elevation = tile.elevation ?? 0;
-        if (elevation > 0.2 && tile.building.type !== 'water' && tile.building.type !== 'road') {
+        if (elevation > 0.1 && tile.building.type !== 'water' && tile.building.type !== 'road') {
           // Blend from green to grey based on elevation
-          if (elevation >= 0.85) {
+          if (elevation >= 0.75) {
             color = '#d0d0d0'; // Snow-capped peaks - very light grey
-          } else if (elevation >= 0.5) {
+          } else if (elevation >= 0.4) {
             color = '#8b8b8b'; // High elevation - grey
           } else {
             color = '#5a6a5a'; // Low hills - grey-green

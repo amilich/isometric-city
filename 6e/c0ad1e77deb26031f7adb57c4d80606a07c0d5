@@ -1,8 +1,9 @@
 AI Notes:
 
-src/components/Game.tsx: +2008-2018[0],+2023[0],+2030-2035[0],+2048[0],+2054-2059[0],+2061-2068[0] -2030[1],-2032[0]
+src/components/Game.tsx: +2008-2010[0],+2011-2018[1],+2023[0],+2030-2034[0],+2035[1],+2048[0],+2054-2057[0],+2058-2059[1],+2061[0],+2062-2067[1],+2068[0] -2030[2],-2032[0]
 
 Conversations:
 
 [0]: 8530061e-f1c6-4bd3-9f9f-28ca786b8e30; Add emergency vehicle mechanics; claude-4.5-opus-high-thinking;
-[1]: 54c6418c-5549-4758-b706-73877123ece9; Remove old png rendering method; claude-4.5-opus-high-thinking;
+[1]: c81b05bd-76e6-4316-be11-d52c34476549; Ensure firetrucks travel on roads; claude-4.5-opus-high-thinking;
+[2]: 54c6418c-5549-4758-b706-73877123ece9; Remove old png rendering method; claude-4.5-opus-high-thinking;

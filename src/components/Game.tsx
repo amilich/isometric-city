@@ -5270,12 +5270,12 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       // Higher elevation = more grey
       if (elevation > 0 && tile.building.type !== 'water' && tile.building.type !== 'road') {
         // Interpolate between grass green and grey based on elevation
-        // At elevation 0.3+, start showing more grey
-        // At elevation 0.6+, mostly grey (rocky)
-        // At elevation 0.8+, light grey (snowy peaks)
-        const greyStart = 0.2;
-        const greyFull = 0.7;
-        const snowStart = 0.85;
+        // At elevation 0.1+, start showing grey tint
+        // At elevation 0.5+, mostly grey (rocky)
+        // At elevation 0.75+, light grey (snowy peaks)
+        const greyStart = 0.1;  // Start grey earlier to make hills more visible
+        const greyFull = 0.5;   // Fully grey at lower elevation
+        const snowStart = 0.75; // Snow starts earlier
         
         if (elevation >= snowStart) {
           // Snow-capped peaks - very light grey/white

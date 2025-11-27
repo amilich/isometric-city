@@ -417,28 +417,28 @@ function generateHills(grid: Tile[][], size: number, seed: number): void {
       const noiseVal = perlinNoise(x, y, hillSeed, 4);
       
       // Create distinct hill regions - elevation only where noise is high enough
-      // This creates distinct "mountain range" areas rather than gentle rolling hills everywhere
-      const threshold = 0.55; // Only create elevation above this noise value
+      // Lower threshold (0.45) creates more frequent hills
+      const threshold = 0.45;
       
       if (noiseVal > threshold) {
         // Map noise above threshold to 0-1 elevation range
         // Higher noise = taller peaks
         const rawElevation = (noiseVal - threshold) / (1 - threshold);
         
-        // Apply a curve to create more dramatic peaks
-        // Square the value to make peaks more pronounced and valleys flatter
-        let elevation = rawElevation * rawElevation;
+        // Apply a gentler curve - use sqrt to boost lower values
+        // This makes hills more visible instead of squaring which makes them tiny
+        let elevation = Math.pow(rawElevation, 0.7); // Gentler curve, boosts low values
         
         // Apply distance from water reduction - hills near water should be shorter
         // Creates a more natural coastline effect
         const nearWater = isNearWater(grid, x, y, size);
         if (nearWater) {
-          elevation *= 0.4; // Reduce elevation near water significantly
+          elevation *= 0.5; // Reduce elevation near water
         }
         
         // Reduce elevation at map edges for nicer boundaries
         const edgeDist = Math.min(x, y, size - 1 - x, size - 1 - y);
-        const edgeFade = Math.min(1, edgeDist / 8);
+        const edgeFade = Math.min(1, edgeDist / 6);
         elevation *= edgeFade;
         
         grid[y][x].elevation = Math.min(1, Math.max(0, elevation));
@@ -448,8 +448,7 @@ function generateHills(grid: Tile[][], size: number, seed: number): void {
     }
   }
   
-  // Smooth elevation to create more natural hills
-  // Pass 1: smooth locally
+  // Smooth elevation to create more natural hills - but keep peaks prominent
   const smoothedElevation: number[][] = [];
   for (let y = 0; y < size; y++) {
     smoothedElevation[y] = [];
@@ -459,11 +458,11 @@ function generateHills(grid: Tile[][], size: number, seed: number): void {
         continue;
       }
       
-      // Average with neighbors
-      let sum = grid[y][x].elevation * 2; // Weight center more
-      let count = 2;
+      // Light smoothing - weight center heavily to preserve peaks
+      let sum = grid[y][x].elevation * 4; // Weight center more heavily
+      let count = 4;
       
-      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
       for (const [dx, dy] of directions) {
         const nx = x + dx;
         const ny = y + dy;

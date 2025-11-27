@@ -45,6 +45,8 @@ type GameContextValue = {
   currentSpritePack: SpritePack;
   availableSpritePacks: SpritePack[];
   setSpritePack: (packId: string) => void;
+  // Trade system
+  connectToCity: (cityId: string) => void;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -108,6 +110,13 @@ function loadGameState(): GameState | null {
         // Migrate selectedTool if it's park_medium
         if (parsed.selectedTool === 'park_medium') {
           parsed.selectedTool = 'park_large';
+        }
+        // Migrate: add adjacentCities and waterBodies if missing
+        if (!parsed.adjacentCities) {
+          parsed.adjacentCities = [];
+        }
+        if (!parsed.waterBodies) {
+          parsed.waterBodies = [];
         }
         return parsed as GameState;
       } else {
@@ -438,6 +447,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return JSON.stringify(state);
   }, [state]);
 
+  const connectToCity = useCallback((cityId: string) => {
+    setState((prev) => {
+      const updatedCities = prev.adjacentCities.map((city) =>
+        city.id === cityId ? { ...city, connected: true } : city
+      );
+      return { ...prev, adjacentCities: updatedCities };
+    });
+  }, []);
+
   const value: GameContextValue = {
     state,
     setTool,
@@ -456,6 +474,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     currentSpritePack,
     availableSpritePacks: SPRITE_PACKS,
     setSpritePack,
+    // Trade system
+    connectToCity,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

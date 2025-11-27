@@ -199,6 +199,20 @@ export interface HistoryPoint {
   happiness: number;
 }
 
+export interface AdjacentCity {
+  id: string;
+  name: string;
+  direction: 'north' | 'south' | 'east' | 'west';
+  connected: boolean;
+}
+
+export interface WaterBody {
+  id: string;
+  name: string;
+  type: 'lake' | 'ocean';
+  tiles: { x: number; y: number }[];
+}
+
 export interface GameState {
   grid: Tile[][];
   gridSize: number;
@@ -219,6 +233,8 @@ export interface GameState {
   history: HistoryPoint[];
   activePanel: 'none' | 'budget' | 'statistics' | 'advisors' | 'achievements' | 'settings';
   disastersEnabled: boolean;
+  adjacentCities: AdjacentCity[];
+  waterBodies: WaterBody[];
 }
 
 // Building evolution paths based on zone and level

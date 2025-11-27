@@ -9,12 +9,12 @@ src/types/game.ts: +238[8]
 Conversations:
 
 [0]: e4159b39-4af0-43eb-a9f9-f6631519c12a; e4159b39; unknown;
-[1]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; Add construction mechanic with new sprite; claude-4.5-opus-high-thinking;
+[1]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; 323593a2; unknown;
 [2]: 8a0dc2bd-5fe7-49c2-bb0f-679c1954289d; Add buildings to new asset sheet; claude-4.5-opus-high-thinking;
 [3]: b804e07f-2ac5-497b-8b80-6ea3bac042dc; b804e07f; unknown;
 [4]: 77e1d9e2-594d-4bdf-b2c2-fe97ea8e7fcf; 77e1d9e2; unknown;
 [5]: 111db73a-f984-4f4a-8c0d-a85717023cce; 111db73a; unknown;
 [6]: 544416f4-5eb3-457f-be07-9b1e97aec490; 544416f4; unknown;
-[7]: 171e2440-44dc-45b9-95bb-e758b8d73613; Triple the number of cars; claude-4.5-opus-high-thinking;
+[7]: 171e2440-44dc-45b9-95bb-e758b8d73613; 171e2440; unknown;
 [8]: d44abec9-b236-4eda-b842-f5e0194bd921; d44abec9; unknown;
 [9]: 5fb4fd14-4fc7-4370-b37c-862483784e1f; 5fb4fd14; unknown;

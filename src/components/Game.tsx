@@ -393,7 +393,7 @@ function gridToScreen(x: number, y: number, offsetX: number, offsetY: number): {
   return { screenX, screenY };
 }
 
-// Convert screen coordinates to grid coordinates
+// Convert screen coordinates to grid coordinates with improved accuracy
 function screenToGrid(screenX: number, screenY: number, offsetX: number, offsetY: number): { gridX: number; gridY: number } {
   const adjustedX = screenX - offsetX;
   const adjustedY = screenY - offsetY;
@@ -402,6 +402,62 @@ function screenToGrid(screenX: number, screenY: number, offsetX: number, offsetY
   const gridY = (adjustedY / (TILE_HEIGHT / 2) - adjustedX / (TILE_WIDTH / 2)) / 2;
   
   return { gridX: Math.floor(gridX), gridY: Math.floor(gridY) };
+}
+
+// More accurate hit-testing for isometric tiles using diamond shape detection
+function getTileAtScreenPosition(screenX: number, screenY: number, offsetX: number, offsetY: number, gridSize: number): { gridX: number; gridY: number } | null {
+  const adjustedX = screenX - offsetX;
+  const adjustedY = screenY - offsetY;
+  
+  // First, get approximate grid coordinates
+  const approxGridX = (adjustedX / (TILE_WIDTH / 2) + adjustedY / (TILE_HEIGHT / 2)) / 2;
+  const approxGridY = (adjustedY / (TILE_HEIGHT / 2) - adjustedX / (TILE_WIDTH / 2)) / 2;
+  
+  // Check the tile at the approximate position and its neighbors
+  const candidates = [
+    { x: Math.floor(approxGridX), y: Math.floor(approxGridY) },
+    { x: Math.floor(approxGridX) + 1, y: Math.floor(approxGridY) },
+    { x: Math.floor(approxGridX), y: Math.floor(approxGridY) + 1 },
+    { x: Math.floor(approxGridX) + 1, y: Math.floor(approxGridY) + 1 },
+    { x: Math.floor(approxGridX) - 1, y: Math.floor(approxGridY) },
+    { x: Math.floor(approxGridX), y: Math.floor(approxGridY) - 1 },
+  ];
+  
+  // Check each candidate tile to see if the point is inside its diamond shape
+  for (const candidate of candidates) {
+    if (candidate.x < 0 || candidate.x >= gridSize || candidate.y < 0 || candidate.y >= gridSize) {
+      continue;
+    }
+    
+    // Get the screen position of the tile top-left corner
+    const tileScreenX = (candidate.x - candidate.y) * (TILE_WIDTH / 2) + offsetX;
+    const tileScreenY = (candidate.x + candidate.y) * (TILE_HEIGHT / 2) + offsetY;
+    
+    // Tile center in screen coordinates
+    const tileCenterX = tileScreenX + TILE_WIDTH / 2;
+    const tileCenterY = tileScreenY + TILE_HEIGHT / 2;
+    
+    // Check if point is inside the diamond shape
+    // Diamond shape: |dx|/(w/2) + |dy|/(h/2) <= 1
+    const dx = Math.abs(screenX - tileCenterX);
+    const dy = Math.abs(screenY - tileCenterY);
+    
+    const normalizedDx = dx / (TILE_WIDTH / 2);
+    const normalizedDy = dy / (TILE_HEIGHT / 2);
+    
+    if (normalizedDx + normalizedDy <= 1) {
+      return { gridX: candidate.x, gridY: candidate.y };
+    }
+  }
+  
+  // Fallback to the approximate position
+  const gridX = Math.floor(approxGridX);
+  const gridY = Math.floor(approxGridY);
+  if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+    return { gridX, gridY };
+  }
+  
+  return null;
 }
 
 const EVENT_ICON_MAP: Record<string, React.ReactNode> = {
@@ -1926,6 +1982,10 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   const initialZoomRef = useRef<number>(zoom);
   const lastTouchCenterRef = useRef<{ x: number; y: number } | null>(null);
   
+  // Optimized hover updates using requestAnimationFrame
+  const hoverUpdateRef = useRef<{ mouseX: number; mouseY: number; rect: DOMRect | null } | null>(null);
+  const hoverRafRef = useRef<number | null>(null);
+  
   // Airplane system refs
   const airplanesRef = useRef<Airplane[]>([]);
   const airplaneIdRef = useRef(0);
@@ -1982,6 +2042,17 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   useEffect(() => {
     worldStateRef.current.canvasSize = canvasSize;
   }, [canvasSize]);
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverRafRef.current) {
+        cancelAnimationFrame(hoverRafRef.current);
+        hoverRafRef.current = null;
+      }
+      hoverUpdateRef.current = null;
+    };
+  }, []);
 
   // Notify parent of viewport changes for minimap
   useEffect(() => {
@@ -5630,35 +5701,36 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       if (rect) {
         const mouseX = (e.clientX - rect.left) / zoom;
         const mouseY = (e.clientY - rect.top) / zoom;
-        const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
+        // Use improved hit-testing for accurate tile selection
+        const tile = getTileAtScreenPosition(mouseX, mouseY, offset.x / zoom, offset.y / zoom, gridSize);
         
-        if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+        if (tile && tile.gridX >= 0 && tile.gridX < gridSize && tile.gridY >= 0 && tile.gridY < gridSize) {
           if (selectedTool === 'select') {
             // For multi-tile buildings, select the origin tile
-            const origin = findBuildingOrigin(gridX, gridY);
+            const origin = findBuildingOrigin(tile.gridX, tile.gridY);
             if (origin) {
               setSelectedTile({ x: origin.originX, y: origin.originY });
             } else {
-              setSelectedTile({ x: gridX, y: gridY });
+              setSelectedTile({ x: tile.gridX, y: tile.gridY });
             }
           } else if (showsDragGrid) {
             // Start drag rectangle selection for zoning tools
-            setDragStartTile({ x: gridX, y: gridY });
-            setDragEndTile({ x: gridX, y: gridY });
+            setDragStartTile({ x: tile.gridX, y: tile.gridY });
+            setDragEndTile({ x: tile.gridX, y: tile.gridY });
             setIsDragging(true);
           } else if (supportsDragPlace) {
             // For roads, bulldoze, and other tools, start drag-to-place
-            setDragStartTile({ x: gridX, y: gridY });
-            setDragEndTile({ x: gridX, y: gridY });
+            setDragStartTile({ x: tile.gridX, y: tile.gridY });
+            setDragEndTile({ x: tile.gridX, y: tile.gridY });
             setIsDragging(true);
             // Reset road drawing state for new drag
             setRoadDrawDirection(null);
             placedRoadTilesRef.current.clear();
             // Place immediately on first click
-            placeAtTile(gridX, gridY);
+            placeAtTile(tile.gridX, tile.gridY);
             // Track initial tile for roads and subways
             if (selectedTool === 'road' || selectedTool === 'subway') {
-              placedRoadTilesRef.current.add(`${gridX},${gridY}`);
+              placedRoadTilesRef.current.add(`${tile.gridX},${tile.gridY}`);
             }
           }
         }
@@ -5721,6 +5793,81 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     onNavigationComplete?.();
   }, [navigationTarget, zoom, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete]);
 
+  // Process hover update using requestAnimationFrame for smooth updates
+  const processHoverUpdate = useCallback(() => {
+    if (!hoverUpdateRef.current) {
+      hoverRafRef.current = null;
+      return;
+    }
+    
+    const { mouseX, mouseY, rect } = hoverUpdateRef.current;
+    if (!rect) {
+      hoverRafRef.current = null;
+      return;
+    }
+    
+    // Use the improved hit-testing function for accurate tile detection
+    const tile = getTileAtScreenPosition(mouseX, mouseY, offset.x / zoom, offset.y / zoom, gridSize);
+    
+    if (tile && tile.gridX >= 0 && tile.gridX < gridSize && tile.gridY >= 0 && tile.gridY < gridSize) {
+      setHoveredTile({ x: tile.gridX, y: tile.gridY });
+      
+      // Update drag rectangle end point for zoning tools
+      if (isDragging && showsDragGrid && dragStartTile) {
+        setDragEndTile({ x: tile.gridX, y: tile.gridY });
+      }
+      // For roads and subways, use straight-line snapping
+      else if (isDragging && (selectedTool === 'road' || selectedTool === 'subway') && dragStartTile) {
+        const dx = Math.abs(tile.gridX - dragStartTile.x);
+        const dy = Math.abs(tile.gridY - dragStartTile.y);
+        
+        // Lock direction after moving at least 1 tile
+        let direction = roadDrawDirection;
+        if (!direction && (dx > 0 || dy > 0)) {
+          // Lock to the axis with more movement, or horizontal if equal
+          direction = dx >= dy ? 'h' : 'v';
+          setRoadDrawDirection(direction);
+        }
+        
+        // Calculate target position along the locked axis
+        let targetX = tile.gridX;
+        let targetY = tile.gridY;
+        if (direction === 'h') {
+          targetY = dragStartTile.y; // Lock to horizontal
+        } else if (direction === 'v') {
+          targetX = dragStartTile.x; // Lock to vertical
+        }
+        
+        setDragEndTile({ x: targetX, y: targetY });
+        
+        // Place all tiles from start to target in a straight line
+        const minX = Math.min(dragStartTile.x, targetX);
+        const maxX = Math.max(dragStartTile.x, targetX);
+        const minY = Math.min(dragStartTile.y, targetY);
+        const maxY = Math.max(dragStartTile.y, targetY);
+        
+        for (let x = minX; x <= maxX; x++) {
+          for (let y = minY; y <= maxY; y++) {
+            const key = `${x},${y}`;
+            if (!placedRoadTilesRef.current.has(key)) {
+              placeAtTile(x, y);
+              placedRoadTilesRef.current.add(key);
+            }
+          }
+        }
+      }
+      // For other drag-to-place tools, place continuously
+      else if (isDragging && supportsDragPlace && dragStartTile) {
+        placeAtTile(tile.gridX, tile.gridY);
+      }
+    } else {
+      setHoveredTile(null);
+    }
+    
+    hoverUpdateRef.current = null;
+    hoverRafRef.current = null;
+  }, [offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isPanning) {
       const newOffset = {
@@ -5735,62 +5882,16 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     if (rect) {
       const mouseX = (e.clientX - rect.left) / zoom;
       const mouseY = (e.clientY - rect.top) / zoom;
-      const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
       
-      if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
-        setHoveredTile({ x: gridX, y: gridY });
-        
-        // Update drag rectangle end point for zoning tools
-        if (isDragging && showsDragGrid && dragStartTile) {
-          setDragEndTile({ x: gridX, y: gridY });
-        }
-        // For roads and subways, use straight-line snapping
-        else if (isDragging && (selectedTool === 'road' || selectedTool === 'subway') && dragStartTile) {
-          const dx = Math.abs(gridX - dragStartTile.x);
-          const dy = Math.abs(gridY - dragStartTile.y);
-          
-          // Lock direction after moving at least 1 tile
-          let direction = roadDrawDirection;
-          if (!direction && (dx > 0 || dy > 0)) {
-            // Lock to the axis with more movement, or horizontal if equal
-            direction = dx >= dy ? 'h' : 'v';
-            setRoadDrawDirection(direction);
-          }
-          
-          // Calculate target position along the locked axis
-          let targetX = gridX;
-          let targetY = gridY;
-          if (direction === 'h') {
-            targetY = dragStartTile.y; // Lock to horizontal
-          } else if (direction === 'v') {
-            targetX = dragStartTile.x; // Lock to vertical
-          }
-          
-          setDragEndTile({ x: targetX, y: targetY });
-          
-          // Place all tiles from start to target in a straight line
-          const minX = Math.min(dragStartTile.x, targetX);
-          const maxX = Math.max(dragStartTile.x, targetX);
-          const minY = Math.min(dragStartTile.y, targetY);
-          const maxY = Math.max(dragStartTile.y, targetY);
-          
-          for (let x = minX; x <= maxX; x++) {
-            for (let y = minY; y <= maxY; y++) {
-              const key = `${x},${y}`;
-              if (!placedRoadTilesRef.current.has(key)) {
-                placeAtTile(x, y);
-                placedRoadTilesRef.current.add(key);
-              }
-            }
-          }
-        }
-        // For other drag-to-place tools, place continuously
-        else if (isDragging && supportsDragPlace && dragStartTile) {
-          placeAtTile(gridX, gridY);
-        }
+      // Store mouse position for RAF-based update
+      hoverUpdateRef.current = { mouseX, mouseY, rect };
+      
+      // Schedule hover update using requestAnimationFrame for smooth, lag-free updates
+      if (!hoverRafRef.current) {
+        hoverRafRef.current = requestAnimationFrame(processHoverUpdate);
       }
     }
-  }, [isPanning, dragStart, offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile, clampOffset]);
+  }, [isPanning, dragStart, zoom, processHoverUpdate, clampOffset]);
   
   const handleMouseUp = useCallback(() => {
     // Check for road connection when dragging off edge
@@ -5844,6 +5945,13 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     if (!containerRef.current) {
       setHoveredTile(null);
     }
+    
+    // Cancel any pending hover updates
+    if (hoverRafRef.current) {
+      cancelAnimationFrame(hoverRafRef.current);
+      hoverRafRef.current = null;
+    }
+    hoverUpdateRef.current = null;
   }, [isDragging, gridSize, showsDragGrid, supportsDragPlace, dragStartTile, placeAtTile, selectedTool, dragEndTile, adjacentCities]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -5976,18 +6084,19 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
           if (rect) {
             const mouseX = (touch.clientX - rect.left) / zoom;
             const mouseY = (touch.clientY - rect.top) / zoom;
-            const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
+            // Use improved hit-testing for accurate tile selection
+            const tile = getTileAtScreenPosition(mouseX, mouseY, offset.x / zoom, offset.y / zoom, gridSize);
 
-            if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+            if (tile && tile.gridX >= 0 && tile.gridX < gridSize && tile.gridY >= 0 && tile.gridY < gridSize) {
               if (selectedTool === 'select') {
-                const origin = findBuildingOrigin(gridX, gridY);
+                const origin = findBuildingOrigin(tile.gridX, tile.gridY);
                 if (origin) {
                   setSelectedTile({ x: origin.originX, y: origin.originY });
                 } else {
-                  setSelectedTile({ x: gridX, y: gridY });
+                  setSelectedTile({ x: tile.gridX, y: tile.gridY });
                 }
               } else {
-                placeAtTile(gridX, gridY);
+                placeAtTile(tile.gridX, tile.gridY);
               }
             }
           }

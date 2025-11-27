@@ -7,7 +7,7 @@ src/lib/simulation.ts: +1019[0],+1022[0],+1028-1029[0],+1038[0],+1042-1043[0] -1
 Conversations:
 
 [0]: 8530061e-f1c6-4bd3-9f9f-28ca786b8e30; Add emergency vehicle mechanics; claude-4.5-opus-high-thinking;
-[1]: b4a8890e-bd4e-47ad-bf90-3d73410c84b4; Improve straight road drawing efficiency; claude-4.5-opus-high-thinking;
+[1]: 77bcf63b-a978-45e4-8ca6-d4faa6c84798; Scale down the stadium by 30%; composer-1;
 [2]: 60de5d90-062d-4d67-b90c-fb5f9a185f62; Clear overlays on reload; claude-4.5-opus-high-thinking;
 [3]: 743537a1-cd5b-4c38-a99b-074881c0ca8a; Add subway station mechanic to game; claude-4.5-opus-high-thinking;
 [4]: f49b0af2-3d4c-46c4-81a7-24df560061c8; f49b0af2; unknown;

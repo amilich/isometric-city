@@ -1,9 +1,10 @@
 AI Notes:
 
-src/components/Game.tsx: +1397[0],+3126-3128[0],+3129[1],+4251[0],+4253[0],+4259-4270[0],+4271[1],+4281-4293[0],+4294[1],+4295-4299[0],+4300[1],+4301-4303[0],+4304[1],+4370-4372[0],+4373[1] -1397[0],-4261-4262[0]
-src/lib/renderConfig.ts: +19-23[0],+120-124[0],+184-210[0],+211[1],+292-296[0]
+src/components/Game.tsx: +1397[0],+3126-3128[0],+3129[1],+4251[0],+4253[0],+4259-4270[0],+4271[1],+4281-4293[0],+4294[1],+4295-4299[0],+4300-4301[1],+4302-4303[0],+4304[1],+4370-4372[0],+4373[1] -1397[0],-4261-4262[0]
+src/lib/renderConfig.ts: +19-23[0],+120-124[0],+184-210[0],+211[2],+292-296[0]
 
 Conversations:
 
 [0]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
-[1]: 2058aea1-6709-4765-b9cd-14ccfc478036; Remove time clock from top bar; claude-4.5-opus-high-thinking;
+[1]: 212bb374-70f3-4f76-a5e3-09ff6f1d0291; Shift subway station asset position; claude-4.5-opus-high-thinking;
+[2]: 2058aea1-6709-4765-b9cd-14ccfc478036; Remove time clock from top bar; claude-4.5-opus-high-thinking;

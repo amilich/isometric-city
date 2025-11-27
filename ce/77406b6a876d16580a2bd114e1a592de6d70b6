@@ -5,7 +5,7 @@ src/components/Game.tsx: +72-73[0],+75-92[0],+93[1],+169-180[0],+182-184[0],+186
 Conversations:
 
 [0]: 8530061e-f1c6-4bd3-9f9f-28ca786b8e30; Add emergency vehicle mechanics; claude-4.5-opus-high-thinking;
-[1]: b4a8890e-bd4e-47ad-bf90-3d73410c84b4; Improve straight road drawing efficiency; claude-4.5-opus-high-thinking;
+[1]: 77bcf63b-a978-45e4-8ca6-d4faa6c84798; Scale down the stadium by 30%; composer-1;
 [2]: 743537a1-cd5b-4c38-a99b-074881c0ca8a; Add subway station mechanic to game; claude-4.5-opus-high-thinking;
 [3]: 60de5d90-062d-4d67-b90c-fb5f9a185f62; Clear overlays on reload; claude-4.5-opus-high-thinking;
 [4]: b0dad303-4e11-4739-8f36-b37e20cbec01; Render building tiles over water; composer-1;

@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/Game.tsx: +4355-4361[0],+5145-5151[0],+6475[0],+6486[0]
+src/lib/renderConfig.ts: +247-248[0],+252[0],+259[0],+261[0],+267[0],+272[0],+275-279[0],+484-485[0],+489[0],+496[0],+498[0],+504[0],+509[0],+515-517[0]
+src/lib/simulation.ts: +1626[0],+1637[0]
+src/types/game.ts: +171[0],+195[0]
+
+Conversations:
+
+[0]: 252834ef-c245-4113-b926-9b6b04144d0b; Add new assets to parks section; claude-4.5-opus-high-thinking;

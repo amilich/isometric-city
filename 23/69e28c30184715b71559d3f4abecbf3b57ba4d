@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +3726[0],+3729-3731[0],+3738[0],+3741[0],+3744[0],+3749[0],+3752[0] -3739-3740[0],-3745[1],-3746[0],-3748[0],-3751[0],-3754[0],-3759[0],-3762[0]
+
+Conversations:
+
+[0]: 920d9d5a-64b1-4baa-9202-b574611a9015; Design new marina game mechanics; claude-4.5-opus-high-thinking;
+[1]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; 323593a2; unknown;

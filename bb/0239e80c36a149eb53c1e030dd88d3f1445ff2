@@ -4,12 +4,13 @@ src/components/Game.tsx: +13[0],+333[0],+368[0],+372[0],+1594[0],+1962-1968[0],+
 src/components/ui/Icons.tsx: +289-304[0],+306-318[0],+333[0],+347[0]
 src/context/GameContext.tsx: +17[0],+70[0],+376-381[0],+383-384[0],+386-390[0]
 src/lib/renderConfig.ts: +79[0],+97[3],+137-138[0],+186[0],+203[3],+236[0],+284[0],+301[3],+334[0] -79[0],-183[0],-279[0]
-src/lib/simulation.ts: +277[0],+653-654[0],+662-666[0],+669[0],+688-689[0],+693-694[0],+696[0],+799-807[0],+813[0],+1517[0],+1525[0],+1531-1534[0],+1536-1537[0],+1539-1540[0],+1542-1543[0],+1545-1546[0],+1548-1551[0],+1553-1554[0],+1556-1557[0],+1559-1560[0] -660[0],-682-683[0],-685[0],-792[0]
+src/lib/simulation.ts: +277[0],+653-654[0],+662-665[0],+666[4],+669[0],+688-689[0],+693-694[0],+696[0],+799-805[0],+806-807[4],+813[0],+1517[0],+1525[0],+1531-1534[0],+1536-1537[0],+1539-1540[0],+1542-1543[0],+1545[0],+1546[4],+1548-1551[0],+1553-1554[0],+1556-1557[0],+1559[0],+1560[4] -660[0],-682-683[0],-685[0],-792[0]
 src/types/game.ts: +38-39[0],+52[0],+68[0],+85[0],+101[0],+129[0],+270[0]
 
 Conversations:
 
 [0]: 743537a1-cd5b-4c38-a99b-074881c0ca8a; Add subway station mechanic to game; claude-4.5-opus-high-thinking;
-[1]: b4a8890e-bd4e-47ad-bf90-3d73410c84b4; Improve straight road drawing efficiency; claude-4.5-opus-high-thinking;
+[1]: 77bcf63b-a978-45e4-8ca6-d4faa6c84798; Scale down the stadium by 30%; composer-1;
 [2]: 60de5d90-062d-4d67-b90c-fb5f9a185f62; Clear overlays on reload; claude-4.5-opus-high-thinking;
 [3]: 207d7407-bbe0-47fa-a2b8-b50c055ac36b; Adjust police station position; claude-4.5-opus-high-thinking;
+[4]: 07cb52cf-27ce-4540-a460-24f40709d22c; Improve ocean rendering for new city; claude-4.5-opus-high-thinking;

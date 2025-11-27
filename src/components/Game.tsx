@@ -4620,21 +4620,28 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         'mountain_lodge', 'mountain_trailhead'];
       const isPark = allParkTypes.includes(tile.building.type) ||
                      (tile.building.type === 'empty' && isPartOfParkBuilding(tile.x, tile.y));
-      // Check if this is a building (not grass, empty, water, road, tree, or parks)
+      // Check if this is a building (not grass, empty, water, road, tree, hill, or parks)
       // Also check if it's part of a multi-tile building footprint
       const isDirectBuilding = !isPark &&
         tile.building.type !== 'grass' &&
         tile.building.type !== 'empty' &&
         tile.building.type !== 'water' &&
         tile.building.type !== 'road' &&
-        tile.building.type !== 'tree';
+        tile.building.type !== 'tree' &&
+        tile.building.type !== 'hill';
       const isPartOfBuilding = tile.building.type === 'empty' && isPartOfMultiTileBuilding(tile.x, tile.y);
       const isBuilding = isDirectBuilding || isPartOfBuilding;
       
       // ALL buildings get grey/concrete base tiles (except parks which stay green)
       const hasGreyBase = isBuilding && !isPark;
       
-      if (tile.building.type === 'water') {
+      if (tile.building.type === 'hill') {
+        // Grey mountain peaks for hills
+        topColor = '#6b7280';
+        leftColor = '#4b5563';
+        rightColor = '#9ca3af';
+        strokeColor = '#374151';
+      } else if (tile.building.type === 'water') {
         topColor = '#2563eb';
         leftColor = '#1d4ed8';
         rightColor = '#3b82f6';
@@ -4805,6 +4812,10 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
       
+      // Apply elevation offset for flagged tiles (buildings on hills)
+      const elevationOffset = tile.elevation ? -tile.elevation * h : 0;
+      const adjustedY = y + elevationOffset;
+      
       // Grey/concrete base tiles for ALL buildings (except parks)
       const topColor = '#6b7280';
       const leftColor = '#4b5563';
@@ -4814,10 +4825,10 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       // Draw the isometric diamond (top face)
       ctx.fillStyle = topColor;
       ctx.beginPath();
-      ctx.moveTo(x + w / 2, y);
-      ctx.lineTo(x + w, y + h / 2);
-      ctx.lineTo(x + w / 2, y + h);
-      ctx.lineTo(x, y + h / 2);
+      ctx.moveTo(x + w / 2, adjustedY);
+      ctx.lineTo(x + w, adjustedY + h / 2);
+      ctx.lineTo(x + w / 2, adjustedY + h);
+      ctx.lineTo(x, adjustedY + h / 2);
       ctx.closePath();
       ctx.fill();
       
@@ -5058,9 +5069,13 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
       
+      // Apply elevation offset for flagged tiles (buildings on hills)
+      const elevationOffset = tile.elevation ? -tile.elevation * h : 0;
+      const adjustedY = y + elevationOffset;
+      
       // Handle roads separately with adjacency
       if (buildingType === 'road') {
-        drawRoad(ctx, x, y, tile.x, tile.y);
+        drawRoad(ctx, x, adjustedY, tile.x, tile.y);
         return;
       }
       
@@ -5208,7 +5223,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
               // Calculate draw position for multi-tile buildings
               // Multi-tile buildings need to be positioned at the front-most corner
               let drawPosX = x;
-              let drawPosY = y;
+              let drawPosY = adjustedY;
               
               if (isMultiTile) {
                 // Calculate offset to position sprite at the front-most visible corner
@@ -5218,7 +5233,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
                 const screenOffsetX = (frontmostOffsetX - frontmostOffsetY) * (w / 2);
                 const screenOffsetY = (frontmostOffsetX + frontmostOffsetY) * (h / 2);
                 drawPosX = x + screenOffsetX;
-                drawPosY = y + screenOffsetY;
+                drawPosY = adjustedY + screenOffsetY;
               }
               
               // Calculate destination size preserving aspect ratio of source sprite
@@ -5378,7 +5393,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       // Draw fire effect
       if (tile.building.onFire) {
         const fireX = x + w / 2;
-        const fireY = y - 10;
+        const fireY = adjustedY - 10;
         
         ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
         ctx.beginPath();

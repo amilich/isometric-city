@@ -6,6 +6,7 @@ export type BuildingType =
   | 'water'
   | 'road'
   | 'tree'
+  | 'hill'
   // Residential
   | 'house_small'
   | 'house_medium'
@@ -220,6 +221,7 @@ export interface Tile {
   crime: number;
   traffic: number;
   hasSubway: boolean;
+  elevation?: number; // Elevation offset for buildings on hills (flagged tiles)
 }
 
 export interface Stats {
@@ -352,6 +354,7 @@ export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: num
   water: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 5 },
   road: { maxPop: 0, maxJobs: 0, pollution: 2, landValue: 0 },
   tree: { maxPop: 0, maxJobs: 0, pollution: -5, landValue: 2 },
+  hill: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
   house_small: { maxPop: 6, maxJobs: 0, pollution: 0, landValue: 10 },
   house_medium: { maxPop: 14, maxJobs: 0, pollution: 0, landValue: 22 },
   mansion: { maxPop: 18, maxJobs: 0, pollution: 0, landValue: 60 },

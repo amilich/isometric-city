@@ -1,8 +1,9 @@
 AI Notes:
 
-src/components/Game.tsx: +3810-3811[0],+3814-3816[0],+5031-5035[0] -3810[0],-5030[0]
+src/components/Game.tsx: +3810-3811[0],+3814-3816[0],+5031-5034[0],+5035[1] -3810[0],-5030[0]
 src/lib/renderConfig.ts: +250[0],+252[0],+274-276[0],+278[0],+489[0],+491[0],+514[0],+517[0]
 
 Conversations:
 
 [0]: 252834ef-c245-4113-b926-9b6b04144d0b; Add new assets to parks section; claude-4.5-opus-high-thinking;
+[1]: 920d9d5a-64b1-4baa-9202-b574611a9015; Design new marina game mechanics; claude-4.5-opus-high-thinking;

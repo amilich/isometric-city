@@ -6,7 +6,7 @@ src/lib/simulation.ts: +80[4],+242[4],+247-248[4],+253-256[4],+258-263[4],+266-2
 Conversations:
 
 [0]: b4a8890e-bd4e-47ad-bf90-3d73410c84b4; Improve straight road drawing efficiency; claude-4.5-opus-high-thinking;
-[1]: 77bcf63b-a978-45e4-8ca6-d4faa6c84798; Scale down the stadium by 30%; composer-1;
+[1]: 8abb97c8-f8b1-448f-a0f9-71bccb698911; Adjust vertical offsets for building sprites; composer-1;
 [2]: 60de5d90-062d-4d67-b90c-fb5f9a185f62; Clear overlays on reload; claude-4.5-opus-high-thinking;
 [3]: 743537a1-cd5b-4c38-a99b-074881c0ca8a; Add subway station mechanic to game; claude-4.5-opus-high-thinking;
 [4]: 07cb52cf-27ce-4540-a460-24f40709d22c; Improve ocean rendering for new city; claude-4.5-opus-high-thinking;

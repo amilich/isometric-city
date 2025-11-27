@@ -8455,47 +8455,115 @@ export default function Game() {
               isMobile={true}
             />
             
-            {/* Compact overlay toggle for mobile */}
-            <Card className="absolute top-2 right-2 p-1.5 shadow-lg bg-card/90 border-border/70 z-30">
-              <div className="flex gap-1">
+            {/* Compact overlay toggle for mobile - positioned below MobileTopBar */}
+            <Card className="fixed top-20 right-2 p-1.5 shadow-lg bg-card/90 border-border/70 z-50 max-w-[calc(100vw-1rem)] pointer-events-auto">
+              <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                 <Button
                   variant={overlayMode === 'none' ? 'default' : 'ghost'}
                   size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setOverlayMode('none')}
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('none');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
                 >
                   <CloseIcon size={14} />
                 </Button>
                 <Button
                   variant={overlayMode === 'power' ? 'default' : 'ghost'}
                   size="icon"
-                  className={`h-8 w-8 ${overlayMode === 'power' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
-                  onClick={() => setOverlayMode('power')}
+                  className={`h-8 w-8 flex-shrink-0 ${overlayMode === 'power' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('power');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
                 >
                   <PowerIcon size={14} />
                 </Button>
                 <Button
                   variant={overlayMode === 'water' ? 'default' : 'ghost'}
                   size="icon"
-                  className={`h-8 w-8 ${overlayMode === 'water' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
-                  onClick={() => setOverlayMode('water')}
+                  className={`h-8 w-8 flex-shrink-0 ${overlayMode === 'water' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('water');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
                 >
                   <WaterIcon size={14} />
                 </Button>
                 <Button
                   variant={overlayMode === 'fire' ? 'default' : 'ghost'}
                   size="icon"
-                  className={`h-8 w-8 ${overlayMode === 'fire' ? 'bg-red-500 hover:bg-red-600' : ''}`}
-                  onClick={() => setOverlayMode('fire')}
+                  className={`h-8 w-8 flex-shrink-0 ${overlayMode === 'fire' ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('fire');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
                 >
                   <FireIcon size={14} />
+                </Button>
+                <Button
+                  variant={overlayMode === 'police' ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`h-8 w-8 flex-shrink-0 ${overlayMode === 'police' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('police');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
+                  <SafetyIcon size={14} />
+                </Button>
+                <Button
+                  variant={overlayMode === 'health' ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`h-8 w-8 flex-shrink-0 ${overlayMode === 'health' ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('health');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
+                  <HealthIcon size={14} />
+                </Button>
+                <Button
+                  variant={overlayMode === 'education' ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`h-8 w-8 flex-shrink-0 ${overlayMode === 'education' ? 'bg-purple-500 hover:bg-purple-600' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('education');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
+                  <EducationIcon size={14} />
+                </Button>
+                <Button
+                  variant={overlayMode === 'subway' ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`h-8 w-8 flex-shrink-0 ${overlayMode === 'subway' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOverlayMode('subway');
+                  }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
+                  <SubwayIcon size={14} />
                 </Button>
               </div>
             </Card>
           </div>
           
           {/* Mobile Bottom Toolbar */}
-          <MobileToolbar onOpenPanel={(panel) => setActivePanel(panel)} />
+          <MobileToolbar 
+            onOpenPanel={(panel) => setActivePanel(panel)}
+            overlayMode={overlayMode}
+            setOverlayMode={setOverlayMode}
+          />
           
           {/* Panels - render as fullscreen modals on mobile */}
           {state.activePanel === 'budget' && <BudgetPanel />}

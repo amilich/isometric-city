@@ -18,6 +18,10 @@ import {
   AdvisorIcon,
   TrophyIcon,
   SettingsIcon,
+  FireIcon,
+  HealthIcon,
+  EducationIcon,
+  SafetyIcon,
 } from '@/components/ui/Icons';
 
 // Tool category icons
@@ -197,11 +201,15 @@ const toolCategories = {
   'SPECIAL': ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[],
 };
 
+type OverlayMode = 'none' | 'power' | 'water' | 'fire' | 'police' | 'health' | 'education' | 'subway';
+
 interface MobileToolbarProps {
   onOpenPanel: (panel: 'budget' | 'statistics' | 'advisors' | 'achievements' | 'settings') => void;
+  overlayMode?: OverlayMode;
+  setOverlayMode?: (mode: OverlayMode) => void;
 }
 
-export function MobileToolbar({ onOpenPanel }: MobileToolbarProps) {
+export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMode }: MobileToolbarProps) {
   const { state, setTool } = useGame();
   const { selectedTool, stats } = state;
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -343,51 +351,121 @@ export function MobileToolbar({ onOpenPanel }: MobileToolbarProps) {
               <div className="grid grid-cols-5 gap-2">
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="h-12 w-full flex-col gap-1"
+                  size="sm"
+                  className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('budget'); setShowMenu(false); }}
                 >
-                  <BudgetIcon size={18} />
-                  <span className="text-[9px]">Budget</span>
+                  Budget
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="h-12 w-full flex-col gap-1"
+                  size="sm"
+                  className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('statistics'); setShowMenu(false); }}
                 >
-                  <ChartIcon size={18} />
-                  <span className="text-[9px]">Stats</span>
+                  Stats
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="h-12 w-full flex-col gap-1"
+                  size="sm"
+                  className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('advisors'); setShowMenu(false); }}
                 >
-                  <AdvisorIcon size={18} />
-                  <span className="text-[9px]">Advisors</span>
+                  Advisors
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="h-12 w-full flex-col gap-1"
+                  size="sm"
+                  className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('achievements'); setShowMenu(false); }}
                 >
-                  <TrophyIcon size={18} />
-                  <span className="text-[9px]">Awards</span>
+                  Awards
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="h-12 w-full flex-col gap-1"
+                  size="sm"
+                  className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
                 >
-                  <SettingsIcon size={18} />
-                  <span className="text-[9px]">Settings</span>
+                  Settings
                 </Button>
               </div>
             </div>
+
+            {/* Overlay Toggle Section */}
+            {setOverlayMode && (
+              <div className="p-3 border-b border-border">
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                  View Overlays
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  <Button
+                    variant={overlayMode === 'none' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-10 w-full text-xs"
+                    onClick={() => setOverlayMode('none')}
+                  >
+                    None
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'power' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'power' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+                    onClick={() => setOverlayMode('power')}
+                  >
+                    Power
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'water' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'water' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                    onClick={() => setOverlayMode('water')}
+                  >
+                    Water
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'fire' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'fire' ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                    onClick={() => setOverlayMode('fire')}
+                  >
+                    Fire
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'police' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'police' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                    onClick={() => setOverlayMode('police')}
+                  >
+                    Police
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'health' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'health' ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                    onClick={() => setOverlayMode('health')}
+                  >
+                    Health
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'education' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'education' ? 'bg-purple-500 hover:bg-purple-600' : ''}`}
+                    onClick={() => setOverlayMode('education')}
+                  >
+                    Education
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'subway' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'subway' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                    onClick={() => setOverlayMode('subway')}
+                  >
+                    Subway
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <ScrollArea className="h-[50vh]">
               <div className="p-2 space-y-1">

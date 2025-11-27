@@ -226,7 +226,8 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
     // Abandoned apartments need different positioning than normal
     apartment_low: -0.25, // Normal is -1.0, abandoned shifts down 0.75: -1.0 + 0.75 = -0.25
     apartment_high: -0.15, // Shifted up 0.3 from previous 0.15
-    house_medium: 0.35, // Normal is -0.05, abandoned shifts down 0.4: -0.05 + 0.4 = 0.35
+    house_medium: -0.05, // Normal is -0.05, abandoned matches normal position (moved up 0.5 tiles from 0.35, then down 0.1 tiles)
+    house_small: -0.05, // Normal is -0.2, abandoned shifted up 0.15 tiles to match house_medium adjustment
   },
   abandonedScales: {
     // Abandoned factory_large needs to be scaled down 30%

@@ -80,6 +80,16 @@
   background: linear-gradient(180deg, hsl(210 60% 60%) 0%, hsl(210 60% 40%) 100%);
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* Art Deco Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }

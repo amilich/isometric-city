@@ -1,8 +1,9 @@
 AI Notes:
 
 src/components/Game.tsx: +1397[0],+3126-3129[0],+4251[0],+4253[0],+4259-4271[0],+4281-4304[0],+4370-4373[0] -1397[0],-4261-4262[0]
-src/lib/renderConfig.ts: +19-23[0],+120-124[0],+184-211[0],+292-296[0]
+src/lib/renderConfig.ts: +19-23[0],+120-124[0],+184-210[0],+211[1],+292-296[0]
 
 Conversations:
 
 [0]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
+[1]: 2058aea1-6709-4765-b9cd-14ccfc478036; Remove time clock from top bar; claude-4.5-opus-high-thinking;

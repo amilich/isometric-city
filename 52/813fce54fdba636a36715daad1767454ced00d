@@ -1,8 +1,10 @@
 AI Notes:
 
-src/components/Game.tsx: +4305[0],+4311-4314[0],+4319[0],+4429[0],+4436-4438[0] -4314[0]
-src/lib/renderConfig.ts: +50-52[0],+317[0],+319[0],+325-328[0]
+src/components/Game.tsx: +4305[0],+4311-4313[0],+4314[1],+4319[0],+4429[0],+4436-4438[0] -4314[0]
+src/lib/renderConfig.ts: +50-52[2],+317[2],+319[2],+325-328[2]
 
 Conversations:
 
-[0]: 212bb374-70f3-4f76-a5e3-09ff6f1d0291; Shift subway station asset position; claude-4.5-opus-high-thinking;
+[0]: c9c3dfad-5969-4c38-b601-5fc81cd0b116; Add airplane mechanics to city simulation; claude-4.5-opus-high-thinking;
+[1]: 195e30ee-6947-4351-8f4c-c009213a3427; Improve game performance and asset cleanup; claude-4.5-opus-high-thinking;
+[2]: 212bb374-70f3-4f76-a5e3-09ff6f1d0291; Shift subway station asset position; claude-4.5-opus-high-thinking;

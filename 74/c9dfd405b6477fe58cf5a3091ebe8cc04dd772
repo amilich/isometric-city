@@ -7,7 +7,7 @@ Conversations:
 
 [0]: b4a8890e-bd4e-47ad-bf90-3d73410c84b4; Improve straight road drawing efficiency; claude-4.5-opus-high-thinking;
 [1]: 2f3069bd-a123-43d9-a39d-0ac146de7ab6; Fix variable access error in Game.tsx; composer-1;
-[2]: d44abec9-b236-4eda-b842-f5e0194bd921; Implement day/night cycle and dynamic lighting; claude-4.5-opus-high-thinking;
+[2]: 2d31b117-7371-4440-8257-d2782e9ba3a2; Improve zoom behavior and camera positioning; claude-4.5-opus-high-thinking;
 [3]: 60de5d90-062d-4d67-b90c-fb5f9a185f62; Clear overlays on reload; claude-4.5-opus-high-thinking;
 [4]: 743537a1-cd5b-4c38-a99b-074881c0ca8a; Add subway station mechanic to game; claude-4.5-opus-high-thinking;
 [5]: 915b0d22-00f6-4b1c-8cb3-d7735e9f2789; Scale down buildings in sprites_red_water_new; composer-1;

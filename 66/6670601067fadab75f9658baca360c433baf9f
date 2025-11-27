@@ -6,4 +6,4 @@ src/lib/renderConfig.ts: +266[0],+505[0]
 Conversations:
 
 [0]: 920d9d5a-64b1-4baa-9202-b574611a9015; Design new marina game mechanics; claude-4.5-opus-high-thinking;
-[1]: 22b066bb-47c2-4172-9a74-083b28b8222f; Add boats mechanic and swap marina dimensions; claude-4.5-opus-high-thinking;
+[1]: 73cdb8cf-5809-40af-8ea2-5390ab03b6a1; Implement hover effects and tooltips; claude-4.5-opus-high-thinking;

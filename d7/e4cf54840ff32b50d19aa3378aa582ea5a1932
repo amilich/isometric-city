@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +4374-4377[0]
+src/lib/renderConfig.ts: +120-121[0],+292-293[0]
+
+Conversations:
+
+[0]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;

@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/Game.tsx: +538[0],+606[0],+623[0],+625[0],+1077[0],+1081[0],+1085[0],+1089[0] -538[0],-606[0],-623[0],-625[0],-1077[0],-1081[0],-1085[0],-1089[0]
+src/lib/simulation.ts: +792-793[0],+887[1],+890[1],+1281-1282[0],+1313[2],+1470-1474[0],+1476-1484[0] -792-793[0],-887[1],-890[1],-1281[0],-1312[2]
+
+Conversations:
+
+[0]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
+[1]: 008dd38d-69f4-4924-850d-fd3e4a96bea9; Tab Request 008dd38d; unknown;
+[2]: 457777ba-0116-4893-8305-35c8aff31ce6; Tab Request 457777ba; unknown;

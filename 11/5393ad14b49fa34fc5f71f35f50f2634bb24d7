@@ -7,6 +7,6 @@ src/types/game.ts: +238[0]
 Conversations:
 
 [0]: e4159b39-4af0-43eb-a9f9-f6631519c12a; Exciting ideas to extend the game; claude-4.5-opus-high-thinking;
-[1]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; Add construction mechanic with new sprite; claude-4.5-opus-high-thinking;
+[1]: b804e07f-2ac5-497b-8b80-6ea3bac042dc; Investigate building development zones; claude-4.5-opus-high-thinking;
 [2]: 2b6d3493-3a37-4dfe-a712-99a535cef514; Refactor large files for better structure; gpt-5.1-codex-fast;
 [3]: 111db73a-f984-4f4a-8c0d-a85717023cce; Pedestrian duration should be increased; claude-4.5-opus-high-thinking;

@@ -6,6 +6,6 @@ src/lib/renderConfig.ts: +50-52[2],+317[2],+319[2],+325-327[2],+328[3]
 Conversations:
 
 [0]: c9c3dfad-5969-4c38-b601-5fc81cd0b116; Add airplane mechanics to city simulation; claude-4.5-opus-high-thinking;
-[1]: 456ae9c6-8f15-4c21-8a4e-226348ebb131; Map hover effects for incidents; claude-4.5-opus-high-thinking;
+[1]: 89e78dc3-859b-432b-8518-1a0937f33199; Make minimap viewport thicker; claude-4.5-opus-high-thinking;
 [2]: 212bb374-70f3-4f76-a5e3-09ff6f1d0291; Shift subway station asset position; claude-4.5-opus-high-thinking;
 [3]: 195e30ee-6947-4351-8f4c-c009213a3427; Improve game performance and asset cleanup; claude-4.5-opus-high-thinking;

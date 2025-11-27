@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +4358-4360[0] -4358[0]
+src/lib/renderConfig.ts: +215-216[0],+223[0],+257-258[0]
+
+Conversations:
+
+[0]: 915b0d22-00f6-4b1c-8cb3-d7735e9f2789; Scale down buildings in sprites_red_water_new; composer-1;

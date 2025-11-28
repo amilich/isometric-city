@@ -1,7 +1,7 @@
 AI Notes:
 
-src/components/Game.tsx: -53[0]
+src/components/Game.tsx: -15-18[0],-20-24[0],-29[0],-31-37[0],-43[0],-45-47[0],-50-51[0],-53-54[0],-67-68[0],-70-71[0],-74-76[0],-78-79[0],-81-84[0],-87[0],-117[0]
 
 Conversations:
 
-[0]: f0e72a98-16ef-4085-bed4-92269600fcb5; Tab Request f0e72a98; unknown;
+[0]: 2f89f522-e4b0-4ced-ac48-f19e28430087; Refactor game components into separate files; claude-4.5-opus-high-thinking;

@@ -6,4 +6,4 @@ src/context/GameContext.tsx: +415[0],+448[0],+453-456[0],+458[0],+482-485[0] -41
 Conversations:
 
 [0]: 78e93c8f-a05a-42ff-bd9c-28e2f0563651; Mobile drawer scrolling issue; composer-1;
-[1]: 128ff917-6560-402f-9df5-72513dbf9a32; Improve mobile game performance; claude-4.5-opus-high-thinking;
+[1]: 41d6ec98-9937-482c-ad3e-bae893a958b8; Fix pedestrian movement off the road; claude-4.5-opus-high-thinking;

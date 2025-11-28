@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +2113[0],+2149[0],+2279[0],+2306[0] -2113[0],-2149[0],-2279[0],-2306[0]
+src/components/game/trafficSystem.ts: +530[0],+807[0],+850[0] -530[0],-807[0],-850[0]
+src/components/game/vehicleSystems.ts: +691[0],+988[0] -691[0],-988[0]
+
+Conversations:
+
+[0]: f074b5b6-5660-4958-a63f-5454af710591; Adjust mobile rendering thresholds; claude-4.5-opus-high-thinking;

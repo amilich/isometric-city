@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useGame } from '@/context/GameContext';
-import { Tile } from '@/types/game';
+import { Tile, WeatherState } from '@/types/game';
+import { getWeatherDescription } from '@/lib/weather';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,52 @@ import {
   EnvironmentIcon,
   CloseIcon,
 } from '@/components/ui/Icons';
+
+// Weather icon for mobile
+function MobileWeatherIcon({ weather }: { weather: WeatherState }) {
+  const iconClass = "w-3 h-3";
+  
+  switch (weather.type) {
+    case 'clear':
+      return (
+        <svg className={`${iconClass} text-yellow-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0z" />
+        </svg>
+      );
+    case 'cloudy':
+      return (
+        <svg className={`${iconClass} text-gray-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004z" />
+        </svg>
+      );
+    case 'rain':
+      return (
+        <svg className={`${iconClass} text-blue-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004z" />
+        </svg>
+      );
+    case 'storm':
+      return (
+        <svg className={`${iconClass} text-purple-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004z" />
+        </svg>
+      );
+    case 'snow':
+      return (
+        <svg className={`${iconClass} text-blue-200`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004z" />
+        </svg>
+      );
+    case 'heatwave':
+      return (
+        <svg className={`${iconClass} text-red-500`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
 
 // Sun/Moon icon for time of day
 function TimeOfDayIcon({ hour }: { hour: number }) {
@@ -76,10 +123,16 @@ export function MobileTopBar({
   onCloseTile: () => void;
 }) {
   const { state, setSpeed, setTaxRate, isSaving } = useGame();
-  const { stats, year, month, hour, speed, taxRate, cityName } = state;
+  const { stats, year, month, hour, speed, taxRate, cityName, weather } = state;
   const [showDetails, setShowDetails] = useState(false);
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const seasonColors: Record<string, string> = {
+    spring: 'text-green-400',
+    summer: 'text-yellow-400',
+    fall: 'text-orange-400',
+    winter: 'text-blue-300',
+  };
 
   return (
     <>
@@ -103,6 +156,8 @@ export function MobileTopBar({
               <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
                 <span>{monthNames[month - 1]} {year}</span>
                 <TimeOfDayIcon hour={hour} />
+                <MobileWeatherIcon weather={weather} />
+                <span className={`${seasonColors[weather.season]} text-[8px] capitalize`}>{weather.season.slice(0, 2)}</span>
               </div>
             </button>
           </div>

@@ -3,7 +3,8 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
-import { Tool, TOOL_INFO, Tile, BuildingType, AdjacentCity } from '@/types/game';
+import { Tool, TOOL_INFO, Tile, BuildingType, AdjacentCity, WeatherState, WeatherType } from '@/types/game';
+import { getWeatherDescription, isPrecipitating, getSnowAccumulation } from '@/lib/weather';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency } from '@/lib/simulation';
 import { useMobile } from '@/hooks/useMobile';
 import { MobileToolbar } from '@/components/mobile/MobileToolbar';
@@ -89,6 +90,10 @@ import {
   DirectionMeta,
   WorldRenderState,
   OverlayMode,
+  RainDrop,
+  SnowFlake,
+  Cloud,
+  LightningBolt,
 } from '@/components/game/types';
 import {
   CAR_COLORS,
@@ -135,6 +140,47 @@ import {
   SMOG_MAX_PARTICLES_PER_FACTORY_MOBILE,
   DIRECTION_META,
   OPPOSITE_DIRECTION,
+  // Weather constants
+  WEATHER_PARTICLE_MAX_COUNT,
+  WEATHER_PARTICLE_MAX_COUNT_MOBILE,
+  RAIN_DROP_SPEED_MIN,
+  RAIN_DROP_SPEED_MAX,
+  RAIN_DROP_LENGTH,
+  RAIN_DROP_WIDTH,
+  RAIN_DROP_COLOR,
+  RAIN_ANGLE,
+  RAIN_SPAWN_RATE_LIGHT,
+  RAIN_SPAWN_RATE_MODERATE,
+  RAIN_SPAWN_RATE_HEAVY,
+  SNOW_FALL_SPEED_MIN,
+  SNOW_FALL_SPEED_MAX,
+  SNOW_PARTICLE_SIZE_MIN,
+  SNOW_PARTICLE_SIZE_MAX,
+  SNOW_COLOR,
+  SNOW_DRIFT_SPEED,
+  SNOW_SPAWN_RATE_LIGHT,
+  SNOW_SPAWN_RATE_MODERATE,
+  SNOW_SPAWN_RATE_HEAVY,
+  SNOW_ACCUMULATION_OPACITY,
+  LIGHTNING_FLASH_DURATION,
+  LIGHTNING_FLASH_INTERVAL_MIN,
+  LIGHTNING_FLASH_INTERVAL_MAX,
+  LIGHTNING_BOLT_SEGMENTS,
+  LIGHTNING_BOLT_COLOR,
+  LIGHTNING_FLASH_COLOR,
+  CLOUD_COUNT_MIN,
+  CLOUD_COUNT_MAX,
+  CLOUD_SPEED_MIN,
+  CLOUD_SPEED_MAX,
+  CLOUD_SIZE_MIN,
+  CLOUD_SIZE_MAX,
+  CLOUD_OPACITY_CLEAR,
+  CLOUD_OPACITY_CLOUDY,
+  CLOUD_OPACITY_RAIN,
+  CLOUD_OPACITY_STORM,
+  CLOUD_COLOR_NORMAL,
+  CLOUD_COLOR_STORM,
+  HEATWAVE_OVERLAY_COLOR,
 } from '@/components/game/constants';
 import {
   getOppositeDirection,
@@ -203,6 +249,74 @@ const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
   jobs: <JobsIcon size={18} />,
 };
 
+// Weather icon component
+const WeatherIcon = ({ weather }: { weather: WeatherState }) => {
+  const iconClass = "w-4 h-4";
+  
+  switch (weather.type) {
+    case 'clear':
+      return (
+        <svg className={`${iconClass} text-yellow-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18z" />
+        </svg>
+      );
+    case 'cloudy':
+      return (
+        <svg className={`${iconClass} text-gray-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004 6.072 6.072 0 01-.02-.496z" />
+        </svg>
+      );
+    case 'rain':
+      return (
+        <svg className={`${iconClass} text-blue-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004 6.072 6.072 0 01-.02-.496z" />
+          <path d="M8 14l-1 4M12 14l-1 4M16 14l-1 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+    case 'storm':
+      return (
+        <svg className={`${iconClass} text-purple-400`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004 6.072 6.072 0 01-.02-.496z" />
+          <path d="M13 12l-2 4h3l-2 4" stroke="yellow" strokeWidth="2" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+    case 'snow':
+      return (
+        <svg className={`${iconClass} text-blue-200`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004 6.072 6.072 0 01-.02-.496z" />
+          <circle cx="8" cy="16" r="1.5" fill="white" />
+          <circle cx="12" cy="18" r="1.5" fill="white" />
+          <circle cx="16" cy="16" r="1.5" fill="white" />
+        </svg>
+      );
+    case 'heatwave':
+      return (
+        <svg className={`${iconClass} text-red-500`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" />
+          <path fillRule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 01-3 3h-15a3 3 0 01-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 001.11-.71l.822-1.315a2.942 2.942 0 012.332-1.39zM6.75 12.75a5.25 5.25 0 1110.5 0 5.25 5.25 0 01-10.5 0zm12-1.5a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H19.5a.75.75 0 01-.75-.75v-.008z" clipRule="evenodd" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
+
+// Season display component
+const SeasonBadge = ({ season }: { season: string }) => {
+  const seasonColors: Record<string, string> = {
+    spring: 'text-green-400',
+    summer: 'text-yellow-400',
+    fall: 'text-orange-400',
+    winter: 'text-blue-300',
+  };
+  
+  return (
+    <span className={`text-xs capitalize ${seasonColors[season] || 'text-muted-foreground'}`}>
+      {season}
+    </span>
+  );
+};
+
 // Sun/Moon icon for time of day
 const TimeOfDayIcon = ({ hour }: { hour: number }) => {
   const isNight = hour < 6 || hour >= 20;
@@ -236,10 +350,11 @@ const TimeOfDayIcon = ({ hour }: { hour: number }) => {
 // Memoized TopBar Component
 const TopBar = React.memo(function TopBar() {
   const { state, setSpeed, setTaxRate, isSaving } = useGame();
-  const { stats, year, month, day, hour, speed, taxRate, cityName } = state;
+  const { stats, year, month, day, hour, speed, taxRate, cityName, weather } = state;
   
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
+  const weatherDesc = getWeatherDescription(weather);
   
   return (
     <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
@@ -261,6 +376,18 @@ const TopBar = React.memo(function TopBar() {
               </TooltipContent>
             </Tooltip>
             <TimeOfDayIcon hour={hour} />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex items-center gap-1 cursor-default">
+                  <WeatherIcon weather={weather} />
+                  <SeasonBadge season={weather.season} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{weatherDesc}</p>
+                <p className="text-xs text-muted-foreground mt-1 capitalize">{weather.season} • {weather.intensity}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
         
@@ -1844,7 +1971,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   onViewportChange?: (viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } }) => void;
 }) {
   const { state, placeAtTile, connectToCity, currentSpritePack } = useGame();
-  const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, hour } = state;
+  const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, hour, weather } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const carsCanvasRef = useRef<HTMLCanvasElement>(null);
   const lightingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1914,6 +2041,15 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   // Factory smog system refs
   const factorySmogRef = useRef<FactorySmog[]>([]);
   const smogLastGridVersionRef = useRef(-1); // Track when to rebuild factory list
+
+  // Weather particle system refs
+  const rainDropsRef = useRef<RainDrop[]>([]);
+  const snowFlakesRef = useRef<SnowFlake[]>([]);
+  const cloudsRef = useRef<Cloud[]>([]);
+  const lightningRef = useRef<LightningBolt | null>(null);
+  const lightningTimerRef = useRef(0);
+  const weatherCanvasRef = useRef<HTMLCanvasElement>(null);
+  const lastWeatherTypeRef = useRef<WeatherType>('clear');
 
   // Performance: Cache expensive grid calculations
   const cachedRoadTileCountRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
@@ -5190,6 +5326,258 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     ctx.restore();
   }, []);
 
+  // Update weather particles (rain, snow, clouds, lightning)
+  const updateWeather = useCallback((delta: number, currentWeather: WeatherState) => {
+    const { canvasSize } = worldStateRef.current;
+    const maxParticles = isMobile ? WEATHER_PARTICLE_MAX_COUNT_MOBILE : WEATHER_PARTICLE_MAX_COUNT;
+    
+    // Check if weather type changed - reset particles if so
+    if (currentWeather.type !== lastWeatherTypeRef.current) {
+      rainDropsRef.current = [];
+      snowFlakesRef.current = [];
+      lightningRef.current = null;
+      lastWeatherTypeRef.current = currentWeather.type;
+      
+      // Initialize clouds based on weather
+      const cloudCount = Math.floor(CLOUD_COUNT_MIN + currentWeather.cloudCover * (CLOUD_COUNT_MAX - CLOUD_COUNT_MIN));
+      if (cloudsRef.current.length !== cloudCount) {
+        cloudsRef.current = Array.from({ length: cloudCount }, () => ({
+          x: Math.random() * canvasSize.width * 1.5 - canvasSize.width * 0.25,
+          y: Math.random() * canvasSize.height * 0.3,
+          width: CLOUD_SIZE_MIN + Math.random() * (CLOUD_SIZE_MAX - CLOUD_SIZE_MIN),
+          height: (CLOUD_SIZE_MIN + Math.random() * (CLOUD_SIZE_MAX - CLOUD_SIZE_MIN)) * 0.5,
+          speed: CLOUD_SPEED_MIN + Math.random() * (CLOUD_SPEED_MAX - CLOUD_SPEED_MIN),
+          opacity: 0.5 + Math.random() * 0.3,
+          seed: Math.random() * 1000,
+        }));
+      }
+    }
+    
+    // Update clouds (always present, opacity varies)
+    for (const cloud of cloudsRef.current) {
+      cloud.x += cloud.speed * delta;
+      if (cloud.x > canvasSize.width + cloud.width) {
+        cloud.x = -cloud.width;
+        cloud.y = Math.random() * canvasSize.height * 0.3;
+      }
+    }
+    
+    // Spawn and update rain
+    if (currentWeather.type === 'rain' || currentWeather.type === 'storm') {
+      const spawnRate = currentWeather.intensity === 'heavy' ? RAIN_SPAWN_RATE_HEAVY :
+                       currentWeather.intensity === 'moderate' ? RAIN_SPAWN_RATE_MODERATE : RAIN_SPAWN_RATE_LIGHT;
+      const particlesToSpawn = Math.floor(spawnRate * delta * 100);
+      
+      for (let i = 0; i < particlesToSpawn && rainDropsRef.current.length < maxParticles; i++) {
+        rainDropsRef.current.push({
+          x: Math.random() * canvasSize.width * 1.2 - canvasSize.width * 0.1,
+          y: -20,
+          speed: RAIN_DROP_SPEED_MIN + Math.random() * (RAIN_DROP_SPEED_MAX - RAIN_DROP_SPEED_MIN),
+          opacity: 0.3 + Math.random() * 0.4,
+        });
+      }
+      
+      // Update rain drops
+      rainDropsRef.current = rainDropsRef.current.filter(drop => {
+        drop.y += drop.speed * delta;
+        drop.x += Math.sin(RAIN_ANGLE) * drop.speed * delta * 0.3;
+        return drop.y < canvasSize.height + 20;
+      });
+    }
+    
+    // Spawn and update snow
+    if (currentWeather.type === 'snow') {
+      const spawnRate = currentWeather.intensity === 'heavy' ? SNOW_SPAWN_RATE_HEAVY :
+                       currentWeather.intensity === 'moderate' ? SNOW_SPAWN_RATE_MODERATE : SNOW_SPAWN_RATE_LIGHT;
+      const particlesToSpawn = Math.floor(spawnRate * delta * 100);
+      
+      for (let i = 0; i < particlesToSpawn && snowFlakesRef.current.length < maxParticles; i++) {
+        snowFlakesRef.current.push({
+          x: Math.random() * canvasSize.width * 1.2 - canvasSize.width * 0.1,
+          y: -10,
+          speed: SNOW_FALL_SPEED_MIN + Math.random() * (SNOW_FALL_SPEED_MAX - SNOW_FALL_SPEED_MIN),
+          size: SNOW_PARTICLE_SIZE_MIN + Math.random() * (SNOW_PARTICLE_SIZE_MAX - SNOW_PARTICLE_SIZE_MIN),
+          driftPhase: Math.random() * Math.PI * 2,
+          opacity: 0.6 + Math.random() * 0.4,
+        });
+      }
+      
+      // Update snowflakes
+      snowFlakesRef.current = snowFlakesRef.current.filter(flake => {
+        flake.y += flake.speed * delta;
+        flake.driftPhase += delta * 2;
+        flake.x += Math.sin(flake.driftPhase) * SNOW_DRIFT_SPEED * delta;
+        return flake.y < canvasSize.height + 20;
+      });
+    }
+    
+    // Lightning during storms
+    if (currentWeather.type === 'storm') {
+      lightningTimerRef.current -= delta;
+      
+      if (lightningTimerRef.current <= 0) {
+        // Random chance for lightning
+        if (Math.random() < 0.3) {
+          // Create a lightning bolt
+          const startX = Math.random() * canvasSize.width;
+          const segments: { x: number; y: number }[] = [{ x: startX, y: 0 }];
+          let currentX = startX;
+          let currentY = 0;
+          
+          for (let i = 0; i < LIGHTNING_BOLT_SEGMENTS; i++) {
+            currentX += (Math.random() - 0.5) * 80;
+            currentY += canvasSize.height / LIGHTNING_BOLT_SEGMENTS;
+            segments.push({ x: currentX, y: currentY });
+          }
+          
+          lightningRef.current = {
+            startX,
+            startY: 0,
+            segments,
+            age: 0,
+            maxAge: LIGHTNING_FLASH_DURATION,
+          };
+        }
+        
+        // Reset timer
+        lightningTimerRef.current = LIGHTNING_FLASH_INTERVAL_MIN + 
+          Math.random() * (LIGHTNING_FLASH_INTERVAL_MAX - LIGHTNING_FLASH_INTERVAL_MIN);
+      }
+      
+      // Update existing lightning
+      if (lightningRef.current) {
+        lightningRef.current.age += delta;
+        if (lightningRef.current.age >= lightningRef.current.maxAge) {
+          lightningRef.current = null;
+        }
+      }
+    } else {
+      lightningRef.current = null;
+    }
+  }, [isMobile]);
+
+  // Draw weather effects on a separate canvas
+  const drawWeather = useCallback((ctx: CanvasRenderingContext2D, currentWeather: WeatherState) => {
+    const { canvasSize } = worldStateRef.current;
+    const dpr = window.devicePixelRatio || 1;
+    
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
+    // Draw clouds
+    const cloudOpacity = currentWeather.type === 'storm' ? CLOUD_OPACITY_STORM :
+                        currentWeather.type === 'rain' ? CLOUD_OPACITY_RAIN :
+                        currentWeather.type === 'cloudy' ? CLOUD_OPACITY_CLOUDY :
+                        currentWeather.type === 'snow' ? CLOUD_OPACITY_RAIN : CLOUD_OPACITY_CLEAR;
+    const cloudColor = currentWeather.type === 'storm' ? CLOUD_COLOR_STORM : CLOUD_COLOR_NORMAL;
+    
+    for (const cloud of cloudsRef.current) {
+      const finalOpacity = cloud.opacity * cloudOpacity * currentWeather.cloudCover;
+      if (finalOpacity < 0.05) continue;
+      
+      // Draw cloud as multiple overlapping ellipses
+      ctx.fillStyle = `${cloudColor}, ${finalOpacity})`;
+      
+      // Main body
+      ctx.beginPath();
+      ctx.ellipse(cloud.x * dpr, cloud.y * dpr, cloud.width * 0.5 * dpr, cloud.height * 0.5 * dpr, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Left bump
+      ctx.beginPath();
+      ctx.ellipse((cloud.x - cloud.width * 0.3) * dpr, (cloud.y + cloud.height * 0.1) * dpr, 
+                  cloud.width * 0.35 * dpr, cloud.height * 0.4 * dpr, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Right bump
+      ctx.beginPath();
+      ctx.ellipse((cloud.x + cloud.width * 0.35) * dpr, (cloud.y + cloud.height * 0.05) * dpr, 
+                  cloud.width * 0.4 * dpr, cloud.height * 0.45 * dpr, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Draw rain
+    if (currentWeather.type === 'rain' || currentWeather.type === 'storm') {
+      ctx.strokeStyle = RAIN_DROP_COLOR;
+      ctx.lineWidth = RAIN_DROP_WIDTH * dpr;
+      ctx.lineCap = 'round';
+      
+      for (const drop of rainDropsRef.current) {
+        ctx.globalAlpha = drop.opacity;
+        ctx.beginPath();
+        ctx.moveTo(drop.x * dpr, drop.y * dpr);
+        ctx.lineTo((drop.x + Math.sin(RAIN_ANGLE) * RAIN_DROP_LENGTH) * dpr, 
+                   (drop.y + RAIN_DROP_LENGTH) * dpr);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    
+    // Draw snow
+    if (currentWeather.type === 'snow') {
+      ctx.fillStyle = SNOW_COLOR;
+      
+      for (const flake of snowFlakesRef.current) {
+        ctx.globalAlpha = flake.opacity;
+        ctx.beginPath();
+        ctx.arc(flake.x * dpr, flake.y * dpr, flake.size * dpr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    
+    // Draw lightning flash
+    if (lightningRef.current && currentWeather.type === 'storm') {
+      const flashProgress = lightningRef.current.age / lightningRef.current.maxAge;
+      const flashOpacity = flashProgress < 0.3 ? 1 : 1 - ((flashProgress - 0.3) / 0.7);
+      
+      // Screen flash
+      ctx.fillStyle = `rgba(255, 255, 255, ${flashOpacity * 0.2})`;
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      
+      // Lightning bolt
+      ctx.strokeStyle = LIGHTNING_BOLT_COLOR;
+      ctx.lineWidth = 3 * dpr;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalAlpha = flashOpacity;
+      
+      ctx.beginPath();
+      const segments = lightningRef.current.segments;
+      ctx.moveTo(segments[0].x * dpr, segments[0].y * dpr);
+      for (let i = 1; i < segments.length; i++) {
+        ctx.lineTo(segments[i].x * dpr, segments[i].y * dpr);
+      }
+      ctx.stroke();
+      
+      // Glow effect
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 8 * dpr;
+      ctx.stroke();
+      
+      ctx.globalAlpha = 1;
+    }
+    
+    // Draw heatwave shimmer effect
+    if (currentWeather.type === 'heatwave') {
+      ctx.fillStyle = HEATWAVE_OVERLAY_COLOR;
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+    
+    // Draw snow accumulation overlay (white tint on the ground)
+    if (currentWeather.type === 'snow') {
+      const accumulation = getSnowAccumulation(currentWeather);
+      if (accumulation > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${accumulation * SNOW_ACCUMULATION_OPACITY * 0.15})`;
+        // Apply to bottom half of screen (ground level)
+        ctx.fillRect(0, ctx.canvas.height * 0.4, ctx.canvas.width, ctx.canvas.height * 0.6);
+      }
+    }
+    
+    ctx.restore();
+  }, []);
+
   // Draw emergency vehicles (fire trucks and police cars)
   const drawEmergencyVehicles = useCallback((ctx: CanvasRenderingContext2D) => {
     const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
@@ -7122,6 +7510,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         updateBoats(delta); // Update boats (marina/pier required)
         updateFireworks(delta, hour); // Update fireworks (nighttime only)
         updateSmog(delta); // Update factory smog particles
+        updateWeather(delta, weather); // Update weather particles
         navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
       }
       drawCars(ctx);
@@ -7137,7 +7526,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, hour, isMobile]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, updateWeather, hour, weather, isMobile]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {
@@ -7401,6 +7790,35 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     ctx.globalCompositeOperation = 'source-over';
     
   }, [grid, gridSize, hour, offset, zoom, canvasSize.width, canvasSize.height, isMobile]);
+
+  // Weather rendering effect - runs continuously for animated weather
+  useEffect(() => {
+    const canvas = weatherCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    let animationFrameId: number;
+    let lastTime = performance.now();
+    
+    const renderWeather = (time: number) => {
+      animationFrameId = requestAnimationFrame(renderWeather);
+      
+      const delta = Math.min((time - lastTime) / 1000, 0.1);
+      lastTime = time;
+      
+      // Only render weather if there's something to show
+      if (weather.type !== 'clear' || weather.cloudCover > 0.1) {
+        drawWeather(ctx, weather);
+      } else {
+        // Clear the canvas when weather is clear
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+    
+    animationFrameId = requestAnimationFrame(renderWeather);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [weather, drawWeather, canvasSize.width, canvasSize.height]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
@@ -7860,6 +8278,12 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"
         style={{ mixBlendMode: 'multiply' }}
+      />
+      <canvas
+        ref={weatherCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
       />
       
       {selectedTile && selectedTool === 'select' && !isMobile && (

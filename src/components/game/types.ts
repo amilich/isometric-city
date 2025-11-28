@@ -282,6 +282,41 @@ export type DirectionMeta = {
   normal: { nx: number; ny: number };
 };
 
+// Weather particle types
+export type RainDrop = {
+  x: number;
+  y: number;
+  speed: number;
+  opacity: number;
+};
+
+export type SnowFlake = {
+  x: number;
+  y: number;
+  speed: number;
+  size: number;
+  driftPhase: number; // For sine wave horizontal drift
+  opacity: number;
+};
+
+export type Cloud = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  speed: number;
+  opacity: number;
+  seed: number; // For consistent shape generation
+};
+
+export type LightningBolt = {
+  startX: number;
+  startY: number;
+  segments: { x: number; y: number }[];
+  age: number;
+  maxAge: number;
+};
+
 // World render state
 export type WorldRenderState = {
   grid: import('@/types/game').Tile[][];

@@ -14,12 +14,18 @@ import {
   Notification,
   AdjacentCity,
   WaterBody,
+  WeatherState,
   BUILDING_STATS,
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
   INDUSTRIAL_BUILDINGS,
+  WEATHER_EFFECTS,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import { createInitialWeather, updateWeather, getWeatherEffects, getSeasonalDaylight } from './weather';
+
+// Constants for game time - days pass 3x faster now
+const TICKS_PER_DAY = 10; // Was 30, now 10 for faster date passage
 
 // Check if a factory_small at this position would render as a farm
 // This matches the deterministic logic in Game.tsx for farm variant selection
@@ -646,13 +652,14 @@ function createServiceCoverage(size: number): ServiceCoverage {
 export function createInitialGameState(size: number = 60, cityName: string = 'New City'): GameState {
   const { grid, waterBodies } = generateTerrain(size);
   const adjacentCities = generateAdjacentCities();
+  const initialMonth = 1; // January
 
   return {
     grid,
     gridSize: size,
     cityName,
     year: 2024,
-    month: 1,
+    month: initialMonth,
     day: 1,
     hour: 12, // Start at noon
     tick: 0,
@@ -670,6 +677,7 @@ export function createInitialGameState(size: number = 60, cityName: string = 'Ne
     disastersEnabled: true,
     adjacentCities,
     waterBodies,
+    weather: createInitialWeather(initialMonth),
   };
 }
 
@@ -1604,12 +1612,16 @@ export function simulateTick(state: GameState): GameState {
         }
       }
 
-      // Random fire start
+      // Random fire start - weather affects fire risk
+      const weatherFireRisk = getWeatherEffects(state.weather).fireRiskModifier;
+      const baseFireChance = 0.00003;
+      const adjustedFireChance = baseFireChance * weatherFireRisk;
+      
       if (state.disastersEnabled && !tile.building.onFire && 
           tile.building.type !== 'grass' && tile.building.type !== 'water' && 
           tile.building.type !== 'road' && tile.building.type !== 'tree' &&
           tile.building.type !== 'empty' &&
-          Math.random() < 0.00003) {
+          Math.random() < adjustedFireChance) {
         tile.building.onFire = true;
         tile.building.fireProgress = 0;
       }
@@ -1635,14 +1647,51 @@ export function simulateTick(state: GameState): GameState {
   let newDay = state.day;
   let newTick = state.tick + 1;
   
+  // Update weather state
+  const newWeather = updateWeather(state.weather, newMonth);
+  
+  // Apply weather effects to stats
+  const weatherEffects = getWeatherEffects(newWeather);
+  newStats.happiness = Math.max(0, Math.min(100, newStats.happiness + weatherEffects.happinessModifier * 0.1));
+  
+  // Weather affects income (commercial/industrial productivity)
+  const weatherIncomeModifier = (weatherEffects.commercialModifier + weatherEffects.industrialModifier) / 2;
+  newStats.income = Math.floor(newStats.income * weatherIncomeModifier);
+  
+  // Weather affects expenses (power demand)
+  // Power costs increase during extreme weather
+  const powerCostIncrease = Math.floor(newBudget.power.cost * (weatherEffects.powerDemandModifier - 1));
+  newStats.expenses += powerCostIncrease;
+  
   // Calculate visual hour for day/night cycle (much slower than game time)
-  // One full day/night cycle = 15 game days (450 ticks)
+  // One full day/night cycle = 15 game days (150 ticks with new rate)
   // This makes the cycle atmospheric rather than jarring
-  const totalTicks = ((state.year - 2024) * 12 * 30 * 30) + ((state.month - 1) * 30 * 30) + ((state.day - 1) * 30) + newTick;
-  const cycleLength = 450; // ticks per visual day (15 game days)
-  const newHour = Math.floor((totalTicks % cycleLength) / cycleLength * 24);
+  const totalTicks = ((state.year - 2024) * 12 * 30 * TICKS_PER_DAY) + ((state.month - 1) * 30 * TICKS_PER_DAY) + ((state.day - 1) * TICKS_PER_DAY) + newTick;
+  const cycleLength = 150; // ticks per visual day (15 game days at new rate)
+  
+  // Get seasonal daylight adjustments
+  const { dawn, dusk } = getSeasonalDaylight(newWeather.daylightModifier);
+  const dayLength = dusk - dawn; // Hours of daylight
+  const nightLength = 24 - dayLength;
+  
+  // Calculate hour within the visual cycle, adjusted for seasonal daylight
+  const cycleProgress = (totalTicks % cycleLength) / cycleLength;
+  let newHour: number;
+  
+  if (cycleProgress < 0.5) {
+    // Daytime portion (0 to 0.5 of cycle)
+    const dayProgress = cycleProgress * 2; // 0 to 1
+    newHour = dawn + dayProgress * dayLength;
+  } else {
+    // Nighttime portion (0.5 to 1 of cycle)
+    const nightProgress = (cycleProgress - 0.5) * 2; // 0 to 1
+    newHour = dusk + nightProgress * nightLength;
+    if (newHour >= 24) newHour -= 24;
+  }
+  newHour = Math.floor(newHour);
 
-  if (newTick >= 30) {
+  // Day advancement uses the new faster rate
+  if (newTick >= TICKS_PER_DAY) {
     newTick = 0;
     newDay++;
     // Weekly income/expense (deposit every 7 days at 1/4 monthly rate)
@@ -1704,6 +1753,7 @@ export function simulateTick(state: GameState): GameState {
     advisorMessages,
     notifications: newNotifications,
     history,
+    weather: newWeather,
   };
 }
 

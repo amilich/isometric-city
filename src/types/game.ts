@@ -305,6 +305,153 @@ export interface WaterBody {
   centerY: number;
 }
 
+// Season types based on months
+export type Season = 'spring' | 'summer' | 'fall' | 'winter';
+
+// Weather condition types
+export type WeatherType = 'clear' | 'cloudy' | 'rain' | 'storm' | 'snow' | 'heatwave';
+
+// Weather intensity (affects visuals and economic impact)
+export type WeatherIntensity = 'light' | 'moderate' | 'heavy';
+
+// Full weather state
+export interface WeatherState {
+  type: WeatherType;
+  intensity: WeatherIntensity;
+  season: Season;
+  // Duration remaining in ticks
+  duration: number;
+  // Time until next weather change (ticks)
+  nextChangeIn: number;
+  // Visual state
+  cloudCover: number; // 0-1
+  // Season-based day length modifier (affects visual day/night cycle)
+  daylightModifier: number; // -2 to +2 hours offset
+}
+
+// Get season from month
+export function getSeasonFromMonth(month: number): Season {
+  if (month >= 3 && month <= 5) return 'spring';
+  if (month >= 6 && month <= 8) return 'summer';
+  if (month >= 9 && month <= 11) return 'fall';
+  return 'winter'; // December, January, February
+}
+
+// Season configuration
+export const SEASON_CONFIG: Record<Season, {
+  daylightModifier: number;
+  temperatureRange: { min: number; max: number };
+  weatherProbabilities: Record<WeatherType, number>;
+}> = {
+  spring: {
+    daylightModifier: 0,
+    temperatureRange: { min: 45, max: 70 },
+    weatherProbabilities: {
+      clear: 0.35,
+      cloudy: 0.30,
+      rain: 0.30,
+      storm: 0.05,
+      snow: 0.0,
+      heatwave: 0.0,
+    },
+  },
+  summer: {
+    daylightModifier: 2, // Longer days
+    temperatureRange: { min: 70, max: 95 },
+    weatherProbabilities: {
+      clear: 0.50,
+      cloudy: 0.20,
+      rain: 0.15,
+      storm: 0.10,
+      snow: 0.0,
+      heatwave: 0.05,
+    },
+  },
+  fall: {
+    daylightModifier: -1, // Shorter days
+    temperatureRange: { min: 40, max: 65 },
+    weatherProbabilities: {
+      clear: 0.30,
+      cloudy: 0.35,
+      rain: 0.30,
+      storm: 0.05,
+      snow: 0.0,
+      heatwave: 0.0,
+    },
+  },
+  winter: {
+    daylightModifier: -2, // Shortest days
+    temperatureRange: { min: 20, max: 45 },
+    weatherProbabilities: {
+      clear: 0.25,
+      cloudy: 0.30,
+      rain: 0.10,
+      storm: 0.05,
+      snow: 0.30,
+      heatwave: 0.0,
+    },
+  },
+};
+
+// Weather economic effects (multipliers and modifiers)
+export const WEATHER_EFFECTS: Record<WeatherType, {
+  commercialModifier: number;   // Multiplier for commercial demand/income
+  industrialModifier: number;   // Multiplier for industrial productivity
+  residentialModifier: number;  // Multiplier for residential happiness
+  powerDemandModifier: number;  // Additional power demand
+  fireRiskModifier: number;     // Fire risk multiplier
+  happinessModifier: number;    // Direct happiness effect
+}> = {
+  clear: {
+    commercialModifier: 1.0,
+    industrialModifier: 1.0,
+    residentialModifier: 1.0,
+    powerDemandModifier: 1.0,
+    fireRiskModifier: 1.0,
+    happinessModifier: 0,
+  },
+  cloudy: {
+    commercialModifier: 0.98,
+    industrialModifier: 1.0,
+    residentialModifier: 0.98,
+    powerDemandModifier: 1.0,
+    fireRiskModifier: 0.9,
+    happinessModifier: -1,
+  },
+  rain: {
+    commercialModifier: 0.90,
+    industrialModifier: 0.95,
+    residentialModifier: 0.95,
+    powerDemandModifier: 1.05,
+    fireRiskModifier: 0.3,
+    happinessModifier: -3,
+  },
+  storm: {
+    commercialModifier: 0.75,
+    industrialModifier: 0.80,
+    residentialModifier: 0.85,
+    powerDemandModifier: 1.15,
+    fireRiskModifier: 1.5, // Lightning can cause fires
+    happinessModifier: -8,
+  },
+  snow: {
+    commercialModifier: 0.80,
+    industrialModifier: 0.85,
+    residentialModifier: 0.90,
+    powerDemandModifier: 1.25, // Heating
+    fireRiskModifier: 0.5,
+    happinessModifier: -5,
+  },
+  heatwave: {
+    commercialModifier: 0.85,
+    industrialModifier: 0.80,
+    residentialModifier: 0.85,
+    powerDemandModifier: 1.40, // AC demand
+    fireRiskModifier: 2.0, // Increased fire risk
+    happinessModifier: -10,
+  },
+};
+
 export interface GameState {
   grid: Tile[][];
   gridSize: number;
@@ -328,6 +475,7 @@ export interface GameState {
   disastersEnabled: boolean;
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];
+  weather: WeatherState;
 }
 
 // Building evolution paths based on zone and level

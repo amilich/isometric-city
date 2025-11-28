@@ -47,6 +47,61 @@ export const SMOG_PARTICLE_GROWTH = 0.5; // How much particles grow per second
 export const SMOG_MAX_PARTICLES_PER_FACTORY = 25; // Maximum particles per factory to prevent memory issues
 export const SMOG_MAX_PARTICLES_PER_FACTORY_MOBILE = 12; // Lower limit on mobile
 
+// Weather visual system constants
+export const WEATHER_PARTICLE_MAX_COUNT = 500; // Maximum weather particles (rain/snow)
+export const WEATHER_PARTICLE_MAX_COUNT_MOBILE = 150; // Lower on mobile for performance
+
+// Rain particle constants
+export const RAIN_DROP_SPEED_MIN = 400; // pixels per second
+export const RAIN_DROP_SPEED_MAX = 600;
+export const RAIN_DROP_LENGTH = 15; // Length of rain streak in pixels
+export const RAIN_DROP_WIDTH = 1.5;
+export const RAIN_DROP_COLOR = 'rgba(180, 200, 255, 0.6)';
+export const RAIN_ANGLE = 0.15; // Slight angle to simulate wind (radians)
+export const RAIN_SPAWN_RATE_LIGHT = 0.02; // Particles per pixel area per second (light rain)
+export const RAIN_SPAWN_RATE_MODERATE = 0.05;
+export const RAIN_SPAWN_RATE_HEAVY = 0.1;
+
+// Snow particle constants
+export const SNOW_FALL_SPEED_MIN = 30; // Much slower than rain
+export const SNOW_FALL_SPEED_MAX = 80;
+export const SNOW_PARTICLE_SIZE_MIN = 2;
+export const SNOW_PARTICLE_SIZE_MAX = 5;
+export const SNOW_COLOR = 'rgba(255, 255, 255, 0.9)';
+export const SNOW_DRIFT_SPEED = 20; // Horizontal drift in pixels per second
+export const SNOW_SPAWN_RATE_LIGHT = 0.015;
+export const SNOW_SPAWN_RATE_MODERATE = 0.04;
+export const SNOW_SPAWN_RATE_HEAVY = 0.08;
+
+// Snow accumulation on ground/buildings (visual overlay)
+export const SNOW_ACCUMULATION_OPACITY = 0.4; // White overlay opacity on buildings
+
+// Lightning constants
+export const LIGHTNING_FLASH_DURATION = 0.15; // seconds
+export const LIGHTNING_FLASH_INTERVAL_MIN = 3; // seconds between flashes
+export const LIGHTNING_FLASH_INTERVAL_MAX = 15;
+export const LIGHTNING_BOLT_SEGMENTS = 8;
+export const LIGHTNING_BOLT_COLOR = 'rgba(200, 220, 255, 0.95)';
+export const LIGHTNING_FLASH_COLOR = 'rgba(255, 255, 255, 0.3)'; // Screen flash
+
+// Cloud system constants
+export const CLOUD_COUNT_MIN = 3;
+export const CLOUD_COUNT_MAX = 12;
+export const CLOUD_SPEED_MIN = 5; // pixels per second
+export const CLOUD_SPEED_MAX = 20;
+export const CLOUD_SIZE_MIN = 100;
+export const CLOUD_SIZE_MAX = 300;
+export const CLOUD_OPACITY_CLEAR = 0.3;
+export const CLOUD_OPACITY_CLOUDY = 0.6;
+export const CLOUD_OPACITY_RAIN = 0.8;
+export const CLOUD_OPACITY_STORM = 0.9;
+export const CLOUD_COLOR_NORMAL = 'rgba(255, 255, 255';
+export const CLOUD_COLOR_STORM = 'rgba(80, 80, 100';
+
+// Heatwave visual constants
+export const HEATWAVE_SHIMMER_INTENSITY = 0.03; // Distortion amount
+export const HEATWAVE_OVERLAY_COLOR = 'rgba(255, 200, 100, 0.08)'; // Warm tint
+
 // Firework system constants
 export const FIREWORK_BUILDINGS: BuildingType[] = ['baseball_stadium', 'amusement_park', 'marina_docks_small', 'pier_large'];
 export const FIREWORK_COLORS = [

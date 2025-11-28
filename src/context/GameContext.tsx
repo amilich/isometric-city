@@ -159,6 +159,23 @@ function loadGameState(): GameState | null {
         if (parsed.effectiveTaxRate === undefined) {
           parsed.effectiveTaxRate = parsed.taxRate ?? 9; // Start at current tax rate
         }
+        // Ensure weather state exists for backward compatibility
+        if (!parsed.weather) {
+          // Import dynamically to avoid circular dependencies
+          const month = parsed.month ?? 1;
+          const season = month >= 3 && month <= 5 ? 'spring' :
+                        month >= 6 && month <= 8 ? 'summer' :
+                        month >= 9 && month <= 11 ? 'fall' : 'winter';
+          parsed.weather = {
+            type: 'clear',
+            intensity: 'light',
+            season,
+            duration: 50,
+            nextChangeIn: 50,
+            cloudCover: 0.1,
+            daylightModifier: season === 'summer' ? 2 : season === 'winter' ? -2 : season === 'fall' ? -1 : 0,
+          };
+        }
         // Migrate constructionProgress for existing buildings (they're already built)
         if (parsed.grid) {
           for (let y = 0; y < parsed.grid.length; y++) {
@@ -563,6 +580,22 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Ensure effectiveTaxRate exists for lagging tax effect
         if (parsed.effectiveTaxRate === undefined) {
           parsed.effectiveTaxRate = parsed.taxRate ?? 9;
+        }
+        // Ensure weather state exists for backward compatibility
+        if (!parsed.weather) {
+          const month = parsed.month ?? 1;
+          const season = month >= 3 && month <= 5 ? 'spring' :
+                        month >= 6 && month <= 8 ? 'summer' :
+                        month >= 9 && month <= 11 ? 'fall' : 'winter';
+          parsed.weather = {
+            type: 'clear',
+            intensity: 'light',
+            season,
+            duration: 50,
+            nextChangeIn: 50,
+            cloudCover: 0.1,
+            daylightModifier: season === 'summer' ? 2 : season === 'winter' ? -2 : season === 'fall' ? -1 : 0,
+          };
         }
         // Migrate constructionProgress for existing buildings (they're already built)
         if (parsed.grid) {

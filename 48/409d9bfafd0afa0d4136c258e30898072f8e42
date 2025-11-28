@@ -1,7 +1,8 @@
 AI Notes:
 
-src/components/game/vehicleSystems.ts: +564-565[0],+568-574[0],+576[0] -564-565[0],-568-571[0]
+src/components/game/vehicleSystems.ts: +564-565[0],+568-573[0],+574[1],+576[0] -564-565[0],-568-571[0]
 
 Conversations:
 
 [0]: f074b5b6-5660-4958-a63f-5454af710591; Adjust mobile rendering thresholds; claude-4.5-opus-high-thinking;
+[1]: c84ccf7e-dfe9-468a-8904-c27391b5efad; Reduce car visibility on mobile; claude-4.5-opus-high-thinking;

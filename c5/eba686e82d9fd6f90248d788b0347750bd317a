@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +4164[0],+4168-4171[0] -4164[0]
+src/lib/renderConfig.ts: +325[0],+333[0] -325[0],-333[0]
+
+Conversations:
+
+[0]: 14a90f10-c19a-4fe7-8786-36e5b4224117; Shift museum asset position; composer-1;

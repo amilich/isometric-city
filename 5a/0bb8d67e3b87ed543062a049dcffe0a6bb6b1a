@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +41[0],+1915-1924[0],+6700-6701[0] -6689-6690[0]
+src/lib/renderConfig.ts: +214[0],+216-218[0],+232[0] -214[0],-216-218[0]
+
+Conversations:
+
+[0]: 8b83d401-dcb6-4ac5-8b10-edc7d7ad27e3; Adjust office construction asset position; claude-4.5-opus-high-thinking;

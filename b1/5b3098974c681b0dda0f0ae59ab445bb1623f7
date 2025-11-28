@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +3874-3876[0] -3823-3837[0],-3839-3843[0],-3874-3879[0],-3903-3905[0]
+
+Conversations:
+
+[0]: 18530400-d17f-4067-b3c7-36c82135bd19; Add state toggle for settings; claude-4.5-opus-high-thinking;

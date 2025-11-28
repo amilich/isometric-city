@@ -94,6 +94,14 @@ const QuickToolIcons: Partial<Record<Tool, React.ReactNode>> = {
     </svg>
   ),
   road: <RoadIcon size={20} />,
+  rail: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M6 4l12 16" />
+      <path d="M18 4L6 20" />
+      <path d="M4 8h16" />
+      <path d="M4 16h16" />
+    </svg>
+  ),
   subway: <SubwayIcon size={20} />,
   tree: <TreeIcon size={20} />,
   zone_residential: (
@@ -188,9 +196,9 @@ const QuickToolIcons: Partial<Record<Tool, React.ReactNode>> = {
 };
 
 const toolCategories = {
-  'TOOLS': ['select', 'bulldoze', 'road', 'subway'] as Tool[],
+  'TOOLS': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
   'ZONES': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
-  'UTILITIES': ['power_plant', 'water_tower', 'subway_station'] as Tool[],
+  'UTILITIES': ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
   'SERVICES': ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[],
   'PARKS': ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[],
   'SPORTS': ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[],
@@ -281,6 +289,15 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
               onClick={() => handleToolSelect('road')}
             >
               {QuickToolIcons.road}
+            </Button>
+
+            <Button
+              variant={selectedTool === 'rail' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-11 w-11"
+              onClick={() => handleToolSelect('rail')}
+            >
+              {QuickToolIcons.rail}
             </Button>
 
             {/* Zone buttons */}

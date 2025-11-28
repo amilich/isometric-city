@@ -119,6 +119,25 @@ export function findStations(
 }
 
 /**
+ * Find all rail stations in the grid
+ */
+export function findRailStations(
+  grid: Tile[][],
+  gridSize: number
+): { x: number; y: number }[] {
+  if (!grid || gridSize <= 0) return [];
+  const stations: { x: number; y: number }[] = [];
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      if (grid[y][x].building.type === 'rail_station') {
+        stations.push({ x, y });
+      }
+    }
+  }
+  return stations;
+}
+
+/**
  * Find all active fires in the grid
  */
 export function findFires(

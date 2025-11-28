@@ -4,6 +4,14 @@ import { CarDirection, DirectionMeta, TILE_WIDTH, TILE_HEIGHT } from './types';
 // Vehicle colors (duller/muted versions)
 export const CAR_COLORS = ['#d97777', '#d4a01f', '#2ba67a', '#4d84c8', '#9a6ac9'];
 
+// Train rendering constants
+export const TRAIN_COLORS = ['#f87171', '#60a5fa', '#fbbf24', '#34d399'];
+export const TRAIN_MIN_STATIONS = 2;
+export const TRAIN_MAX_TRAINS = 12;
+export const TRAIN_SPAWN_INTERVAL = 6; // seconds between spawn attempts
+export const TRAIN_DWELL_TIME = 3; // seconds trains wait at stations
+export const TRAIN_SPEED_RANGE = { min: 0.7, max: 1.1 }; // tiles per second
+
 // Pedestrian appearance colors
 export const PEDESTRIAN_SKIN_COLORS = ['#fdbf7e', '#e0ac69', '#c68642', '#8d5524', '#613318'];
 export const PEDESTRIAN_SHIRT_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#ffffff', '#1f2937'];

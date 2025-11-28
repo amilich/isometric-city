@@ -711,7 +711,7 @@ function createTile(x: number, y: number, buildingType: BuildingType = 'grass'):
 }
 
 // Building types that don't require construction (already complete when placed)
-const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'tree'];
+const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'rail', 'tree'];
 
 function createBuilding(type: BuildingType): Building {
   // Buildings that don't require construction start at 100% complete
@@ -2207,18 +2207,28 @@ export function placeBuilding(
   // Can't build on water
   if (tile.building.type === 'water') return state;
 
-  // Can't place roads on existing buildings (only allow on grass, tree, or existing roads)
-  // Note: 'empty' tiles are part of multi-tile building footprints, so roads can't be placed there either
-  if (buildingType === 'road') {
-    const allowedTypes: BuildingType[] = ['grass', 'tree', 'road'];
+  const linearInfrastructure: BuildingType[] = ['road', 'rail'];
+  const isLinearPlacement = buildingType ? linearInfrastructure.includes(buildingType) : false;
+  const tileHasLinear = linearInfrastructure.includes(tile.building.type);
+
+  if (buildingType && isLinearPlacement) {
+    const allowedTypes: BuildingType[] =
+      buildingType === 'rail'
+        ? ['grass', 'tree', 'rail']
+        : ['grass', 'tree', 'road'];
     if (!allowedTypes.includes(tile.building.type)) {
-      return state; // Can't place road on existing building
+      return state; // Can't place linear infrastructure here
     }
   }
 
-  // Only roads can be placed on roads - all other buildings require clearing the road first
-  if (buildingType && buildingType !== 'road' && tile.building.type === 'road') {
-    return state;
+  // Only linear infrastructure can be placed on existing linear tiles,
+  // except rail stations which can be built on top of rail to create stops
+  if (buildingType && !isLinearPlacement && tileHasLinear) {
+    const canConvertRail =
+      buildingType === 'rail_station' && tile.building.type === 'rail';
+    if (!canConvertRail) {
+      return state;
+    }
   }
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
@@ -2288,9 +2298,14 @@ export function placeBuilding(
     } else {
       // Single tile building - check if tile is available
       // Can't place on water, existing buildings, or 'empty' tiles (part of multi-tile buildings)
-      // Note: 'road' is included here so roads can extend over existing roads,
-      // but non-road buildings are already blocked from roads by the check above
+      // Note: 'road' and 'rail' are included here so infrastructure can extend over existing tiles of the same type,
+      // but non-linear buildings are already blocked from these by the check above
       const allowedTypes: BuildingType[] = ['grass', 'tree', 'road'];
+      if (buildingType === 'rail') {
+        allowedTypes.push('rail');
+      } else if (buildingType === 'rail_station') {
+        allowedTypes.push('rail');
+      }
       if (!allowedTypes.includes(tile.building.type)) {
         return state; // Can't place on existing building or part of multi-tile building
       }

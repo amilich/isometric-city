@@ -5,6 +5,7 @@ export type BuildingType =
   | 'grass'
   | 'water'
   | 'road'
+  | 'rail'
   | 'tree'
   // Residential
   | 'house_small'
@@ -37,6 +38,7 @@ export type BuildingType =
   | 'water_tower'
   // Transportation
   | 'subway_station'
+  | 'rail_station'
   // Special
   | 'stadium'
   | 'museum'
@@ -79,6 +81,7 @@ export type Tool =
   | 'select'
   | 'bulldoze'
   | 'road'
+  | 'rail'
   | 'subway'
   | 'tree'
   | 'zone_residential'
@@ -96,6 +99,7 @@ export type Tool =
   | 'power_plant'
   | 'water_tower'
   | 'subway_station'
+  | 'rail_station'
   | 'stadium'
   | 'museum'
   | 'airport'
@@ -142,6 +146,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   select: { name: 'Select', cost: 0, description: 'Click to view tile info' },
   bulldoze: { name: 'Bulldoze', cost: 10, description: 'Remove buildings and zones' },
   road: { name: 'Road', cost: 25, description: 'Connect your city' },
+  rail: { name: 'Rail', cost: 60, description: 'Surface rail for trains' },
   subway: { name: 'Subway', cost: 50, description: 'Underground transit' },
   tree: { name: 'Tree', cost: 15, description: 'Plant trees to improve environment' },
   zone_residential: { name: 'Residential', cost: 50, description: 'Zone for housing' },
@@ -159,6 +164,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   power_plant: { name: 'Power Plant', cost: 3000, description: 'Generate electricity (2x2)', size: 2 },
   water_tower: { name: 'Water Tower', cost: 1000, description: 'Provide water', size: 1 },
   subway_station: { name: 'Subway Station', cost: 750, description: 'Access to subway network', size: 1 },
+  rail_station: { name: 'Rail Station', cost: 1500, description: 'Passenger rail hub (1x1)', size: 1 },
   stadium: { name: 'Stadium', cost: 5000, description: 'Boosts commercial demand (3x3)', size: 3 },
   museum: { name: 'Museum', cost: 4000, description: 'Boosts commercial & residential demand (3x3)', size: 3 },
   airport: { name: 'Airport', cost: 10000, description: 'Boosts commercial & industrial demand (4x4)', size: 4 },
@@ -341,6 +347,7 @@ export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: num
   grass: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
   water: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 5 },
   road: { maxPop: 0, maxJobs: 0, pollution: 2, landValue: 0 },
+  rail: { maxPop: 0, maxJobs: 0, pollution: 1, landValue: 2 },
   tree: { maxPop: 0, maxJobs: 0, pollution: -5, landValue: 2 },
   house_small: { maxPop: 6, maxJobs: 0, pollution: 0, landValue: 10 },
   house_medium: { maxPop: 14, maxJobs: 0, pollution: 0, landValue: 22 },
@@ -371,6 +378,7 @@ export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: num
   airport: { maxPop: 0, maxJobs: 200, pollution: 20, landValue: 50 },
   space_program: { maxPop: 0, maxJobs: 150, pollution: 5, landValue: 80 },
   subway_station: { maxPop: 0, maxJobs: 15, pollution: 0, landValue: 25 },
+  rail_station: { maxPop: 0, maxJobs: 20, pollution: 0, landValue: 30 },
   city_hall: { maxPop: 0, maxJobs: 60, pollution: 0, landValue: 50 },
   amusement_park: { maxPop: 0, maxJobs: 100, pollution: 8, landValue: 60 },
   // Parks (new sprite sheet)

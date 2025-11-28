@@ -13,6 +13,13 @@ export function isRoadTile(gridData: Tile[][], gridSizeValue: number, x: number,
   return gridData[y][x].building.type === 'road';
 }
 
+// Check if a tile is a rail (tracks or station)
+export function isRailTile(gridData: Tile[][], gridSizeValue: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSizeValue || y >= gridSizeValue) return false;
+  const type = gridData[y][x].building.type;
+  return type === 'rail' || type === 'rail_station';
+}
+
 // Get available direction options from a tile
 export function getDirectionOptions(gridData: Tile[][], gridSizeValue: number, x: number, y: number): CarDirection[] {
   const options: CarDirection[] = [];
@@ -20,6 +27,16 @@ export function getDirectionOptions(gridData: Tile[][], gridSizeValue: number, x
   if (isRoadTile(gridData, gridSizeValue, x, y - 1)) options.push('east');
   if (isRoadTile(gridData, gridSizeValue, x + 1, y)) options.push('south');
   if (isRoadTile(gridData, gridSizeValue, x, y + 1)) options.push('west');
+  return options;
+}
+
+// Get rail direction options
+export function getRailDirectionOptions(gridData: Tile[][], gridSizeValue: number, x: number, y: number): CarDirection[] {
+  const options: CarDirection[] = [];
+  if (isRailTile(gridData, gridSizeValue, x - 1, y)) options.push('north');
+  if (isRailTile(gridData, gridSizeValue, x, y - 1)) options.push('east');
+  if (isRailTile(gridData, gridSizeValue, x + 1, y)) options.push('south');
+  if (isRailTile(gridData, gridSizeValue, x, y + 1)) options.push('west');
   return options;
 }
 
@@ -158,6 +175,54 @@ export function findPathOnRoads(
   }
   
   return null; // No path found
+}
+
+// BFS pathfinding directly on rail network between two rail tiles
+export function findPathOnRails(
+  gridData: Tile[][],
+  gridSizeValue: number,
+  startX: number,
+  startY: number,
+  targetX: number,
+  targetY: number
+): { x: number; y: number }[] | null {
+  if (!isRailTile(gridData, gridSizeValue, startX, startY)) return null;
+  if (!isRailTile(gridData, gridSizeValue, targetX, targetY)) return null;
+
+  const queue: { x: number; y: number; path: { x: number; y: number }[] }[] = [
+    { x: startX, y: startY, path: [{ x: startX, y: startY }] },
+  ];
+  const visited = new Set<string>([`${startX},${startY}`]);
+  const directions = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+  ];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current.x === targetX && current.y === targetY) {
+      return current.path;
+    }
+
+    for (const { dx, dy } of directions) {
+      const nx = current.x + dx;
+      const ny = current.y + dy;
+      const key = `${nx},${ny}`;
+      if (nx < 0 || ny < 0 || nx >= gridSizeValue || ny >= gridSizeValue) continue;
+      if (visited.has(key)) continue;
+      if (!isRailTile(gridData, gridSizeValue, nx, ny)) continue;
+      visited.add(key);
+      queue.push({
+        x: nx,
+        y: ny,
+        path: [...current.path, { x: nx, y: ny }],
+      });
+    }
+  }
+
+  return null;
 }
 
 // Get direction from current tile to next tile

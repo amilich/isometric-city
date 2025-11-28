@@ -22,6 +22,22 @@ export type Car = {
   laneOffset: number;
 };
 
+// Train types for surface rail system
+export type Train = {
+  id: number;
+  path: { x: number; y: number }[];
+  pathIndex: number;
+  progress: number;
+  speed: number;
+  direction: 1 | -1;
+  color: string;
+  length: number;
+  state: 'moving' | 'dwell';
+  dwellTimer: number;
+  fromStation: { x: number; y: number };
+  toStation: { x: number; y: number };
+};
+
 // Airplane types for airport animation
 export type AirplaneState = 'flying' | 'landing' | 'taking_off' | 'taxiing';
 

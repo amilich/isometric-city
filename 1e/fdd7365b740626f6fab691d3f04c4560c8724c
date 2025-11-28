@@ -1,7 +1,8 @@
 AI Notes:
 
-src/components/game/CanvasIsometricGrid.tsx: +4379-4380[0],+4383-4388[0] -4380-4382[0]
+src/components/game/CanvasIsometricGrid.tsx: +4379-4380[0],+4383-4388[0] -4380[1],-4381-4382[0]
 
 Conversations:
 
 [0]: 2163f615-4f07-46db-af37-cb6fabb34282; 2163f615; unknown;
+[1]: e3ac0890-d5a4-47bf-920c-74fdd2a3a2fc; Adjust building orientation to face road; claude-4.5-opus-high-thinking;

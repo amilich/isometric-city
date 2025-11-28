@@ -4,4 +4,4 @@ src/components/game/CanvasIsometricGrid.tsx: +4379-4380[0],+4383-4388[0] -4380-4
 
 Conversations:
 
-[0]: 2163f615-4f07-46db-af37-cb6fabb34282; Do not apply random mirror to waterfront; composer-1;
+[0]: 2163f615-4f07-46db-af37-cb6fabb34282; 2163f615; unknown;

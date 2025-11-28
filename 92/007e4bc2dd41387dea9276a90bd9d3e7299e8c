@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/mobile/MobileToolbar.tsx: +345-346[0] -345-349[0]
+src/lib/renderConfig.ts: +169-170[1],+188[1],+204[1] -169-170[1],-188[1],-204[1]
+
+Conversations:
+
+[0]: 31672e72-63c9-4611-9f5d-2a6156e57d2a; Hide desktop overlay on mobile; claude-4.5-opus-high-thinking;
+[1]: 05d87c85-3ce8-451a-8032-ffa46e95e36d; Improve game mechanics for more fun; claude-4.5-opus-high-thinking;

@@ -4,4 +4,4 @@ src/lib/simulation.ts: +811-812[0],+814-815[0] -811-812[0],-814-815[0]
 
 Conversations:
 
-[0]: 0e468b58-9db7-4703-853d-2817b3c48f42; Increase effect range for institutions; claude-4.5-opus-high-thinking;
+[0]: 0e468b58-9db7-4703-853d-2817b3c48f42; 0e468b58; unknown;

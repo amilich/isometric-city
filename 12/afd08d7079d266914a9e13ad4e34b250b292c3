@@ -4,4 +4,4 @@ src/components/game/panels/SettingsPanel.tsx: +268-269[0],+279-280[0],+290-291[0
 
 Conversations:
 
-[0]: d50cb6a1-8d0a-4ea2-9dcc-5d64b2a70edf; Load example states asynchronously on press; claude-4.5-opus-high-thinking;
+[0]: d50cb6a1-8d0a-4ea2-9dcc-5d64b2a70edf; d50cb6a1; unknown;

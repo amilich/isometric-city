@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/Game.tsx: +2594[0],+2595[1],+2598[1],+2600[1],+2606[1],+3222-3223[2],+3590-3591[3]
+
+Conversations:
+
+[0]: 128ff917-6560-402f-9df5-72513dbf9a32; Improve mobile game performance; claude-4.5-opus-high-thinking;
+[1]: 77e1d9e2-594d-4bdf-b2c2-fe97ea8e7fcf; 77e1d9e2; unknown;
+[2]: 5b9d9075-82bf-44b7-87ed-68916b35ad86; Triple the number of planes; composer-1;
+[3]: 7d49953a-db62-4977-bb15-2ce56b92f149; Slightly too many boats; claude-4.5-opus-high-thinking;

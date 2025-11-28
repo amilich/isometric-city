@@ -1,8 +1,9 @@
 AI Notes:
 
-src/components/game/CanvasIsometricGrid.tsx: +3155-3158[0]
+src/components/game/CanvasIsometricGrid.tsx: +3155-3157[0],+3158[1]
 src/lib/renderConfig.ts: +223[0],+361[0] -360[0]
 
 Conversations:
 
 [0]: 695a34e0-2e23-4647-904c-e5390ebcf0b8; Make car colors duller; composer-1;
+[1]: bfe0028f-19a1-4c73-9be7-151c2c399826; Investigate sidewalk tile issues; claude-4.5-opus-high-thinking;

@@ -11,6 +11,7 @@ export * from './renderHelpers';
 export * from './drawAircraft';
 export * from './drawPedestrians';
 export * from './trafficSystem';
+export * from './railSystem';
 export { Sidebar } from './Sidebar';
 export { OverlayModeToggle } from './OverlayModeToggle';
 export { MiniMap } from './MiniMap';

@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +7357-7363[0]
+src/context/GameContext.tsx: +415[0],+448[0],+453-456[0],+458[0],+482-485[0] -415[0],-448[0]
+
+Conversations:
+
+[0]: 78e93c8f-a05a-42ff-bd9c-28e2f0563651; Mobile drawer scrolling issue; composer-1;

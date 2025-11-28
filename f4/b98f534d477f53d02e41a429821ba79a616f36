@@ -1,0 +1,13 @@
+AI Notes:
+
+src/components/Game.tsx: -755[0],-771[0],-772[1],-773-774[0],-775[1],-789-790[0],-791[1],-792[0],-793[1],-794-795[0],-796[1],-799-800[2],-7956[3],-7991[3]
+src/components/mobile/MobileToolbar.tsx: +347[4]
+src/lib/simulation.ts: -645-646[2],-1466-1467[2],-1506-1507[2],-1510-1511[2],-1516-1517[2],-1520[2],-1748[2]
+
+Conversations:
+
+[0]: 128ff917-6560-402f-9df5-72513dbf9a32; Improve mobile game performance; claude-4.5-opus-high-thinking;
+[1]: 3095e105-01c5-4d92-9fcd-7a60cdcb04a1; Refactor game.tsx for better readability; claude-4.5-opus-high-thinking;
+[2]: 51c38e8f-2bf6-420c-97f6-b708c8ac0249; Optimize performance for isometric sim city game; claude-4.5-opus-high-thinking;
+[3]: c9c3dfad-5969-4c38-b601-5fc81cd0b116; Add airplane mechanics to city simulation; claude-4.5-opus-high-thinking;
+[4]: 4cf7d407-ad1c-4f4b-8058-edc84b4bdd45; Overlays not visible on mobile; composer-1;

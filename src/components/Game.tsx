@@ -236,10 +236,25 @@ const TimeOfDayIcon = ({ hour }: { hour: number }) => {
 // Memoized TopBar Component
 const TopBar = React.memo(function TopBar() {
   const { state, setSpeed, setTaxRate, isSaving } = useGame();
-  const { stats, year, month, day, hour, speed, taxRate, cityName } = state;
+  const { stats, year, month, day, hour, speed, taxRate, cityName, weather, season } = state;
   
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
+  
+  const seasonNames: Record<string, string> = {
+    spring: 'Spring',
+    summer: 'Summer',
+    fall: 'Fall',
+    winter: 'Winter',
+  };
+  
+  const weatherIcons: Record<string, string> = {
+    clear: '☀️',
+    rain: '🌧️',
+    snow: '❄️',
+    lightning: '⛈️',
+    heat: '🌡️',
+  };
   
   return (
     <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
@@ -261,6 +276,23 @@ const TopBar = React.memo(function TopBar() {
               </TooltipContent>
             </Tooltip>
             <TimeOfDayIcon hour={hour} />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex items-center gap-1">
+                  {weatherIcons[weather.type] || '☀️'} {seasonNames[season] || 'Spring'}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {weather.type === 'clear' ? 'Clear' : 
+                   weather.type === 'rain' ? 'Rain' :
+                   weather.type === 'snow' ? 'Snow' :
+                   weather.type === 'lightning' ? 'Thunderstorm' :
+                   weather.type === 'heat' ? 'Heat Wave' : 'Clear'}
+                  {weather.type !== 'clear' && ` (${Math.round(weather.intensity)}%)`}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
         
@@ -5190,6 +5222,146 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     ctx.restore();
   }, []);
 
+  // Weather rendering - clouds, rain, snow, lightning
+  const drawWeather = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const { weather, tick } = state;
+    
+    if (!currentGrid || currentGridSize <= 0 || weather.type === 'clear') {
+      return;
+    }
+    
+    ctx.save();
+    ctx.scale(dpr * currentZoom, dpr * currentZoom);
+    ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
+    
+    const viewWidth = canvas.width / (dpr * currentZoom);
+    const viewHeight = canvas.height / (dpr * currentZoom);
+    const viewLeft = -currentOffset.x / currentZoom - 200;
+    const viewTop = -currentOffset.y / currentZoom - 300;
+    const viewRight = viewWidth - currentOffset.x / currentZoom + 200;
+    const viewBottom = viewHeight - currentOffset.y / currentZoom + 200;
+    
+    const intensity = weather.intensity / 100;
+    
+    // Draw clouds (like contrails/smog, aesthetically pleasing)
+    if (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'lightning') {
+      const cloudCount = Math.floor(15 + intensity * 20);
+      for (let i = 0; i < cloudCount; i++) {
+        const seed = (i * 137.5 + tick * 0.1) % 1000;
+        const cloudX = viewLeft + (seed % (viewRight - viewLeft));
+        const cloudY = viewTop + (Math.sin(seed) * 50 + 50);
+        const cloudSize = 40 + Math.sin(seed * 2) * 20;
+        const cloudOpacity = 0.3 + intensity * 0.4;
+        
+        // Draw cloud as soft, billowy shapes (like contrails)
+        ctx.fillStyle = `rgba(180, 180, 190, ${cloudOpacity})`;
+        ctx.beginPath();
+        ctx.arc(cloudX, cloudY, cloudSize, 0, Math.PI * 2);
+        ctx.arc(cloudX + cloudSize * 0.6, cloudY - cloudSize * 0.3, cloudSize * 0.8, 0, Math.PI * 2);
+        ctx.arc(cloudX - cloudSize * 0.5, cloudY - cloudSize * 0.2, cloudSize * 0.7, 0, Math.PI * 2);
+        ctx.arc(cloudX + cloudSize * 0.3, cloudY + cloudSize * 0.4, cloudSize * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Draw rain
+    if (weather.type === 'rain') {
+      const rainDropCount = Math.floor(100 + intensity * 200);
+      ctx.strokeStyle = `rgba(150, 180, 220, ${0.4 + intensity * 0.4})`;
+      ctx.lineWidth = 1;
+      
+      for (let i = 0; i < rainDropCount; i++) {
+        const seed = (i * 97.3 + tick * 2) % 10000;
+        const rainX = viewLeft + (seed % (viewRight - viewLeft));
+        const rainY = viewTop + ((seed * 1.7) % (viewBottom - viewTop));
+        const rainLength = 8 + intensity * 12;
+        
+        ctx.beginPath();
+        ctx.moveTo(rainX, rainY);
+        ctx.lineTo(rainX + 2, rainY + rainLength);
+        ctx.stroke();
+      }
+    }
+    
+    // Draw snow
+    if (weather.type === 'snow') {
+      const snowFlakeCount = Math.floor(80 + intensity * 120);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + intensity * 0.3})`;
+      
+      for (let i = 0; i < snowFlakeCount; i++) {
+        const seed = (i * 113.7 + tick * 0.5) % 10000;
+        const snowX = viewLeft + (seed % (viewRight - viewLeft));
+        const snowY = viewTop + ((seed * 0.8) % (viewBottom - viewTop));
+        const snowSize = 2 + Math.sin(seed) * 1.5;
+        
+        ctx.beginPath();
+        ctx.arc(snowX, snowY, snowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add sparkle effect
+        if (Math.random() < 0.1) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.9})`;
+          ctx.beginPath();
+          ctx.arc(snowX, snowY, snowSize * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + intensity * 0.3})`;
+        }
+      }
+      
+      // Draw snow accumulation on roads and buildings
+      if (intensity > 0.5) {
+        for (let y = 0; y < currentGridSize; y++) {
+          for (let x = 0; x < currentGridSize; x++) {
+            const tile = currentGrid[y][x];
+            if (tile.building.type === 'road' || 
+                (tile.building.type !== 'grass' && tile.building.type !== 'water' && tile.building.type !== 'tree')) {
+              const [screenX, screenY] = gridToScreen(x, y);
+              if (screenX >= viewLeft && screenX <= viewRight && screenY >= viewTop && screenY <= viewBottom) {
+                const snowCoverage = intensity * 0.3;
+                ctx.fillStyle = `rgba(255, 255, 255, ${snowCoverage})`;
+                ctx.fillRect(screenX - TILE_WIDTH / 2, screenY - TILE_HEIGHT / 2, TILE_WIDTH, TILE_HEIGHT * 0.3);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Draw lightning
+    if (weather.type === 'lightning') {
+      const lightningChance = intensity * 0.02;
+      if (Math.random() < lightningChance) {
+        const lightningX = viewLeft + Math.random() * (viewRight - viewLeft);
+        const lightningY = viewTop;
+        const lightningLength = (viewBottom - viewTop) * 0.8;
+        
+        ctx.strokeStyle = `rgba(255, 255, 200, ${0.9})`;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(255, 255, 200, 0.8)';
+        
+        ctx.beginPath();
+        ctx.moveTo(lightningX, lightningY);
+        let currentX = lightningX;
+        let currentY = lightningY;
+        const segments = 8;
+        for (let i = 1; i <= segments; i++) {
+          currentY = lightningY + (lightningLength / segments) * i;
+          currentX += (Math.random() - 0.5) * 30;
+          ctx.lineTo(currentX, currentY);
+        }
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0;
+      }
+    }
+    
+    ctx.restore();
+  }, [state.weather, state.tick, state]);
+
   // Draw emergency vehicles (fire trucks and police cars)
   const drawEmergencyVehicles = useCallback((ctx: CanvasRenderingContext2D) => {
     const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
@@ -7177,6 +7349,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       drawPedestrians(ctx); // Draw pedestrians (zoom-gated)
       drawBoats(ctx); // Draw boats on water
       drawSmog(ctx); // Draw factory smog (above ground, below aircraft)
+      drawWeather(ctx); // Draw weather effects (clouds, rain, snow, lightning)
       drawEmergencyVehicles(ctx); // Draw emergency vehicles!
       drawIncidentIndicators(ctx, delta); // Draw fire/crime incident indicators!
       drawHelicopters(ctx); // Draw helicopters (below planes, above ground)
@@ -7186,7 +7359,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, hour, isMobile]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, drawWeather, hour, isMobile]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {

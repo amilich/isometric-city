@@ -564,6 +564,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         if (parsed.effectiveTaxRate === undefined) {
           parsed.effectiveTaxRate = parsed.taxRate ?? 9;
         }
+        // Ensure weather and season exist for weather system
+        if (!parsed.weather || !parsed.season) {
+          // Determine season from month
+          const month = parsed.month ?? 1;
+          let season: 'spring' | 'summer' | 'fall' | 'winter';
+          if (month >= 3 && month <= 5) season = 'spring';
+          else if (month >= 6 && month <= 8) season = 'summer';
+          else if (month >= 9 && month <= 11) season = 'fall';
+          else season = 'winter';
+          
+          parsed.season = season;
+          parsed.weather = {
+            type: 'clear',
+            intensity: 0,
+            duration: 0,
+            temperature: season === 'spring' ? 15 : season === 'summer' ? 28 : season === 'fall' ? 12 : -2,
+          };
+        }
         // Migrate constructionProgress for existing buildings (they're already built)
         if (parsed.grid) {
           for (let y = 0; y < parsed.grid.length; y++) {

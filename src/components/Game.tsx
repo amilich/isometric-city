@@ -5465,35 +5465,78 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
-    // Draw clouds
+    // Draw clouds - soft, fluffy appearance
     const cloudOpacity = currentWeather.type === 'storm' ? CLOUD_OPACITY_STORM :
                         currentWeather.type === 'rain' ? CLOUD_OPACITY_RAIN :
                         currentWeather.type === 'cloudy' ? CLOUD_OPACITY_CLOUDY :
                         currentWeather.type === 'snow' ? CLOUD_OPACITY_RAIN : CLOUD_OPACITY_CLEAR;
-    const cloudColor = currentWeather.type === 'storm' ? CLOUD_COLOR_STORM : CLOUD_COLOR_NORMAL;
+    const isStorm = currentWeather.type === 'storm';
     
     for (const cloud of cloudsRef.current) {
       const finalOpacity = cloud.opacity * cloudOpacity * currentWeather.cloudCover;
-      if (finalOpacity < 0.05) continue;
+      if (finalOpacity < 0.03) continue;
       
-      // Draw cloud as multiple overlapping ellipses
-      ctx.fillStyle = `${cloudColor}, ${finalOpacity})`;
+      const cx = cloud.x * dpr;
+      const cy = cloud.y * dpr;
+      const w = cloud.width * dpr;
+      const h = cloud.height * dpr;
       
-      // Main body
+      // Use the cloud's seed for consistent pseudo-random puffs
+      const seed = cloud.seed;
+      const puffCount = 5 + Math.floor((seed % 4));
+      
+      // Draw cloud using multiple soft radial gradients for a fluffy look
+      for (let i = 0; i < puffCount; i++) {
+        // Deterministic positions based on seed
+        const angle = (seed * 0.1 + i * 1.3) % (Math.PI * 2);
+        const dist = (0.15 + ((seed * (i + 1)) % 100) / 250) * w;
+        const puffX = cx + Math.cos(angle) * dist * 0.6;
+        const puffY = cy + Math.sin(angle) * dist * 0.3;
+        const puffRadius = (0.25 + ((seed * (i + 2)) % 100) / 400) * w;
+        
+        // Create soft radial gradient for each puff
+        const gradient = ctx.createRadialGradient(
+          puffX, puffY, 0,
+          puffX, puffY, puffRadius
+        );
+        
+        if (isStorm) {
+          // Dark storm clouds
+          gradient.addColorStop(0, `rgba(90, 95, 110, ${finalOpacity * 0.7})`);
+          gradient.addColorStop(0.4, `rgba(70, 75, 90, ${finalOpacity * 0.5})`);
+          gradient.addColorStop(1, `rgba(60, 65, 80, 0)`);
+        } else {
+          // Light fluffy clouds
+          gradient.addColorStop(0, `rgba(255, 255, 255, ${finalOpacity * 0.6})`);
+          gradient.addColorStop(0.3, `rgba(250, 252, 255, ${finalOpacity * 0.4})`);
+          gradient.addColorStop(0.7, `rgba(245, 248, 255, ${finalOpacity * 0.15})`);
+          gradient.addColorStop(1, `rgba(240, 245, 255, 0)`);
+        }
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(puffX, puffY, puffRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Add a central highlight for depth
+      const centerGradient = ctx.createRadialGradient(
+        cx, cy - h * 0.1, 0,
+        cx, cy, w * 0.35
+      );
+      
+      if (isStorm) {
+        centerGradient.addColorStop(0, `rgba(100, 105, 120, ${finalOpacity * 0.4})`);
+        centerGradient.addColorStop(1, `rgba(70, 75, 90, 0)`);
+      } else {
+        centerGradient.addColorStop(0, `rgba(255, 255, 255, ${finalOpacity * 0.5})`);
+        centerGradient.addColorStop(0.5, `rgba(252, 254, 255, ${finalOpacity * 0.25})`);
+        centerGradient.addColorStop(1, `rgba(248, 250, 255, 0)`);
+      }
+      
+      ctx.fillStyle = centerGradient;
       ctx.beginPath();
-      ctx.ellipse(cloud.x * dpr, cloud.y * dpr, cloud.width * 0.5 * dpr, cloud.height * 0.5 * dpr, 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Left bump
-      ctx.beginPath();
-      ctx.ellipse((cloud.x - cloud.width * 0.3) * dpr, (cloud.y + cloud.height * 0.1) * dpr, 
-                  cloud.width * 0.35 * dpr, cloud.height * 0.4 * dpr, 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Right bump
-      ctx.beginPath();
-      ctx.ellipse((cloud.x + cloud.width * 0.35) * dpr, (cloud.y + cloud.height * 0.05) * dpr, 
-                  cloud.width * 0.4 * dpr, cloud.height * 0.45 * dpr, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy, w * 0.35, h * 0.4, 0, 0, Math.PI * 2);
       ctx.fill();
     }
     

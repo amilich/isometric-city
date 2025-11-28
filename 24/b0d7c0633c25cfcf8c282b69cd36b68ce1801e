@@ -6,9 +6,9 @@ src/lib/simulation.ts: +24-25[1],+782[1],+2439-2440[3],+2442[3],+2450-2451[3],+2
 
 Conversations:
 
-[0]: 56312f3a-881c-4602-a519-f56c5753e818; Create button for random city state; claude-4.5-opus-high-thinking;
-[1]: 9297b35d-665c-411e-9c10-622e76c8dc5c; Make the maps larger; claude-4.5-opus-high-thinking;
-[2]: 18530400-d17f-4067-b3c7-36c82135bd19; Add state toggle for settings; claude-4.5-opus-high-thinking;
-[3]: 0e468b58-9db7-4703-853d-2817b3c48f42; Increase effect range for institutions; claude-4.5-opus-high-thinking;
+[0]: 56312f3a-881c-4602-a519-f56c5753e818; 56312f3a; unknown;
+[1]: 9297b35d-665c-411e-9c10-622e76c8dc5c; 9297b35d; unknown;
+[2]: 18530400-d17f-4067-b3c7-36c82135bd19; 18530400; unknown;
+[3]: 0e468b58-9db7-4703-853d-2817b3c48f42; 0e468b58; unknown;
 [4]: 5071c7d2-d420-4b8c-ae7d-b14747f583fd; 5071c7d2; unknown;
-[5]: 66e8f76a-de8e-4e98-8a3d-93a7d68a7664; Fixing low education levels in town; composer-1;
+[5]: 66e8f76a-de8e-4e98-8a3d-93a7d68a7664; 66e8f76a; unknown;

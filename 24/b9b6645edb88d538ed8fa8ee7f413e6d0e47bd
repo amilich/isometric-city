@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/Game.tsx: +2063-2068[0],+2073[0],+2075[1],+2077[0] -2302[2]
+
+Conversations:
+
+[0]: ddd9a431-ffd0-453d-8147-e1f9df1e58a1; Add assets to sprite page; composer-1;
+[1]: 1e16f708-0ce1-4981-9c91-0e6a88f180ed; Shift mini golf down by 0.2 tiles; composer-1;
+[2]: 2b6d3493-3a37-4dfe-a712-99a535cef514; 2b6d3493; unknown;

@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +3557-3561[0],+3585-3590[0],+3594[0] -3579-3581[0],-3584[0]
+
+Conversations:
+
+[0]: bddee576-0d85-4b26-aa0c-103bd8c70107; Optimize night lighting performance; claude-4.5-opus-high-thinking;

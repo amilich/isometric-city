@@ -1,0 +1,11 @@
+AI Notes:
+
+src/components/Game.tsx: +6838[0],+7358-7362[0] -6838[0],-7358[0]
+src/components/mobile/MobileTopBar.tsx: +5[0],+8[0],+22[0],+69-77[0],+173-174[0],+175-201[1],+203-221[1],+223-227[1],+229-233[1],+235-250[1] -66[0]
+src/lib/renderConfig.ts: +213[2],+215[2],+217[2],+219[2],+306[2],+318[2],+327-328[2] -213[2],-215[0],-217[0],-305[2],-317[2]
+
+Conversations:
+
+[0]: d69cffff-7dd9-4c86-96b8-8645cea4e501; Update tile caption font and mobile layout; composer-1;
+[1]: a8f02b35-2d5a-47dc-a177-abf18d36ad0d; Improve MobileTopBar tile design; claude-4.5-opus-high-thinking;
+[2]: 920d9d5a-64b1-4baa-9202-b574611a9015; Design new marina game mechanics; claude-4.5-opus-high-thinking;

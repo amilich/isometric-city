@@ -1,7 +1,8 @@
 AI Notes:
 
-src/components/game/CanvasIsometricGrid.tsx: +2400[0],+2417-2427[0],+2447-2457[0] -2416-2418[0],-2438-2440[0]
+src/components/game/CanvasIsometricGrid.tsx: +2400[0],+2417-2426[0],+2427[1],+2447-2456[0],+2457[1] -2416-2418[0],-2438-2440[0]
 
 Conversations:
 
 [0]: bfe0028f-19a1-4c73-9be7-151c2c399826; Investigate sidewalk tile issues; claude-4.5-opus-high-thinking;
+[1]: dcd6b6cf-032b-402d-ada9-7b99c47daf59; Define asset usage for new sprites; claude-4.5-opus-high-thinking;

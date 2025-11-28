@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import {
   CloseIcon,
   RoadIcon,
+  RailIcon,
   SubwayIcon,
   TreeIcon,
   PowerIcon,
@@ -94,6 +95,7 @@ const QuickToolIcons: Partial<Record<Tool, React.ReactNode>> = {
     </svg>
   ),
   road: <RoadIcon size={20} />,
+  rail: <RailIcon size={20} />,
   subway: <SubwayIcon size={20} />,
   tree: <TreeIcon size={20} />,
   zone_residential: (
@@ -149,6 +151,7 @@ const QuickToolIcons: Partial<Record<Tool, React.ReactNode>> = {
   power_plant: <PowerIcon size={20} />,
   water_tower: <WaterIcon size={20} />,
   subway_station: <SubwayIcon size={20} />,
+  rail_station: <SubwayIcon size={20} />, // Use subway icon for now
   stadium: <TrophyIcon size={20} />,
   museum: (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -188,9 +191,9 @@ const QuickToolIcons: Partial<Record<Tool, React.ReactNode>> = {
 };
 
 const toolCategories = {
-  'TOOLS': ['select', 'bulldoze', 'road', 'subway'] as Tool[],
+    'TOOLS': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
   'ZONES': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
-  'UTILITIES': ['power_plant', 'water_tower', 'subway_station'] as Tool[],
+    'UTILITIES': ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
   'SERVICES': ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[],
   'PARKS': ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[],
   'SPORTS': ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[],

@@ -13,13 +13,29 @@ export function isRoadTile(gridData: Tile[][], gridSizeValue: number, x: number,
   return gridData[y][x].building.type === 'road';
 }
 
-// Get available direction options from a tile
+// Check if a tile is a rail
+export function isRailTile(gridData: Tile[][], gridSizeValue: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSizeValue || y >= gridSizeValue) return false;
+  return gridData[y][x].building.type === 'rail';
+}
+
+// Get available direction options from a tile (for roads)
 export function getDirectionOptions(gridData: Tile[][], gridSizeValue: number, x: number, y: number): CarDirection[] {
   const options: CarDirection[] = [];
   if (isRoadTile(gridData, gridSizeValue, x - 1, y)) options.push('north');
   if (isRoadTile(gridData, gridSizeValue, x, y - 1)) options.push('east');
   if (isRoadTile(gridData, gridSizeValue, x + 1, y)) options.push('south');
   if (isRoadTile(gridData, gridSizeValue, x, y + 1)) options.push('west');
+  return options;
+}
+
+// Get available direction options from a rail tile
+export function getRailDirectionOptions(gridData: Tile[][], gridSizeValue: number, x: number, y: number): CarDirection[] {
+  const options: CarDirection[] = [];
+  if (isRailTile(gridData, gridSizeValue, x - 1, y)) options.push('north');
+  if (isRailTile(gridData, gridSizeValue, x, y - 1)) options.push('east');
+  if (isRailTile(gridData, gridSizeValue, x + 1, y)) options.push('south');
+  if (isRailTile(gridData, gridSizeValue, x, y + 1)) options.push('west');
   return options;
 }
 
@@ -158,6 +174,127 @@ export function findPathOnRoads(
   }
   
   return null; // No path found
+}
+
+// BFS pathfinding on rail network - finds path from start to a tile adjacent to target
+export function findPathOnRails(
+  gridData: Tile[][],
+  gridSizeValue: number,
+  startX: number,
+  startY: number,
+  targetX: number,
+  targetY: number
+): { x: number; y: number }[] | null {
+  // Find the nearest rail tile to the target
+  const targetRail = findNearestRailToBuilding(gridData, gridSizeValue, targetX, targetY);
+  if (!targetRail) return null;
+  
+  // Find the nearest rail tile to the start
+  const startRail = findNearestRailToBuilding(gridData, gridSizeValue, startX, startY);
+  if (!startRail) return null;
+  
+  // If start and target rails are the same, return a simple path
+  if (startRail.x === targetRail.x && startRail.y === targetRail.y) {
+    return [{ x: startRail.x, y: startRail.y }];
+  }
+  
+  // BFS from start rail to target rail
+  const queue: { x: number; y: number; path: { x: number; y: number }[] }[] = [
+    { x: startRail.x, y: startRail.y, path: [{ x: startRail.x, y: startRail.y }] }
+  ];
+  const visited = new Set<string>();
+  visited.add(`${startRail.x},${startRail.y}`);
+  
+  const directions = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+  ];
+  
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    
+    // Check if we reached the target rail
+    if (current.x === targetRail.x && current.y === targetRail.y) {
+      return current.path;
+    }
+    
+    for (const { dx, dy } of directions) {
+      const nx = current.x + dx;
+      const ny = current.y + dy;
+      const key = `${nx},${ny}`;
+      
+      if (nx < 0 || ny < 0 || nx >= gridSizeValue || ny >= gridSizeValue) continue;
+      if (visited.has(key)) continue;
+      if (!isRailTile(gridData, gridSizeValue, nx, ny)) continue;
+      
+      visited.add(key);
+      queue.push({
+        x: nx,
+        y: ny,
+        path: [...current.path, { x: nx, y: ny }],
+      });
+    }
+  }
+  
+  return null; // No path found
+}
+
+// Find the nearest rail tile adjacent to a building
+export function findNearestRailToBuilding(
+  gridData: Tile[][],
+  gridSizeValue: number,
+  buildingX: number,
+  buildingY: number
+): { x: number; y: number } | null {
+  // Check adjacent tiles first (distance 1) - including diagonals
+  const adjacentOffsets = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+    { dx: -1, dy: -1 },
+    { dx: -1, dy: 1 },
+    { dx: 1, dy: -1 },
+    { dx: 1, dy: 1 },
+  ];
+  
+  for (const { dx, dy } of adjacentOffsets) {
+    const nx = buildingX + dx;
+    const ny = buildingY + dy;
+    if (isRailTile(gridData, gridSizeValue, nx, ny)) {
+      return { x: nx, y: ny };
+    }
+  }
+  
+  // BFS to find nearest rail within reasonable distance
+  const queue: { x: number; y: number; dist: number }[] = [{ x: buildingX, y: buildingY, dist: 0 }];
+  const visited = new Set<string>();
+  visited.add(`${buildingX},${buildingY}`);
+  
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current.dist > 20) break;
+    
+    for (const { dx, dy } of adjacentOffsets) {
+      const nx = current.x + dx;
+      const ny = current.y + dy;
+      const key = `${nx},${ny}`;
+      
+      if (nx < 0 || ny < 0 || nx >= gridSizeValue || ny >= gridSizeValue) continue;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      
+      if (isRailTile(gridData, gridSizeValue, nx, ny)) {
+        return { x: nx, y: ny };
+      }
+      
+      queue.push({ x: nx, y: ny, dist: current.dist + 1 });
+    }
+  }
+  
+  return null;
 }
 
 // Get direction from current tile to next tile

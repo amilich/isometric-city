@@ -44,6 +44,7 @@ export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {
   power_plant: { top: '#9ca3af', left: '#6b7280', right: '#d1d5db', height: 1.0 },
   water_tower: { top: '#60a5fa', left: '#3b82f6', right: '#93c5fd', height: 1.4 },
   subway_station: { top: '#6b7280', left: '#4b5563', right: '#9ca3af', height: 0.5 },
+  rail_station: { top: '#6b7280', left: '#4b5563', right: '#9ca3af', height: 0.5 },
   // Special - golds
   stadium: { top: '#fbbf24', left: '#f59e0b', right: '#fcd34d', height: 0.8 },
   museum: { top: '#e879f9', left: '#d946ef', right: '#f0abfc', height: 0.9 },

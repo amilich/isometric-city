@@ -225,7 +225,7 @@ export const Sidebar = React.memo(function Sidebar() {
   
   // Direct tool categories (shown inline)
   const directCategories = useMemo(() => ({
-    'TOOLS': ['select', 'bulldoze', 'road', 'subway'] as Tool[],
+    'TOOLS': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
     'ZONES': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
   }), []);
   
@@ -264,7 +264,7 @@ export const Sidebar = React.memo(function Sidebar() {
     { 
       key: 'utilities', 
       label: 'Utilities', 
-      tools: ['power_plant', 'water_tower', 'subway_station'] as Tool[],
+      tools: ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
       forceOpenUpward: true
     },
     { 

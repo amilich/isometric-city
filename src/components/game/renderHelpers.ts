@@ -20,7 +20,7 @@ export interface ViewportBounds {
 /**
  * Building types that don't occlude vehicles/pedestrians
  */
-const NON_OCCLUDING_TYPES: BuildingType[] = ['road', 'grass', 'empty', 'water', 'tree'];
+const NON_OCCLUDING_TYPES: BuildingType[] = ['road', 'rail', 'grass', 'empty', 'water', 'tree'];
 
 /**
  * Calculate viewport bounds for rendering culling

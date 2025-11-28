@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react';
-import { Car, CarDirection, EmergencyVehicle, EmergencyVehicleType, Pedestrian, PedestrianDestType, WorldRenderState, TILE_WIDTH, TILE_HEIGHT } from './types';
+import { Car, Train, CarDirection, EmergencyVehicle, EmergencyVehicleType, Pedestrian, PedestrianDestType, WorldRenderState, TILE_WIDTH, TILE_HEIGHT } from './types';
 import { CAR_COLORS, PEDESTRIAN_SKIN_COLORS, PEDESTRIAN_SHIRT_COLORS, PEDESTRIAN_MIN_ZOOM, DIRECTION_META } from './constants';
-import { isRoadTile, getDirectionOptions, pickNextDirection, findPathOnRoads, getDirectionToTile, gridToScreen } from './utils';
+import { isRoadTile, isRailTile, getDirectionOptions, getRailDirectionOptions, pickNextDirection, findPathOnRoads, findPathOnRails, getDirectionToTile, gridToScreen, getOppositeDirection } from './utils';
 import { findResidentialBuildings, findPedestrianDestinations, findStations, findFires } from './gridFinders';
 import { drawPedestrians as drawPedestriansUtil } from './drawPedestrians';
 import { BuildingType, Tile } from '@/types/game';
@@ -12,6 +12,9 @@ export interface VehicleSystemRefs {
   carsRef: React.MutableRefObject<Car[]>;
   carIdRef: React.MutableRefObject<number>;
   carSpawnTimerRef: React.MutableRefObject<number>;
+  trainsRef: React.MutableRefObject<Train[]>;
+  trainIdRef: React.MutableRefObject<number>;
+  trainSpawnTimerRef: React.MutableRefObject<number>;
   emergencyVehiclesRef: React.MutableRefObject<EmergencyVehicle[]>;
   emergencyVehicleIdRef: React.MutableRefObject<number>;
   emergencyDispatchTimerRef: React.MutableRefObject<number>;
@@ -48,6 +51,9 @@ export function useVehicleSystems(
     carsRef,
     carIdRef,
     carSpawnTimerRef,
+    trainsRef,
+    trainIdRef,
+    trainSpawnTimerRef,
     emergencyVehiclesRef,
     emergencyVehicleIdRef,
     emergencyDispatchTimerRef,
@@ -1268,6 +1274,220 @@ export function useVehicleSystems(
     ctx.restore();
   }, [worldStateRef, activeCrimeIncidentsRef]);
 
+  // Train system - similar to cars but on rails
+  const spawnRandomTrain = useCallback(() => {
+    const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    if (!currentGrid || currentGridSize <= 0) return false;
+    
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const tileX = Math.floor(Math.random() * currentGridSize);
+      const tileY = Math.floor(Math.random() * currentGridSize);
+      if (!isRailTile(currentGrid, currentGridSize, tileX, tileY)) continue;
+      
+      const options = getRailDirectionOptions(currentGrid, currentGridSize, tileX, tileY);
+      if (options.length === 0) continue;
+      
+      const direction = options[Math.floor(Math.random() * options.length)];
+      // Track offset: -1 for left track, +1 for right track
+      const trackOffset = Math.random() < 0.5 ? -1 : 1;
+      
+      trainsRef.current.push({
+        id: trainIdRef.current++,
+        tileX,
+        tileY,
+        direction,
+        progress: Math.random() * 0.8,
+        speed: (0.25 + Math.random() * 0.15) * 0.7, // Trains are slower than cars
+        age: 0,
+        maxAge: Infinity,
+        color: '#1a1a1a', // Dark train color
+        trackOffset: trackOffset * 5, // Offset for which track (left or right)
+      });
+      return true;
+    }
+    
+    return false;
+  }, [worldStateRef, trainIdRef, trainsRef]);
+
+  const pickNextRailDirection = useCallback((
+    previousDirection: CarDirection,
+    gridData: Tile[][],
+    gridSizeValue: number,
+    x: number,
+    y: number
+  ): CarDirection | null => {
+    const options = getRailDirectionOptions(gridData, gridSizeValue, x, y);
+    if (options.length === 0) return null;
+    const incoming = getOppositeDirection(previousDirection);
+    const filtered = options.filter(dir => dir !== incoming);
+    const pool = filtered.length > 0 ? filtered : options;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }, []);
+
+  const updateTrains = useCallback((delta: number) => {
+    const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed } = worldStateRef.current;
+    if (!currentGrid || currentGridSize <= 0) {
+      return;
+    }
+    
+    const speedMultiplier = currentSpeed === 0 ? 0 : currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2.5 : 4;
+    
+    const baseMaxTrains = 50;
+    const maxTrains = Math.min(baseMaxTrains, Math.max(10, Math.floor(currentGridSize * 0.6)));
+    trainSpawnTimerRef.current -= delta;
+    if (trainsRef.current.length < maxTrains && trainSpawnTimerRef.current <= 0) {
+      const trainsToSpawn = Math.min(2, maxTrains - trainsRef.current.length);
+      let spawnedCount = 0;
+      for (let i = 0; i < trainsToSpawn; i++) {
+        if (spawnRandomTrain()) {
+          spawnedCount++;
+        }
+      }
+      trainSpawnTimerRef.current = spawnedCount > 0 ? 0.5 + Math.random() * 0.5 : 0.2;
+    }
+    
+    const updatedTrains: Train[] = [];
+    for (const train of [...trainsRef.current]) {
+      const onRail = isRailTile(currentGrid, currentGridSize, train.tileX, train.tileY);
+      if (!onRail) {
+        // Train is off-rail - try to find nearby rail
+        let relocated = false;
+        for (let r = 1; r <= 5 && !relocated; r++) {
+          for (let dy = -r; dy <= r && !relocated; dy++) {
+            for (let dx = -r; dx <= r && !relocated; dx++) {
+              if (Math.abs(dx) === r || Math.abs(dy) === r) {
+                const nx = train.tileX + dx;
+                const ny = train.tileY + dy;
+                if (isRailTile(currentGrid, currentGridSize, nx, ny)) {
+                  train.tileX = nx;
+                  train.tileY = ny;
+                  train.progress = 0.5;
+                  const opts = getRailDirectionOptions(currentGrid, currentGridSize, nx, ny);
+                  if (opts.length > 0) {
+                    train.direction = opts[Math.floor(Math.random() * opts.length)];
+                  }
+                  relocated = true;
+                }
+              }
+            }
+          }
+        }
+        if (!relocated) continue; // Remove train if no rail found
+        updatedTrains.push(train);
+        continue;
+      }
+      
+      train.progress += train.speed * delta * speedMultiplier;
+      
+      let guard = 0;
+      while (train.progress >= 1 && guard < 4) {
+        guard++;
+        const meta = DIRECTION_META[train.direction];
+        const newTileX = train.tileX + meta.step.x;
+        const newTileY = train.tileY + meta.step.y;
+        
+        if (!isRailTile(currentGrid, currentGridSize, newTileX, newTileY)) {
+          const options = getRailDirectionOptions(currentGrid, currentGridSize, train.tileX, train.tileY);
+          if (options.length > 0) {
+            const otherOptions = options.filter(d => d !== train.direction);
+            const newDir = otherOptions.length > 0 
+              ? otherOptions[Math.floor(Math.random() * otherOptions.length)]
+              : options[Math.floor(Math.random() * options.length)];
+            train.direction = newDir;
+            train.progress = 0.1;
+            train.trackOffset = Math.random() < 0.5 ? -5 : 5;
+          } else {
+            train.progress = 0.5;
+          }
+          break;
+        }
+        
+        train.tileX = newTileX;
+        train.tileY = newTileY;
+        train.progress -= 1;
+        
+        const nextDirection = pickNextRailDirection(train.direction, currentGrid, currentGridSize, train.tileX, train.tileY);
+        if (nextDirection) {
+          train.direction = nextDirection;
+        } else {
+          const options = getRailDirectionOptions(currentGrid, currentGridSize, train.tileX, train.tileY);
+          if (options.length > 0) {
+            train.direction = options[Math.floor(Math.random() * options.length)];
+          }
+        }
+      }
+      
+      updatedTrains.push(train);
+    }
+    
+    trainsRef.current = updatedTrains;
+  }, [worldStateRef, trainsRef, trainSpawnTimerRef, spawnRandomTrain, pickNextRailDirection]);
+
+  const drawTrains = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (!currentGrid || currentGridSize <= 0 || trainsRef.current.length === 0) {
+      return;
+    }
+    
+    ctx.save();
+    ctx.scale(dpr * currentZoom, dpr * currentZoom);
+    ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
+    
+    trainsRef.current.forEach(train => {
+      const { screenX, screenY } = gridToScreen(train.tileX, train.tileY, 0, 0);
+      const centerX = screenX + TILE_WIDTH / 2;
+      const centerY = screenY + TILE_HEIGHT / 2;
+      const meta = DIRECTION_META[train.direction];
+      const trainX = centerX + meta.vec.dx * train.progress + meta.normal.nx * train.trackOffset;
+      const trainY = centerY + meta.vec.dy * train.progress + meta.normal.ny * train.trackOffset;
+      
+      ctx.save();
+      ctx.translate(trainX, trainY);
+      ctx.rotate(meta.angle);
+
+      const scale = 0.8; // Trains are larger than cars
+      
+      // Train body (longer rectangle)
+      ctx.fillStyle = train.color;
+      ctx.beginPath();
+      ctx.moveTo(-15 * scale, -6 * scale);
+      ctx.lineTo(15 * scale, -6 * scale);
+      ctx.lineTo(18 * scale, 0);
+      ctx.lineTo(15 * scale, 6 * scale);
+      ctx.lineTo(-15 * scale, 6 * scale);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Train windows
+      ctx.fillStyle = 'rgba(200, 220, 255, 0.7)';
+      ctx.fillRect(-8 * scale, -4 * scale, 5 * scale, 8 * scale);
+      ctx.fillRect(-1 * scale, -4 * scale, 5 * scale, 8 * scale);
+      ctx.fillRect(6 * scale, -4 * scale, 5 * scale, 8 * scale);
+      
+      // Train wheels
+      ctx.fillStyle = '#111827';
+      ctx.beginPath();
+      ctx.arc(-8 * scale, 7 * scale, 2 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 7 * scale, 2 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(8 * scale, 7 * scale, 2 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    });
+    
+    ctx.restore();
+  }, [worldStateRef, trainsRef]);
+
   return {
     spawnRandomCar,
     spawnPedestrian,
@@ -1283,5 +1503,8 @@ export function useVehicleSystems(
     drawPedestrians,
     drawEmergencyVehicles,
     drawIncidentIndicators,
+    spawnRandomTrain,
+    updateTrains,
+    drawTrains,
   };
 }

@@ -2051,12 +2051,12 @@ function isMergeableZoneTile(
   // The tile being upgraded is always considered mergeable (it's the source of the evolution)
   if (excludeTile && tile.x === excludeTile.x && tile.y === excludeTile.y) {
     return tile.zone === zone && !tile.building.onFire && 
-           tile.building.type !== 'water' && tile.building.type !== 'road';
+           tile.building.type !== 'water' && tile.building.type !== 'road' && tile.building.type !== 'rail';
   }
   
   if (tile.zone !== zone) return false;
   if (tile.building.onFire) return false;
-  if (tile.building.type === 'water' || tile.building.type === 'road') return false;
+  if (tile.building.type === 'water' || tile.building.type === 'road' || tile.building.type === 'rail') return false;
   
   // Always allow merging grass and trees - truly unoccupied tiles
   if (MERGEABLE_TILE_TYPES.has(tile.building.type)) {
@@ -2116,11 +2116,11 @@ function scoreFootprint(grid: Tile[][], originX: number, originY: number, width:
       for (const [ox, oy] of offsets) {
         const nx = gx + ox;
         const ny = gy + oy;
-        if (nx >= 0 && ny >= 0 && nx < gridSize && ny < gridSize) {
-          if (grid[ny][nx].building.type === 'road') {
-            roadScore++;
+          if (nx >= 0 && ny >= 0 && nx < gridSize && ny < gridSize) {
+            if (grid[ny][nx].building.type === 'road' || grid[ny][nx].building.type === 'rail') {
+              roadScore++;
+            }
           }
-        }
       }
     }
   }
@@ -2216,8 +2216,21 @@ export function placeBuilding(
     }
   }
 
+  // Can't place rails on existing buildings (only allow on grass, tree, or existing rails)
+  if (buildingType === 'rail') {
+    const allowedTypes: BuildingType[] = ['grass', 'tree', 'rail'];
+    if (!allowedTypes.includes(tile.building.type)) {
+      return state; // Can't place rail on existing building
+    }
+  }
+
   // Only roads can be placed on roads - all other buildings require clearing the road first
   if (buildingType && buildingType !== 'road' && tile.building.type === 'road') {
+    return state;
+  }
+
+  // Only rails can be placed on rails - all other buildings require clearing the rail first
+  if (buildingType && buildingType !== 'rail' && tile.building.type === 'rail') {
     return state;
   }
 
@@ -2253,9 +2266,9 @@ export function placeBuilding(
         newGrid[y][x].building = createBuilding('grass');
       }
     } else {
-      // Can't zone over existing buildings (only allow zoning on grass, tree, or road)
+      // Can't zone over existing buildings (only allow zoning on grass, tree, road, or rail)
       // NOTE: 'empty' tiles are part of multi-tile buildings, so we can't zone them either
-      const allowedTypesForZoning: BuildingType[] = ['grass', 'tree', 'road'];
+      const allowedTypesForZoning: BuildingType[] = ['grass', 'tree', 'road', 'rail'];
       if (!allowedTypesForZoning.includes(tile.building.type)) {
         return state; // Can't zone over existing building or part of multi-tile building
       }
@@ -2288,9 +2301,9 @@ export function placeBuilding(
     } else {
       // Single tile building - check if tile is available
       // Can't place on water, existing buildings, or 'empty' tiles (part of multi-tile buildings)
-      // Note: 'road' is included here so roads can extend over existing roads,
-      // but non-road buildings are already blocked from roads by the check above
-      const allowedTypes: BuildingType[] = ['grass', 'tree', 'road'];
+      // Note: 'road' and 'rail' are included here so roads/rails can extend over existing roads/rails,
+      // but non-road/rail buildings are already blocked from roads/rails by the check above
+      const allowedTypes: BuildingType[] = ['grass', 'tree', 'road', 'rail'];
       if (!allowedTypes.includes(tile.building.type)) {
         return state; // Can't place on existing building or part of multi-tile building
       }
@@ -2320,7 +2333,7 @@ function findBuildingOrigin(
   // If this tile has an actual building (not empty), check if it's multi-tile
   if (tile.building.type !== 'empty' && tile.building.type !== 'grass' && 
       tile.building.type !== 'water' && tile.building.type !== 'road' && 
-      tile.building.type !== 'tree') {
+      tile.building.type !== 'rail' && tile.building.type !== 'tree') {
     const size = getBuildingSize(tile.building.type);
     if (size.width > 1 || size.height > 1) {
       return { originX: x, originY: y, buildingType: tile.building.type };
@@ -2343,6 +2356,7 @@ function findBuildingOrigin(
               checkTile.building.type !== 'grass' &&
               checkTile.building.type !== 'water' &&
               checkTile.building.type !== 'road' &&
+              checkTile.building.type !== 'rail' &&
               checkTile.building.type !== 'tree') {
             const size = getBuildingSize(checkTile.building.type);
             // Check if this building's footprint includes our original tile

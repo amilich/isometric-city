@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +1949-1951[0],+3069[0],+3136-3148[0],+3158[0],+3163[0],+3261-3275[0],+3365-3368[0],+3401-3404[0],+3443-3445[0] -3141[0]
+src/lib/renderConfig.ts: +105-118[0],+428-461[0]
+
+Conversations:
+
+[0]: dcd6b6cf-032b-402d-ada9-7b99c47daf59; Define asset usage for new sprites; claude-4.5-opus-high-thinking;

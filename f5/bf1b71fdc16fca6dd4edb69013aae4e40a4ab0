@@ -1,8 +1,10 @@
 AI Notes:
 
-src/components/Game.tsx: +6319-6321[0],+6336-6337[0],+6345-6347[0],+6349-6357[0],+6359-6363[0],+6367-6370[0],+6375[0],+6377-6385[0],+6387-6389[0],+6391-6393[0],+6395-6403[0],+6404[1],+6405-6410[0],+6412-6419[0],+6420[1],+6422-6423[0] -6357[0],-6363-6364[0],-6370[0]
+src/components/Game.tsx: +6319-6321[0],+6336-6337[0],+6345-6347[0],+6349-6357[0],+6359-6363[0],+6367-6370[0],+6375[0],+6377-6385[0],+6387-6389[0],+6391-6393[0],+6395-6403[0],+6404[1],+6405-6410[0],+6412-6419[0],+6420[1],+6422-6423[0] -6357[2],-6363[2],-6364[0],-6370[3]
 
 Conversations:
 
 [0]: c8dce99e-3f9a-4da2-b0f3-62c868d89358; Fix yellow line spacing on roads; claude-4.5-opus-high-thinking;
 [1]: 4adcf47f-b16b-4a56-b52d-1dec63c6cb13; Beaches and marina dock placement; claude-4.5-opus-high-thinking;
+[2]: e8c5a2b8-c64a-4815-8241-59e735aab34f; Refactor game.tsx components structure; claude-4.5-opus-high-thinking;
+[3]: 2f89f522-e4b0-4ced-ac48-f19e28430087; Refactor game components into separate files; claude-4.5-opus-high-thinking;

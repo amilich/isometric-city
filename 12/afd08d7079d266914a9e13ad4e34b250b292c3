@@ -1,7 +1,8 @@
 AI Notes:
 
-src/components/game/panels/SettingsPanel.tsx: +268-269[0],+279-280[0],+290-291[0],+301-302[0],+312-313[0] -13-17[0],-273[0],-283[0],-293[0],-303[0],-313[0]
+src/components/game/panels/SettingsPanel.tsx: +268[1],+269[0],+279[1],+280[0],+290[1],+291[0],+301[1],+302[0],+312[1],+313[0] -13-17[0],-273[0],-283[0],-293[0],-303[0],-313[0]
 
 Conversations:
 
 [0]: d50cb6a1-8d0a-4ea2-9dcc-5d64b2a70edf; d50cb6a1; unknown;
+[1]: 42e1afb6-e3b9-4f43-bcc3-c79ee54680a9; Tab Request 42e1afb6; unknown;

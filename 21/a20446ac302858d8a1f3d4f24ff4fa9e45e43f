@@ -5,4 +5,4 @@ src/components/Game.tsx: +6305[0],+6309-6316[0],+6317[1],+6319-6321[0],+6328-633
 Conversations:
 
 [0]: c8dce99e-3f9a-4da2-b0f3-62c868d89358; Fix yellow line spacing on roads; claude-4.5-opus-high-thinking;
-[1]: 537af195-03f0-4960-a255-d549d42529af; Shift tennis construction asset position; composer-1;
+[1]: b504129c-16f6-4376-9eb3-399d7db1b78a; Offset apartment asset in sprite sheet; composer-1;

@@ -1,0 +1,8 @@
+AI Notes:
+
+src/lib/simulation.ts: +1288-1294[0],+1331-1339[0],+1360-1363[0],+1365-1368[0],+1370-1372[0],+1374-1375[0],+1377-1379[0],+1381-1382[0],+1389-1392[0],+1396-1398[0] -1349-1351[0]
+src/types/game.ts: +162-167[0] -162-167[0]
+
+Conversations:
+
+[0]: 0e468b58-9db7-4703-853d-2817b3c48f42; Increase effect range for institutions; claude-4.5-opus-high-thinking;

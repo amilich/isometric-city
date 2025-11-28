@@ -6,4 +6,4 @@ src/lib/renderConfig.ts: +223[0],+361[0] -360[0]
 Conversations:
 
 [0]: 695a34e0-2e23-4647-904c-e5390ebcf0b8; Make car colors duller; composer-1;
-[1]: dcd6b6cf-032b-402d-ada9-7b99c47daf59; Define asset usage for new sprites; claude-4.5-opus-high-thinking;
+[1]: 80cdd42c-138a-4816-8cb7-935104998538; Improving game rendering performance without detail loss; claude-4.5-opus-high-thinking;

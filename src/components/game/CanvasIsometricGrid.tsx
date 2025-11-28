@@ -110,6 +110,18 @@ import {
   generateTourWaypoints,
 } from '@/components/game/gridFinders';
 import {
+  updateTrafficLights,
+  getTrafficLightState,
+  getTrafficLightColors,
+  analyzeRoadSegment,
+  checkMergedAvenue,
+  getRoadDrawInfo,
+  ROAD_COLORS,
+  LIGHT_COLORS,
+  drawTrafficLight,
+  RoadSegmentInfo,
+} from '@/components/game/traffic';
+import {
   calculateViewportBounds,
   isEntityBehindBuilding,
   isInViewport,
@@ -3395,12 +3407,19 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       return false;
     }
     
-    // Draw road with proper adjacency, markings, and sidewalks
+    // Draw road with proper adjacency, markings, sidewalks, traffic lights, and lane management
     function drawRoad(ctx: CanvasRenderingContext2D, x: number, y: number, gridX: number, gridY: number) {
+      // Use zoom from component scope
+      const currentZoom = zoom;
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
       const cx = x + w / 2;
       const cy = y + h / 2;
+      
+      // Get road analysis info
+      const roadInfo = getRoadDrawInfo(grid, gridSize, gridX, gridY);
+      const segment = roadInfo?.segment;
+      const mergeInfo = roadInfo?.mergeInfo;
       
       // Check adjacency (in isometric coordinates)
       const north = hasRoad(gridX - 1, gridY);  // top-left edge
@@ -3408,17 +3427,22 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const south = hasRoad(gridX + 1, gridY);  // bottom-right edge
       const west = hasRoad(gridX, gridY + 1);   // bottom-left edge
       
-      // Road width - aligned with gridlines
-      const roadW = w * 0.14;
-      const roadH = h * 0.14;
+      // Check for merged avenue (parallel roads)
+      const isMergedAvenue = mergeInfo?.isMerged ?? false;
+      const avenueDirection = mergeInfo?.direction ?? null;
+      const isLeftLane = mergeInfo?.isLeftLane ?? false;
+      const isRightLane = mergeInfo?.isRightLane ?? false;
+      
+      // Road width - wider for avenues
+      const baseRoadW = w * 0.14;
+      const roadW = isMergedAvenue ? baseRoadW * 1.3 : baseRoadW;
       
       // Sidewalk configuration
-      const sidewalkWidth = w * 0.08; // Width of the sidewalk strip
-      const sidewalkColor = '#9ca3af'; // Light gray for sidewalk
-      const curbColor = '#6b7280'; // Darker gray for curb edge
+      const sidewalkWidth = w * 0.08;
+      const sidewalkColor = ROAD_COLORS.sidewalk;
+      const curbColor = ROAD_COLORS.sidewalkCurb;
       
-      // Edge stop distance - extend roads almost to the edge for better connection
-      // Using 0.98 means roads extend to 98% of the way to the edge
+      // Edge stop distance
       const edgeStop = 0.98;
       
       // Calculate edge midpoints (where gridlines meet)
@@ -3432,7 +3456,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const westEdgeY = y + h * 0.75;
       
       // Calculate direction vectors for each edge (normalized)
-      // These align with the gridline directions
       const northDx = (northEdgeX - cx) / Math.hypot(northEdgeX - cx, northEdgeY - cy);
       const northDy = (northEdgeY - cy) / Math.hypot(northEdgeX - cx, northEdgeY - cy);
       const eastDx = (eastEdgeX - cx) / Math.hypot(eastEdgeX - cx, eastEdgeY - cy);
@@ -3442,14 +3465,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const westDx = (westEdgeX - cx) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
       const westDy = (westEdgeY - cy) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
       
-      // Perpendicular vectors for road width (rotated 90 degrees)
+      // Perpendicular vectors for road width
       const getPerp = (dx: number, dy: number) => ({ nx: -dy, ny: dx });
-      
-      // ============================================
-      // DRAW SIDEWALKS FIRST (underneath the road)
-      // ============================================
-      // Sidewalks appear on edges where there's NO adjacent road
-      // They run along the outer perimeter of the tile edge
       
       // Diamond corner points
       const topCorner = { x: x + w / 2, y: y };
@@ -3457,7 +3474,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const bottomCorner = { x: x + w / 2, y: y + h };
       const leftCorner = { x: x, y: y + h / 2 };
       
-      // Draw sidewalk helper - draws a strip along an edge, optionally shortening at corners
+      // ============================================
+      // DRAW SIDEWALKS (underneath the road)
+      // ============================================
       const drawSidewalkEdge = (
         startX: number, startY: number, 
         endX: number, endY: number,
@@ -3466,16 +3485,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         shortenEnd: boolean = false
       ) => {
         const swWidth = sidewalkWidth;
-        const shortenDist = swWidth * 0.707; // Distance to shorten at corners
+        const shortenDist = swWidth * 0.707;
         
-        // Calculate edge direction vector
         const edgeDx = endX - startX;
         const edgeDy = endY - startY;
         const edgeLen = Math.hypot(edgeDx, edgeDy);
         const edgeDirX = edgeDx / edgeLen;
         const edgeDirY = edgeDy / edgeLen;
         
-        // Apply shortening if needed
         let actualStartX = startX;
         let actualStartY = startY;
         let actualEndX = endX;
@@ -3490,7 +3507,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           actualEndY = endY - edgeDirY * shortenDist;
         }
         
-        // Draw curb (darker line at outer edge)
         ctx.strokeStyle = curbColor;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
@@ -3498,7 +3514,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.lineTo(actualEndX, actualEndY);
         ctx.stroke();
         
-        // Draw sidewalk fill
         ctx.fillStyle = sidewalkColor;
         ctx.beginPath();
         ctx.moveTo(actualStartX, actualStartY);
@@ -3509,92 +3524,48 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       };
       
-      // North edge sidewalk (top-left edge: leftCorner to topCorner)
-      // Inward direction points toward center-right and down
-      if (!north) {
-        const inwardDx = 0.707; // ~45 degrees inward
-        const inwardDy = 0.707;
-        // Shorten at topCorner if east edge also has sidewalk
-        const shortenAtTop = !east;
-        // Shorten at leftCorner if west edge also has sidewalk
-        const shortenAtLeft = !west;
-        drawSidewalkEdge(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, inwardDx, inwardDy, shortenAtLeft, shortenAtTop);
+      // For merged avenues, only draw outer sidewalks
+      const skipNorthSidewalk = isMergedAvenue && avenueDirection === 'ns' && isRightLane;
+      const skipSouthSidewalk = isMergedAvenue && avenueDirection === 'ns' && isLeftLane;
+      const skipEastSidewalk = isMergedAvenue && avenueDirection === 'ew' && isRightLane;
+      const skipWestSidewalk = isMergedAvenue && avenueDirection === 'ew' && isLeftLane;
+      
+      if (!north && !skipNorthSidewalk) {
+        drawSidewalkEdge(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707, !west, !east);
+      }
+      if (!east && !skipEastSidewalk) {
+        drawSidewalkEdge(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707, !north, !south);
+      }
+      if (!south && !skipSouthSidewalk) {
+        drawSidewalkEdge(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707, !east, !west);
+      }
+      if (!west && !skipWestSidewalk) {
+        drawSidewalkEdge(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707, !south, !north);
       }
       
-      // East edge sidewalk (top-right edge: topCorner to rightCorner)
-      // Inward direction points toward center-left and down
-      if (!east) {
-        const inwardDx = -0.707;
-        const inwardDy = 0.707;
-        // Shorten at topCorner if north edge also has sidewalk
-        const shortenAtTop = !north;
-        // Shorten at rightCorner if south edge also has sidewalk
-        const shortenAtRight = !south;
-        drawSidewalkEdge(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, inwardDx, inwardDy, shortenAtTop, shortenAtRight);
-      }
-      
-      // South edge sidewalk (bottom-right edge: rightCorner to bottomCorner)
-      // Inward direction points toward center-left and up
-      if (!south) {
-        const inwardDx = -0.707;
-        const inwardDy = -0.707;
-        // Shorten at rightCorner if east edge also has sidewalk
-        const shortenAtRight = !east;
-        // Shorten at bottomCorner if west edge also has sidewalk
-        const shortenAtBottom = !west;
-        drawSidewalkEdge(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, inwardDx, inwardDy, shortenAtRight, shortenAtBottom);
-      }
-      
-      // West edge sidewalk (bottom-left edge: bottomCorner to leftCorner)
-      // Inward direction points toward center-right and up
-      if (!west) {
-        const inwardDx = 0.707;
-        const inwardDy = -0.707;
-        // Shorten at bottomCorner if south edge also has sidewalk
-        const shortenAtBottom = !south;
-        // Shorten at leftCorner if north edge also has sidewalk
-        const shortenAtLeft = !north;
-        drawSidewalkEdge(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, inwardDx, inwardDy, shortenAtBottom, shortenAtLeft);
-      }
-      
-      // Draw corner sidewalk pieces for non-adjacent edges that meet
-      // Corner pieces connect exactly where the shortened edge strips end
+      // Corner sidewalk pieces
       const swWidth = sidewalkWidth;
       const shortenDist = swWidth * 0.707;
       ctx.fillStyle = sidewalkColor;
       
-      // Helper to calculate where a shortened edge's inner endpoint is
       const getShortenedInnerEndpoint = (
         cornerX: number, cornerY: number,
         otherCornerX: number, otherCornerY: number,
         inwardDx: number, inwardDy: number
       ) => {
-        // Edge direction FROM otherCorner TO corner (the direction the edge approaches the corner)
         const edgeDx = cornerX - otherCornerX;
         const edgeDy = cornerY - otherCornerY;
         const edgeLen = Math.hypot(edgeDx, edgeDy);
         const edgeDirX = edgeDx / edgeLen;
         const edgeDirY = edgeDy / edgeLen;
-        // Shortened outer endpoint (move backwards from corner along edge)
         const shortenedOuterX = cornerX - edgeDirX * shortenDist;
         const shortenedOuterY = cornerY - edgeDirY * shortenDist;
-        // Inner endpoint
-        return {
-          x: shortenedOuterX + inwardDx * swWidth,
-          y: shortenedOuterY + inwardDy * swWidth
-        };
+        return { x: shortenedOuterX + inwardDx * swWidth, y: shortenedOuterY + inwardDy * swWidth };
       };
       
-      // Top corner (where north and east edges meet) - only if both don't have roads
-      if (!north && !east) {
-        const northInner = getShortenedInnerEndpoint(
-          topCorner.x, topCorner.y, leftCorner.x, leftCorner.y,
-          0.707, 0.707
-        );
-        const eastInner = getShortenedInnerEndpoint(
-          topCorner.x, topCorner.y, rightCorner.x, rightCorner.y,
-          -0.707, 0.707
-        );
+      if (!north && !east && !skipNorthSidewalk && !skipEastSidewalk) {
+        const northInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, leftCorner.x, leftCorner.y, 0.707, 0.707);
+        const eastInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707);
         ctx.beginPath();
         ctx.moveTo(topCorner.x, topCorner.y);
         ctx.lineTo(northInner.x, northInner.y);
@@ -3603,16 +3574,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       }
       
-      // Right corner (where east and south edges meet)
-      if (!east && !south) {
-        const eastInner = getShortenedInnerEndpoint(
-          rightCorner.x, rightCorner.y, topCorner.x, topCorner.y,
-          -0.707, 0.707
-        );
-        const southInner = getShortenedInnerEndpoint(
-          rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y,
-          -0.707, -0.707
-        );
+      if (!east && !south && !skipEastSidewalk && !skipSouthSidewalk) {
+        const eastInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, topCorner.x, topCorner.y, -0.707, 0.707);
+        const southInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707);
         ctx.beginPath();
         ctx.moveTo(rightCorner.x, rightCorner.y);
         ctx.lineTo(eastInner.x, eastInner.y);
@@ -3621,16 +3585,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       }
       
-      // Bottom corner (where south and west edges meet)
-      if (!south && !west) {
-        const southInner = getShortenedInnerEndpoint(
-          bottomCorner.x, bottomCorner.y, rightCorner.x, rightCorner.y,
-          -0.707, -0.707
-        );
-        const westInner = getShortenedInnerEndpoint(
-          bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y,
-          0.707, -0.707
-        );
+      if (!south && !west && !skipSouthSidewalk && !skipWestSidewalk) {
+        const southInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, rightCorner.x, rightCorner.y, -0.707, -0.707);
+        const westInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707);
         ctx.beginPath();
         ctx.moveTo(bottomCorner.x, bottomCorner.y);
         ctx.lineTo(southInner.x, southInner.y);
@@ -3639,16 +3596,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       }
       
-      // Left corner (where west and north edges meet)
-      if (!west && !north) {
-        const westInner = getShortenedInnerEndpoint(
-          leftCorner.x, leftCorner.y, bottomCorner.x, bottomCorner.y,
-          0.707, -0.707
-        );
-        const northInner = getShortenedInnerEndpoint(
-          leftCorner.x, leftCorner.y, topCorner.x, topCorner.y,
-          0.707, 0.707
-        );
+      if (!west && !north && !skipWestSidewalk && !skipNorthSidewalk) {
+        const westInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, bottomCorner.x, bottomCorner.y, 0.707, -0.707);
+        const northInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707);
         ctx.beginPath();
         ctx.moveTo(leftCorner.x, leftCorner.y);
         ctx.lineTo(westInner.x, westInner.y);
@@ -3660,9 +3610,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       // ============================================
       // DRAW ROAD SEGMENTS
       // ============================================
-      ctx.fillStyle = '#4a4a4a';
+      ctx.fillStyle = isMergedAvenue ? ROAD_COLORS.asphaltDark : ROAD_COLORS.asphaltLight;
       
-      // North segment (to top-left) - aligned with gridline
+      // Draw road segments to adjacent tiles
       if (north) {
         const stopX = cx + (northEdgeX - cx) * edgeStop;
         const stopY = cy + (northEdgeY - cy) * edgeStop;
@@ -3677,7 +3627,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       }
       
-      // East segment (to top-right) - aligned with gridline
       if (east) {
         const stopX = cx + (eastEdgeX - cx) * edgeStop;
         const stopY = cy + (eastEdgeY - cy) * edgeStop;
@@ -3692,7 +3641,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       }
       
-      // South segment (to bottom-right) - aligned with gridline
       if (south) {
         const stopX = cx + (southEdgeX - cx) * edgeStop;
         const stopY = cy + (southEdgeY - cy) * edgeStop;
@@ -3707,7 +3655,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       }
       
-      // West segment (to bottom-left) - aligned with gridline
       if (west) {
         const stopX = cx + (westEdgeX - cx) * edgeStop;
         const stopY = cy + (westEdgeY - cy) * edgeStop;
@@ -3732,43 +3679,142 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       ctx.closePath();
       ctx.fill();
       
-      // Draw road markings (yellow dashed lines) - aligned with gridlines
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 0.8;  // Thinner lines
-      ctx.setLineDash([1.5, 2]);  // Smaller, more frequent dots
+      // ============================================
+      // DRAW CENTRAL MEDIAN FOR MERGED AVENUES
+      // ============================================
+      if (isMergedAvenue && currentZoom >= 0.5) {
+        const medianWidth = roadW * 0.25;
+        
+        if (avenueDirection === 'ns') {
+          // N-S avenue - draw median on the side facing the parallel road
+          if (isLeftLane) {
+            // Left lane - median on the east side (toward y-1)
+            const medianOffsetX = eastDx * (roadW * 0.5 + medianWidth * 0.3);
+            const medianOffsetY = eastDy * (roadW * 0.5 + medianWidth * 0.3);
+            
+            // Draw green median strip
+            ctx.fillStyle = ROAD_COLORS.medianEdge;
+            if (north || south) {
+              const startX = north ? northEdgeX + medianOffsetX : cx + medianOffsetX;
+              const startY = north ? northEdgeY + medianOffsetY : cy + medianOffsetY;
+              const endX = south ? southEdgeX + medianOffsetX : cx + medianOffsetX;
+              const endY = south ? southEdgeY + medianOffsetY : cy + medianOffsetY;
+              
+              const perp = getPerp(southDx - northDx, southDy - northDy);
+              const len = Math.hypot(southDx - northDx, southDy - northDy) || 1;
+              const nx = perp.nx / len * medianWidth * 0.5;
+              const ny = perp.ny / len * medianWidth * 0.5;
+              
+              ctx.beginPath();
+              ctx.moveTo(startX + nx, startY + ny);
+              ctx.lineTo(endX + nx, endY + ny);
+              ctx.lineTo(endX - nx, endY - ny);
+              ctx.lineTo(startX - nx, startY - ny);
+              ctx.closePath();
+              ctx.fill();
+              
+              // Add some plant dots for decoration
+              ctx.fillStyle = '#22c55e';
+              const plantCount = 3;
+              for (let i = 0; i < plantCount; i++) {
+                const t = (i + 0.5) / plantCount;
+                const px = startX + (endX - startX) * t;
+                const py = startY + (endY - startY) * t;
+                ctx.beginPath();
+                ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          }
+        } else if (avenueDirection === 'ew') {
+          // E-W avenue - draw median on the side facing the parallel road
+          if (isLeftLane) {
+            // Left lane - median on the south side (toward x+1)
+            const medianOffsetX = southDx * (roadW * 0.5 + medianWidth * 0.3);
+            const medianOffsetY = southDy * (roadW * 0.5 + medianWidth * 0.3);
+            
+            ctx.fillStyle = ROAD_COLORS.medianEdge;
+            if (east || west) {
+              const startX = east ? eastEdgeX + medianOffsetX : cx + medianOffsetX;
+              const startY = east ? eastEdgeY + medianOffsetY : cy + medianOffsetY;
+              const endX = west ? westEdgeX + medianOffsetX : cx + medianOffsetX;
+              const endY = west ? westEdgeY + medianOffsetY : cy + medianOffsetY;
+              
+              const perp = getPerp(westDx - eastDx, westDy - eastDy);
+              const len = Math.hypot(westDx - eastDx, westDy - eastDy) || 1;
+              const nx = perp.nx / len * medianWidth * 0.5;
+              const ny = perp.ny / len * medianWidth * 0.5;
+              
+              ctx.beginPath();
+              ctx.moveTo(startX + nx, startY + ny);
+              ctx.lineTo(endX + nx, endY + ny);
+              ctx.lineTo(endX - nx, endY - ny);
+              ctx.lineTo(startX - nx, startY - ny);
+              ctx.closePath();
+              ctx.fill();
+              
+              // Add plant dots
+              ctx.fillStyle = '#22c55e';
+              const plantCount = 3;
+              for (let i = 0; i < plantCount; i++) {
+                const t = (i + 0.5) / plantCount;
+                const px = startX + (endX - startX) * t;
+                const py = startY + (endY - startY) * t;
+                ctx.beginPath();
+                ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          }
+        }
+      }
+      
+      // ============================================
+      // DRAW ROAD MARKINGS
+      // ============================================
+      // Draw different markings based on road type
+      const isIntersection = segment?.isIntersection ?? false;
+      const adjacentCount = (north ? 1 : 0) + (east ? 1 : 0) + (south ? 1 : 0) + (west ? 1 : 0);
+      
+      // Yellow center line for regular roads, white lane dividers for avenues
+      if (isMergedAvenue) {
+        // Avenue: white dashed lane dividers
+        ctx.strokeStyle = ROAD_COLORS.laneLine;
+        ctx.lineWidth = 0.6;
+        ctx.setLineDash([2, 3]);
+      } else {
+        // Regular road: yellow center line
+        ctx.strokeStyle = ROAD_COLORS.centerLine;
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([1.5, 2]);
+      }
       ctx.lineCap = 'round';
       
-      // Extend past tile edge to overlap with adjacent tile's marking
-      // This ensures continuous yellow lines across tile boundaries
-      const markingOverlap = 4; // pixels past edge for overlap
-      const markingStartOffset = 2; // pixels from center
+      const markingOverlap = 4;
+      const markingStartOffset = 2;
       
-      // North marking (toward top-left)
-      if (north) {
+      if (north && !isIntersection) {
         ctx.beginPath();
         ctx.moveTo(cx + northDx * markingStartOffset, cy + northDy * markingStartOffset);
         ctx.lineTo(northEdgeX + northDx * markingOverlap, northEdgeY + northDy * markingOverlap);
         ctx.stroke();
       }
       
-      // East marking (toward top-right)
-      if (east) {
+      if (east && !isIntersection) {
         ctx.beginPath();
         ctx.moveTo(cx + eastDx * markingStartOffset, cy + eastDy * markingStartOffset);
         ctx.lineTo(eastEdgeX + eastDx * markingOverlap, eastEdgeY + eastDy * markingOverlap);
         ctx.stroke();
       }
       
-      // South marking (toward bottom-right)
-      if (south) {
+      if (south && !isIntersection) {
         ctx.beginPath();
         ctx.moveTo(cx + southDx * markingStartOffset, cy + southDy * markingStartOffset);
         ctx.lineTo(southEdgeX + southDx * markingOverlap, southEdgeY + southDy * markingOverlap);
         ctx.stroke();
       }
       
-      // West marking (toward bottom-left)
-      if (west) {
+      if (west && !isIntersection) {
         ctx.beginPath();
         ctx.moveTo(cx + westDx * markingStartOffset, cy + westDy * markingStartOffset);
         ctx.lineTo(westEdgeX + westDx * markingOverlap, westEdgeY + westDy * markingOverlap);
@@ -3777,6 +3823,179 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       
       ctx.setLineDash([]);
       ctx.lineCap = 'butt';
+      
+      // ============================================
+      // DRAW LANE DIRECTION ARROWS (for avenues and intersections)
+      // ============================================
+      if (currentZoom >= 0.7 && !isIntersection) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        
+        // Draw small direction arrows showing traffic flow
+        const drawArrow = (px: number, py: number, angle: number, size: number = 4) => {
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.moveTo(0, -size);
+          ctx.lineTo(size * 0.6, size * 0.3);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(-size * 0.6, size * 0.3);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        };
+        
+        // For merged avenues, show one-way arrows
+        if (isMergedAvenue) {
+          if (avenueDirection === 'ns') {
+            // N-S avenue lanes
+            if (isLeftLane && (north || south)) {
+              // Left lane: traffic goes NORTH (toward gridX-1)
+              const arrowX = cx + northDx * 8;
+              const arrowY = cy + northDy * 8;
+              drawArrow(arrowX, arrowY, Math.atan2(northDy, northDx) - Math.PI/2, 5);
+            } else if (isRightLane && (north || south)) {
+              // Right lane: traffic goes SOUTH (toward gridX+1)
+              const arrowX = cx + southDx * 8;
+              const arrowY = cy + southDy * 8;
+              drawArrow(arrowX, arrowY, Math.atan2(southDy, southDx) - Math.PI/2, 5);
+            }
+          } else if (avenueDirection === 'ew') {
+            // E-W avenue lanes
+            if (isLeftLane && (east || west)) {
+              // Left lane: traffic goes EAST (toward gridY-1)
+              const arrowX = cx + eastDx * 8;
+              const arrowY = cy + eastDy * 8;
+              drawArrow(arrowX, arrowY, Math.atan2(eastDy, eastDx) - Math.PI/2, 5);
+            } else if (isRightLane && (east || west)) {
+              // Right lane: traffic goes WEST (toward gridY+1)
+              const arrowX = cx + westDx * 8;
+              const arrowY = cy + westDy * 8;
+              drawArrow(arrowX, arrowY, Math.atan2(westDy, westDx) - Math.PI/2, 5);
+            }
+          }
+        }
+      }
+      
+      // ============================================
+      // DRAW TRAFFIC LIGHTS AT INTERSECTIONS
+      // ============================================
+      if (isIntersection && adjacentCount >= 3 && currentZoom >= 0.6) {
+        const trafficLightState = getTrafficLightState();
+        const lightColors = getTrafficLightColors(trafficLightState);
+        
+        // Draw small traffic lights at corners of the intersection
+        const lightOffset = roadW * 1.8;
+        const lightScale = 0.7;
+        
+        // Helper to draw a simple traffic light
+        const drawSimpleLight = (lx: number, ly: number, isNS: boolean) => {
+          const colors = isNS ? lightColors.ns : lightColors.ew;
+          
+          // Light housing (very simple box)
+          const boxW = 4 * lightScale;
+          const boxH = 10 * lightScale;
+          
+          ctx.fillStyle = LIGHT_COLORS.housing;
+          ctx.fillRect(lx - boxW/2, ly - boxH, boxW, boxH);
+          
+          // Pole
+          ctx.fillStyle = '#4b5563';
+          ctx.fillRect(lx - 1, ly, 2, 6 * lightScale);
+          
+          // Lights (stacked vertically: red, yellow, green)
+          const lightR = 1.5 * lightScale;
+          const spacing = 2.8 * lightScale;
+          
+          // Red
+          ctx.beginPath();
+          ctx.arc(lx, ly - boxH + spacing, lightR, 0, Math.PI * 2);
+          ctx.fillStyle = colors.red;
+          ctx.fill();
+          
+          // Yellow
+          ctx.beginPath();
+          ctx.arc(lx, ly - boxH + spacing * 2, lightR, 0, Math.PI * 2);
+          ctx.fillStyle = colors.yellow;
+          ctx.fill();
+          
+          // Green
+          ctx.beginPath();
+          ctx.arc(lx, ly - boxH + spacing * 3, lightR, 0, Math.PI * 2);
+          ctx.fillStyle = colors.green;
+          ctx.fill();
+        };
+        
+        // Position lights at the corners where roads meet
+        // North-South lights (controlling N-S traffic)
+        if (north) {
+          const lightX = cx + northDx * lightOffset + getPerp(northDx, northDy).nx * (roadW * 0.8);
+          const lightY = cy + northDy * lightOffset + getPerp(northDx, northDy).ny * (roadW * 0.8);
+          drawSimpleLight(lightX, lightY, true);
+        }
+        if (south) {
+          const lightX = cx + southDx * lightOffset + getPerp(southDx, southDy).nx * (roadW * 0.8);
+          const lightY = cy + southDy * lightOffset + getPerp(southDx, southDy).ny * (roadW * 0.8);
+          drawSimpleLight(lightX, lightY, true);
+        }
+        
+        // East-West lights (controlling E-W traffic)
+        if (east) {
+          const lightX = cx + eastDx * lightOffset + getPerp(eastDx, eastDy).nx * (roadW * 0.8);
+          const lightY = cy + eastDy * lightOffset + getPerp(eastDx, eastDy).ny * (roadW * 0.8);
+          drawSimpleLight(lightX, lightY, false);
+        }
+        if (west) {
+          const lightX = cx + westDx * lightOffset + getPerp(westDx, westDy).nx * (roadW * 0.8);
+          const lightY = cy + westDy * lightOffset + getPerp(westDx, westDy).ny * (roadW * 0.8);
+          drawSimpleLight(lightX, lightY, false);
+        }
+        
+        // Draw stop lines at the intersection when zoomed in
+        if (currentZoom >= 0.8) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.lineWidth = 1.5;
+          
+          const stopLineOffset = roadW * 0.8;
+          
+          if (north) {
+            const perp = getPerp(northDx, northDy);
+            const slx = cx + northDx * stopLineOffset;
+            const sly = cy + northDy * stopLineOffset;
+            ctx.beginPath();
+            ctx.moveTo(slx + perp.nx * roadW * 0.5, sly + perp.ny * roadW * 0.5);
+            ctx.lineTo(slx - perp.nx * roadW * 0.5, sly - perp.ny * roadW * 0.5);
+            ctx.stroke();
+          }
+          if (east) {
+            const perp = getPerp(eastDx, eastDy);
+            const slx = cx + eastDx * stopLineOffset;
+            const sly = cy + eastDy * stopLineOffset;
+            ctx.beginPath();
+            ctx.moveTo(slx + perp.nx * roadW * 0.5, sly + perp.ny * roadW * 0.5);
+            ctx.lineTo(slx - perp.nx * roadW * 0.5, sly - perp.ny * roadW * 0.5);
+            ctx.stroke();
+          }
+          if (south) {
+            const perp = getPerp(southDx, southDy);
+            const slx = cx + southDx * stopLineOffset;
+            const sly = cy + southDy * stopLineOffset;
+            ctx.beginPath();
+            ctx.moveTo(slx + perp.nx * roadW * 0.5, sly + perp.ny * roadW * 0.5);
+            ctx.lineTo(slx - perp.nx * roadW * 0.5, sly - perp.ny * roadW * 0.5);
+            ctx.stroke();
+          }
+          if (west) {
+            const perp = getPerp(westDx, westDy);
+            const slx = cx + westDx * stopLineOffset;
+            const sly = cy + westDy * stopLineOffset;
+            ctx.beginPath();
+            ctx.moveTo(slx + perp.nx * roadW * 0.5, sly + perp.ny * roadW * 0.5);
+            ctx.lineTo(slx - perp.nx * roadW * 0.5, sly - perp.ny * roadW * 0.5);
+            ctx.stroke();
+          }
+        }
+      }
     }
     
     // Draw isometric tile base
@@ -4760,6 +4979,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         updateFireworks(delta, hour); // Update fireworks (nighttime only)
         updateSmog(delta); // Update factory smog particles
         navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
+        updateTrafficLights(delta * 1000); // Update traffic light states (pass ms)
       }
       drawCars(ctx);
       drawPedestrians(ctx); // Draw pedestrians (zoom-gated)

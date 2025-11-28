@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/vehicleSystems.ts: +92[0],+661-662[0],+664-683[0],+686-687[0],+692-711[0] -92[0],-661-662[0],-664-666[0],-672-679[0],-681[0]
+
+Conversations:
+
+[0]: f074b5b6-5660-4958-a63f-5454af710591; Adjust mobile rendering thresholds; claude-4.5-opus-high-thinking;

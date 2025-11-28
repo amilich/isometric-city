@@ -20,6 +20,7 @@ export type Car = {
   maxAge: number;
   color: string;
   laneOffset: number;
+  waitingForLight: boolean;
 };
 
 // Airplane types for airport animation

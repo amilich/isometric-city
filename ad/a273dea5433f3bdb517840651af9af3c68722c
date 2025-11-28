@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +5791-5796[0],+5798-5818[0],+6792[1],+6797-6800[1],+6802-6804[1],+7024[0],+7026-7029[0] -6763[1],-6767[1],-6988-6991[0]
+
+Conversations:
+
+[0]: 4adcf47f-b16b-4a56-b52d-1dec63c6cb13; Beaches and marina dock placement; claude-4.5-opus-high-thinking;
+[1]: 5e261074-fb84-4b56-a7a1-4b19167f5b76; Add visual intricacy with mirroring; claude-4.5-opus-high-thinking;

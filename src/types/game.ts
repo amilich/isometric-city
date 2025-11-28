@@ -1,5 +1,39 @@
 // Game type definitions for IsoCity
 
+// ============================================================================
+// Season and Weather Types
+// ============================================================================
+
+export type Season = 'spring' | 'summer' | 'fall' | 'winter';
+
+export type WeatherType = 
+  | 'clear'      // Clear skies
+  | 'cloudy'     // Overcast but no precipitation
+  | 'rain'       // Light to moderate rain
+  | 'storm'      // Heavy rain with thunder/lightning
+  | 'snow'       // Snowfall (winter only)
+  | 'heatwave';  // Extreme heat (summer only)
+
+export interface WeatherState {
+  type: WeatherType;
+  intensity: number;           // 0-1, affects visual density and economic impact
+  duration: number;            // Ticks remaining for this weather
+  lightningTimer: number;      // Ticks until next lightning flash (storms only)
+  cloudCoverage: number;       // 0-1, affects day brightness
+  temperature: number;         // Relative temp modifier (-20 to +20 from base)
+  snowAccumulation: number;    // 0-1, visual snow buildup (winter)
+}
+
+export interface SeasonInfo {
+  season: Season;
+  dayLength: number;           // Hours of daylight (affects day/night cycle)
+  baseTemperature: number;     // Base temperature for the season
+}
+
+// ============================================================================
+// Building Types
+// ============================================================================
+
 export type BuildingType =
   | 'empty'
   | 'grass'
@@ -328,6 +362,7 @@ export interface GameState {
   disastersEnabled: boolean;
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];
+  weather: WeatherState; // Current weather conditions
 }
 
 // Building evolution paths based on zone and level

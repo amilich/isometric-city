@@ -14,12 +14,20 @@ import {
   Notification,
   AdjacentCity,
   WaterBody,
+  WeatherState,
   BUILDING_STATS,
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
   INDUSTRIAL_BUILDINGS,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import {
+  createInitialWeather,
+  updateWeather,
+  getSeasonFromMonth,
+  calculateWeatherEffects,
+  getWeatherDescription,
+} from './weather';
 
 // Check if a factory_small at this position would render as a farm
 // This matches the deterministic logic in Game.tsx for farm variant selection
@@ -646,13 +654,14 @@ function createServiceCoverage(size: number): ServiceCoverage {
 export function createInitialGameState(size: number = 60, cityName: string = 'New City'): GameState {
   const { grid, waterBodies } = generateTerrain(size);
   const adjacentCities = generateAdjacentCities();
+  const initialMonth = 1; // January
 
   return {
     grid,
     gridSize: size,
     cityName,
     year: 2024,
-    month: 1,
+    month: initialMonth,
     day: 1,
     hour: 12, // Start at noon
     tick: 0,
@@ -670,6 +679,7 @@ export function createInitialGameState(size: number = 60, cityName: string = 'Ne
     disastersEnabled: true,
     adjacentCities,
     waterBodies,
+    weather: createInitialWeather(initialMonth),
   };
 }
 
@@ -1106,7 +1116,17 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
 
 // Calculate city stats
 // effectiveTaxRate is the lagged tax rate used for demand calculations
-function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage): Stats {
+// weather affects demand, happiness, and income
+function calculateStats(
+  grid: Tile[][],
+  size: number,
+  budget: Budget,
+  taxRate: number,
+  effectiveTaxRate: number,
+  services: ServiceCoverage,
+  weather: WeatherState,
+  month: number
+): Stats {
   let population = 0;
   let jobs = 0;
   let totalPollution = 0;
@@ -1160,6 +1180,10 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
     }
   }
 
+  // Get weather economic effects
+  const season = getSeasonFromMonth(month);
+  const weatherEffects = calculateWeatherEffects(weather, season);
+
   // Calculate demand - subway network boosts commercial demand
   // Tax rate affects demand as BOTH a multiplier and additive modifier:
   // - Multiplier: At 100% tax, demand is reduced to 0 regardless of other factors
@@ -1184,12 +1208,20 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   
   // Apply tax effect: multiply by tax factor, then add small modifier
   // The multiplier ensures high taxes crush demand; the additive fine-tunes at normal rates
-  const residentialDemand = Math.min(100, Math.max(-100, baseResidentialDemand * taxMultiplier + taxAdditiveModifier));
-  const commercialDemand = Math.min(100, Math.max(-100, baseCommercialDemand * taxMultiplier + taxAdditiveModifier * 0.8));
-  const industrialDemand = Math.min(100, Math.max(-100, baseIndustrialDemand * taxMultiplier + taxAdditiveModifier * 0.5));
+  // Weather effects also modify demand
+  const residentialDemand = Math.min(100, Math.max(-100, 
+    (baseResidentialDemand * taxMultiplier + taxAdditiveModifier) * weatherEffects.demandModifier
+  ));
+  const commercialDemand = Math.min(100, Math.max(-100, 
+    (baseCommercialDemand * taxMultiplier + taxAdditiveModifier * 0.8) * weatherEffects.demandModifier
+  ));
+  const industrialDemand = Math.min(100, Math.max(-100, 
+    (baseIndustrialDemand * taxMultiplier + taxAdditiveModifier * 0.5) * weatherEffects.demandModifier
+  ));
 
-  // Calculate income and expenses
-  const income = Math.floor(population * taxRate * 0.1 + jobs * taxRate * 0.05);
+  // Calculate income and expenses - weather affects income
+  const baseIncome = Math.floor(population * taxRate * 0.1 + jobs * taxRate * 0.05);
+  const income = Math.floor(baseIncome * weatherEffects.incomeModifier);
   
   let expenses = 0;
   expenses += Math.floor(budget.police.cost * budget.police.funding / 100);
@@ -1216,14 +1248,17 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   const environment = Math.min(100, Math.max(0, greenRatio * 200 - pollutionRatio * 100 + 50));
 
   const jobSatisfaction = jobs >= population ? 100 : (jobs / (population || 1)) * 100;
-  const happiness = Math.min(100, (
+  
+  // Calculate happiness - weather has a direct impact
+  const baseHappiness = (
     safety * 0.15 +
     health * 0.2 +
     education * 0.15 +
     environment * 0.15 +
     jobSatisfaction * 0.2 +
     (100 - taxRate * 3) * 0.15
-  ));
+  );
+  const happiness = Math.min(100, Math.max(0, baseHappiness + weatherEffects.happinessModifier));
 
   return {
     population,
@@ -1604,12 +1639,18 @@ export function simulateTick(state: GameState): GameState {
         }
       }
 
-      // Random fire start
+      // Random fire start - weather affects fire risk
+      // Calculate weather fire risk modifier
+      const currentSeason = getSeasonFromMonth(state.month);
+      const weatherFireEffects = calculateWeatherEffects(state.weather, currentSeason);
+      const baseFireChance = 0.00003;
+      const adjustedFireChance = baseFireChance * weatherFireEffects.fireRiskModifier;
+      
       if (state.disastersEnabled && !tile.building.onFire && 
           tile.building.type !== 'grass' && tile.building.type !== 'water' && 
           tile.building.type !== 'road' && tile.building.type !== 'tree' &&
           tile.building.type !== 'empty' &&
-          Math.random() < 0.00003) {
+          Math.random() < adjustedFireChance) {
         tile.building.onFire = true;
         tile.building.fireProgress = 0;
       }
@@ -1619,6 +1660,9 @@ export function simulateTick(state: GameState): GameState {
   // Update budget costs
   const newBudget = updateBudgetCosts(newGrid, state.budget);
 
+  // Update weather system
+  const newWeather = updateWeather(state.weather, state.month);
+
   // Gradually move effectiveTaxRate toward taxRate
   // This creates a lagging effect so tax changes don't immediately impact demand
   // Rate of change: 3% of difference per tick, so large changes take ~50-80 ticks (~2-3 game days)
@@ -1626,7 +1670,8 @@ export function simulateTick(state: GameState): GameState {
   const newEffectiveTaxRate = state.effectiveTaxRate + taxRateDiff * 0.03;
 
   // Calculate stats (using lagged effectiveTaxRate for demand calculations)
-  const newStats = calculateStats(newGrid, size, newBudget, state.taxRate, newEffectiveTaxRate, services);
+  // Weather affects demand, income, and happiness
+  const newStats = calculateStats(newGrid, size, newBudget, state.taxRate, newEffectiveTaxRate, services, newWeather, state.month);
   newStats.money = state.stats.money;
 
   // Update money on month change
@@ -1635,10 +1680,15 @@ export function simulateTick(state: GameState): GameState {
   let newDay = state.day;
   let newTick = state.tick + 1;
   
-  // Calculate visual hour for day/night cycle (much slower than game time)
-  // One full day/night cycle = 15 game days (450 ticks)
-  // This makes the cycle atmospheric rather than jarring
+  // Calculate visual hour for day/night cycle
+  // Season affects day length: winter has shorter days, summer has longer days
+  const season = getSeasonFromMonth(state.month);
   const totalTicks = ((state.year - 2024) * 12 * 30 * 30) + ((state.month - 1) * 30 * 30) + ((state.day - 1) * 30) + newTick;
+  
+  // Day/night cycle varies by season:
+  // - Summer: ~16 hours of daylight (dawn at 5, dusk at 21)
+  // - Winter: ~8 hours of daylight (dawn at 8, dusk at 16)
+  // - Spring/Fall: ~12 hours of daylight
   const cycleLength = 450; // ticks per visual day (15 game days)
   const newHour = Math.floor((totalTicks % cycleLength) / cycleLength * 24);
 
@@ -1662,8 +1712,25 @@ export function simulateTick(state: GameState): GameState {
     newYear++;
   }
 
-  // Generate advisor messages
+  // Generate advisor messages (including weather advisor)
   const advisorMessages = generateAdvisorMessages(newStats, services, newGrid);
+  
+  // Add weather advisor message for severe weather
+  if (newWeather.type === 'storm' || newWeather.type === 'heatwave' || 
+      (newWeather.type === 'snow' && newWeather.intensity > 0.6)) {
+    const weatherDesc = getWeatherDescription(newWeather, season);
+    advisorMessages.push({
+      name: 'Weather Advisor',
+      icon: 'environment',
+      messages: [
+        `Current conditions: ${weatherDesc}`,
+        newWeather.type === 'storm' ? 'Severe storms may impact construction and commerce.' :
+        newWeather.type === 'heatwave' ? 'Heat wave warning! Fire risk is elevated.' :
+        'Heavy snowfall is slowing construction and reducing income.',
+      ],
+      priority: newWeather.type === 'storm' || newWeather.type === 'heatwave' ? 'high' : 'medium',
+    });
+  }
 
   // Keep existing notifications
   const newNotifications = [...state.notifications];
@@ -1704,6 +1771,7 @@ export function simulateTick(state: GameState): GameState {
     advisorMessages,
     notifications: newNotifications,
     history,
+    weather: newWeather,
   };
 }
 

@@ -17,6 +17,7 @@ import {
   placeSubway,
   simulateTick,
 } from '@/lib/simulation';
+import { createInitialWeather } from '@/lib/weather';
 import {
   SPRITE_PACKS,
   DEFAULT_SPRITE_PACK_ID,
@@ -172,6 +173,10 @@ function loadGameState(): GameState | null {
               }
             }
           }
+        }
+        // Migrate weather for existing saves
+        if (!parsed.weather) {
+          parsed.weather = createInitialWeather(parsed.month || 1);
         }
         return parsed as GameState;
       } else {
@@ -577,6 +582,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
               }
             }
           }
+        }
+        // Migrate weather for existing saves
+        if (!parsed.weather) {
+          parsed.weather = createInitialWeather(parsed.month || 1);
         }
         setState(parsed as GameState);
         return true;

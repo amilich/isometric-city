@@ -159,6 +159,26 @@ import {
 } from '@/components/game/overlays';
 import { OverlayModeToggle } from '@/components/game/OverlayModeToggle';
 import { Sidebar } from '@/components/game/Sidebar';
+import {
+  WeatherParticles,
+  createWeatherParticles,
+  updateWeatherParticles,
+  drawWeatherOverlay,
+  drawClouds,
+  drawRain,
+  drawSnow,
+  drawLightning,
+  drawHeatShimmer,
+  drawSnowOnTile,
+  drawSnowOnRoad,
+  drawWeatherIcon,
+} from '@/components/game/Weather';
+import {
+  getSeasonFromMonth,
+  getWeatherDescription,
+  getDaylightHours,
+  getAmbientLight,
+} from '@/lib/weather';
 
 // HEIGHT_RATIO is still used locally in some places
 const HEIGHT_RATIO = 0.60;
@@ -233,13 +253,74 @@ const TimeOfDayIcon = ({ hour }: { hour: number }) => {
   }
 };
 
+// Weather Icon Component for TopBar
+function WeatherIcon({ type, size = 14 }: { type: string; size?: number }) {
+  switch (type) {
+    case 'clear':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-yellow-400">
+          <circle cx="12" cy="12" r="5" />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
+            <line key={i} x1="12" y1="4" x2="12" y2="1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" transform={`rotate(${angle} 12 12)`} />
+          ))}
+        </svg>
+      );
+    case 'cloudy':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-gray-400">
+          <path d="M19.35 10.04A7.49 7.49 0 0012 4a7.48 7.48 0 00-6.64 4.04A6 6 0 000 14a6 6 0 006 6h13a5 5 0 00.35-9.96z" />
+        </svg>
+      );
+    case 'rain':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-blue-400">
+          <path d="M17.92 7.02A6 6 0 006 8a6 6 0 100 12h12a4 4 0 00.92-7.98z" fill="#6b7280" />
+          <line x1="8" y1="19" x2="8" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="12" y1="19" x2="12" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="16" y1="19" x2="16" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 'storm':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-yellow-400">
+          <path d="M17.92 7.02A6 6 0 006 8a6 6 0 100 12h12a4 4 0 00.92-7.98z" fill="#374151" />
+          <polygon points="13 10 9 16 11 16 10 22 15 14 12 14" fill="currentColor" />
+        </svg>
+      );
+    case 'snow':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-sky-300">
+          <path d="M17.92 7.02A6 6 0 006 8a6 6 0 100 12h12a4 4 0 00.92-7.98z" fill="#d1d5db" />
+          <circle cx="8" cy="18" r="1.5" fill="currentColor" />
+          <circle cx="12" cy="20" r="1.5" fill="currentColor" />
+          <circle cx="16" cy="18" r="1.5" fill="currentColor" />
+        </svg>
+      );
+    case 'heatwave':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className="text-red-500">
+          <rect x="10" y="2" width="4" height="16" rx="2" fill="currentColor" />
+          <circle cx="12" cy="19" r="4" fill="currentColor" />
+          <rect x="11" y="6" width="2" height="8" fill="white" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 // Memoized TopBar Component
 const TopBar = React.memo(function TopBar() {
   const { state, setSpeed, setTaxRate, isSaving } = useGame();
-  const { stats, year, month, day, hour, speed, taxRate, cityName } = state;
+  const { stats, year, month, day, hour, speed, taxRate, cityName, weather } = state;
   
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
+  
+  // Get season and weather description
+  const season = getSeasonFromMonth(month);
+  const seasonNames = { spring: 'Spring', summer: 'Summer', fall: 'Fall', winter: 'Winter' };
+  const weatherDesc = weather ? getWeatherDescription(weather, season) : 'Clear';
   
   return (
     <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
@@ -258,9 +339,29 @@ const TopBar = React.memo(function TopBar() {
               </TooltipTrigger>
               <TooltipContent>
                 <p>{formattedDate}</p>
+                <p className="text-muted-foreground">{seasonNames[season]}</p>
               </TooltipContent>
             </Tooltip>
             <TimeOfDayIcon hour={hour} />
+            {weather && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center gap-1 cursor-default">
+                    <WeatherIcon type={weather.type} size={14} />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{weatherDesc}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {weather.type === 'storm' ? 'Storms reduce construction speed' :
+                     weather.type === 'heatwave' ? 'Heat wave increases fire risk' :
+                     weather.type === 'snow' ? 'Snow slows construction' :
+                     weather.type === 'rain' ? 'Rain reduces outdoor activity' :
+                     'Good conditions'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
         
@@ -1844,7 +1945,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   onViewportChange?: (viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } }) => void;
 }) {
   const { state, placeAtTile, connectToCity, currentSpritePack } = useGame();
-  const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, hour } = state;
+  const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, hour, weather, month } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const carsCanvasRef = useRef<HTMLCanvasElement>(null);
   const lightingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1914,6 +2015,10 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   // Factory smog system refs
   const factorySmogRef = useRef<FactorySmog[]>([]);
   const smogLastGridVersionRef = useRef(-1); // Track when to rebuild factory list
+
+  // Weather particle system refs
+  const weatherParticlesRef = useRef<WeatherParticles | null>(null);
+  const weatherLastTypeRef = useRef<string>(''); // Track weather type changes
 
   // Performance: Cache expensive grid calculations
   const cachedRoadTileCountRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
@@ -7076,6 +7181,84 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     ctx.restore();
   }, [grid, gridSize, offset, zoom, hoveredTile, selectedTile, overlayMode, imagesLoaded, imageLoadVersion, canvasSize, dragStartTile, dragEndTile, state.services, currentSpritePack, waterBodies, isPartOfMultiTileBuilding, isPartOfParkBuilding, showsDragGrid]);
   
+  // Weather particle system update
+  const updateWeatherSystem = useCallback((delta: number) => {
+    if (!weather) return;
+    
+    const currentCanvasSize = worldStateRef.current.canvasSize;
+    
+    // Initialize or recreate particles if weather type changed
+    if (weatherLastTypeRef.current !== weather.type || !weatherParticlesRef.current) {
+      weatherParticlesRef.current = createWeatherParticles(
+        weather,
+        currentCanvasSize.width,
+        currentCanvasSize.height,
+        isMobile
+      );
+      weatherLastTypeRef.current = weather.type;
+    }
+    
+    // Update particles
+    if (weatherParticlesRef.current) {
+      weatherParticlesRef.current = updateWeatherParticles(
+        weatherParticlesRef.current,
+        weather,
+        delta,
+        currentCanvasSize.width,
+        currentCanvasSize.height,
+        isMobile
+      );
+    }
+  }, [weather, isMobile]);
+  
+  // Draw weather effects (called from render loop)
+  const drawWeather = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!weather || !weatherParticlesRef.current) return;
+    
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const currentCanvasSize = { width: canvas.width / dpr, height: canvas.height / dpr };
+    
+    ctx.save();
+    
+    // Draw weather overlay (atmospheric tint, day/night)
+    drawWeatherOverlay(ctx, weather, month, hour, currentCanvasSize.width * dpr, currentCanvasSize.height * dpr);
+    
+    // Draw clouds
+    if (weatherParticlesRef.current.clouds.length > 0) {
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      drawClouds(ctx, weatherParticlesRef.current.clouds, weather);
+      ctx.restore();
+    }
+    
+    // Draw precipitation
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    if (weather.type === 'rain' || weather.type === 'storm') {
+      drawRain(ctx, weatherParticlesRef.current.rainDrops, weather);
+    }
+    if (weather.type === 'snow') {
+      drawSnow(ctx, weatherParticlesRef.current.snowFlakes, weather);
+    }
+    ctx.restore();
+    
+    // Draw lightning
+    if (weather.type === 'storm' && weatherParticlesRef.current.lightning.active) {
+      drawLightning(ctx, weatherParticlesRef.current.lightning, currentCanvasSize.width * dpr, currentCanvasSize.height * dpr);
+    }
+    
+    // Draw heat shimmer
+    if (weather.type === 'heatwave') {
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      drawHeatShimmer(ctx, weatherParticlesRef.current.heatShimmer, currentCanvasSize.width, currentCanvasSize.height);
+      ctx.restore();
+    }
+    
+    ctx.restore();
+  }, [weather, month, hour]);
+
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
     const canvas = carsCanvasRef.current;
@@ -7116,6 +7299,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         updateBoats(delta); // Update boats (marina/pier required)
         updateFireworks(delta, hour); // Update fireworks (nighttime only)
         updateSmog(delta); // Update factory smog particles
+        updateWeatherSystem(delta); // Update weather particles
         navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
       }
       drawCars(ctx);
@@ -7127,11 +7311,12 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
       drawHelicopters(ctx); // Draw helicopters (below planes, above ground)
       drawAirplanes(ctx); // Draw airplanes above everything
       drawFireworks(ctx); // Draw fireworks above everything (nighttime only)
+      drawWeather(ctx); // Draw weather effects (rain, snow, clouds, lightning) on top
     };
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, hour, isMobile]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, updateWeatherSystem, drawWeather, hour, isMobile]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {

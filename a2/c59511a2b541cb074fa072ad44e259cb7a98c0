@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/TopBar.tsx: +171-172[0],+258-260[0],+263-265[0],+270-273[0],+275-276[0]
+src/components/game/vehicleSystems.ts: +84-87[1],+97[1],+105[1],+598-602[1],+744[1] -92[1],-100[1],-733[1]
+
+Conversations:
+
+[0]: 2f89f522-e4b0-4ced-ac48-f19e28430087; 2f89f522; unknown;
+[1]: c84ccf7e-dfe9-468a-8904-c27391b5efad; Reduce car visibility on mobile; claude-4.5-opus-high-thinking;

@@ -154,6 +154,13 @@ import {
   drawBeachOnWater,
 } from '@/components/game/drawing';
 import {
+  initializeWeatherParticles,
+  updateWeatherParticles,
+  drawWeather,
+  drawSnowAccumulation,
+  type WeatherParticles,
+} from '@/components/game/weather';
+import {
   getOverlayFillStyle,
   getOverlayForTool,
 } from '@/components/game/overlays';
@@ -1844,10 +1851,11 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   onViewportChange?: (viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } }) => void;
 }) {
   const { state, placeAtTile, connectToCity, currentSpritePack } = useGame();
-  const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, hour } = state;
+  const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, hour, weather } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const carsCanvasRef = useRef<HTMLCanvasElement>(null);
   const lightingCanvasRef = useRef<HTMLCanvasElement>(null);
+  const weatherCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState({ x: isMobile ? 200 : 620, y: isMobile ? 100 : 160 });
   const [isDragging, setIsDragging] = useState(false);
@@ -1866,6 +1874,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
   const carsRef = useRef<Car[]>([]);
   const carIdRef = useRef(0);
   const carSpawnTimerRef = useRef(0);
+  const weatherParticlesRef = useRef<WeatherParticles | null>(null);
   const emergencyVehiclesRef = useRef<EmergencyVehicle[]>([]);
   const emergencyVehicleIdRef = useRef(0);
   const emergencyDispatchTimerRef = useRef(0);
@@ -5669,6 +5678,10 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
           lightingCanvasRef.current.style.width = `${rect.width}px`;
           lightingCanvasRef.current.style.height = `${rect.height}px`;
         }
+        if (weatherCanvasRef.current) {
+          weatherCanvasRef.current.style.width = `${rect.width}px`;
+          weatherCanvasRef.current.style.height = `${rect.height}px`;
+        }
         
         // Set actual size in memory (scaled for DPI)
         setCanvasSize({
@@ -7117,6 +7130,17 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         updateFireworks(delta, hour); // Update fireworks (nighttime only)
         updateSmog(delta); // Update factory smog particles
         navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
+        
+        // Update weather particles
+        if (weatherParticlesRef.current && weather) {
+          weatherParticlesRef.current = updateWeatherParticles(
+            weatherParticlesRef.current,
+            weather,
+            canvasSize.width,
+            canvasSize.height,
+            delta
+          );
+        }
       }
       drawCars(ctx);
       drawPedestrians(ctx); // Draw pedestrians (zoom-gated)
@@ -7131,7 +7155,7 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, hour, isMobile]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, hour, isMobile, weather]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {
@@ -7395,6 +7419,63 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
     ctx.globalCompositeOperation = 'source-over';
     
   }, [grid, gridSize, hour, offset, zoom, canvasSize.width, canvasSize.height, isMobile]);
+  
+  // Initialize weather particles when weather changes
+  useEffect(() => {
+    if (weather && weatherCanvasRef.current) {
+      const dpr = window.devicePixelRatio || 1;
+      weatherParticlesRef.current = initializeWeatherParticles(
+        weather,
+        canvasSize.width / dpr,
+        canvasSize.height / dpr
+      );
+    }
+  }, [weather?.currentWeather, weather?.intensity, canvasSize.width, canvasSize.height]);
+  
+  // Weather rendering
+  useEffect(() => {
+    const canvas = weatherCanvasRef.current;
+    if (!canvas || !weather) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
+    
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (!weatherParticlesRef.current) {
+      weatherParticlesRef.current = initializeWeatherParticles(
+        weather,
+        canvasSize.width / dpr,
+        canvasSize.height / dpr
+      );
+    }
+    
+    // Calculate visible tile bounds for snow accumulation
+    const viewWidth = canvasSize.width / (dpr * zoom);
+    const viewHeight = canvasSize.height / (dpr * zoom);
+    const viewLeft = -offset.x / zoom - TILE_WIDTH;
+    const viewTop = -offset.y / zoom - TILE_HEIGHT * 2;
+    const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH;
+    const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 2;
+    
+    // Approximate grid bounds
+    const minGridY = Math.max(0, Math.floor((viewTop / TILE_HEIGHT) - gridSize / 2));
+    const maxGridY = Math.min(gridSize - 1, Math.ceil((viewBottom / TILE_HEIGHT) + gridSize / 2));
+    const minGridX = Math.max(0, Math.floor((viewLeft / TILE_WIDTH) + gridSize / 2));
+    const maxGridX = Math.min(gridSize - 1, Math.ceil((viewRight / TILE_WIDTH) + gridSize / 2));
+    
+    const visibleTiles = { minX: minGridX, maxX: maxGridX, minY: minGridY, maxY: maxGridY };
+    
+    // Draw weather effects
+    if (weatherParticlesRef.current) {
+      drawWeather(ctx, weather, weatherParticlesRef.current, offset, zoom, canvasSize);
+      drawSnowAccumulation(ctx, weather, grid, gridSize, offset, zoom, visibleTiles);
+    }
+  }, [weather, grid, gridSize, offset, zoom, canvasSize.width, canvasSize.height]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
@@ -7854,6 +7935,13 @@ function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMob
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"
         style={{ mixBlendMode: 'multiply' }}
+      />
+      <canvas
+        ref={weatherCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
+        style={{ mixBlendMode: 'screen' }}
       />
       
       {selectedTile && selectedTool === 'select' && !isMobile && (

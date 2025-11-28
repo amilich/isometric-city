@@ -20,6 +20,7 @@ import {
   INDUSTRIAL_BUILDINGS,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import { createInitialWeatherState, updateWeather, calculateWeatherEconomicEffects } from './weather';
 
 // Check if a factory_small at this position would render as a farm
 // This matches the deterministic logic in Game.tsx for farm variant selection
@@ -646,13 +647,15 @@ function createServiceCoverage(size: number): ServiceCoverage {
 export function createInitialGameState(size: number = 60, cityName: string = 'New City'): GameState {
   const { grid, waterBodies } = generateTerrain(size);
   const adjacentCities = generateAdjacentCities();
+  const initialMonth = 1;
+  const weather = createInitialWeatherState(initialMonth);
 
   return {
     grid,
     gridSize: size,
     cityName,
     year: 2024,
-    month: 1,
+    month: initialMonth,
     day: 1,
     hour: 12, // Start at noon
     tick: 0,
@@ -670,6 +673,7 @@ export function createInitialGameState(size: number = 60, cityName: string = 'Ne
     disastersEnabled: true,
     adjacentCities,
     waterBodies,
+    weather,
   };
 }
 
@@ -1625,9 +1629,18 @@ export function simulateTick(state: GameState): GameState {
   const taxRateDiff = state.taxRate - state.effectiveTaxRate;
   const newEffectiveTaxRate = state.effectiveTaxRate + taxRateDiff * 0.03;
 
+  // Update weather state
+  const newWeather = updateWeather(state.weather, state.month);
+  
   // Calculate stats (using lagged effectiveTaxRate for demand calculations)
   const newStats = calculateStats(newGrid, size, newBudget, state.taxRate, newEffectiveTaxRate, services);
   newStats.money = state.stats.money;
+  
+  // Apply weather economic effects
+  const weatherEffects = calculateWeatherEconomicEffects(newWeather, newStats);
+  newStats.income = Math.floor(newStats.income * weatherEffects.incomeModifier);
+  newStats.expenses = Math.floor(newStats.expenses * weatherEffects.expenseModifier);
+  newStats.happiness = Math.max(0, Math.min(100, newStats.happiness + weatherEffects.happinessModifier));
 
   // Update money on month change
   let newYear = state.year;
@@ -1636,11 +1649,26 @@ export function simulateTick(state: GameState): GameState {
   let newTick = state.tick + 1;
   
   // Calculate visual hour for day/night cycle (much slower than game time)
+  // Day length varies by season (affects when day/night transitions happen)
   // One full day/night cycle = 15 game days (450 ticks)
   // This makes the cycle atmospheric rather than jarring
   const totalTicks = ((state.year - 2024) * 12 * 30 * 30) + ((state.month - 1) * 30 * 30) + ((state.day - 1) * 30) + newTick;
   const cycleLength = 450; // ticks per visual day (15 game days)
-  const newHour = Math.floor((totalTicks % cycleLength) / cycleLength * 24);
+  const dayLength = newWeather.dayLength;
+  const nightLength = 24 - dayLength;
+  const dayStartHour = (24 - dayLength) / 2; // Center daylight hours around noon
+  
+  // Calculate hour with seasonal day length variation
+  const cycleProgress = (totalTicks % cycleLength) / cycleLength;
+  let newHour: number;
+  if (cycleProgress < dayLength / 24) {
+    // Daytime
+    newHour = Math.floor(dayStartHour + (cycleProgress * 24 / dayLength) * dayLength);
+  } else {
+    // Nighttime
+    const nightProgress = (cycleProgress - dayLength / 24) / (nightLength / 24);
+    newHour = Math.floor((dayStartHour + dayLength + nightProgress * nightLength) % 24);
+  }
 
   if (newTick >= 30) {
     newTick = 0;
@@ -1704,6 +1732,7 @@ export function simulateTick(state: GameState): GameState {
     advisorMessages,
     notifications: newNotifications,
     history,
+    weather: newWeather,
   };
 }
 

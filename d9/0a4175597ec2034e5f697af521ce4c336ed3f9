@@ -1,8 +1,9 @@
 AI Notes:
 
-src/components/game/vehicleSystems.ts: +593-619[0],+685[0],+688[0],+694[0],+699-700[0],+702[0],+705[0],+710[0],+712-720[0],+729[0],+733-734[0] -593[0],-595-596[0],-597-598[1],-600[0],-679[0],-681-682[0],-691[0],-700-702[0],-704-709[0],-710[1],-711[0],-715-716[0],-717[1]
+src/components/game/vehicleSystems.ts: +593-610[0],+611[1],+612[0],+613-617[1],+618-619[0],+685[0],+688[0],+694[0],+699-700[0],+702[0],+705[0],+710[0],+712-716[0],+717[1],+718-720[0],+729[0],+733-734[0] -593[0],-595-596[0],-597-598[2],-600[0],-679[0],-681-682[0],-691[0],-700-702[0],-704-709[0],-710[2],-711[0],-715-716[0],-717[2]
 
 Conversations:
 
 [0]: f074b5b6-5660-4958-a63f-5454af710591; Adjust mobile rendering thresholds; claude-4.5-opus-high-thinking;
-[1]: ad635ada-cb90-4923-92bf-df66a5a27961; Understanding unexpected car disappearances; claude-4.5-opus-high-thinking;
+[1]: c84ccf7e-dfe9-468a-8904-c27391b5efad; Reduce car visibility on mobile; claude-4.5-opus-high-thinking;
+[2]: ad635ada-cb90-4923-92bf-df66a5a27961; Understanding unexpected car disappearances; claude-4.5-opus-high-thinking;

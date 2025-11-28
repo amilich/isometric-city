@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +156[0],+353-356[0],+2303-2305[0],+3494-3506[0] -2297[0],-3486-3494[0]
+
+Conversations:
+
+[0]: fd8b9621-50cc-4be4-b5a3-56186f81f32a; Improve mobile game performance while panning; claude-4.5-opus-high-thinking;

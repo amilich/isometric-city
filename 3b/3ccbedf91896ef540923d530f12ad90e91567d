@@ -1,8 +1,9 @@
 AI Notes:
 
 src/components/Game.tsx: +548-549[0],+554[0],+559[0],+561[0] -548[0],-557[0],-559[0]
-src/lib/renderConfig.ts: +228-229[0],+234[0] -228-229[0]
+src/lib/renderConfig.ts: +228-229[1],+234[1] -228-229[1]
 
 Conversations:
 
 [0]: d69cffff-7dd9-4c86-96b8-8645cea4e501; Update tile caption font and mobile layout; composer-1;
+[1]: 920d9d5a-64b1-4baa-9202-b574611a9015; Design new marina game mechanics; claude-4.5-opus-high-thinking;

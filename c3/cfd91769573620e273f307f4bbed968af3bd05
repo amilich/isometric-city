@@ -1,11 +1,11 @@
 AI Notes:
 
-src/components/Game.tsx: +6747[0],+6749[1] -6754[1],-6755[2]
+src/components/Game.tsx: +6747[0],+6749[1] -6754-6755[2]
 src/lib/renderConfig.ts: -271[3]
 
 Conversations:
 
 [0]: c9c3dfad-5969-4c38-b601-5fc81cd0b116; c9c3dfad; unknown;
 [1]: 2761664d-5009-4583-b211-a995a25f2ca1; Offset apartment asset in sprite sheet; claude-4.5-opus-high-thinking;
-[2]: 2f89f522-e4b0-4ced-ac48-f19e28430087; Refactor game components into separate files; claude-4.5-opus-high-thinking;
+[2]: bd5412f7-532f-4cd0-a813-f0a43c71a561; Refactor CanvasIsometricGrid from Game.tsx; claude-4.5-opus-high-thinking;
 [3]: 920d9d5a-64b1-4baa-9202-b574611a9015; 920d9d5a; unknown;

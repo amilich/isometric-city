@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/Game.tsx: +6725[0],+6727-6733[0] -6725[0],-6727[0]
+src/lib/renderConfig.ts: +66-68[0],+268-269[0],+271[0]
+
+Conversations:
+
+[0]: 2761664d-5009-4583-b211-a995a25f2ca1; Offset apartment asset in sprite sheet; claude-4.5-opus-high-thinking;

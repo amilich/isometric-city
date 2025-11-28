@@ -6,4 +6,4 @@ src/lib/renderConfig.ts: +66-68[0],+268-269[0],+271[0]
 Conversations:
 
 [0]: 2761664d-5009-4583-b211-a995a25f2ca1; Offset apartment asset in sprite sheet; claude-4.5-opus-high-thinking;
-[1]: 211c3756-7598-44a6-b8c3-3cdad62ea036; Add search icon to logomark area; composer-1;
+[1]: 5071c7d2-d420-4b8c-ae7d-b14747f583fd; Improve game performance without gameplay loss; claude-4.5-opus-high-thinking;

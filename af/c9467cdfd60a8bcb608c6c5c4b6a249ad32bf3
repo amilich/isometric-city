@@ -1,0 +1,9 @@
+AI Notes:
+
+src/app/page.tsx: +154-155[0],+158[0],+161[0]
+src/components/game/panels/SettingsPanel.tsx: -205[1]
+
+Conversations:
+
+[0]: 174562dd-4ee6-40d0-8883-05e83e059e56; Add share button and compress controls; claude-4.5-opus-high-thinking;
+[1]: d50cb6a1-8d0a-4ea2-9dcc-5d64b2a70edf; d50cb6a1; unknown;

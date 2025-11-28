@@ -1,10 +1,10 @@
 AI Notes:
 
 src/components/Game.tsx: +6996[0],+7105-7109[0],+7115[0] -6996[0],-7110[0]
-src/lib/renderConfig.ts: +217[1],+222[1],+233[1],+240-241[2] -217[1],-222[1],-239-240[2]
+src/lib/renderConfig.ts: +217[1],+222[2],+233[2],+240-241[2] -217[1],-222[2],-239-240[2]
 
 Conversations:
 
 [0]: d7a7399b-a506-44d6-bd0e-8e3848322f44; Implement pause and unpause functionality; composer-1;
 [1]: 4c78c017-c1aa-4836-987d-6e0fa4c4fecd; Shift office high construction up; composer-1;
-[2]: 29da545c-21a5-4743-9f8d-29ff6b52cb9f; Shift apartment position by 0.2 tiles; composer-1;
+[2]: 920d9d5a-64b1-4baa-9202-b574611a9015; Design new marina game mechanics; claude-4.5-opus-high-thinking;

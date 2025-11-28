@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +2320-2323[0],+2325-2326[0],+2328-2335[0],+2337-2344[0],+2346-2353[0],+2355-2363[0],+2568[0],+2571[0]
+src/components/game/constants.ts: +96-99[0]
+src/components/game/vehicleSystems.ts: +619[0],+621[0],+625[0],+635-636[0],+639-640[0],+753-756[0],+758-765[0],+767-770[0],+772-777[0],+779-781[0],+959[0] -752[0],-930[0]
+
+Conversations:
+
+[0]: 566da022-d140-4254-a974-3d20f6440546; Enhance traffic system design; claude-4.5-opus-high-thinking;

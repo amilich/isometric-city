@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +2396[0],+2401-2409[0],+2412-2420[0],+2423-2431[0],+2434-2442[0] -2405[0],-2410-2411[1],-2414[0],-2419-2420[1],-2423[0],-2428-2429[1],-2432[0],-2437-2438[1]
+
+Conversations:
+
+[0]: 566da022-d140-4254-a974-3d20f6440546; Enhance traffic system design; claude-4.5-opus-high-thinking;
+[1]: 5a920703-b61a-4029-865c-aebebb98b92d; 5a920703; unknown;

@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +2791-2793[0],+3539-3542[0] -2791-2792[0],-3538-3540[0]
+
+Conversations:
+
+[0]: 45770780-7a4a-4ec6-b449-641e401d6f05; Investigate lake asset layering issue; claude-4.5-opus-high-thinking;

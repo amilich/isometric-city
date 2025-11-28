@@ -1,9 +1,10 @@
 AI Notes:
 
-src/components/Game.tsx: -7361-7362[0]
-src/context/GameContext.tsx: +448[1]
+src/components/Game.tsx: -7361[0],-7362[1]
+src/context/GameContext.tsx: +448[2]
 
 Conversations:
 
 [0]: 128ff917-6560-402f-9df5-72513dbf9a32; Improve mobile game performance; claude-4.5-opus-high-thinking;
-[1]: c88cc24c-c14e-4f63-a694-448b9fd43a8a; c88cc24c; unknown;
+[1]: 51c38e8f-2bf6-420c-97f6-b708c8ac0249; Optimize performance for isometric sim city game; claude-4.5-opus-high-thinking;
+[2]: c88cc24c-c14e-4f63-a694-448b9fd43a8a; c88cc24c; unknown;

@@ -1,0 +1,14 @@
+AI Notes:
+
+eslint.config.mjs: +3[0],+5[0] -3[0]
+src/components/game/panels/SettingsPanel.tsx: +4[0],+124-125[0],+128-129[0],+131[0] -123-124[0],-127[0]
+src/components/game/panels/SpriteTestPanel.tsx: +3[0],+11[0],+55-63[0],+65-71[0],+303[0] -3[0],-11[0],-263-271[0],-273-278[0],-302[0]
+src/components/game/Sidebar.tsx: +70[0] -70[0]
+src/components/game/vehicleSystems.ts: +879[0] -879[0]
+src/components/ui/CommandMenu.tsx: +247-251[0],+253-261[0],+265[0],+269[0],+377[0],+399[0] -249[0],-253[0],-296-299[0],-318-325[0],-375[0],-397[0]
+src/lib/renderConfig.ts: +381[1]
+
+Conversations:
+
+[0]: bd632a75-d8f7-4d43-8e48-896a27636edc; Fix lint issues without losing functionality; claude-4.5-opus-high-thinking;
+[1]: 9ab583bd-6592-4eb9-a135-e522953b5532; Shrink the baseball field dimensions; composer-1;

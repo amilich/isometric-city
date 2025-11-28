@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +6[0],+2795-2796[1],+2798-2799[1],+3174[0],+3177-3180[0],+3182-3186[0],+3188[0],+3193[0],+3195[0] -6[0],-2795-2796[1],-2798-2799[1],-3174[0],-3177-3180[0],-3185[0],-3187[0]
+src/lib/simulation.ts: +626-638[0],+640-642[0],+644-652[0],+654-664[0],+666-674[0],+676-686[0],+688-690[0],+692-693[0],+1944[1],+1946[1] -1876[1]
+
+Conversations:
+
+[0]: e3ac0890-d5a4-47bf-920c-74fdd2a3a2fc; Adjust building orientation to face road; claude-4.5-opus-high-thinking;
+[1]: ff869acb-3ffb-4f7f-973e-9306529ca28f; Extend second phase of construction; composer-1;

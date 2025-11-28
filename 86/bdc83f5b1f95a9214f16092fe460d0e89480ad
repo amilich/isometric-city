@@ -1,7 +1,8 @@
 AI Notes:
 
-src/components/Game.tsx: -15-18[0],-20-24[0],-29[0],-31-37[0],-43[0],-45-47[0],-50-51[0],-53-54[0],-67-68[0],-70-71[0],-74-76[0],-78-79[0],-81-84[0],-87[0],-117[0]
+src/components/Game.tsx: -15-18[0],-20-24[0],-29[0],-31-37[0],-43[0],-45-47[0],-50-51[0],-53-54[0],-67-68[0],-70-71[0],-74[0],-75-76[1],-78-79[0],-81[1],-82-84[0],-87-88[1],-117[0]
 
 Conversations:
 
 [0]: 2f89f522-e4b0-4ced-ac48-f19e28430087; Refactor game components into separate files; claude-4.5-opus-high-thinking;
+[1]: bd5412f7-532f-4cd0-a813-f0a43c71a561; Refactor CanvasIsometricGrid from Game.tsx; claude-4.5-opus-high-thinking;

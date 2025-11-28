@@ -4,10 +4,11 @@ src/components/Game.tsx: +70-72[0],+98-101[0],+1766-1769[0],+3042-3045[0],+3047-
 src/components/game/constants.ts: +20-24[0]
 src/components/game/Sidebar.tsx: +40[0],+187[0] -40[0],-187[0]
 src/components/game/types.ts: +63-64[0],+66-71[0],+73-107[0]
-src/lib/renderConfig.ts: +77-79[0],+212[0],+298[0],+320[0],+333-336[0] -209[0],-295[0],-317[0]
+src/lib/renderConfig.ts: +77-79[0],+212[0],+298[0],+320[0],+333-335[0],+336[3] -209[0],-295[0],-317[0]
 
 Conversations:
 
 [0]: 2a1b980d-f679-4cf4-b951-ae53bb743f9c; Add helicopter dynamics to city simulation; claude-4.5-opus-high-thinking;
 [1]: d6cd79d9-1f01-420e-aa91-d1bf6e0ec2fe; Add flashing lights to vehicles at night; claude-4.5-opus-high-thinking;
 [2]: 51c38e8f-2bf6-420c-97f6-b708c8ac0249; Optimize performance for isometric sim city game; claude-4.5-opus-high-thinking;
+[3]: 403b6602-c865-4343-8026-51ee53dc6bc5; Enable sprite sheet theme switching; claude-4.5-opus-high-thinking;

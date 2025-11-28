@@ -8,5 +8,5 @@ src/components/game/index.ts: +11-12[0]
 Conversations:
 
 [0]: 5a920703-b61a-4029-865c-aebebb98b92d; Refactor CanvasIsometricGrid for better structure; claude-4.5-opus-high-thinking;
-[1]: 7f17439b-9fa1-43bc-b1c6-5d0f27c078ee; Shrink space asset by 5%; composer-1;
+[1]: a39747e9-c9c4-442b-bdc1-c782e09f415d; Add overground rail mechanic to game; claude-4.5-opus-high-thinking;
 [2]: 4683bb89-0b6a-4535-86a3-85acf30c3b76; Revise game mechanic for city connections; claude-4.5-opus-high-thinking;

@@ -23,7 +23,7 @@ import { generateCityName, generateWaterName } from './names';
 import { isMobile } from 'react-device-detect';
 
 // Default grid size for new games
-export const DEFAULT_GRID_SIZE = isMobile ? 50 : 90;
+export const DEFAULT_GRID_SIZE = isMobile ? 50 : 70;
 
 // Check if a factory_small at this position would render as a farm
 // This matches the deterministic logic in Game.tsx for farm variant selection

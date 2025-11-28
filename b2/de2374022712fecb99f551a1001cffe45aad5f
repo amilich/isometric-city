@@ -1,0 +1,18 @@
+AI Notes:
+
+src/components/Game.tsx: +86-87[0],+119-134[0],+1691[0],+1695[0],+1762[0],+1770-1771[1],+1786[0],+1791[2],+1792[0],+1796[0],+1801[2],+1802[0],+1806[0],+1811[2],+1812[0],+1816[3],+1817[0],+1822-1823[2],+1824[0],+1904-1906[0],+4955-4958[0],+4960-4975[0],+4977-4979[0],+4981-4983[0],+4985-4988[0],+4990-4991[0],+4993-4996[0],+4998-5001[0],+5003[0],+5005-5009[0],+5011-5013[0],+5015-5019[0],+5021-5026[0],+5028-5038[0],+5040-5046[0],+5048[0],+5050-5052[0],+5054-5056[0],+5058-5060[0],+5062-5064[0],+5066-5076[0],+5078-5081[0],+5083-5085[0],+5087-5089[0],+5091-5093[0],+5095-5096[0],+5098-5099[0],+5101-5102[0],+5104-5107[0],+5109-5113[0],+5115-5118[0],+5120-5128[0],+5130-5132[0],+5134-5140[0],+5142-5149[0],+5151-5160[0],+5162-5163[0],+5165-5169[0],+5171-5178[0],+5180-5181[0],+5484[0],+5486[0],+5490[4],+5503[5],+5505[0],+5506[6],+5508[0],+5509[6],+5511[0],+5512[7],+5514[0],+5515[7],+5517[0],+5518[8],+5520-5521[0],+6331[0],+6338[0],+6340[0],+6345[2],+6346[0],+6672[0],+7010[0],+7016[0],+7026[0] -5106[9],-5111[10],-5116[10],-5121[10],-5126[10],-5131[10],-5136[10],-6620[0]
+src/components/game/types.ts: +219-220[2],+221-222[9],+223[2],+224-225[9],+226-227[2],+230-233[9],+237[2]
+
+Conversations:
+
+[0]: e6219b54-d592-457b-a3b6-b2e976b88d90; Add clouds and smog for factories; claude-4.5-opus-high-thinking;
+[1]: ef1eacc0-c8ac-48b2-8a4e-d592378766a8; Add fireworks mechanic to buildings; claude-4.5-opus-high-thinking;
+[2]: 2a1b980d-f679-4cf4-b951-ae53bb743f9c; Add helicopter dynamics to city simulation; claude-4.5-opus-high-thinking;
+[3]: 22b066bb-47c2-4172-9a74-083b28b8222f; Add boats mechanic and swap marina dimensions; claude-4.5-opus-high-thinking;
+[4]: ddd9a431-ffd0-453d-8147-e1f9df1e58a1; Add assets to sprite page; composer-1;
+[5]: 323593a2-29d2-49f1-84bb-ab63d4a17f0b; 323593a2; unknown;
+[6]: 8c14792a-c40f-48a6-ae6e-4c9f93f6aaba; Fix shifting game parameters; claude-4.5-opus-high-thinking;
+[7]: 252834ef-c245-4113-b926-9b6b04144d0b; Add new assets to parks section; claude-4.5-opus-high-thinking;
+[8]: 403b6602-c865-4343-8026-51ee53dc6bc5; Enable sprite sheet theme switching; claude-4.5-opus-high-thinking;
+[9]: 3095e105-01c5-4d92-9fcd-7a60cdcb04a1; Refactor game.tsx for better readability; claude-4.5-opus-high-thinking;
+[10]: d4412716-ddec-487d-bdea-47ea1f12617a; Asset bug in harry potter theme; claude-4.5-opus-high-thinking;

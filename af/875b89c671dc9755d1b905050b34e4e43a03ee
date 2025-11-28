@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/mobile/MobileToolbar.tsx: +193[0],+339[0],+343[0],+393[0],+466-467[0],+518[0] -8[0],-200[0],-340[0],-344[0],-394[0],-467-468[0],-519[0]
+src/components/ui/scroll-area.tsx: +17[0] -17[0]
+
+Conversations:
+
+[0]: 78e93c8f-a05a-42ff-bd9c-28e2f0563651; Mobile drawer scrolling issue; composer-1;

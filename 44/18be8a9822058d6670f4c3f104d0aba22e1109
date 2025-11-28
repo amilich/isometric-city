@@ -4,5 +4,5 @@ src/components/game/CanvasIsometricGrid.tsx: +2791-2793[0],+3539-3542[1] -2791-2
 
 Conversations:
 
-[0]: bfe0028f-19a1-4c73-9be7-151c2c399826; Investigate sidewalk tile issues; claude-4.5-opus-high-thinking;
-[1]: 45770780-7a4a-4ec6-b449-641e401d6f05; Investigate lake asset layering issue; claude-4.5-opus-high-thinking;
+[0]: bfe0028f-19a1-4c73-9be7-151c2c399826; bfe0028f; unknown;
+[1]: 45770780-7a4a-4ec6-b449-641e401d6f05; 45770780; unknown;

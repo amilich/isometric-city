@@ -4,6 +4,6 @@ src/components/game/CanvasIsometricGrid.tsx: +1727[0],+3754[0],+4524[1],+4526-45
 
 Conversations:
 
-[0]: bb117056-bd13-4ee5-8475-4a0c18d6c9f9; Adjust cropping for asset in row five; composer-1;
+[0]: e6f5c8e1-095c-478f-b94c-3808ad148efd; Understanding pedestrian building occlusion logic; claude-4.5-opus-high-thinking;
 [1]: 5466c533-2863-415e-95b3-24fe45fd809e; 5466c533; unknown;
 [2]: fd8b9621-50cc-4be4-b5a3-56186f81f32a; fd8b9621; unknown;

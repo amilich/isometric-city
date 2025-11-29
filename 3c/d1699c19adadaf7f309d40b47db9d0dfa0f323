@@ -6,7 +6,7 @@ src/components/game/trainSystem.ts: +15[0],+22[0],+54-55[0],+598[0],+611-613[0],
 Conversations:
 
 [0]: ee11ab53-e7aa-4d31-94f0-817f4355619a; Fix curve rendering for rail tiles; claude-4.5-opus-high-thinking;
-[1]: 1f42ded9-2c45-4796-912d-db5a98dbed88; Implement curved T shape rail intersections; composer-1;
+[1]: ddbf2eb8-417b-432a-8d0a-41cbb957e280; Adjust T curve rail line extension; composer-1;
 [2]: eba36228-eeb7-44c2-a5c5-ff1b20589d4c; Adjust T-shaped train intersection curves; claude-4.5-opus-high-thinking;
 [3]: d02d5036-67e1-40a9-9aad-23c4009320c3; Align rail ends with station tiles; claude-4.5-opus-high-thinking;
 [4]: 73cfc44b-a526-479c-b015-0b07f2f350c4; Fix 1x1 rail tile appearance; claude-4.5-opus-high-thinking;

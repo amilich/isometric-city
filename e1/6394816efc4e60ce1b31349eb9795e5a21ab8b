@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/constants.ts: +115[0] -115[0]
+src/components/game/trainSystem.ts: +141[1],+144[1] -141[0],-144[0]
+
+Conversations:
+
+[0]: b5110302-ccb4-4b42-9054-8d19ace64073; Need for more trains on the network; claude-4.5-opus-high-thinking;
+[1]: 3b7f198e-5855-4429-a232-7085a44cc7a3; Improve train size and navigation issues; claude-4.5-opus-high-thinking;

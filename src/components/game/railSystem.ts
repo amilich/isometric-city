@@ -300,7 +300,8 @@ function drawStraightTrack(
 }
 
 /**
- * Draw a curved track segment (quarter circle) connecting two perpendicular directions
+ * Draw a curved track segment connecting two perpendicular directions
+ * Uses bezier curves for smooth isometric appearance
  */
 function drawCurvedTrack(
   ctx: CanvasRenderingContext2D,
@@ -308,71 +309,80 @@ function drawCurvedTrack(
   to: { x: number; y: number },
   center: { x: number; y: number },
   spacing: number,
-  clockwise: boolean
+  _clockwise: boolean
 ): void {
-  // For curves, we need to draw arc segments
-  // The center of the curve is at the tile center
-  // From and To are the edge midpoints
+  // Get perpendicular offsets for both track directions
+  // From point perpendicular (toward center)
+  const fromDirX = center.x - from.x;
+  const fromDirY = center.y - from.y;
+  const fromLen = Math.hypot(fromDirX, fromDirY);
+  const fromPerpX = -fromDirY / fromLen * spacing / 2;
+  const fromPerpY = fromDirX / fromLen * spacing / 2;
   
-  // Calculate radii for inner and outer tracks
-  const baseRadius = Math.hypot(from.x - center.x, from.y - center.y);
-  const innerRadius = baseRadius - spacing / 2;
-  const outerRadius = baseRadius + spacing / 2;
+  // To point perpendicular (toward center)
+  const toDirX = center.x - to.x;
+  const toDirY = center.y - to.y;
+  const toLen = Math.hypot(toDirX, toDirY);
+  const toPerpX = -toDirY / toLen * spacing / 2;
+  const toPerpY = toDirX / toLen * spacing / 2;
   
-  // Calculate angles
-  const fromAngle = Math.atan2(from.y - center.y, from.x - center.x);
-  const toAngle = Math.atan2(to.y - center.y, to.x - center.x);
+  // Control point is at the tile center for smooth curve
+  const controlX = center.x;
+  const controlY = center.y;
   
-  // Draw ties along the curve
-  const numTies = 4;
+  // Draw ties along the curve using quadratic bezier interpolation
+  const numTies = 5;
   ctx.strokeStyle = RAIL_COLORS.TIE;
   ctx.lineWidth = RAIL_CONFIG.TIE_WIDTH;
   ctx.lineCap = 'butt';
   
   for (let i = 0; i <= numTies; i++) {
     const t = i / numTies;
-    let angle: number;
+    // Quadratic bezier interpolation for center line
+    const cx = (1-t)*(1-t)*from.x + 2*(1-t)*t*controlX + t*t*to.x;
+    const cy = (1-t)*(1-t)*from.y + 2*(1-t)*t*controlY + t*t*to.y;
     
-    // Interpolate angle (handling wrap-around)
-    let angleDiff = toAngle - fromAngle;
-    if (clockwise && angleDiff > 0) angleDiff -= Math.PI * 2;
-    if (!clockwise && angleDiff < 0) angleDiff += Math.PI * 2;
-    angle = fromAngle + angleDiff * t;
+    // Get tangent direction at this point
+    const tx = 2*(1-t)*(controlX - from.x) + 2*t*(to.x - controlX);
+    const ty = 2*(1-t)*(controlY - from.y) + 2*t*(to.y - controlY);
+    const tLen = Math.hypot(tx, ty);
     
-    const innerX = center.x + Math.cos(angle) * innerRadius;
-    const innerY = center.y + Math.sin(angle) * innerRadius;
-    const outerX = center.x + Math.cos(angle) * outerRadius;
-    const outerY = center.y + Math.sin(angle) * outerRadius;
-    
-    ctx.beginPath();
-    ctx.moveTo(innerX, innerY);
-    ctx.lineTo(outerX, outerY);
-    ctx.stroke();
+    if (tLen > 0) {
+      // Perpendicular to tangent - extend beyond track spacing for tie overhang
+      const tieHalfLen = spacing * 0.7;
+      const px = -ty / tLen * tieHalfLen;
+      const py = tx / tLen * tieHalfLen;
+      
+      ctx.beginPath();
+      ctx.moveTo(cx + px, cy + py);
+      ctx.lineTo(cx - px, cy - py);
+      ctx.stroke();
+    }
   }
   
-  // Draw rail arcs
+  // Draw the two rail lines using quadratic bezier curves
   ctx.strokeStyle = RAIL_COLORS.RAIL;
   ctx.lineWidth = RAIL_CONFIG.RAIL_WIDTH;
   ctx.lineCap = 'round';
   
-  // Inner rail
+  // Inner rail (offset toward inside of curve)
   ctx.beginPath();
-  ctx.arc(center.x, center.y, innerRadius, fromAngle, toAngle, clockwise);
+  ctx.moveTo(from.x + fromPerpX, from.y + fromPerpY);
+  ctx.quadraticCurveTo(controlX, controlY, to.x + toPerpX, to.y + toPerpY);
   ctx.stroke();
   
-  // Outer rail
+  // Outer rail (offset toward outside of curve)
   ctx.beginPath();
-  ctx.arc(center.x, center.y, outerRadius, fromAngle, toAngle, clockwise);
+  ctx.moveTo(from.x - fromPerpX, from.y - fromPerpY);
+  ctx.quadraticCurveTo(controlX, controlY, to.x - toPerpX, to.y - toPerpY);
   ctx.stroke();
   
-  // Add highlights
+  // Add highlights to inner rail
   ctx.strokeStyle = RAIL_COLORS.RAIL_HIGHLIGHT;
   ctx.lineWidth = 0.5;
   ctx.beginPath();
-  ctx.arc(center.x, center.y, innerRadius, fromAngle, toAngle, clockwise);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, outerRadius, fromAngle, toAngle, clockwise);
+  ctx.moveTo(from.x + fromPerpX, from.y + fromPerpY);
+  ctx.quadraticCurveTo(controlX, controlY, to.x + toPerpX, to.y + toPerpY);
   ctx.stroke();
 }
 

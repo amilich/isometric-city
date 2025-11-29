@@ -6,6 +6,6 @@ src/lib/renderConfig.ts: +237-238[0] -237-238[0]
 
 Conversations:
 
-[0]: b3283a88-8cb7-4652-bace-88a4d8f15bbc; Fix pedestrian rendering issues; claude-4.5-opus-high-thinking;
-[1]: 270eb1d9-720c-48cc-9745-5a11a1ede965; Add ocean barges game mechanic; claude-4.5-opus-high-thinking;
-[2]: e7dc0a4a-d9a9-4b8f-87d5-ba0f6690790a; Make sidewalks visible at lower zoom levels; claude-4.5-opus-high-thinking;
+[0]: b3283a88-8cb7-4652-bace-88a4d8f15bbc; b3283a88; unknown;
+[1]: 04e86497-6656-4e0f-84e3-d5b8563ccd7a; 04e86497; unknown;
+[2]: e7dc0a4a-d9a9-4b8f-87d5-ba0f6690790a; e7dc0a4a; unknown;

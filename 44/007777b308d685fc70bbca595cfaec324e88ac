@@ -7,5 +7,5 @@ src/components/game/constants.ts: +76-77[0] -76-77[0]
 
 Conversations:
 
-[0]: aed45725-e3e2-4ba6-a1ba-bac17fa7e6b4; Update economic impact of barges; claude-4.5-opus-high-thinking;
-[1]: 04e86497-6656-4e0f-84e3-d5b8563ccd7a; Refactor CanvasIsometricGrid for performance; composer-1;
+[0]: aed45725-e3e2-4ba6-a1ba-bac17fa7e6b4; aed45725; unknown;
+[1]: 04e86497-6656-4e0f-84e3-d5b8563ccd7a; 04e86497; unknown;

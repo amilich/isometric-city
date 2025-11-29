@@ -1,10 +1,11 @@
 AI Notes:
 
-src/components/game/CanvasIsometricGrid.tsx: +3156-3163[0],+3836[0],+3843[0] -3834-3835[0]
-src/components/game/constants.ts: +43[1] -42-43[1]
+src/components/game/CanvasIsometricGrid.tsx: +3156-3158[0],+3159[1],+3160-3162[0],+3163[1],+3836[0],+3843[0] -3834-3835[0]
+src/components/game/constants.ts: +43[2] -42-43[2]
 src/lib/renderConfig.ts: +237-238[0] -237-238[0]
 
 Conversations:
 
 [0]: b3283a88-8cb7-4652-bace-88a4d8f15bbc; Fix pedestrian rendering issues; claude-4.5-opus-high-thinking;
-[1]: e7dc0a4a-d9a9-4b8f-87d5-ba0f6690790a; Make sidewalks visible at lower zoom levels; claude-4.5-opus-high-thinking;
+[1]: 270eb1d9-720c-48cc-9745-5a11a1ede965; Add ocean barges game mechanic; claude-4.5-opus-high-thinking;
+[2]: e7dc0a4a-d9a9-4b8f-87d5-ba0f6690790a; Make sidewalks visible at lower zoom levels; claude-4.5-opus-high-thinking;

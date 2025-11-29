@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +3140[0],+3142[0] -3140[0],-3142[0]
+src/lib/renderConfig.ts: +247[0],+712-714[0] -247[0]
+
+Conversations:
+
+[0]: 4381733d-b9c5-44a1-93f2-11050b323345; Crop and shift space program asset; claude-4.5-opus-high-thinking;

@@ -174,6 +174,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
   const carsCanvasRef = useRef<HTMLCanvasElement>(null);
   const buildingsCanvasRef = useRef<HTMLCanvasElement>(null); // Buildings rendered on top of cars/trains
+  const aircraftCanvasRef = useRef<HTMLCanvasElement>(null); // Aircraft (airplanes/helicopters) rendered on top of buildings
   const lightingCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderPendingRef = useRef<number | null>(null); // PERF: Track pending render frame
@@ -1719,6 +1720,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         if (buildingsCanvasRef.current) {
           buildingsCanvasRef.current.style.width = `${rect.width}px`;
           buildingsCanvasRef.current.style.height = `${rect.height}px`;
+        }
+        if (aircraftCanvasRef.current) {
+          aircraftCanvasRef.current.style.width = `${rect.width}px`;
+          aircraftCanvasRef.current.style.height = `${rect.height}px`;
         }
         if (lightingCanvasRef.current) {
           lightingCanvasRef.current.style.width = `${rect.width}px`;
@@ -3766,13 +3771,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         updateCrimeIncidents(delta); // Update/decay crime incidents
         updateEmergencyVehicles(delta); // Update emergency vehicles!
         updatePedestrians(delta); // Update pedestrians (zoom-gated)
-        updateAirplanes(delta); // Update airplanes (airport required)
-        updateHelicopters(delta); // Update helicopters (hospital/airport required)
         updateBoats(delta); // Update boats (marina/pier required)
         updateTrains(delta); // Update trains on rail network
         updateFireworks(delta, visualHour); // Update fireworks (nighttime only)
         updateSmog(delta); // Update factory smog particles
-        navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
         trafficLightTimerRef.current += delta; // Update traffic light cycle timer
       }
       // PERF: Skip drawing animated elements during mobile panning/zooming for better performance
@@ -3789,15 +3791,85 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         drawSmog(ctx); // Draw factory smog (above ground, below aircraft)
         drawEmergencyVehicles(ctx); // Draw emergency vehicles!
         drawIncidentIndicators(ctx, delta); // Draw fire/crime incident indicators!
-        drawHelicopters(ctx); // Draw helicopters (below planes, above ground)
-        drawAirplanes(ctx); // Draw airplanes above everything
         drawFireworks(ctx); // Draw fireworks above everything (nighttime only)
       }
     };
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateBoats, drawBoats, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile]);
+  
+  // Animate aircraft (airplanes/helicopters) on separate canvas above buildings
+  useEffect(() => {
+    const canvas = aircraftCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.imageSmoothingEnabled = false;
+    
+    let animationFrameId: number;
+    let lastTime = performance.now();
+    let lastRenderTime = 0;
+    
+    // Target 30fps on mobile (33ms per frame), 60fps on desktop (16ms per frame)
+    const targetFrameTime = isMobile ? 33 : 16;
+    
+    const render = (time: number) => {
+      animationFrameId = requestAnimationFrame(render);
+      
+      // Frame rate limiting for mobile - skip frames to maintain target FPS
+      const timeSinceLastRender = time - lastRenderTime;
+      if (isMobile && timeSinceLastRender < targetFrameTime) {
+        return; // Skip this frame on mobile to reduce CPU load
+      }
+      
+      const delta = Math.min((time - lastTime) / 1000, 0.3);
+      lastTime = time;
+      lastRenderTime = time;
+      
+      if (delta > 0) {
+        updateAirplanes(delta); // Update airplanes (airport required)
+        updateHelicopters(delta); // Update helicopters (hospital/airport required)
+        navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
+      }
+      
+      // PERF: Skip drawing animated elements during mobile panning/zooming for better performance
+      const skipAnimatedElements = isMobile && (isPanningRef.current || isPinchZoomingRef.current);
+      if (skipAnimatedElements) {
+        // Clear the canvas but don't draw anything - hides all animated elements while panning/zooming
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      } else {
+        // Set canvas size in memory (scaled for DPI)
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvasSize.width;
+        canvas.height = canvasSize.height;
+        
+        // Clear aircraft canvas
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Apply same transform as main canvas
+        ctx.scale(dpr, dpr);
+        ctx.translate(offset.x, offset.y);
+        ctx.scale(zoom, zoom);
+        
+        // Disable image smoothing for crisp pixel art
+        ctx.imageSmoothingEnabled = false;
+        
+        // Draw helicopters (below planes, above buildings)
+        drawHelicopters(ctx);
+        // Draw airplanes above everything
+        drawAirplanes(ctx);
+        
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+    };
+    
+    animationFrameId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [canvasSize.width, canvasSize.height, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, visualHour, isMobile, offset.x, offset.y, zoom]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {
@@ -4502,6 +4574,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       />
       <canvas
         ref={buildingsCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
+      />
+      <canvas
+        ref={aircraftCanvasRef}
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"

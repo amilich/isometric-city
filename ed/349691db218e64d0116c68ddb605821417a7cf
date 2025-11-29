@@ -1,0 +1,9 @@
+AI Notes:
+
+eslint.config.mjs: +3[0]
+package.json: +27[1],+29[1],+37-38[1] -27[1],-29[1],-37-38[1]
+
+Conversations:
+
+[0]: bd632a75-d8f7-4d43-8e48-896a27636edc; bd632a75; unknown;
+[1]: 2a4d4471-12f6-4568-a26c-75aa83e74fae; Upgrade to React 19; claude-4.5-opus-high-thinking;

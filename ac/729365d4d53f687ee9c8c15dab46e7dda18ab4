@@ -1,0 +1,8 @@
+AI Notes:
+
+src/app/layout.tsx: +31-38[0],+44-50[0]
+src/app/opengraph-image/route.ts: +1[0],+3-14[0],+16-18[0],+20-21[0],+23-24[0],+26-28[0],+30[0],+35[0]
+
+Conversations:
+
+[0]: 33e65e32-be64-422a-ab7c-cb545041e3cc; Crop in-game screenshots dimensions; claude-4.5-opus-high-thinking;

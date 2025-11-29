@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/trainSystem.ts: +261[0],+333[0] -261[0],-333[0]
+src/components/game/vehicleSystems.ts: +86-87[1] -86-87[1]
+
+Conversations:
+
+[0]: a0a49ad7-a4c9-48ab-a20d-fbaf9d9cf99d; Make trains move faster; composer-1;
+[1]: 90001355-5b0a-4fdc-b48e-9f1f9b5b2f0b; Cars disappearing too quickly; claude-4.5-opus-high-thinking;

@@ -1,0 +1,11 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +1707[0],+3571[1],+3577[2],+3580-3581[0],+4490[1],+4492-4495[1] -3545[3],-3546[4]
+
+Conversations:
+
+[0]: 844ff051-ec4f-4daf-a511-5db02319f01e; Render rail on road and vice versa; claude-4.5-opus-high-thinking;
+[1]: 5466c533-2863-415e-95b3-24fe45fd809e; 5466c533; unknown;
+[2]: 0179b720-7f2e-4624-ac3c-0c4f4359402d; Enable rail on road and road on rail; claude-4.5-opus-high-thinking;
+[3]: bc955a41-f125-43a2-8845-f21d1e0159f7; Enable rail on road and road on rail; claude-4.5-opus-high-thinking;
+[4]: b7819bdd-5e13-49c6-8a3c-7cf504fc9f25; b7819bdd; unknown;

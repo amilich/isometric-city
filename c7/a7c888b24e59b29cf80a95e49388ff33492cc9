@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/game/gridFinders.ts: +37[0],+43[0],+49[0] -37[0],-43[0],-49[0]
+src/components/game/vehicleSystems.ts: +5[0],+156[0],+158-171[0],+213[0],+215-223[0] -5[0],-155[0],-197[0]
+src/lib/renderConfig.ts: +411-412[1] -411[1]
+
+Conversations:
+
+[0]: 90d72553-35c1-4b5b-aa2b-c4d065cd8055; Pedestrian activity and sports participation; claude-4.5-opus-high-thinking;
+[1]: f6b81a22-0fa7-4bf9-855a-03cd0e1345e0; Pedestrian activity in sports and pools; composer-1;

@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +2929[0],+2952[0],+3016-3017[0],+3027[0],+3059[0],+3083-3084[0],+3113-3114[0] -2929[0],-2952[0],-3016-3017[0],-3027[0],-3059[0],-3083-3084[0],-3113-3114[0]
+src/lib/renderConfig.ts: +236[1] -236[1]
+
+Conversations:
+
+[0]: cc6acff4-d148-428d-b85c-bb9125f1847e; Make nights darker; composer-1;
+[1]: 604b6087-ee9a-4b99-9342-d5347350b9eb; Shift subway station position; composer-1;

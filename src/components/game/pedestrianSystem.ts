@@ -58,18 +58,20 @@ const ENTERABLE_BUILDINGS: BuildingType[] = [
 ];
 
 // Map building types to possible activities
+// IMPORTANT: Sports activities (basketball, tennis, soccer, baseball) should ONLY
+// appear at their dedicated facilities, not at regular parks
 const BUILDING_ACTIVITIES: Partial<Record<BuildingType, PedestrianActivity[]>> = {
-  // Sports
+  // Sports - ONLY at dedicated facilities
   'basketball_courts': ['playing_basketball', 'watching_game'],
   'tennis': ['playing_tennis', 'watching_game'],
-  'soccer_field_small': ['playing_soccer', 'watching_game', 'jogging'],
+  'soccer_field_small': ['playing_soccer', 'watching_game'],
   'baseball_field_small': ['playing_baseball', 'watching_game'],
-  'football_field': ['playing_soccer', 'watching_game', 'jogging'],
+  'football_field': ['playing_soccer', 'watching_game'],
   'baseball_stadium': ['watching_game', 'sitting_bench'],
   'stadium': ['watching_game', 'sitting_bench'],
   'bleachers_field': ['watching_game', 'sitting_bench'],
   
-  // Recreation
+  // Recreation facilities
   'swimming_pool': ['swimming'],
   'skate_park': ['skateboarding', 'watching_game'],
   'playground_small': ['playground'],
@@ -79,9 +81,9 @@ const BUILDING_ACTIVITIES: Partial<Record<BuildingType, PedestrianActivity[]>> =
   'roller_coaster_small': ['watching_game'],
   'amusement_park': ['walking_dog', 'sitting_bench', 'watching_game'],
   
-  // Parks and relaxation
-  'park': ['sitting_bench', 'picnicking', 'walking_dog', 'jogging'],
-  'park_large': ['sitting_bench', 'picnicking', 'walking_dog', 'jogging', 'playing_soccer'],
+  // Parks and relaxation - NO ball sports here
+  'park': ['sitting_bench', 'picnicking', 'walking_dog'],
+  'park_large': ['sitting_bench', 'picnicking', 'walking_dog'],
   'community_garden': ['sitting_bench', 'picnicking'],
   'pond_park': ['sitting_bench', 'picnicking', 'walking_dog'],
   'campground': ['sitting_bench', 'picnicking'],
@@ -142,12 +144,13 @@ export function canPedestrianEnterBuilding(buildingType: BuildingType): boolean 
 
 /**
  * Generate random activity position offset within a tile
+ * Uses very small range to keep pedestrians well within tile bounds
  */
 export function getRandomActivityOffset(): { x: number; y: number } {
-  // Random offset within the tile bounds (smaller area for activities)
+  // Very small random offset to add slight variation without going outside tile
   return {
-    x: (Math.random() - 0.5) * TILE_WIDTH * 0.6,
-    y: (Math.random() - 0.5) * TILE_HEIGHT * 0.6,
+    x: (Math.random() - 0.5) * 8,
+    y: (Math.random() - 0.5) * 4,
   };
 }
 

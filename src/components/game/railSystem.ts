@@ -219,8 +219,14 @@ export function getTrackType(connections: RailConnection): TrackType {
 // ============================================================================
 
 // Screen-space perpendicular calculation (90° clockwise rotation)
-// This gives the correct rail offset direction for isometric tracks
-const getPerp = (dx: number, dy: number) => ({ x: dy, y: -dx });
+// Used for curves where we need smooth transitions
+const getScreenPerp = (dx: number, dy: number) => ({ x: dy, y: -dx });
+
+// Isometric axis directions (normalized) - these align with the grid
+// N-S axis: from northEdge to southEdge (top-left to bottom-right on screen)
+const ISO_NS = { x: 0.894427, y: 0.447214 };
+// E-W axis: from eastEdge to westEdge (top-right to bottom-left on screen)  
+const ISO_EW = { x: -0.894427, y: 0.447214 };
 
 /**
  * Draw the ballast (gravel bed) foundation for tracks
@@ -254,16 +260,12 @@ function drawBallast(
 
   ctx.fillStyle = RAIL_COLORS.BALLAST;
 
-  // Draw a straight ballast segment - calculates perpendicular from track direction
+  // Draw a straight ballast segment with explicit isometric perpendicular
   const drawStraightBallast = (
     from: { x: number; y: number },
-    to: { x: number; y: number }
+    to: { x: number; y: number },
+    perp: { x: number; y: number }  // Isometric perpendicular direction
   ) => {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const len = Math.hypot(dx, dy);
-    const perp = getPerp(dx / len, dy / len);
-
     ctx.beginPath();
     ctx.moveTo(from.x + perp.x * halfW, from.y + perp.y * halfW);
     ctx.lineTo(to.x + perp.x * halfW, to.y + perp.y * halfW);
@@ -286,22 +288,14 @@ function drawBallast(
   };
 
   // Draw curved ballast using a filled arc shape
+  // Uses isometric perpendiculars at start/end for grid alignment
   const drawCurvedBallast = (
     from: { x: number; y: number },
     to: { x: number; y: number },
-    control: { x: number; y: number }
+    control: { x: number; y: number },
+    fromPerp: { x: number; y: number },
+    toPerp: { x: number; y: number }
   ) => {
-    // Calculate perpendiculars at start and end based on tangent directions
-    const fromDx = control.x - from.x;
-    const fromDy = control.y - from.y;
-    const fromLen = Math.hypot(fromDx, fromDy);
-    const fromPerp = getPerp(fromDx / fromLen, fromDy / fromLen);
-
-    const toDx = to.x - control.x;
-    const toDy = to.y - control.y;
-    const toLen = Math.hypot(toDx, toDy);
-    const toPerp = getPerp(toDx / toLen, toDy / toLen);
-
     // Average perpendicular at the curve apex
     const midPerp = {
       x: (fromPerp.x + toPerp.x) / 2,
@@ -328,69 +322,70 @@ function drawBallast(
   };
 
   // Draw ballast based on track type
-  // For curves, use the center to create curves that go through the middle of the tile
+  // N-S tracks use E-W perpendicular, E-W tracks use N-S perpendicular
+  // For curves, interpolate between the perpendiculars at each end
   switch (trackType) {
     case 'straight_ns':
-      drawStraightBallast(northEdge, southEdge);
+      drawStraightBallast(northEdge, southEdge, ISO_EW);
       break;
     case 'straight_ew':
-      drawStraightBallast(eastEdge, westEdge);
+      drawStraightBallast(eastEdge, westEdge, ISO_NS);
       break;
     case 'curve_ne':
-      // North (top-left edge) to East (top-right edge) - curve through center
-      drawCurvedBallast(northEdge, eastEdge, center);
+      // North (N-S track, perp=EW) to East (E-W track, perp=NS)
+      drawCurvedBallast(northEdge, eastEdge, center, ISO_EW, ISO_NS);
       break;
     case 'curve_nw':
-      // North (top-left edge) to West (bottom-left edge) - curve through center
-      drawCurvedBallast(northEdge, westEdge, center);
+      // North (N-S track, perp=EW) to West (E-W track, perp=NS)
+      drawCurvedBallast(northEdge, westEdge, center, ISO_EW, ISO_NS);
       break;
     case 'curve_se':
-      // South (bottom-right edge) to East (top-right edge) - curve through center
-      drawCurvedBallast(southEdge, eastEdge, center);
+      // South (N-S track, perp=EW) to East (E-W track, perp=NS)
+      drawCurvedBallast(southEdge, eastEdge, center, ISO_EW, ISO_NS);
       break;
     case 'curve_sw':
-      // South (bottom-right edge) to West (bottom-left edge) - curve through center
-      drawCurvedBallast(southEdge, westEdge, center);
+      // South (N-S track, perp=EW) to West (E-W track, perp=NS)
+      drawCurvedBallast(southEdge, westEdge, center, ISO_EW, ISO_NS);
       break;
     case 'junction_t_n':
-      drawStraightBallast(eastEdge, westEdge);
-      drawStraightBallast(center, southEdge);
+      drawStraightBallast(eastEdge, westEdge, ISO_NS);
+      drawStraightBallast(center, southEdge, ISO_EW);
       drawCenterBallast();
       break;
     case 'junction_t_e':
-      drawStraightBallast(northEdge, southEdge);
-      drawStraightBallast(center, westEdge);
+      drawStraightBallast(northEdge, southEdge, ISO_EW);
+      drawStraightBallast(center, westEdge, ISO_NS);
       drawCenterBallast();
       break;
     case 'junction_t_s':
-      drawStraightBallast(eastEdge, westEdge);
-      drawStraightBallast(center, northEdge);
+      drawStraightBallast(eastEdge, westEdge, ISO_NS);
+      drawStraightBallast(center, northEdge, ISO_EW);
       drawCenterBallast();
       break;
     case 'junction_t_w':
-      drawStraightBallast(northEdge, southEdge);
-      drawStraightBallast(center, eastEdge);
+      drawStraightBallast(northEdge, southEdge, ISO_EW);
+      drawStraightBallast(center, eastEdge, ISO_NS);
       drawCenterBallast();
       break;
     case 'junction_cross':
-      drawStraightBallast(northEdge, southEdge);
-      drawStraightBallast(eastEdge, westEdge);
+      drawStraightBallast(northEdge, southEdge, ISO_EW);
+      drawStraightBallast(eastEdge, westEdge, ISO_NS);
       drawCenterBallast();
       break;
     case 'terminus_n':
-      drawStraightBallast(center, southEdge);
+      drawStraightBallast(center, southEdge, ISO_EW);
       drawCenterBallast();
       break;
     case 'terminus_e':
-      drawStraightBallast(center, westEdge);
+      drawStraightBallast(center, westEdge, ISO_NS);
       drawCenterBallast();
       break;
     case 'terminus_s':
-      drawStraightBallast(center, northEdge);
+      drawStraightBallast(center, northEdge, ISO_EW);
       drawCenterBallast();
       break;
     case 'terminus_w':
-      drawStraightBallast(center, eastEdge);
+      drawStraightBallast(center, eastEdge, ISO_NS);
       drawCenterBallast();
       break;
     case 'single':
@@ -401,7 +396,7 @@ function drawBallast(
 
 /**
  * Draw rail ties (sleepers) perpendicular to track direction
- * Ties run perpendicular to the track in screen space
+ * Ties run along the isometric perpendicular axis for grid alignment
  */
 function drawTies(
   ctx: CanvasRenderingContext2D,
@@ -426,20 +421,14 @@ function drawTies(
   const westEdge = { x: x + w * 0.25, y: y + h * 0.75 };
   const center = { x: cx, y: cy };
 
-  // Diamond corners for curve control points
-  const topCorner = { x: x + w / 2, y: y };
-  const rightCorner = { x: x + w, y: y + h / 2 };
-  const bottomCorner = { x: x + w / 2, y: y + h };
-  const leftCorner = { x: x, y: y + h / 2 };
-
   ctx.fillStyle = RAIL_COLORS.TIE;
 
-  // Draw a single tie at a position - tie runs perpendicular to track direction
+  // Draw a single tie at a position - tie runs along the given isometric direction
   const drawTie = (tieX: number, tieY: number, tieDir: { x: number; y: number }) => {
     const halfLen = tieLength / 2;
     const halfWidth = tieWidth / 2;
-    // Perpendicular for thickness
-    const perpDir = getPerp(tieDir.x, tieDir.y);
+    // Perpendicular for thickness (screen-space rotation)
+    const perpDir = getScreenPerp(tieDir.x, tieDir.y);
     
     ctx.beginPath();
     ctx.moveTo(
@@ -462,17 +451,15 @@ function drawTies(
     ctx.fill();
   };
 
-  // Draw ties along a straight segment - ties are perpendicular to the track
+  // Draw ties along a straight segment with explicit isometric tie direction
   const drawTiesAlongSegment = (
     from: { x: number; y: number },
     to: { x: number; y: number },
+    tieDir: { x: number; y: number },
     numTies: number
   ) => {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
-    const len = Math.hypot(dx, dy);
-    // Ties are perpendicular to track direction
-    const tieDir = getPerp(dx / len, dy / len);
     
     for (let i = 0; i < numTies; i++) {
       const t = (i + 0.5) / numTies;
@@ -482,11 +469,13 @@ function drawTies(
     }
   };
 
-  // Draw ties along a curve - ties smoothly rotate to stay perpendicular to curve
+  // Draw ties along a curve - interpolate isometric tie direction
   const drawTiesAlongCurve = (
     from: { x: number; y: number },
     to: { x: number; y: number },
     control: { x: number; y: number },
+    fromTieDir: { x: number; y: number },
+    toTieDir: { x: number; y: number },
     numTies: number
   ) => {
     for (let i = 0; i < numTies; i++) {
@@ -497,71 +486,72 @@ function drawTies(
       const tieX = u * u * from.x + 2 * u * t * control.x + t * t * to.x;
       const tieY = u * u * from.y + 2 * u * t * control.y + t * t * to.y;
       
-      // Tangent to curve at this point (derivative of bezier)
-      const tangentX = 2 * u * (control.x - from.x) + 2 * t * (to.x - control.x);
-      const tangentY = 2 * u * (control.y - from.y) + 2 * t * (to.y - control.y);
-      const tangentLen = Math.hypot(tangentX, tangentY);
-      
-      // Tie direction is perpendicular to tangent
-      const tieDir = getPerp(tangentX / tangentLen, tangentY / tangentLen);
+      // Interpolate tie direction between isometric axes
+      const interpDir = {
+        x: fromTieDir.x * u + toTieDir.x * t,
+        y: fromTieDir.y * u + toTieDir.y * t
+      };
+      const interpLen = Math.hypot(interpDir.x, interpDir.y);
+      const tieDir = { x: interpDir.x / interpLen, y: interpDir.y / interpLen };
       
       drawTie(tieX, tieY, tieDir);
     }
   };
 
   // Draw ties based on track type
+  // For N-S tracks, ties run along E-W; for E-W tracks, ties run along N-S
   const tiesHalf = Math.ceil(TIES_PER_TILE / 2);
 
   switch (trackType) {
     case 'straight_ns':
-      drawTiesAlongSegment(northEdge, southEdge, TIES_PER_TILE);
+      drawTiesAlongSegment(northEdge, southEdge, ISO_EW, TIES_PER_TILE);
       break;
     case 'straight_ew':
-      drawTiesAlongSegment(eastEdge, westEdge, TIES_PER_TILE);
+      drawTiesAlongSegment(eastEdge, westEdge, ISO_NS, TIES_PER_TILE);
       break;
     case 'curve_ne':
-      drawTiesAlongCurve(northEdge, eastEdge, center, TIES_PER_TILE);
+      drawTiesAlongCurve(northEdge, eastEdge, center, ISO_EW, ISO_NS, TIES_PER_TILE);
       break;
     case 'curve_nw':
-      drawTiesAlongCurve(northEdge, westEdge, center, TIES_PER_TILE);
+      drawTiesAlongCurve(northEdge, westEdge, center, ISO_EW, ISO_NS, TIES_PER_TILE);
       break;
     case 'curve_se':
-      drawTiesAlongCurve(southEdge, eastEdge, center, TIES_PER_TILE);
+      drawTiesAlongCurve(southEdge, eastEdge, center, ISO_EW, ISO_NS, TIES_PER_TILE);
       break;
     case 'curve_sw':
-      drawTiesAlongCurve(southEdge, westEdge, center, TIES_PER_TILE);
+      drawTiesAlongCurve(southEdge, westEdge, center, ISO_EW, ISO_NS, TIES_PER_TILE);
       break;
     case 'junction_t_n':
-      drawTiesAlongSegment(eastEdge, westEdge, TIES_PER_TILE);
-      drawTiesAlongSegment(center, southEdge, tiesHalf);
+      drawTiesAlongSegment(eastEdge, westEdge, ISO_NS, TIES_PER_TILE);
+      drawTiesAlongSegment(center, southEdge, ISO_EW, tiesHalf);
       break;
     case 'junction_t_e':
-      drawTiesAlongSegment(northEdge, southEdge, TIES_PER_TILE);
-      drawTiesAlongSegment(center, westEdge, tiesHalf);
+      drawTiesAlongSegment(northEdge, southEdge, ISO_EW, TIES_PER_TILE);
+      drawTiesAlongSegment(center, westEdge, ISO_NS, tiesHalf);
       break;
     case 'junction_t_s':
-      drawTiesAlongSegment(eastEdge, westEdge, TIES_PER_TILE);
-      drawTiesAlongSegment(center, northEdge, tiesHalf);
+      drawTiesAlongSegment(eastEdge, westEdge, ISO_NS, TIES_PER_TILE);
+      drawTiesAlongSegment(center, northEdge, ISO_EW, tiesHalf);
       break;
     case 'junction_t_w':
-      drawTiesAlongSegment(northEdge, southEdge, TIES_PER_TILE);
-      drawTiesAlongSegment(center, eastEdge, tiesHalf);
+      drawTiesAlongSegment(northEdge, southEdge, ISO_EW, TIES_PER_TILE);
+      drawTiesAlongSegment(center, eastEdge, ISO_NS, tiesHalf);
       break;
     case 'junction_cross':
-      drawTiesAlongSegment(northEdge, southEdge, TIES_PER_TILE);
-      drawTiesAlongSegment(eastEdge, westEdge, TIES_PER_TILE);
+      drawTiesAlongSegment(northEdge, southEdge, ISO_EW, TIES_PER_TILE);
+      drawTiesAlongSegment(eastEdge, westEdge, ISO_NS, TIES_PER_TILE);
       break;
     case 'terminus_n':
-      drawTiesAlongSegment(center, southEdge, tiesHalf);
+      drawTiesAlongSegment(center, southEdge, ISO_EW, tiesHalf);
       break;
     case 'terminus_e':
-      drawTiesAlongSegment(center, westEdge, tiesHalf);
+      drawTiesAlongSegment(center, westEdge, ISO_NS, tiesHalf);
       break;
     case 'terminus_s':
-      drawTiesAlongSegment(center, northEdge, tiesHalf);
+      drawTiesAlongSegment(center, northEdge, ISO_EW, tiesHalf);
       break;
     case 'terminus_w':
-      drawTiesAlongSegment(center, eastEdge, tiesHalf);
+      drawTiesAlongSegment(center, eastEdge, ISO_NS, tiesHalf);
       break;
   }
 }
@@ -590,24 +580,14 @@ function drawRails(
   const westEdge = { x: x + w * 0.25, y: y + h * 0.75 };
   const center = { x: cx, y: cy };
 
-  // Diamond corners for curve control points
-  const topCorner = { x: x + w / 2, y: y };
-  const rightCorner = { x: x + w, y: y + h / 2 };
-  const bottomCorner = { x: x + w / 2, y: y + h };
-  const leftCorner = { x: x, y: y + h / 2 };
-
   const halfGauge = railGauge / 2;
 
-  // Draw two parallel rails along a straight segment - calculates perpendicular from direction
+  // Draw two parallel rails along a straight segment with explicit isometric perpendicular
   const drawStraightRailPair = (
     from: { x: number; y: number },
-    to: { x: number; y: number }
+    to: { x: number; y: number },
+    perp: { x: number; y: number }  // Isometric perpendicular direction
   ) => {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const len = Math.hypot(dx, dy);
-    const perp = getPerp(dx / len, dy / len);
-
     // Draw shadow rails first
     ctx.strokeStyle = RAIL_COLORS.RAIL_SHADOW;
     ctx.lineWidth = railWidth + 0.5;
@@ -658,23 +638,14 @@ function drawRails(
     }
   };
 
-  // Draw curved rails using quadratic bezier curves with proper tangent-based perpendiculars
+  // Draw curved rails using quadratic bezier curves with isometric perpendiculars
   const drawCurvedRailPair = (
     from: { x: number; y: number },
     to: { x: number; y: number },
-    control: { x: number; y: number }
+    control: { x: number; y: number },
+    fromPerp: { x: number; y: number },
+    toPerp: { x: number; y: number }
   ) => {
-    // Calculate perpendiculars at start and end based on tangent directions
-    const fromDx = control.x - from.x;
-    const fromDy = control.y - from.y;
-    const fromLen = Math.hypot(fromDx, fromDy);
-    const fromPerp = getPerp(fromDx / fromLen, fromDy / fromLen);
-
-    const toDx = to.x - control.x;
-    const toDy = to.y - control.y;
-    const toLen = Math.hypot(toDx, toDy);
-    const toPerp = getPerp(toDx / toLen, toDy / toLen);
-
     // Average perpendicular for control point
     const midPerp = {
       x: (fromPerp.x + toPerp.x) / 2,
@@ -752,70 +723,69 @@ function drawRails(
   };
 
   // Draw rails based on track type
+  // N-S tracks use E-W perpendicular, E-W tracks use N-S perpendicular
   switch (trackType) {
     case 'straight_ns':
-      drawStraightRailPair(northEdge, southEdge);
+      drawStraightRailPair(northEdge, southEdge, ISO_EW);
       break;
     case 'straight_ew':
-      drawStraightRailPair(eastEdge, westEdge);
+      drawStraightRailPair(eastEdge, westEdge, ISO_NS);
       break;
     case 'curve_ne':
-      drawCurvedRailPair(northEdge, eastEdge, center);
+      drawCurvedRailPair(northEdge, eastEdge, center, ISO_EW, ISO_NS);
       break;
     case 'curve_nw':
-      drawCurvedRailPair(northEdge, westEdge, center);
+      drawCurvedRailPair(northEdge, westEdge, center, ISO_EW, ISO_NS);
       break;
     case 'curve_se':
-      drawCurvedRailPair(southEdge, eastEdge, center);
+      drawCurvedRailPair(southEdge, eastEdge, center, ISO_EW, ISO_NS);
       break;
     case 'curve_sw':
-      drawCurvedRailPair(southEdge, westEdge, center);
+      drawCurvedRailPair(southEdge, westEdge, center, ISO_EW, ISO_NS);
       break;
     case 'junction_t_n':
-      drawStraightRailPair(eastEdge, westEdge);
-      drawStraightRailPair(center, southEdge);
+      drawStraightRailPair(eastEdge, westEdge, ISO_NS);
+      drawStraightRailPair(center, southEdge, ISO_EW);
       break;
     case 'junction_t_e':
-      drawStraightRailPair(northEdge, southEdge);
-      drawStraightRailPair(center, westEdge);
+      drawStraightRailPair(northEdge, southEdge, ISO_EW);
+      drawStraightRailPair(center, westEdge, ISO_NS);
       break;
     case 'junction_t_s':
-      drawStraightRailPair(eastEdge, westEdge);
-      drawStraightRailPair(center, northEdge);
+      drawStraightRailPair(eastEdge, westEdge, ISO_NS);
+      drawStraightRailPair(center, northEdge, ISO_EW);
       break;
     case 'junction_t_w':
-      drawStraightRailPair(northEdge, southEdge);
-      drawStraightRailPair(center, eastEdge);
+      drawStraightRailPair(northEdge, southEdge, ISO_EW);
+      drawStraightRailPair(center, eastEdge, ISO_NS);
       break;
     case 'junction_cross':
-      drawStraightRailPair(northEdge, southEdge);
-      drawStraightRailPair(eastEdge, westEdge);
+      drawStraightRailPair(northEdge, southEdge, ISO_EW);
+      drawStraightRailPair(eastEdge, westEdge, ISO_NS);
       break;
     case 'terminus_n':
-      drawStraightRailPair(center, southEdge);
+      drawStraightRailPair(center, southEdge, ISO_EW);
       drawBufferStop(ctx, cx, cy, 'north', zoom);
       break;
     case 'terminus_e':
-      drawStraightRailPair(center, westEdge);
+      drawStraightRailPair(center, westEdge, ISO_NS);
       drawBufferStop(ctx, cx, cy, 'east', zoom);
       break;
     case 'terminus_s':
-      drawStraightRailPair(center, northEdge);
+      drawStraightRailPair(center, northEdge, ISO_EW);
       drawBufferStop(ctx, cx, cy, 'south', zoom);
       break;
     case 'terminus_w':
-      drawStraightRailPair(center, eastEdge);
+      drawStraightRailPair(center, eastEdge, ISO_NS);
       drawBufferStop(ctx, cx, cy, 'west', zoom);
       break;
     case 'single':
       // Just draw a small cross in the center for isolated track
       const stubLen = w * 0.15;
-      const nsDir = { x: southEdge.x - northEdge.x, y: southEdge.y - northEdge.y };
-      const nsLen = Math.hypot(nsDir.x, nsDir.y);
-      const nsDirNorm = { x: nsDir.x / nsLen, y: nsDir.y / nsLen };
       drawStraightRailPair(
-        { x: cx - nsDirNorm.x * stubLen, y: cy - nsDirNorm.y * stubLen },
-        { x: cx + nsDirNorm.x * stubLen, y: cy + nsDirNorm.y * stubLen }
+        { x: cx - ISO_NS.x * stubLen, y: cy - ISO_NS.y * stubLen },
+        { x: cx + ISO_NS.x * stubLen, y: cy + ISO_NS.y * stubLen },
+        ISO_EW
       );
       break;
   }

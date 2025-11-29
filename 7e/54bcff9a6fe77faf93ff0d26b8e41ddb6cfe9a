@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +40-41[0],+3420[0],+3489[0]
+src/components/game/constants.ts: +33-35[0]
+src/lib/renderConfig.ts: +379[1] -379[1]
+
+Conversations:
+
+[0]: f985e368-f995-4f69-9f38-526800514356; Optimize rendering for small objects; claude-4.5-opus-high-thinking;
+[1]: abc2ddf6-0425-4ccc-8d67-b59a3ecd19bd; Move playground position up; claude-4.5-opus-high-thinking;

@@ -408,23 +408,35 @@ function drawBallast(
       drawDoubleCurvedBallast(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 });
       break;
     case 'junction_t_n':
+      // Horizontal E-W tracks (top of T)
       drawDoubleStraightBallast(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightBallast(center, southEdge, ISO_EW);
+      // Curved tracks from south (stem) curving into east and west
+      drawDoubleCurvedBallast(southEdge, eastEdge, center, ISO_EW, NEG_ISO_NS, { x: -1, y: 0 });
+      drawDoubleCurvedBallast(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 });
       drawCenterBallast();
       break;
     case 'junction_t_e':
+      // Vertical N-S tracks (top of T)
       drawDoubleStraightBallast(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightBallast(center, westEdge, ISO_NS);
+      // Curved tracks from west (stem) curving into north and south
+      drawDoubleCurvedBallast(westEdge, northEdge, center, NEG_ISO_EW, ISO_NS, { x: 1, y: 0 });
+      drawDoubleCurvedBallast(westEdge, southEdge, center, ISO_EW, NEG_ISO_NS, { x: -1, y: 0 });
       drawCenterBallast();
       break;
     case 'junction_t_s':
+      // Horizontal E-W tracks (top of T)
       drawDoubleStraightBallast(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightBallast(center, northEdge, ISO_EW);
+      // Curved tracks from north (stem) curving into east and west
+      drawDoubleCurvedBallast(northEdge, eastEdge, center, ISO_EW, ISO_NS, { x: 0, y: 1 });
+      drawDoubleCurvedBallast(northEdge, westEdge, center, NEG_ISO_EW, ISO_NS, { x: 1, y: 0 });
       drawCenterBallast();
       break;
     case 'junction_t_w':
+      // Vertical N-S tracks (top of T)
       drawDoubleStraightBallast(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightBallast(center, eastEdge, ISO_NS);
+      // Curved tracks from east (stem) curving into north and south
+      drawDoubleCurvedBallast(eastEdge, northEdge, center, ISO_NS, NEG_ISO_EW, { x: 0, y: -1 });
+      drawDoubleCurvedBallast(eastEdge, southEdge, center, NEG_ISO_NS, ISO_EW, { x: 0, y: 1 });
       drawCenterBallast();
       break;
     case 'junction_cross':
@@ -616,20 +628,32 @@ function drawTies(
       drawDoubleCurveTies(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 }, TIES_PER_TILE);
       break;
     case 'junction_t_n':
+      // Horizontal E-W tracks (top of T)
       drawDoubleTies(eastEdge, westEdge, ISO_NS, ISO_NS, TIES_PER_TILE);
-      drawDoubleTies(center, southEdge, ISO_EW, ISO_EW, tiesHalf);
+      // Curved tracks from south (stem) curving into east and west
+      drawDoubleCurveTies(southEdge, eastEdge, center, ISO_EW, NEG_ISO_NS, ISO_EW, NEG_ISO_NS, { x: -1, y: 0 }, TIES_PER_TILE);
+      drawDoubleCurveTies(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 }, TIES_PER_TILE);
       break;
     case 'junction_t_e':
+      // Vertical N-S tracks (top of T)
       drawDoubleTies(northEdge, southEdge, ISO_EW, ISO_EW, TIES_PER_TILE);
-      drawDoubleTies(center, westEdge, ISO_NS, ISO_NS, tiesHalf);
+      // Curved tracks from west (stem) curving into north and south
+      drawDoubleCurveTies(westEdge, northEdge, center, NEG_ISO_EW, ISO_NS, NEG_ISO_EW, ISO_NS, { x: 1, y: 0 }, TIES_PER_TILE);
+      drawDoubleCurveTies(westEdge, southEdge, center, ISO_EW, NEG_ISO_NS, ISO_EW, NEG_ISO_NS, { x: -1, y: 0 }, TIES_PER_TILE);
       break;
     case 'junction_t_s':
+      // Horizontal E-W tracks (top of T)
       drawDoubleTies(eastEdge, westEdge, ISO_NS, ISO_NS, TIES_PER_TILE);
-      drawDoubleTies(center, northEdge, ISO_EW, ISO_EW, tiesHalf);
+      // Curved tracks from north (stem) curving into east and west
+      drawDoubleCurveTies(northEdge, eastEdge, center, ISO_EW, ISO_NS, ISO_EW, ISO_NS, { x: 0, y: 1 }, TIES_PER_TILE);
+      drawDoubleCurveTies(northEdge, westEdge, center, NEG_ISO_EW, ISO_NS, NEG_ISO_EW, ISO_NS, { x: 1, y: 0 }, TIES_PER_TILE);
       break;
     case 'junction_t_w':
+      // Vertical N-S tracks (top of T)
       drawDoubleTies(northEdge, southEdge, ISO_EW, ISO_EW, TIES_PER_TILE);
-      drawDoubleTies(center, eastEdge, ISO_NS, ISO_NS, tiesHalf);
+      // Curved tracks from east (stem) curving into north and south
+      drawDoubleCurveTies(eastEdge, northEdge, center, ISO_NS, NEG_ISO_EW, ISO_NS, NEG_ISO_EW, { x: 0, y: -1 }, TIES_PER_TILE);
+      drawDoubleCurveTies(eastEdge, southEdge, center, NEG_ISO_NS, ISO_EW, NEG_ISO_NS, ISO_EW, { x: 0, y: 1 }, TIES_PER_TILE);
       break;
     case 'junction_cross':
       drawDoubleTies(northEdge, southEdge, ISO_EW, ISO_EW, TIES_PER_TILE);
@@ -837,20 +861,32 @@ function drawRails(
       drawDoubleCurvedRails(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 });
       break;
     case 'junction_t_n':
+      // Horizontal E-W tracks (top of T) - keep these
       drawDoubleStraightRails(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightRails(center, southEdge, ISO_EW);
+      // Curved tracks from south (stem) curving into east and west
+      drawDoubleCurvedRails(southEdge, eastEdge, center, ISO_EW, NEG_ISO_NS, { x: -1, y: 0 });
+      drawDoubleCurvedRails(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 });
       break;
     case 'junction_t_e':
+      // Vertical N-S tracks (top of T) - keep these
       drawDoubleStraightRails(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightRails(center, westEdge, ISO_NS);
+      // Curved tracks from west (stem) curving into north and south
+      drawDoubleCurvedRails(westEdge, northEdge, center, NEG_ISO_EW, ISO_NS, { x: 1, y: 0 });
+      drawDoubleCurvedRails(westEdge, southEdge, center, ISO_EW, NEG_ISO_NS, { x: -1, y: 0 });
       break;
     case 'junction_t_s':
+      // Horizontal E-W tracks (top of T) - keep these
       drawDoubleStraightRails(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightRails(center, northEdge, ISO_EW);
+      // Curved tracks from north (stem) curving into east and west
+      drawDoubleCurvedRails(northEdge, eastEdge, center, ISO_EW, ISO_NS, { x: 0, y: 1 });
+      drawDoubleCurvedRails(northEdge, westEdge, center, NEG_ISO_EW, ISO_NS, { x: 1, y: 0 });
       break;
     case 'junction_t_w':
+      // Vertical N-S tracks (top of T) - keep these
       drawDoubleStraightRails(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightRails(center, eastEdge, ISO_NS);
+      // Curved tracks from east (stem) curving into north and south
+      drawDoubleCurvedRails(eastEdge, northEdge, center, ISO_NS, NEG_ISO_EW, { x: 0, y: -1 });
+      drawDoubleCurvedRails(eastEdge, southEdge, center, NEG_ISO_NS, ISO_EW, { x: 0, y: 1 });
       break;
     case 'junction_cross':
       drawDoubleStraightRails(northEdge, southEdge, ISO_EW);

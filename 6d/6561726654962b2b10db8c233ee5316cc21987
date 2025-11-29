@@ -1,0 +1,11 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +1668-1669[0],+1670[1],+2610[2],+2613-2614[2],+2804[0],+2884-2896[1],+2906[1],+2912[1],+3025-3033[1],+3035-3047[1],+3049-3054[1],+3148-3151[1],+3188-3191[1],+3233-3235[1],+4256[3],+4325[3] -2607[2],-2610[2],-2888[1],-4196[3],-4265[3]
+src/lib/renderConfig.ts: +119[2],+120-132[0],+476[2],+477-480[0],+481-485[2],+486[0],+487-494[2],+495-497[0],+498[2],+499-501[0],+502[1],+503[0],+536[2] -494[2]
+
+Conversations:
+
+[0]: 9cce28c1-56bf-4f49-9eab-a801a88c4fbb; Update rail station asset sheet; claude-4.5-opus-high-thinking;
+[1]: 6a2baef6-d59c-4524-a265-57a977560ac0; Troubleshoot station assets visibility; composer-1;
+[2]: 0efc785f-d2e1-4b50-8aa8-2a101c2404b1; Update rail station asset sheet; claude-4.5-opus-high-thinking;
+[3]: 1457d1ae-11ae-4090-b429-f30eb170e5ca; Allow more zooming options; composer-1;

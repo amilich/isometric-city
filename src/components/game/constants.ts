@@ -112,4 +112,4 @@ export const TRAFFIC_LIGHT_CYCLE = 7.6;            // Full cycle time
 export const TRAIN_MIN_ZOOM = 0.35;               // Minimum zoom to show trains
 export const TRAIN_SPAWN_INTERVAL = 3.0;          // Seconds between train spawn attempts
 export const MIN_RAIL_TILES_FOR_TRAINS = 10;      // Minimum rail tiles needed
-export const MAX_TRAINS = 8;                       // Maximum trains in city
+export const MAX_TRAINS = 20;                      // Maximum trains in city

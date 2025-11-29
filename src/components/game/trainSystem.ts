@@ -138,10 +138,10 @@ function bezierPositionAndAngle(
 export const MIN_RAIL_TILES_FOR_TRAINS = 10;
 
 /** Maximum trains per rail network size */
-export const TRAINS_PER_RAIL_TILES = 25; // 1 train per 25 rail tiles
+export const TRAINS_PER_RAIL_TILES = 12; // 1 train per 12 rail tiles
 
 /** Maximum trains in the city */
-export const MAX_TRAINS = 8;
+export const MAX_TRAINS = 20;
 
 /** Train spawn interval in seconds */
 export const TRAIN_SPAWN_INTERVAL = 3.0;

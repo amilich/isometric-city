@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/trainSystem.ts: +13-14[0],+345-346[0],+358-360[0],+367-368[0],+371-381[0],+383-389[0],+391-403[0],+405-412[0],+414-419[0],+421-425[0] -343[0],-360[0],-362-367[0],-370[0]
+
+Conversations:
+
+[0]: ee11ab53-e7aa-4d31-94f0-817f4355619a; Fix curve rendering for rail tiles; claude-4.5-opus-high-thinking;

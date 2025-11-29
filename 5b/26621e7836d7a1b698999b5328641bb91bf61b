@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/MiniMap.tsx: +40[0],+56-58[0],+60-61[0],+63-64[0] -55-56[0],-58[0]
+src/components/mobile/MobileTopBar.tsx: +122-123[1],+136[1],+138-166[1] -122-123[1],-137-162[1]
+
+Conversations:
+
+[0]: 070f2627-81d4-4915-8dea-c4914680abe1; Minimap not updating issue; claude-4.5-opus-high-thinking;
+[1]: fac2a0a6-1e4c-4fed-85b4-988a585b2206; Improve mobile play/pause controls; claude-4.5-opus-high-thinking;

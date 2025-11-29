@@ -403,16 +403,11 @@ export function drawRailTracks(
   _zoom: number
 ): void {
   ctx.save();
-  ctx.globalAlpha = 1;
   
   const config = getRailConfiguration(adj);
   const edges = getEdgeMidpoints(screenX, screenY);
   const { north, east, south, west, center } = edges;
   const spacing = TILE_WIDTH * RAIL_CONFIG.TRACK_SPACING;
-  
-  // DEBUG: Draw a bright colored marker to confirm function is called
-  ctx.fillStyle = '#00ff00';
-  ctx.fillRect(center.x - 5, center.y - 5, 10, 10);
   
   // Draw ballast base first
   drawBallast(ctx, screenX, screenY, config, edges);

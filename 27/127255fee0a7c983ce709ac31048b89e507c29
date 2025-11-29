@@ -8,5 +8,5 @@ Conversations:
 
 [0]: 566da022-d140-4254-a974-3d20f6440546; 566da022; unknown;
 [1]: 12dc04c0-9633-437f-8b18-bb98f1b9c675; Fix inverted corners in sidewalk grids; claude-4.5-opus-high-thinking;
-[2]: 89e37c07-9eb7-4fc9-81fb-9d41b55b2ff9; Scale down subway stations by 30%; claude-4.5-opus-high-thinking;
+[2]: b3283a88-8cb7-4652-bace-88a4d8f15bbc; Fix pedestrian rendering issues; claude-4.5-opus-high-thinking;
 [3]: f95490aa-be61-428d-95a0-24b0d220b602; Fix rail ties misalignment issue; claude-4.5-opus-high-thinking;

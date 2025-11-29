@@ -5,7 +5,6 @@ import { useGame } from '@/context/GameContext';
 import { Tile } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -81,6 +80,7 @@ export function MobileTopBar({
   const { state, setSpeed, setTaxRate, isSaving, visualHour } = useGame();
   const { stats, year, month, speed, taxRate, cityName } = state;
   const [showDetails, setShowDetails] = useState(false);
+  const [showTaxSlider, setShowTaxSlider] = useState(false);
   const [shareState, setShareState] = useState<'idle' | 'copied'>('idle');
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -93,6 +93,18 @@ export function MobileTopBar({
     }
   };
 
+  const handleCityDetailsToggle = () => {
+    setShowTaxSlider(false);
+    setShowDetails((prev) => !prev);
+  };
+
+  const handleTaxRateTap = () => {
+    setShowDetails(false);
+    setShowTaxSlider((prev) => !prev);
+  };
+
+  const closeTaxSlider = () => setShowTaxSlider(false);
+
   return (
     <>
       {/* Main Top Bar */}
@@ -102,7 +114,7 @@ export function MobileTopBar({
           <div className="flex items-center gap-2 min-w-0">
             <button
               className="flex flex-col items-start min-w-0 active:opacity-70"
-              onClick={() => setShowDetails(!showDetails)}
+              onClick={handleCityDetailsToggle}
             >
               <div className="flex items-center gap-1">
                 <span className="text-foreground font-semibold text-xs truncate max-w-[80px]">
@@ -136,12 +148,12 @@ export function MobileTopBar({
           </div>
 
           {/* Speed controls: Pause / Play / 2x / 3x */}
-          <div className="flex items-center gap-0.5 bg-secondary rounded p-0.5">
+          <div className="flex items-center gap-0 bg-secondary rounded px-0.5 py-0">
             <Button
               onClick={() => setSpeed(0)}
               variant={speed === 0 ? 'default' : 'ghost'}
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5 sm:h-6 sm:w-6"
               title="Pause"
             >
               <PauseIcon size={10} />
@@ -150,7 +162,7 @@ export function MobileTopBar({
               onClick={() => setSpeed(1)}
               variant={speed === 1 ? 'default' : 'ghost'}
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5 sm:h-6 sm:w-6"
               title="Normal speed"
             >
               <PlayIcon size={10} />
@@ -159,7 +171,7 @@ export function MobileTopBar({
               onClick={() => setSpeed(2)}
               variant={speed === 2 ? 'default' : 'ghost'}
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5 sm:h-6 sm:w-6"
               title="2x speed"
             >
               <FastForwardIcon size={10} />
@@ -168,7 +180,7 @@ export function MobileTopBar({
               onClick={() => setSpeed(3)}
               variant={speed === 3 ? 'default' : 'ghost'}
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5 sm:h-6 sm:w-6"
               title="3x speed"
             >
               <div className="flex items-center -space-x-1">
@@ -201,10 +213,15 @@ export function MobileTopBar({
             <DemandBar label="I" demand={stats.demand.industrial} color="text-amber-500" />
           </div>
 
-          <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleTaxRateTap}
+            aria-pressed={showTaxSlider}
+            className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary/40 ${showTaxSlider ? 'bg-secondary/60' : 'bg-transparent'} active:opacity-80`}
+          >
             <span className="text-[9px] text-muted-foreground">Tax</span>
             <span className="text-[10px] font-mono text-foreground">{taxRate}%</span>
-          </div>
+          </button>
 
           <div className="flex items-center gap-1">
             <span className={`text-[10px] font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -213,8 +230,8 @@ export function MobileTopBar({
           </div>
         </div>
 
-        {/* Tile Info Row - Mobile Only */}
-        {selectedTile && (
+        {/* Tile Info Row or Tax Slider - Mobile Only */}
+        {selectedTile && !showTaxSlider && (
           <div className="border-t border-sidebar-border/50 bg-gradient-to-b from-secondary/60 to-secondary/20 px-3 py-2">
             {/* Header row */}
             <div className="flex items-center justify-between mb-2">
@@ -288,6 +305,40 @@ export function MobileTopBar({
                   }`}>{Math.round(selectedTile.pollution)}%</span>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {showTaxSlider && (
+          <div className="border-t border-sidebar-border/50 bg-gradient-to-b from-secondary/60 to-secondary/20 px-3 py-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-foreground">Adjust Tax Rate</span>
+                <span className="text-[10px] text-muted-foreground">Impacts growth and funding</span>
+              </div>
+              <button
+                type="button"
+                onClick={closeTaxSlider}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+              >
+                <CloseIcon size={14} />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono text-muted-foreground">0%</span>
+              <Slider
+                value={[taxRate]}
+                onValueChange={(value) => setTaxRate(value[0])}
+                min={0}
+                max={100}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-[11px] font-mono text-muted-foreground">100%</span>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+              <span>Lower taxes boost growth</span>
+              <span className="font-mono text-foreground">{taxRate}%</span>
             </div>
           </div>
         )}

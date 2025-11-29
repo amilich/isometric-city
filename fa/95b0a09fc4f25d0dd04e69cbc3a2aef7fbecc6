@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/vehicleSystems.ts: +909-910[0],+922-923[0] -909-910[0],-922[0]
+
+Conversations:
+
+[0]: 9b0fc8a3-0893-4029-a0b0-2d211cc29dd7; Fix pedestrian appearance and behavior bugs; claude-4.5-opus-high-thinking;

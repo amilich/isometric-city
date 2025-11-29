@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/pedestrianSystem.ts: +61-62[0],+64[0],+67[0],+69[0],+74[0],+84-86[0],+147[0],+150[0],+152-153[0] -62[0],-65[0],-67[0],-72[0],-82-84[0],-147[0],-149-150[0]
+
+Conversations:
+
+[0]: e6f5c8e1-095c-478f-b94c-3808ad148efd; Understanding pedestrian building occlusion logic; claude-4.5-opus-high-thinking;

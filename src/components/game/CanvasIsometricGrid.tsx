@@ -260,6 +260,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Performance: Cache road merge analysis (expensive calculation done per-road-tile)
   const roadAnalysisCacheRef = useRef<Map<string, ReturnType<typeof analyzeMergedRoad>>>(new Map());
   const roadAnalysisCacheVersionRef = useRef(-1);
+  
+  // Tall buildings that need to be redrawn on top of vehicles (cars/trains)
+  // This is populated during main canvas render and used by the animation loop
+  type TallBuildingDraw = { screenX: number; screenY: number; tile: Tile };
+  const tallBuildingsRef = useRef<TallBuildingDraw[]>([]);
+  // Reference to the drawBuilding function for use in animation loop
+  const drawBuildingRef = useRef<((ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile) => void) | null>(null);
 
   const worldStateRef = useRef<WorldRenderState>({
     grid,
@@ -1095,6 +1102,32 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
 
     drawTrains(ctx, trainsRef.current, currentOffset, currentZoom, size, currentGrid, currentGridSize);
+  }, []);
+
+  // Draw tall buildings on top of vehicles (cars/trains)
+  // This redraws building sprites that extend above their base tile
+  // so they properly occlude vehicles that pass behind them
+  const drawTallBuildingsCallback = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom } = worldStateRef.current;
+    const tallBuildings = tallBuildingsRef.current;
+    const drawBuildingFn = drawBuildingRef.current;
+    
+    if (tallBuildings.length === 0 || !drawBuildingFn) {
+      return;
+    }
+    
+    const dpr = window.devicePixelRatio || 1;
+    
+    ctx.save();
+    ctx.scale(dpr * currentZoom, dpr * currentZoom);
+    ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
+    
+    // Redraw each tall building on top of vehicles
+    tallBuildings.forEach(({ screenX, screenY, tile }) => {
+      drawBuildingFn(ctx, screenX, screenY, tile);
+    });
+    
+    ctx.restore();
   }, []);
 
   // Find firework buildings (uses imported utility)
@@ -3329,6 +3362,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
     }
     
+    // Store the drawBuilding function reference for use in animation loop
+    drawBuildingRef.current = drawBuilding;
+    
     // Draw tiles in isometric order (back to front)
     // PERF: Only iterate through diagonal bands that intersect the visible viewport
     for (let sum = visibleMinSum; sum <= visibleMaxSum; sum++) {
@@ -3541,9 +3577,37 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     
     // Draw buildings sorted by depth so multi-tile sprites sit above adjacent tiles
     insertionSortByDepth(buildingQueue);
+    
+    // Tall building types that extend significantly above their base tile
+    // These need to be redrawn on the cars canvas to appear above vehicles
+    const TALL_BUILDING_TYPES = new Set([
+      // Multi-tile residential/commercial (2x2+)
+      'apartment_low', 'apartment_high', 'office_low', 'office_high', 'mall',
+      // Large industrial
+      'factory_large', 'factory_medium',
+      // Civic/special buildings that are tall
+      'hospital', 'university', 'stadium', 'museum', 'airport', 'space_program',
+      'city_hall', 'amusement_park', 'park_large',
+      // Parks buildings that are tall
+      'baseball_stadium', 'mountain_trailhead', 'mountain_lodge', 'roller_coaster_small',
+      // Rail stations (2x2)
+      'rail_station',
+    ]);
+    
+    // Clear and populate tall buildings ref for the animation loop to use
+    const tallBuildings: TallBuildingDraw[] = [];
+    
     buildingQueue.forEach(({ tile, screenX, screenY }) => {
       drawBuilding(ctx, screenX, screenY, tile);
+      
+      // Save tall buildings for redrawing on cars canvas
+      if (TALL_BUILDING_TYPES.has(tile.building.type)) {
+        tallBuildings.push({ screenX, screenY, tile });
+      }
     });
+    
+    // Store for animation loop to use
+    tallBuildingsRef.current = tallBuildings;
     
     // Draw overlays last so they remain visible on top of buildings
     overlayQueue.forEach(({ tile, screenX, screenY }) => {
@@ -3740,6 +3804,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         drawTrainsCallback(ctx); // Draw trains on rail network
         drawSmog(ctx); // Draw factory smog (above ground, below aircraft)
         drawEmergencyVehicles(ctx); // Draw emergency vehicles!
+        drawTallBuildingsCallback(ctx); // Redraw tall buildings on top of ground vehicles
         drawIncidentIndicators(ctx, delta); // Draw fire/crime incident indicators!
         drawHelicopters(ctx); // Draw helicopters (below planes, above ground)
         drawAirplanes(ctx); // Draw airplanes above everything
@@ -3749,7 +3814,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateBoats, drawBoats, updateTrains, drawTrainsCallback, drawTallBuildingsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {

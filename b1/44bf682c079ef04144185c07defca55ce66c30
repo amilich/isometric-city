@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/game/drawPedestrians.ts: +57-67[0] -57[0]
+src/components/game/pedestrianSystem.ts: +335[0],+345-351[0],+587-588[0],+592-595[0],+597-604[0],+610-617[0],+622-623[0],+632[0],+642[0],+655-656[0],+658-663[0],+667[0] -577-578[0],-617[0],-621[0]
+
+Conversations:
+
+[0]: 488bba38-60b1-42f3-93c2-af99edab8043; Review pedestrian activity commit issues; claude-4.5-opus-high-thinking;

@@ -1,7 +1,7 @@
 AI Notes:
 
 src/components/game/constants.ts: +115[0] -115[0]
-src/components/game/trainSystem.ts: +141[1],+144[1] -141[0],-144[0]
+src/components/game/trainSystem.ts: +141[1],+144[1] -141[1],-144[1]
 
 Conversations:
 

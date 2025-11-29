@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/railSystem.ts: +422-423[0],+642-643[0],+876-877[0] -422[0],-641[0],-874[0]
+src/lib/simulation.ts: +1306-1307[1],+1351-1352[1],+1383-1387[1],+1420-1421[1] -1410-1411[1]
+
+Conversations:
+
+[0]: 434de38c-b6f3-4fad-9bb5-7802b3e28102; Adjust T curve rail line extension; claude-4.5-opus-high-thinking;
+[1]: de7260ec-4a34-4817-a150-a6d0839d52c8; Impact of rail quality on commerce; claude-4.5-opus-high-thinking;

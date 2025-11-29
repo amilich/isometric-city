@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +39[0],+125[0],+470-473[0],+629[0],+2854-2855[0],+2864-2867[0],+2869-2871[0],+2882-2884[0],+3418[0],+3487[0] -622[0],-2854-2855[0],-2857[0],-2868[0],-3402[0],-3471[0]
+src/components/game/constants.ts: +46[0]
+src/components/game/drawAircraft.ts: +435-436[0],+442-443[0],+447[0],+709-710[0] -435[0],-443[0],-705-706[0]
+
+Conversations:
+
+[0]: f985e368-f995-4f69-9f38-526800514356; Optimize rendering for small objects; claude-4.5-opus-high-thinking;

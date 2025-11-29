@@ -1,0 +1,12 @@
+AI Notes:
+
+package.json: +9-10[0] -9[0]
+scripts/crop-screenshots.sh: +1[0],+3-4[0],+6[0],+8-11[0],+13-19[0],+21-25[0]
+src/app/layout.tsx: +26[1],+29[1],+31[0],+36[1],+37[0] -26[1],-29[1],-35[1]
+src/app/opengraph-image.tsx: -10[2],-23[2],-31[2],-35[2],-38-39[2],-48[2],-89-90[2],-120[2],-136[2],-142-146[2],-149-150[2],-156-161[2],-166[2],-168[2],-172-173[2],-176-181[2],-184-186[2]
+
+Conversations:
+
+[0]: 33e65e32-be64-422a-ab7c-cb545041e3cc; Crop in-game screenshots dimensions; claude-4.5-opus-high-thinking;
+[1]: 57994d47-7552-407e-8463-06ceb3d56d85; Tab Request 57994d47; unknown;
+[2]: 94096602-7717-4cb6-98e9-e730e82c5e3f; Generate a favicon for my game; claude-4.5-opus-high-thinking;

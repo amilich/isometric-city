@@ -2,11 +2,11 @@ AI Notes:
 
 src/components/game/CanvasIsometricGrid.tsx: +151[0],+359-371[0],+373-376[0],+378-384[0],+386-389[0],+391-395[0],+397-399[0],+401-403[0] -151[0]
 src/components/game/vehicleSystems.ts: +569-570[0],+573-574[0],+581[0] -569-570[0],-573-574[0],-581[0]
-src/context/GameContext.tsx: +196-198[0],+199[1],+669-673[0],+720-724[0],+740-744[0] -665[0],-712[0],-728[0]
+src/context/GameContext.tsx: +196-198[0],+199[1],+669[0],+670[1],+671[0],+672-673[1],+720[0],+721[1],+722[0],+723-724[1],+740[0],+741[1],+742[0],+743-744[1] -665[0],-712[0],-728[0]
 src/lib/simulation.ts: +810[0]
 src/types/game.ts: +332[0]
 
 Conversations:
 
 [0]: 4827c85d-0ad2-4c7f-96fc-370a10a48215; Clear vehicles and entities on game start; claude-4.5-opus-high-thinking;
-[1]: 174562dd-4ee6-40d0-8883-05e83e059e56; Add share button and compress controls; claude-4.5-opus-high-thinking;
+[1]: 9dea2910-9384-4d06-8c92-b47dd8ba369b; Implement multi-city game state system; claude-4.5-opus-high-thinking;

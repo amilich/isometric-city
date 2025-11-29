@@ -385,6 +385,18 @@ function drawBallast(
     ctx.fill();
   };
 
+  // T-junction curve parameters
+  // How far the stem extends from edge toward center (0.15 = 15% of the way)
+  const stemJunctionRatio = 0.15;
+  // How far from center the curve joins the top track (0.55 = 55% of the way to edge)
+  const curveJoinRatio = 0.55;
+
+  // Helper to lerp between two points
+  const lerp = (p1: { x: number; y: number }, p2: { x: number; y: number }, t: number) => ({
+    x: p1.x + (p2.x - p1.x) * t,
+    y: p1.y + (p2.y - p1.y) * t
+  });
+
   // Draw based on track type
   switch (trackType) {
     case 'straight_ns':
@@ -407,26 +419,94 @@ function drawBallast(
     case 'curve_sw':
       drawDoubleCurvedBallast(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 });
       break;
-    case 'junction_t_n':
+    case 'junction_t_n': {
+      // T with no north: E-W track on top, stem going south
+      // Draw full E-W track
       drawDoubleStraightBallast(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightBallast(center, southEdge, ISO_EW);
-      drawCenterBallast();
+      // Draw short stem from south edge
+      const stemEndN = lerp(southEdge, center, stemJunctionRatio);
+      drawDoubleStraightBallast(southEdge, stemEndN, ISO_EW);
+      // Draw curves: one track curves east, one curves west
+      const eastJoinN = lerp(center, eastEdge, curveJoinRatio);
+      const westJoinN = lerp(center, westEdge, curveJoinRatio);
+      // Track 0 (offset +halfSep in ISO_EW for stem) curves to east track (offset +halfSep in ISO_NS for E-W)
+      const stemEnd0N = offsetPoint(stemEndN, ISO_EW, halfSep);
+      const eastJoin0N = offsetPoint(eastJoinN, ISO_NS, halfSep);
+      const ctrl0N = { x: (stemEnd0N.x + eastJoin0N.x) / 2 + halfSep * 0.3, y: (stemEnd0N.y + eastJoin0N.y) / 2 };
+      drawSingleCurvedBallast(stemEnd0N, eastJoin0N, ctrl0N, ISO_EW, ISO_NS);
+      // Track 1 (offset -halfSep in ISO_EW for stem) curves to west track (offset -halfSep in ISO_NS for E-W)
+      const stemEnd1N = offsetPoint(stemEndN, ISO_EW, -halfSep);
+      const westJoin1N = offsetPoint(westJoinN, ISO_NS, -halfSep);
+      const ctrl1N = { x: (stemEnd1N.x + westJoin1N.x) / 2 - halfSep * 0.3, y: (stemEnd1N.y + westJoin1N.y) / 2 };
+      drawSingleCurvedBallast(stemEnd1N, westJoin1N, ctrl1N, ISO_EW, ISO_NS);
       break;
-    case 'junction_t_e':
+    }
+    case 'junction_t_e': {
+      // T with no east: N-S track on left, stem going west
+      // Draw full N-S track
       drawDoubleStraightBallast(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightBallast(center, westEdge, ISO_NS);
-      drawCenterBallast();
+      // Draw short stem from west edge
+      const stemEndE = lerp(westEdge, center, stemJunctionRatio);
+      drawDoubleStraightBallast(westEdge, stemEndE, ISO_NS);
+      // Draw curves: one track curves north, one curves south
+      const northJoinE = lerp(center, northEdge, curveJoinRatio);
+      const southJoinE = lerp(center, southEdge, curveJoinRatio);
+      // Track 0 (offset +halfSep in ISO_NS for stem) curves to north track (offset +halfSep in ISO_EW for N-S)
+      const stemEnd0E = offsetPoint(stemEndE, ISO_NS, halfSep);
+      const northJoin0E = offsetPoint(northJoinE, ISO_EW, halfSep);
+      const ctrl0E = { x: (stemEnd0E.x + northJoin0E.x) / 2, y: (stemEnd0E.y + northJoin0E.y) / 2 - halfSep * 0.3 };
+      drawSingleCurvedBallast(stemEnd0E, northJoin0E, ctrl0E, ISO_NS, ISO_EW);
+      // Track 1 (offset -halfSep in ISO_NS for stem) curves to south track (offset -halfSep in ISO_EW for N-S)
+      const stemEnd1E = offsetPoint(stemEndE, ISO_NS, -halfSep);
+      const southJoin1E = offsetPoint(southJoinE, ISO_EW, -halfSep);
+      const ctrl1E = { x: (stemEnd1E.x + southJoin1E.x) / 2, y: (stemEnd1E.y + southJoin1E.y) / 2 + halfSep * 0.3 };
+      drawSingleCurvedBallast(stemEnd1E, southJoin1E, ctrl1E, ISO_NS, ISO_EW);
       break;
-    case 'junction_t_s':
+    }
+    case 'junction_t_s': {
+      // T with no south: E-W track on bottom, stem going north
+      // Draw full E-W track
       drawDoubleStraightBallast(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightBallast(center, northEdge, ISO_EW);
-      drawCenterBallast();
+      // Draw short stem from north edge
+      const stemEndS = lerp(northEdge, center, stemJunctionRatio);
+      drawDoubleStraightBallast(northEdge, stemEndS, ISO_EW);
+      // Draw curves: one track curves east, one curves west
+      const eastJoinS = lerp(center, eastEdge, curveJoinRatio);
+      const westJoinS = lerp(center, westEdge, curveJoinRatio);
+      // Track 0 (offset +halfSep in ISO_EW for stem) curves to west track (offset +halfSep in ISO_NS for E-W)
+      const stemEnd0S = offsetPoint(stemEndS, ISO_EW, halfSep);
+      const westJoin0S = offsetPoint(westJoinS, ISO_NS, halfSep);
+      const ctrl0S = { x: (stemEnd0S.x + westJoin0S.x) / 2 - halfSep * 0.3, y: (stemEnd0S.y + westJoin0S.y) / 2 };
+      drawSingleCurvedBallast(stemEnd0S, westJoin0S, ctrl0S, ISO_EW, ISO_NS);
+      // Track 1 (offset -halfSep in ISO_EW for stem) curves to east track (offset -halfSep in ISO_NS for E-W)
+      const stemEnd1S = offsetPoint(stemEndS, ISO_EW, -halfSep);
+      const eastJoin1S = offsetPoint(eastJoinS, ISO_NS, -halfSep);
+      const ctrl1S = { x: (stemEnd1S.x + eastJoin1S.x) / 2 + halfSep * 0.3, y: (stemEnd1S.y + eastJoin1S.y) / 2 };
+      drawSingleCurvedBallast(stemEnd1S, eastJoin1S, ctrl1S, ISO_EW, ISO_NS);
       break;
-    case 'junction_t_w':
+    }
+    case 'junction_t_w': {
+      // T with no west: N-S track on right, stem going east
+      // Draw full N-S track
       drawDoubleStraightBallast(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightBallast(center, eastEdge, ISO_NS);
-      drawCenterBallast();
+      // Draw short stem from east edge
+      const stemEndW = lerp(eastEdge, center, stemJunctionRatio);
+      drawDoubleStraightBallast(eastEdge, stemEndW, ISO_NS);
+      // Draw curves: one track curves north, one curves south
+      const northJoinW = lerp(center, northEdge, curveJoinRatio);
+      const southJoinW = lerp(center, southEdge, curveJoinRatio);
+      // Track 0 (offset +halfSep in ISO_NS for stem) curves to south track (offset +halfSep in ISO_EW for N-S)
+      const stemEnd0W = offsetPoint(stemEndW, ISO_NS, halfSep);
+      const southJoin0W = offsetPoint(southJoinW, ISO_EW, halfSep);
+      const ctrl0W = { x: (stemEnd0W.x + southJoin0W.x) / 2, y: (stemEnd0W.y + southJoin0W.y) / 2 + halfSep * 0.3 };
+      drawSingleCurvedBallast(stemEnd0W, southJoin0W, ctrl0W, ISO_NS, ISO_EW);
+      // Track 1 (offset -halfSep in ISO_NS for stem) curves to north track (offset -halfSep in ISO_EW for N-S)
+      const stemEnd1W = offsetPoint(stemEndW, ISO_NS, -halfSep);
+      const northJoin1W = offsetPoint(northJoinW, ISO_EW, -halfSep);
+      const ctrl1W = { x: (stemEnd1W.x + northJoin1W.x) / 2, y: (stemEnd1W.y + northJoin1W.y) / 2 - halfSep * 0.3 };
+      drawSingleCurvedBallast(stemEnd1W, northJoin1W, ctrl1W, ISO_NS, ISO_EW);
       break;
+    }
     case 'junction_cross':
       drawDoubleStraightBallast(northEdge, southEdge, ISO_EW);
       drawDoubleStraightBallast(eastEdge, westEdge, ISO_NS);
@@ -595,6 +675,18 @@ function drawTies(
   };
 
   const tiesHalf = Math.ceil(TIES_PER_TILE / 2);
+  const tiesStem = 2; // Number of ties for the short stem
+  const tiesCurve = 3; // Number of ties for each curve
+
+  // T-junction curve parameters (matching ballast)
+  const stemJunctionRatio = 0.15;
+  const curveJoinRatio = 0.55;
+
+  // Helper to lerp between two points
+  const lerp = (p1: { x: number; y: number }, p2: { x: number; y: number }, t: number) => ({
+    x: p1.x + (p2.x - p1.x) * t,
+    y: p1.y + (p2.y - p1.y) * t
+  });
 
   switch (trackType) {
     case 'straight_ns':
@@ -615,22 +707,82 @@ function drawTies(
     case 'curve_sw':
       drawDoubleCurveTies(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 }, TIES_PER_TILE);
       break;
-    case 'junction_t_n':
+    case 'junction_t_n': {
+      // T with no north: E-W track on top, stem going south with curves
       drawDoubleTies(eastEdge, westEdge, ISO_NS, ISO_NS, TIES_PER_TILE);
-      drawDoubleTies(center, southEdge, ISO_EW, ISO_EW, tiesHalf);
+      // Short stem from south edge
+      const stemEndN = lerp(southEdge, center, stemJunctionRatio);
+      drawDoubleTies(southEdge, stemEndN, ISO_EW, ISO_EW, tiesStem);
+      // Curve ties for each track
+      const eastJoinN = lerp(center, eastEdge, curveJoinRatio);
+      const westJoinN = lerp(center, westEdge, curveJoinRatio);
+      const stemEnd0N = offsetPoint(stemEndN, ISO_EW, halfSep);
+      const eastJoin0N = offsetPoint(eastJoinN, ISO_NS, halfSep);
+      const ctrl0N = { x: (stemEnd0N.x + eastJoin0N.x) / 2 + halfSep * 0.3, y: (stemEnd0N.y + eastJoin0N.y) / 2 };
+      drawSingleCurveTies(stemEnd0N, eastJoin0N, ctrl0N, ISO_EW, ISO_NS, tiesCurve);
+      const stemEnd1N = offsetPoint(stemEndN, ISO_EW, -halfSep);
+      const westJoin1N = offsetPoint(westJoinN, ISO_NS, -halfSep);
+      const ctrl1N = { x: (stemEnd1N.x + westJoin1N.x) / 2 - halfSep * 0.3, y: (stemEnd1N.y + westJoin1N.y) / 2 };
+      drawSingleCurveTies(stemEnd1N, westJoin1N, ctrl1N, ISO_EW, ISO_NS, tiesCurve);
       break;
-    case 'junction_t_e':
+    }
+    case 'junction_t_e': {
+      // T with no east: N-S track on left, stem going west with curves
       drawDoubleTies(northEdge, southEdge, ISO_EW, ISO_EW, TIES_PER_TILE);
-      drawDoubleTies(center, westEdge, ISO_NS, ISO_NS, tiesHalf);
+      // Short stem from west edge
+      const stemEndE = lerp(westEdge, center, stemJunctionRatio);
+      drawDoubleTies(westEdge, stemEndE, ISO_NS, ISO_NS, tiesStem);
+      // Curve ties for each track
+      const northJoinE = lerp(center, northEdge, curveJoinRatio);
+      const southJoinE = lerp(center, southEdge, curveJoinRatio);
+      const stemEnd0E = offsetPoint(stemEndE, ISO_NS, halfSep);
+      const northJoin0E = offsetPoint(northJoinE, ISO_EW, halfSep);
+      const ctrl0E = { x: (stemEnd0E.x + northJoin0E.x) / 2, y: (stemEnd0E.y + northJoin0E.y) / 2 - halfSep * 0.3 };
+      drawSingleCurveTies(stemEnd0E, northJoin0E, ctrl0E, ISO_NS, ISO_EW, tiesCurve);
+      const stemEnd1E = offsetPoint(stemEndE, ISO_NS, -halfSep);
+      const southJoin1E = offsetPoint(southJoinE, ISO_EW, -halfSep);
+      const ctrl1E = { x: (stemEnd1E.x + southJoin1E.x) / 2, y: (stemEnd1E.y + southJoin1E.y) / 2 + halfSep * 0.3 };
+      drawSingleCurveTies(stemEnd1E, southJoin1E, ctrl1E, ISO_NS, ISO_EW, tiesCurve);
       break;
-    case 'junction_t_s':
+    }
+    case 'junction_t_s': {
+      // T with no south: E-W track on bottom, stem going north with curves
       drawDoubleTies(eastEdge, westEdge, ISO_NS, ISO_NS, TIES_PER_TILE);
-      drawDoubleTies(center, northEdge, ISO_EW, ISO_EW, tiesHalf);
+      // Short stem from north edge
+      const stemEndS = lerp(northEdge, center, stemJunctionRatio);
+      drawDoubleTies(northEdge, stemEndS, ISO_EW, ISO_EW, tiesStem);
+      // Curve ties for each track
+      const eastJoinS = lerp(center, eastEdge, curveJoinRatio);
+      const westJoinS = lerp(center, westEdge, curveJoinRatio);
+      const stemEnd0S = offsetPoint(stemEndS, ISO_EW, halfSep);
+      const westJoin0S = offsetPoint(westJoinS, ISO_NS, halfSep);
+      const ctrl0S = { x: (stemEnd0S.x + westJoin0S.x) / 2 - halfSep * 0.3, y: (stemEnd0S.y + westJoin0S.y) / 2 };
+      drawSingleCurveTies(stemEnd0S, westJoin0S, ctrl0S, ISO_EW, ISO_NS, tiesCurve);
+      const stemEnd1S = offsetPoint(stemEndS, ISO_EW, -halfSep);
+      const eastJoin1S = offsetPoint(eastJoinS, ISO_NS, -halfSep);
+      const ctrl1S = { x: (stemEnd1S.x + eastJoin1S.x) / 2 + halfSep * 0.3, y: (stemEnd1S.y + eastJoin1S.y) / 2 };
+      drawSingleCurveTies(stemEnd1S, eastJoin1S, ctrl1S, ISO_EW, ISO_NS, tiesCurve);
       break;
-    case 'junction_t_w':
+    }
+    case 'junction_t_w': {
+      // T with no west: N-S track on right, stem going east with curves
       drawDoubleTies(northEdge, southEdge, ISO_EW, ISO_EW, TIES_PER_TILE);
-      drawDoubleTies(center, eastEdge, ISO_NS, ISO_NS, tiesHalf);
+      // Short stem from east edge
+      const stemEndW = lerp(eastEdge, center, stemJunctionRatio);
+      drawDoubleTies(eastEdge, stemEndW, ISO_NS, ISO_NS, tiesStem);
+      // Curve ties for each track
+      const northJoinW = lerp(center, northEdge, curveJoinRatio);
+      const southJoinW = lerp(center, southEdge, curveJoinRatio);
+      const stemEnd0W = offsetPoint(stemEndW, ISO_NS, halfSep);
+      const southJoin0W = offsetPoint(southJoinW, ISO_EW, halfSep);
+      const ctrl0W = { x: (stemEnd0W.x + southJoin0W.x) / 2, y: (stemEnd0W.y + southJoin0W.y) / 2 + halfSep * 0.3 };
+      drawSingleCurveTies(stemEnd0W, southJoin0W, ctrl0W, ISO_NS, ISO_EW, tiesCurve);
+      const stemEnd1W = offsetPoint(stemEndW, ISO_NS, -halfSep);
+      const northJoin1W = offsetPoint(northJoinW, ISO_EW, -halfSep);
+      const ctrl1W = { x: (stemEnd1W.x + northJoin1W.x) / 2, y: (stemEnd1W.y + northJoin1W.y) / 2 - halfSep * 0.3 };
+      drawSingleCurveTies(stemEnd1W, northJoin1W, ctrl1W, ISO_NS, ISO_EW, tiesCurve);
       break;
+    }
     case 'junction_cross':
       drawDoubleTies(northEdge, southEdge, ISO_EW, ISO_EW, TIES_PER_TILE);
       drawDoubleTies(eastEdge, westEdge, ISO_NS, ISO_NS, TIES_PER_TILE);
@@ -817,6 +969,16 @@ function drawRails(
     drawSingleCurvedRails(from1, to1, ctrl1, fromPerp, toPerp);
   };
 
+  // T-junction curve parameters (matching ballast and ties)
+  const stemJunctionRatio = 0.15;
+  const curveJoinRatio = 0.55;
+
+  // Helper to lerp between two points
+  const lerp = (p1: { x: number; y: number }, p2: { x: number; y: number }, t: number) => ({
+    x: p1.x + (p2.x - p1.x) * t,
+    y: p1.y + (p2.y - p1.y) * t
+  });
+
   switch (trackType) {
     case 'straight_ns':
       drawDoubleStraightRails(northEdge, southEdge, ISO_EW);
@@ -836,22 +998,82 @@ function drawRails(
     case 'curve_sw':
       drawDoubleCurvedRails(southEdge, westEdge, center, NEG_ISO_EW, NEG_ISO_NS, { x: 0, y: -1 });
       break;
-    case 'junction_t_n':
+    case 'junction_t_n': {
+      // T with no north: E-W track on top, stem going south with curves
       drawDoubleStraightRails(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightRails(center, southEdge, ISO_EW);
+      // Short stem from south edge
+      const stemEndN = lerp(southEdge, center, stemJunctionRatio);
+      drawDoubleStraightRails(southEdge, stemEndN, ISO_EW);
+      // Curved rails for each track
+      const eastJoinN = lerp(center, eastEdge, curveJoinRatio);
+      const westJoinN = lerp(center, westEdge, curveJoinRatio);
+      const stemEnd0N = offsetPoint(stemEndN, ISO_EW, halfSep);
+      const eastJoin0N = offsetPoint(eastJoinN, ISO_NS, halfSep);
+      const ctrl0N = { x: (stemEnd0N.x + eastJoin0N.x) / 2 + halfSep * 0.3, y: (stemEnd0N.y + eastJoin0N.y) / 2 };
+      drawSingleCurvedRails(stemEnd0N, eastJoin0N, ctrl0N, ISO_EW, ISO_NS);
+      const stemEnd1N = offsetPoint(stemEndN, ISO_EW, -halfSep);
+      const westJoin1N = offsetPoint(westJoinN, ISO_NS, -halfSep);
+      const ctrl1N = { x: (stemEnd1N.x + westJoin1N.x) / 2 - halfSep * 0.3, y: (stemEnd1N.y + westJoin1N.y) / 2 };
+      drawSingleCurvedRails(stemEnd1N, westJoin1N, ctrl1N, ISO_EW, ISO_NS);
       break;
-    case 'junction_t_e':
+    }
+    case 'junction_t_e': {
+      // T with no east: N-S track on left, stem going west with curves
       drawDoubleStraightRails(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightRails(center, westEdge, ISO_NS);
+      // Short stem from west edge
+      const stemEndE = lerp(westEdge, center, stemJunctionRatio);
+      drawDoubleStraightRails(westEdge, stemEndE, ISO_NS);
+      // Curved rails for each track
+      const northJoinE = lerp(center, northEdge, curveJoinRatio);
+      const southJoinE = lerp(center, southEdge, curveJoinRatio);
+      const stemEnd0E = offsetPoint(stemEndE, ISO_NS, halfSep);
+      const northJoin0E = offsetPoint(northJoinE, ISO_EW, halfSep);
+      const ctrl0E = { x: (stemEnd0E.x + northJoin0E.x) / 2, y: (stemEnd0E.y + northJoin0E.y) / 2 - halfSep * 0.3 };
+      drawSingleCurvedRails(stemEnd0E, northJoin0E, ctrl0E, ISO_NS, ISO_EW);
+      const stemEnd1E = offsetPoint(stemEndE, ISO_NS, -halfSep);
+      const southJoin1E = offsetPoint(southJoinE, ISO_EW, -halfSep);
+      const ctrl1E = { x: (stemEnd1E.x + southJoin1E.x) / 2, y: (stemEnd1E.y + southJoin1E.y) / 2 + halfSep * 0.3 };
+      drawSingleCurvedRails(stemEnd1E, southJoin1E, ctrl1E, ISO_NS, ISO_EW);
       break;
-    case 'junction_t_s':
+    }
+    case 'junction_t_s': {
+      // T with no south: E-W track on bottom, stem going north with curves
       drawDoubleStraightRails(eastEdge, westEdge, ISO_NS);
-      drawDoubleStraightRails(center, northEdge, ISO_EW);
+      // Short stem from north edge
+      const stemEndS = lerp(northEdge, center, stemJunctionRatio);
+      drawDoubleStraightRails(northEdge, stemEndS, ISO_EW);
+      // Curved rails for each track
+      const eastJoinS = lerp(center, eastEdge, curveJoinRatio);
+      const westJoinS = lerp(center, westEdge, curveJoinRatio);
+      const stemEnd0S = offsetPoint(stemEndS, ISO_EW, halfSep);
+      const westJoin0S = offsetPoint(westJoinS, ISO_NS, halfSep);
+      const ctrl0S = { x: (stemEnd0S.x + westJoin0S.x) / 2 - halfSep * 0.3, y: (stemEnd0S.y + westJoin0S.y) / 2 };
+      drawSingleCurvedRails(stemEnd0S, westJoin0S, ctrl0S, ISO_EW, ISO_NS);
+      const stemEnd1S = offsetPoint(stemEndS, ISO_EW, -halfSep);
+      const eastJoin1S = offsetPoint(eastJoinS, ISO_NS, -halfSep);
+      const ctrl1S = { x: (stemEnd1S.x + eastJoin1S.x) / 2 + halfSep * 0.3, y: (stemEnd1S.y + eastJoin1S.y) / 2 };
+      drawSingleCurvedRails(stemEnd1S, eastJoin1S, ctrl1S, ISO_EW, ISO_NS);
       break;
-    case 'junction_t_w':
+    }
+    case 'junction_t_w': {
+      // T with no west: N-S track on right, stem going east with curves
       drawDoubleStraightRails(northEdge, southEdge, ISO_EW);
-      drawDoubleStraightRails(center, eastEdge, ISO_NS);
+      // Short stem from east edge
+      const stemEndW = lerp(eastEdge, center, stemJunctionRatio);
+      drawDoubleStraightRails(eastEdge, stemEndW, ISO_NS);
+      // Curved rails for each track
+      const northJoinW = lerp(center, northEdge, curveJoinRatio);
+      const southJoinW = lerp(center, southEdge, curveJoinRatio);
+      const stemEnd0W = offsetPoint(stemEndW, ISO_NS, halfSep);
+      const southJoin0W = offsetPoint(southJoinW, ISO_EW, halfSep);
+      const ctrl0W = { x: (stemEnd0W.x + southJoin0W.x) / 2, y: (stemEnd0W.y + southJoin0W.y) / 2 + halfSep * 0.3 };
+      drawSingleCurvedRails(stemEnd0W, southJoin0W, ctrl0W, ISO_NS, ISO_EW);
+      const stemEnd1W = offsetPoint(stemEndW, ISO_NS, -halfSep);
+      const northJoin1W = offsetPoint(northJoinW, ISO_EW, -halfSep);
+      const ctrl1W = { x: (stemEnd1W.x + northJoin1W.x) / 2, y: (stemEnd1W.y + northJoin1W.y) / 2 - halfSep * 0.3 };
+      drawSingleCurvedRails(stemEnd1W, northJoin1W, ctrl1W, ISO_NS, ISO_EW);
       break;
+    }
     case 'junction_cross':
       drawDoubleStraightRails(northEdge, southEdge, ISO_EW);
       drawDoubleStraightRails(eastEdge, westEdge, ISO_NS);

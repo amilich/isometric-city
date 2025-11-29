@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +2988-2993[0]
+src/lib/renderConfig.ts: +304[0] -304[0]
+
+Conversations:
+
+[0]: bb117056-bd13-4ee5-8475-4a0c18d6c9f9; Adjust cropping for asset in row five; composer-1;

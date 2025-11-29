@@ -1,0 +1,7 @@
+AI Notes:
+
+src/components/game/drawPedestrians.ts: +203[0],+209[0] -203[0],-209[0]
+
+Conversations:
+
+[0]: e6f5c8e1-095c-478f-b94c-3808ad148efd; Understanding pedestrian building occlusion logic; claude-4.5-opus-high-thinking;

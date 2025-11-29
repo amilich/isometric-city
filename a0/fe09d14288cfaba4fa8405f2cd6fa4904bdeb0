@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +3152-3155[1]
+src/components/VinnieDialog.tsx: +47[0],+72[0] -47[0],-72[0]
+
+Conversations:
+
+[0]: 2c3724f4-d3d5-4276-9dac-8d046f09f2f3; Change dialog theme to blues; claude-4.5-opus-high-thinking;
+[1]: 89e37c07-9eb7-4fc9-81fb-9d41b55b2ff9; Scale down subway stations by 30%; claude-4.5-opus-high-thinking;

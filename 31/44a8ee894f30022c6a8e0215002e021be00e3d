@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +3601-3613[0]
+src/components/game/drawPedestrians.ts: +16-22[0],+27-31[0],+37-38[0],+41[0],+43-48[0] -7[0],-11[0],-25-26[0],-28[0],-31[0]
+src/components/game/gridFinders.ts: +159[0],+220[0] -159[0],-220[0]
+src/components/game/vehicleSystems.ts: +986-987[0] -986[0]
+
+Conversations:
+
+[0]: e6f5c8e1-095c-478f-b94c-3808ad148efd; Understanding pedestrian building occlusion logic; claude-4.5-opus-high-thinking;

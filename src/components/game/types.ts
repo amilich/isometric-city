@@ -133,6 +133,8 @@ export type EmergencyVehicle = {
 // Pedestrian types and destinations
 export type PedestrianDestType = 'school' | 'commercial' | 'industrial' | 'park' | 'home';
 
+export type PedestrianState = 'walking' | 'inside_building' | 'at_park' | 'at_recreation';
+
 export type Pedestrian = {
   id: number;
   tileX: number;
@@ -146,14 +148,23 @@ export type Pedestrian = {
   shirtColor: string;
   walkOffset: number; // For walking animation
   sidewalkSide: 'left' | 'right'; // Which side of the road they walk on
-  destType: PedestrianDestType;
+  state: PedestrianState;
+  // Activity tracking
+  activityTimer: number; // Time remaining at current activity (inside building, at park, etc.)
+  activityDuration: number; // Total duration for current activity
+  // Destination management
   homeX: number;
   homeY: number;
-  destX: number;
-  destY: number;
-  returningHome: boolean;
+  currentDestX: number;
+  currentDestY: number;
+  currentDestType: PedestrianDestType;
+  destinationQueue: Array<{ x: number; y: number; type: PedestrianDestType }>; // Queue of destinations to visit
+  // Pathfinding
   path: { x: number; y: number }[];
   pathIndex: number;
+  // Building entry/exit tracking
+  insideBuildingX: number;
+  insideBuildingY: number;
 };
 
 // Boat types for water navigation

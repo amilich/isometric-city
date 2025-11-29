@@ -22,15 +22,31 @@ export function drawPedestrians(
   if (pedestrians.length === 0) return;
 
   pedestrians.forEach((ped) => {
+    // Don't draw pedestrians that are inside buildings
+    if (ped.state === 'inside_building') {
+      return;
+    }
     const { screenX, screenY } = gridToScreen(ped.tileX, ped.tileY, 0, 0);
     const centerX = screenX + TILE_WIDTH / 2;
     const centerY = screenY + TILE_HEIGHT / 2;
     const meta = DIRECTION_META[ped.direction];
 
-    // Pedestrians walk on sidewalks - offset them toward the edge of the road
-    const sidewalkOffset = ped.sidewalkSide === 'left' ? -12 : 12;
-    const pedX = centerX + meta.vec.dx * ped.progress + meta.normal.nx * sidewalkOffset;
-    const pedY = centerY + meta.vec.dy * ped.progress + meta.normal.ny * sidewalkOffset;
+    // Pedestrians at parks/recreation areas are centered on the tile
+    // Pedestrians walking on roads are offset toward the edge (sidewalk)
+    let pedX: number;
+    let pedY: number;
+    if (ped.state === 'at_park' || ped.state === 'at_recreation') {
+      // Center on the park tile with slight random offset for variety
+      const randomOffsetX = (ped.id % 7 - 3) * 2;
+      const randomOffsetY = (ped.id % 5 - 2) * 2;
+      pedX = centerX + randomOffsetX;
+      pedY = centerY + randomOffsetY;
+    } else {
+      // Pedestrians walk on sidewalks - offset them toward the edge of the road
+      const sidewalkOffset = ped.sidewalkSide === 'left' ? -12 : 12;
+      pedX = centerX + meta.vec.dx * ped.progress + meta.normal.nx * sidewalkOffset;
+      pedY = centerY + meta.vec.dy * ped.progress + meta.normal.ny * sidewalkOffset;
+    }
 
     // Viewport culling
     if (
@@ -51,8 +67,10 @@ export function drawPedestrians(
     ctx.translate(pedX, pedY);
 
     // Walking animation - bob up and down and sway
-    const walkBob = Math.sin(ped.walkOffset) * 0.8;
-    const walkSway = Math.sin(ped.walkOffset * 0.5) * 0.5;
+    // Reduced animation for pedestrians at parks (they're stationary)
+    const animationScale = (ped.state === 'at_park' || ped.state === 'at_recreation') ? 0.3 : 1.0;
+    const walkBob = Math.sin(ped.walkOffset) * 0.8 * animationScale;
+    const walkSway = Math.sin(ped.walkOffset * 0.5) * 0.5 * animationScale;
 
     // Scale for pedestrian (smaller, more realistic)
     const scale = 0.35;

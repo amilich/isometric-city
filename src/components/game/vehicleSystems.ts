@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { Car, CarDirection, EmergencyVehicle, EmergencyVehicleType, Pedestrian, PedestrianDestType, WorldRenderState, TILE_WIDTH, TILE_HEIGHT } from './types';
+import { Car, CarDirection, EmergencyVehicle, EmergencyVehicleType, Pedestrian, PedestrianDestType, PedestrianState, WorldRenderState, TILE_WIDTH, TILE_HEIGHT } from './types';
 import { CAR_COLORS, PEDESTRIAN_SKIN_COLORS, PEDESTRIAN_SHIRT_COLORS, PEDESTRIAN_MIN_ZOOM, DIRECTION_META } from './constants';
 import { isRoadTile, getDirectionOptions, pickNextDirection, findPathOnRoads, getDirectionToTile, gridToScreen } from './utils';
 import { findResidentialBuildings, findPedestrianDestinations, findStations, findFires } from './gridFinders';
@@ -129,9 +129,29 @@ export function useVehicleSystems(
     }
     
     const home = residentials[Math.floor(Math.random() * residentials.length)];
-    const dest = destinations[Math.floor(Math.random() * destinations.length)];
     
-    const path = findPathOnRoads(currentGrid, currentGridSize, home.x, home.y, dest.x, dest.y);
+    // Create a destination queue - pedestrians can visit multiple places
+    const destinationQueue: Array<{ x: number; y: number; type: PedestrianDestType }> = [];
+    const numDestinations = Math.random() < 0.3 ? 3 : Math.random() < 0.6 ? 2 : 1; // 30% visit 3, 30% visit 2, 40% visit 1
+    
+    // Shuffle destinations and pick unique ones
+    const shuffledDests = [...destinations].sort(() => Math.random() - 0.5);
+    const usedTypes = new Set<PedestrianDestType>();
+    
+    for (let i = 0; i < shuffledDests.length && destinationQueue.length < numDestinations; i++) {
+      const dest = shuffledDests[i];
+      if (!usedTypes.has(dest.type)) {
+        destinationQueue.push(dest);
+        usedTypes.add(dest.type);
+      }
+    }
+    
+    if (destinationQueue.length === 0) {
+      return false;
+    }
+    
+    const firstDest = destinationQueue[0];
+    const path = findPathOnRoads(currentGrid, currentGridSize, home.x, home.y, firstDest.x, firstDest.y);
     if (!path || path.length === 0) {
       return false;
     }
@@ -159,18 +179,23 @@ export function useVehicleSystems(
       speed: 0.12 + Math.random() * 0.08,
       pathIndex: startIndex,
       age: 0,
-      maxAge: 60 + Math.random() * 90,
+      maxAge: 120 + Math.random() * 180, // Longer lifespan for multi-destination trips
       skinColor: PEDESTRIAN_SKIN_COLORS[Math.floor(Math.random() * PEDESTRIAN_SKIN_COLORS.length)],
       shirtColor: PEDESTRIAN_SHIRT_COLORS[Math.floor(Math.random() * PEDESTRIAN_SHIRT_COLORS.length)],
       walkOffset: Math.random() * Math.PI * 2,
       sidewalkSide: Math.random() < 0.5 ? 'left' : 'right',
-      destType: dest.type,
+      state: 'walking',
+      activityTimer: 0,
+      activityDuration: 0,
       homeX: home.x,
       homeY: home.y,
-      destX: dest.x,
-      destY: dest.y,
-      returningHome: startIndex >= path.length - 1,
+      currentDestX: firstDest.x,
+      currentDestY: firstDest.y,
+      currentDestType: firstDest.type,
+      destinationQueue: destinationQueue.slice(1), // Remove first destination (it's currentDest)
       path,
+      insideBuildingX: -1,
+      insideBuildingY: -1,
     });
     
     return true;
@@ -748,6 +773,22 @@ export function useVehicleSystems(
     carsRef.current = updatedCars;
   }, [worldStateRef, carsRef, carSpawnTimerRef, spawnRandomCar, trafficLightTimerRef, isIntersection]);
 
+  // Helper to check if a building type is a park/recreation area
+  const isParkOrRecreation = useCallback((buildingType: BuildingType): boolean => {
+    return ['park', 'park_large', 'tennis', 'basketball_courts', 'playground_small', 'playground_large',
+            'baseball_field_small', 'soccer_field_small', 'football_field', 'baseball_stadium',
+            'community_center', 'swimming_pool', 'skate_park', 'mini_golf_course', 'bleachers_field',
+            'go_kart_track', 'amphitheater', 'greenhouse_garden', 'community_garden', 'pond_park',
+            'park_gate', 'marina_docks_small', 'pier_large', 'roller_coaster_small', 'amusement_park'].includes(buildingType);
+  }, []);
+
+  // Helper to check if a building type can be entered
+  const canEnterBuilding = useCallback((buildingType: BuildingType): boolean => {
+    return ['school', 'university', 'shop_small', 'shop_medium', 'office_low', 'office_high', 'mall',
+            'factory_small', 'factory_medium', 'factory_large', 'warehouse', 'hospital', 'police_station',
+            'fire_station', 'museum', 'stadium', 'city_hall'].includes(buildingType);
+  }, []);
+
   const updatePedestrians = useCallback((delta: number) => {
     const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed, zoom: currentZoom } = worldStateRef.current;
     
@@ -802,20 +843,205 @@ export function useVehicleSystems(
         continue;
       }
       
-      ped.walkOffset += delta * 8;
-      
-      if (!isRoadTile(currentGrid, currentGridSize, ped.tileX, ped.tileY)) {
+      // Handle different pedestrian states
+      if (ped.state === 'inside_building' || ped.state === 'at_park' || ped.state === 'at_recreation') {
+        // Pedestrian is engaged in an activity
+        ped.activityTimer -= delta * speedMultiplier;
+        
+        if (ped.activityTimer <= 0) {
+          // Activity finished - exit building or leave park
+          if (ped.state === 'inside_building') {
+            // Find a nearby road to exit to
+            let exitRoad: { x: number; y: number } | null = null;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                const checkX = ped.insideBuildingX + dx;
+                const checkY = ped.insideBuildingY + dy;
+                if (checkX >= 0 && checkX < currentGridSize && checkY >= 0 && checkY < currentGridSize) {
+                  if (isRoadTile(currentGrid, currentGridSize, checkX, checkY)) {
+                    exitRoad = { x: checkX, y: checkY };
+                    break;
+                  }
+                }
+              }
+              if (exitRoad) break;
+            }
+            
+            if (exitRoad) {
+              ped.tileX = exitRoad.x;
+              ped.tileY = exitRoad.y;
+              ped.state = 'walking';
+              ped.progress = 0;
+              
+              // Continue to next destination or go home
+              if (ped.destinationQueue.length > 0) {
+                // Visit next destination
+                const nextDest = ped.destinationQueue.shift()!;
+                ped.currentDestX = nextDest.x;
+                ped.currentDestY = nextDest.y;
+                ped.currentDestType = nextDest.type;
+                const path = findPathOnRoads(currentGrid, currentGridSize, exitRoad.x, exitRoad.y, nextDest.x, nextDest.y);
+                if (path && path.length > 0) {
+                  ped.path = path;
+                  ped.pathIndex = 0;
+                  if (path.length > 1) {
+                    const dir = getDirectionToTile(path[0].x, path[0].y, path[1].x, path[1].y);
+                    if (dir) ped.direction = dir;
+                  }
+                } else {
+                  alive = false;
+                }
+              } else {
+                // Return home
+                const returnPath = findPathOnRoads(currentGrid, currentGridSize, exitRoad.x, exitRoad.y, ped.homeX, ped.homeY);
+                if (returnPath && returnPath.length > 0) {
+                  ped.path = returnPath;
+                  ped.pathIndex = 0;
+                  ped.currentDestX = ped.homeX;
+                  ped.currentDestY = ped.homeY;
+                  ped.currentDestType = 'home';
+                  if (returnPath.length > 1) {
+                    const dir = getDirectionToTile(returnPath[0].x, returnPath[0].y, returnPath[1].x, returnPath[1].y);
+                    if (dir) ped.direction = dir;
+                  }
+                } else {
+                  alive = false;
+                }
+              }
+            } else {
+              // Can't find exit road - remove pedestrian
+              alive = false;
+            }
+          } else {
+            // Leaving park/recreation area - continue to next destination or go home
+            const currentTile = { x: ped.tileX, y: ped.tileY };
+            
+            if (ped.destinationQueue.length > 0) {
+              // Visit next destination
+              const nextDest = ped.destinationQueue.shift()!;
+              ped.currentDestX = nextDest.x;
+              ped.currentDestY = nextDest.y;
+              ped.currentDestType = nextDest.type;
+              const path = findPathOnRoads(currentGrid, currentGridSize, currentTile.x, currentTile.y, nextDest.x, nextDest.y);
+              if (path && path.length > 0) {
+                ped.path = path;
+                ped.pathIndex = 0;
+                ped.state = 'walking';
+                ped.progress = 0;
+                if (path.length > 1) {
+                  const dir = getDirectionToTile(path[0].x, path[0].y, path[1].x, path[1].y);
+                  if (dir) ped.direction = dir;
+                }
+              } else {
+                alive = false;
+              }
+            } else {
+              // Return home
+              const returnPath = findPathOnRoads(currentGrid, currentGridSize, currentTile.x, currentTile.y, ped.homeX, ped.homeY);
+              if (returnPath && returnPath.length > 0) {
+                ped.path = returnPath;
+                ped.pathIndex = 0;
+                ped.state = 'walking';
+                ped.progress = 0;
+                ped.currentDestX = ped.homeX;
+                ped.currentDestY = ped.homeY;
+                ped.currentDestType = 'home';
+                if (returnPath.length > 1) {
+                  const dir = getDirectionToTile(returnPath[0].x, returnPath[0].y, returnPath[1].x, returnPath[1].y);
+                  if (dir) ped.direction = dir;
+                }
+              } else {
+                alive = false;
+              }
+            }
+          }
+        } else {
+          // Still in activity - keep pedestrian but don't update position
+          updatedPedestrians.push(ped);
+        }
         continue;
       }
       
-      // Most pedestrians respect traffic lights at intersections (based on their id)
-      // Check if approaching an intersection and should wait
+      // Pedestrian is walking
+      ped.walkOffset += delta * 8;
+      
+      // Check if pedestrian has reached destination
+      if (ped.path.length > 0 && ped.pathIndex >= ped.path.length - 1 && ped.progress >= 0.8) {
+        const destTile = ped.path[ped.path.length - 1];
+        
+        // Check if we're at or adjacent to the destination building
+        const distToDest = Math.abs(destTile.x - ped.currentDestX) + Math.abs(destTile.y - ped.currentDestY);
+        const isAtDestination = distToDest <= 1; // Allow being adjacent (on road next to building)
+        
+        if (isAtDestination) {
+          if (ped.currentDestType === 'home') {
+            // Reached home - remove pedestrian
+            alive = false;
+            continue;
+          }
+          
+          // Check the actual destination building type
+          const destBuildingType = currentGrid[ped.currentDestY]?.[ped.currentDestX]?.building.type;
+          
+          if (isParkOrRecreation(destBuildingType)) {
+            // Enter park/recreation area
+            ped.state = destBuildingType === 'park' || destBuildingType === 'park_large' ? 'at_park' : 'at_recreation';
+            ped.activityDuration = 5 + Math.random() * 10; // Stay 5-15 seconds
+            ped.activityTimer = ped.activityDuration;
+            ped.tileX = ped.currentDestX;
+            ped.tileY = ped.currentDestY;
+            ped.progress = 0;
+            updatedPedestrians.push(ped);
+            continue;
+          } else if (canEnterBuilding(destBuildingType)) {
+            // Enter building
+            ped.state = 'inside_building';
+            ped.activityDuration = 8 + Math.random() * 15; // Stay 8-23 seconds
+            ped.activityTimer = ped.activityDuration;
+            ped.insideBuildingX = ped.currentDestX;
+            ped.insideBuildingY = ped.currentDestY;
+            ped.tileX = ped.currentDestX;
+            ped.tileY = ped.currentDestY;
+            ped.progress = 0;
+            updatedPedestrians.push(ped);
+            continue;
+          }
+        }
+      }
+      
+      if (!isRoadTile(currentGrid, currentGridSize, ped.tileX, ped.tileY)) {
+        // Not on road - try to find nearby road
+        let nearbyRoad: { x: number; y: number } | null = null;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const checkX = ped.tileX + dx;
+            const checkY = ped.tileY + dy;
+            if (checkX >= 0 && checkX < currentGridSize && checkY >= 0 && checkY < currentGridSize) {
+              if (isRoadTile(currentGrid, currentGridSize, checkX, checkY)) {
+                nearbyRoad = { x: checkX, y: checkY };
+                break;
+              }
+            }
+          }
+          if (nearbyRoad) break;
+        }
+        if (nearbyRoad) {
+          ped.tileX = nearbyRoad.x;
+          ped.tileY = nearbyRoad.y;
+          ped.progress = 0;
+        } else {
+          continue;
+        }
+      }
+      
+      // Most pedestrians respect traffic lights at intersections
       let pedShouldWait = false;
-      const pedRespectsLights = (ped.id % 5) !== 0; // 80% respect lights (4 out of 5)
+      const pedRespectsLights = (ped.id % 5) !== 0; // 80% respect lights
       
       if (pedRespectsLights && ped.pathIndex + 1 < ped.path.length && ped.progress > 0.6) {
         const nextTile = ped.path[ped.pathIndex + 1];
-        // Check if next tile is an intersection
         const nextNorth = isRoadTile(currentGrid, currentGridSize, nextTile.x - 1, nextTile.y);
         const nextEast = isRoadTile(currentGrid, currentGridSize, nextTile.x, nextTile.y - 1);
         const nextSouth = isRoadTile(currentGrid, currentGridSize, nextTile.x + 1, nextTile.y);
@@ -823,11 +1049,9 @@ export function useVehicleSystems(
         const isNextIntersection = [nextNorth, nextEast, nextSouth, nextWest].filter(Boolean).length >= 3;
         
         if (isNextIntersection) {
-          // Get traffic light state
           const trafficTime = trafficLightTimerRef.current;
           const lightState = getTrafficLightState(trafficTime);
           
-          // Pedestrians wait when they can't proceed (same logic as cars)
           if (!canProceedThroughIntersection(ped.direction, lightState)) {
             pedShouldWait = true;
           }
@@ -838,29 +1062,7 @@ export function useVehicleSystems(
         ped.progress += ped.speed * delta * speedMultiplier;
       }
       
-      if (ped.path.length === 1 && ped.progress >= 1) {
-        if (!ped.returningHome) {
-          ped.returningHome = true;
-          const returnPath = findPathOnRoads(currentGrid, currentGridSize, ped.destX, ped.destY, ped.homeX, ped.homeY);
-          if (returnPath && returnPath.length > 0) {
-            ped.path = returnPath;
-            ped.pathIndex = 0;
-            ped.progress = 0;
-            ped.tileX = returnPath[0].x;
-            ped.tileY = returnPath[0].y;
-            if (returnPath.length > 1) {
-              const nextTile = returnPath[1];
-              const dir = getDirectionToTile(returnPath[0].x, returnPath[0].y, nextTile.x, nextTile.y);
-              if (dir) ped.direction = dir;
-            }
-          } else {
-            continue;
-          }
-        } else {
-          continue;
-        }
-      }
-      
+      // Move along path
       while (ped.progress >= 1 && ped.pathIndex < ped.path.length - 1) {
         ped.pathIndex++;
         ped.progress -= 1;
@@ -876,55 +1078,10 @@ export function useVehicleSystems(
         ped.tileX = currentTile.x;
         ped.tileY = currentTile.y;
         
-        if (ped.pathIndex >= ped.path.length - 1) {
-          if (!ped.returningHome) {
-            ped.returningHome = true;
-            const returnPath = findPathOnRoads(currentGrid, currentGridSize, ped.destX, ped.destY, ped.homeX, ped.homeY);
-            if (returnPath && returnPath.length > 0) {
-              ped.path = returnPath;
-              ped.pathIndex = 0;
-              ped.progress = 0;
-              if (returnPath.length > 1) {
-                const nextTile = returnPath[1];
-                const dir = getDirectionToTile(returnPath[0].x, returnPath[0].y, nextTile.x, nextTile.y);
-                if (dir) ped.direction = dir;
-              }
-            } else {
-              alive = false;
-            }
-          } else {
-            alive = false;
-          }
-          break;
-        }
-        
         if (ped.pathIndex + 1 < ped.path.length) {
           const nextTile = ped.path[ped.pathIndex + 1];
           const dir = getDirectionToTile(ped.tileX, ped.tileY, nextTile.x, nextTile.y);
           if (dir) ped.direction = dir;
-        }
-      }
-      
-      if (alive && ped.progress >= 1 && ped.pathIndex >= ped.path.length - 1) {
-        if (!ped.returningHome) {
-          ped.returningHome = true;
-          const returnPath = findPathOnRoads(currentGrid, currentGridSize, ped.destX, ped.destY, ped.homeX, ped.homeY);
-          if (returnPath && returnPath.length > 0) {
-            ped.path = returnPath;
-            ped.pathIndex = 0;
-            ped.progress = 0;
-            ped.tileX = returnPath[0].x;
-            ped.tileY = returnPath[0].y;
-            if (returnPath.length > 1) {
-              const nextTile = returnPath[1];
-              const dir = getDirectionToTile(returnPath[0].x, returnPath[0].y, nextTile.x, nextTile.y);
-              if (dir) ped.direction = dir;
-            }
-          } else {
-            alive = false;
-          }
-        } else {
-          alive = false;
         }
       }
       
@@ -934,7 +1091,7 @@ export function useVehicleSystems(
     }
     
     pedestriansRef.current = updatedPedestrians;
-  }, [worldStateRef, gridVersionRef, cachedRoadTileCountRef, pedestriansRef, pedestrianSpawnTimerRef, spawnPedestrian, trafficLightTimerRef]);
+  }, [worldStateRef, gridVersionRef, cachedRoadTileCountRef, pedestriansRef, pedestrianSpawnTimerRef, spawnPedestrian, trafficLightTimerRef, isParkOrRecreation, canEnterBuilding]);
 
   const drawCars = useCallback((ctx: CanvasRenderingContext2D) => {
     const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;

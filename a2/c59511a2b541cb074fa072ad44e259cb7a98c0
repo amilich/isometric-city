@@ -7,7 +7,7 @@ src/components/mobile/MobileTopBar.tsx: +139[3],+141-144[3],+146-147[3],+150-152
 
 Conversations:
 
-[0]: 174562dd-4ee6-40d0-8883-05e83e059e56; Add share button and compress controls; claude-4.5-opus-high-thinking;
+[0]: 174562dd-4ee6-40d0-8883-05e83e059e56; 174562dd; unknown;
 [1]: 2f89f522-e4b0-4ced-ac48-f19e28430087; 2f89f522; unknown;
-[2]: c84ccf7e-dfe9-468a-8904-c27391b5efad; Reduce car visibility on mobile; claude-4.5-opus-high-thinking;
-[3]: fac2a0a6-1e4c-4fed-85b4-988a585b2206; Improve mobile play/pause controls; claude-4.5-opus-high-thinking;
+[2]: c84ccf7e-dfe9-468a-8904-c27391b5efad; c84ccf7e; unknown;
+[3]: fac2a0a6-1e4c-4fed-85b4-988a585b2206; fac2a0a6; unknown;

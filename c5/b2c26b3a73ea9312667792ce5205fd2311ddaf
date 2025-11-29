@@ -1,8 +1,9 @@
 AI Notes:
 
-src/components/game/railSystem.ts: +438[0],+457[1],+637[0],+654[0],+655[1],+866[0],+884[1] -438[0],-439[1],-830-836[0]
+src/components/game/railSystem.ts: +438[0],+457[1],+637[0],+654[0],+655[1],+866[0],+884[1] -438[0],-439[2],-830-836[0]
 
 Conversations:
 
 [0]: 73cfc44b-a526-479c-b015-0b07f2f350c4; Fix 1x1 rail tile appearance; claude-4.5-opus-high-thinking;
-[1]: d83c53f9-2ab6-45ff-a094-166cb2a5ce78; Extend rail to tile edges; claude-4.5-opus-high-thinking;
+[1]: b1966860-2064-473d-b9f8-3d98eca9e943; Implement curved T shape rail intersections; composer-1;
+[2]: da77620e-fea7-47c5-b888-afeec782c1ba; Adjust T-shaped train intersection curves; claude-4.5-opus-high-thinking;

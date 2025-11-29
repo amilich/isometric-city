@@ -7,5 +7,5 @@ src/components/mobile/MobileTopBar.tsx: +138[1],+167-178[1]
 
 Conversations:
 
-[0]: 2069cbd1-73fd-46ba-9085-0b005f7476c8; Hide boat contrails on mobile zoom; claude-4.5-opus-high-thinking;
-[1]: fac2a0a6-1e4c-4fed-85b4-988a585b2206; Improve mobile play/pause controls; claude-4.5-opus-high-thinking;
+[0]: 2069cbd1-73fd-46ba-9085-0b005f7476c8; 2069cbd1; unknown;
+[1]: fac2a0a6-1e4c-4fed-85b4-988a585b2206; fac2a0a6; unknown;

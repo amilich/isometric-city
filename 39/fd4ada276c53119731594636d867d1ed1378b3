@@ -9,4 +9,4 @@ src/types/game.ts: +229[0]
 Conversations:
 
 [0]: 844ff051-ec4f-4daf-a511-5db02319f01e; Render rail on road and vice versa; claude-4.5-opus-high-thinking;
-[1]: 1f42ded9-2c45-4796-912d-db5a98dbed88; Implement curved T shape rail intersections; composer-1;
+[1]: ddbf2eb8-417b-432a-8d0a-41cbb957e280; Adjust T curve rail line extension; composer-1;

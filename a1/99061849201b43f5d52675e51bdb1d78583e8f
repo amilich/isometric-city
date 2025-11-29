@@ -1,7 +1,7 @@
 AI Notes:
 
 src/components/game/drawPedestrians.ts: -97-100[0]
-src/components/game/trainSystem.ts: +777-783[1],+814-817[1] -121-134[1],-135[2],-793-794[1],-825-826[1]
+src/components/game/trainSystem.ts: +777-779[1],+780-783[2],+814-817[1] -121-134[1],-135[2],-793-794[1],-825-826[1]
 
 Conversations:
 

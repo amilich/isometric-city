@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +3066[0],+3069[0],+3072[0],+3075[0],+4330[0],+4399[0] -4326[0],-4395[0]
+src/components/game/trainSystem.ts: +261[0],+333[0] -261[0],-333[0]
+src/lib/renderConfig.ts: +392[0],+415[0] -392[0]
+
+Conversations:
+
+[0]: 071f00c8-7fc8-4e39-a4f1-c92ca1be1876; Crop bottom part of rail station assets; composer-1;

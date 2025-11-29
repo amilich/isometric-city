@@ -83,8 +83,8 @@ export function useVehicleSystems(
       const laneSign = (direction === 'north' || direction === 'east') ? 1 : -1;
       // Cars have a limited lifespan - shorter on mobile to reduce crowding
       const carMaxAge = isMobile 
-        ? 8 + Math.random() * 4   // 8-12 seconds on mobile
-        : 12 + Math.random() * 8; // 12-20 seconds on desktop
+        ? 25 + Math.random() * 15   // 25-40 seconds on mobile
+        : 45 + Math.random() * 30; // 45-75 seconds on desktop
       
       carsRef.current.push({
         id: carIdRef.current++,

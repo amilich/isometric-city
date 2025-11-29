@@ -1,9 +1,10 @@
 AI Notes:
 
 src/components/game/drawPedestrians.ts: -97-100[0]
-src/components/game/trainSystem.ts: +777-783[1],+814-817[1] -121-135[1],-793-794[1],-825-826[1]
+src/components/game/trainSystem.ts: +777-783[1],+814-817[1] -121-134[1],-135[2],-793-794[1],-825-826[1]
 
 Conversations:
 
 [0]: e6f5c8e1-095c-478f-b94c-3808ad148efd; Understanding pedestrian building occlusion logic; claude-4.5-opus-high-thinking;
 [1]: 488bba38-60b1-42f3-93c2-af99edab8043; Review pedestrian activity commit issues; claude-4.5-opus-high-thinking;
+[2]: bf189056-1791-4bd0-a8f8-8561b1a93d56; Slow down trains to prevent overlap; claude-4.5-opus-high-thinking;

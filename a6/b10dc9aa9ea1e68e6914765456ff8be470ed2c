@@ -8,5 +8,5 @@ src/types/game.ts: +332[0]
 
 Conversations:
 
-[0]: 4827c85d-0ad2-4c7f-96fc-370a10a48215; Clear vehicles and entities on game start; claude-4.5-opus-high-thinking;
-[1]: 9dea2910-9384-4d06-8c92-b47dd8ba369b; Implement multi-city game state system; claude-4.5-opus-high-thinking;
+[0]: 4827c85d-0ad2-4c7f-96fc-370a10a48215; 4827c85d; unknown;
+[1]: 9dea2910-9384-4d06-8c92-b47dd8ba369b; 9dea2910; unknown;

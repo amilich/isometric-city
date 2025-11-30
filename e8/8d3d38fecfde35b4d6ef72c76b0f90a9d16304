@@ -1,6 +1,6 @@
 AI Notes:
 
-src/components/game/CanvasIsometricGrid.tsx: +2695[0],+2701[0] -2720[0],-2726[0]
+src/components/game/CanvasIsometricGrid.tsx: +2691[0],+2695[0],+2697[0],+2701[0],+2703[0] -2716[0],-2718[0],-2720[0],-2722[0],-2724[0],-2726[0]
 src/lib/renderConfig.ts: +264-265[0],+305[0] -264-265[0]
 
 Conversations:

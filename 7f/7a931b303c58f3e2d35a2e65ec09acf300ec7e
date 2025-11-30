@@ -1,8 +1,9 @@
 AI Notes:
 
 src/components/game/drawAircraft.ts: +100[0]
-src/components/game/seaplaneSystem.ts: +184-186[0],+188-192[0],+208-209[0],+228[0],+232-233[0]
+src/components/game/seaplaneSystem.ts: +184-186[0],+188-192[0],+208[0],+209[1],+228[0],+232-233[0]
 
 Conversations:
 
 [0]: 694b95a1-b7a5-4309-a1a7-a0dce27c8856; 694b95a1; unknown;
+[1]: e67d232c-b6a1-4875-99a6-a7b9f4090f61; Seaplane takeoff behavior observation; composer-1;

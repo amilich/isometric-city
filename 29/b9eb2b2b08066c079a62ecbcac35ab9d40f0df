@@ -1,0 +1,14 @@
+AI Notes:
+
+src/components/game/panels/AdvisorsPanel.tsx: +50[0],+52[0],+63[0],+65[0],+69[0],+72[0] -50[0],-52[0],-63[0],-65[0],-69[0],-72[0]
+src/components/game/panels/SettingsPanel.tsx: +136[0],+141-144[1] -142-145[1],-146[2]
+src/components/game/panels/StatisticsPanel.tsx: +93-96[0],+98-100[0],+102-104[0],+106-108[0],+115-118[0] -93-96[0],-98-100[0],-102-104[0],-106-108[0],-115-118[0]
+src/components/mobile/MobileTopBar.tsx: +110[3],+146-147[3],+150[3],+155[3],+159[3],+164[3],+168[3],+173[3],+177[3],+183-184[3],+193[3],+197[3]
+src/components/ui/switch.tsx: +14[0],+17[0],+23[0],+25[0] -14[0],-22[0]
+
+Conversations:
+
+[0]: f4019c72-f1de-44b2-b207-cd92b7e74f28; Fix mobile UI design issues; claude-4.5-opus-high-thinking;
+[1]: dd1118bc-b920-4b63-a7bc-07e941933ee8; Disaster toggle design issues; composer-1;
+[2]: 3e958c73-8ad9-4f12-ad04-a7e4f6981855; 3e958c73; unknown;
+[3]: 0ff141e2-5cf7-47a0-8743-f4df1e37bbba; Fix settings bug on load example; claude-4.5-opus-high-thinking;

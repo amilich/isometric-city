@@ -5,4 +5,4 @@ src/components/game/drawAircraft.ts: +96-101[0],+102-103[1]
 Conversations:
 
 [0]: 8e034292-11ea-4f74-b6ef-dd8a4b5bb054; 8e034292; unknown;
-[1]: 4f579c94-4c94-4d10-8710-206891cfe8e0; Offset contrail for trailing planes; claude-4.5-opus-high-thinking;
+[1]: e67d232c-b6a1-4875-99a6-a7b9f4090f61; Seaplane takeoff behavior observation; composer-1;

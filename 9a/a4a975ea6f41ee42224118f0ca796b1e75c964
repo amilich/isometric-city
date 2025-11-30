@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/mobile/MobileToolbar.tsx: +11[0],+98[0],+193[0],+288-295[0] -191[0]
+src/components/ui/Icons.tsx: +363-376[0],+405[0]
+
+Conversations:
+
+[0]: e0128cd3-4c2e-401d-a13c-430fd74ffaff; Add rail to mobile bottom bar; claude-4.5-opus-high-thinking;

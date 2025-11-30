@@ -5,5 +5,5 @@ src/components/game/constants.ts: +64-65[0]
 
 Conversations:
 
-[0]: c5495d3b-8095-4efb-8156-75b3aa61c0e4; Refactor water assets name to constant; claude-4.5-opus-high-thinking;
-[1]: d0b07a07-8c80-4508-bf6f-7ef827ac7a61; View overlay rendering issue; claude-4.5-opus-high-thinking;
+[0]: c5495d3b-8095-4efb-8156-75b3aa61c0e4; c5495d3b; unknown;
+[1]: d0b07a07-8c80-4508-bf6f-7ef827ac7a61; d0b07a07; unknown;

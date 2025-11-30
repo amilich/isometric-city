@@ -133,15 +133,17 @@ export function SettingsPanel() {
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Game Settings</div>
             
-            <div className="flex items-center justify-between py-2">
-              <div>
+            <div className="flex items-start justify-between gap-4 py-2">
+              <div className="flex-1 min-w-0">
                 <Label>Disasters</Label>
                 <p className="text-muted-foreground text-xs">Enable random fires and disasters</p>
               </div>
-              <Switch
-                checked={disastersEnabled}
-                onCheckedChange={setDisastersEnabled}
-              />
+              <div className="flex-shrink-0 pt-1">
+                <Switch
+                  checked={disastersEnabled}
+                  onCheckedChange={setDisastersEnabled}
+                />
+              </div>
             </div>
             
             <div className="py-2">

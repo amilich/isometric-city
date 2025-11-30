@@ -107,29 +107,27 @@ export function MobileTopBar({
     <>
       {/* Main Top Bar */}
       <Card className="fixed top-0 left-0 right-0 z-40 rounded-none border-x-0 border-t-0 bg-card/95 backdrop-blur-sm safe-area-top">
-        <div className="flex items-start justify-between px-3 pt-2 pb-0">
+        <div className="flex items-start justify-between px-3 pt-2">
           {/* Left: City name and date */}
-          <div className="flex items-start gap-2 min-w-0">
-            <button
-              className="flex flex-col items-start min-w-0 active:opacity-70 p-0 m-0"
-              onClick={() => setShowDetails(!showDetails)}
-            >
-              <div className="flex items-center gap-1">
-                <span className="text-foreground font-semibold text-xs truncate max-w-[80px]">
-                  {cityName}
-                </span>
-                {isSaving && (
-                  <span className="text-[8px] text-muted-foreground animate-pulse">•</span>
-                )}
-              </div>
-              <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
-                <span>{monthNames[month - 1]} {year}</span>
-              </div>
-            </button>
-          </div>
+          <button
+            className="flex flex-col items-start min-w-0 active:opacity-70 p-0 m-0"
+            onClick={() => setShowDetails(!showDetails)}
+          >
+            <div className="flex items-center gap-1">
+              <span className="text-foreground font-semibold text-xs truncate max-w-[80px]">
+                {cityName}
+              </span>
+              {isSaving && (
+                <span className="text-[8px] text-muted-foreground animate-pulse">•</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
+              <span>{monthNames[month - 1]} {year}</span>
+            </div>
+          </button>
 
           {/* Center: Pop/Funds stats */}
-          <div className="flex items-start gap-2 mr-auto ml-2">
+          <div className="flex items-start gap-3 mr-auto ml-3">
             <div className="flex flex-col items-start">
               <span className="text-xs font-mono font-semibold text-foreground">
                 {stats.population >= 1000 ? `${(stats.population / 1000).toFixed(1)}k` : stats.population}
@@ -144,66 +142,68 @@ export function MobileTopBar({
             </div>
           </div>
 
-          {/* Speed controls: Pause / Play / 2x / 3x */}
-          <div className="flex items-center gap-0 bg-secondary rounded-sm h-[31px] overflow-hidden p-0 m-0">
-            <button
-              onClick={() => setSpeed(0)}
-              className={`h-[31px] w-[31px] min-w-[31px] p-0 m-0 flex items-center justify-center rounded-none ${
-                speed === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
-              }`}
-              title="Pause"
-            >
-              <PauseIcon size={16} />
-            </button>
-            <button
-              onClick={() => setSpeed(1)}
-              className={`h-[31px] w-[31px] min-w-[31px] p-0 m-0 flex items-center justify-center rounded-none ${
-                speed === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
-              }`}
-              title="Normal speed"
-            >
-              <PlayIcon size={16} />
-            </button>
-            <button
-              onClick={() => setSpeed(2)}
-              className={`h-[31px] w-[31px] min-w-[31px] p-0 m-0 flex items-center justify-center rounded-none ${
-                speed === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
-              }`}
-              title="2x speed"
-            >
-              <FastForwardIcon size={16} />
-            </button>
-            <button
-              onClick={() => setSpeed(3)}
-              className={`h-[31px] w-[31px] min-w-[31px] p-0 m-0 flex items-center justify-center rounded-none ${
-                speed === 3 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
-              }`}
-              title="3x speed"
-            >
-              <div className="flex items-center -space-x-1">
-                <PlayIcon size={10} />
-                <PlayIcon size={10} />
-              </div>
-            </button>
-          </div>
-
-          {/* Exit button */}
-          {onExit && (
-            <button
-              onClick={() => setShowExitDialog(true)}
-              className="h-[31px] w-[31px] min-w-[31px] p-0 m-0 ml-1 flex items-center justify-center rounded-sm bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent/20"
-              title="Exit to Main Menu"
-            >
-              <svg 
-                className="w-4 h-4" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
+          {/* Speed controls and exit button */}
+          <div className="flex items-center gap-1 -mt-1.5">
+            <div className="flex items-center gap-0 bg-secondary rounded-sm h-7 overflow-hidden p-0 m-0">
+              <button
+                onClick={() => setSpeed(0)}
+                className={`h-7 w-7 min-w-7 p-0 m-0 flex items-center justify-center rounded-none ${
+                  speed === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
+                }`}
+                title="Pause"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          )}
+                <PauseIcon size={14} />
+              </button>
+              <button
+                onClick={() => setSpeed(1)}
+                className={`h-7 w-7 min-w-7 p-0 m-0 flex items-center justify-center rounded-none ${
+                  speed === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
+                }`}
+                title="Normal speed"
+              >
+                <PlayIcon size={14} />
+              </button>
+              <button
+                onClick={() => setSpeed(2)}
+                className={`h-7 w-7 min-w-7 p-0 m-0 flex items-center justify-center rounded-none ${
+                  speed === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
+                }`}
+                title="2x speed"
+              >
+                <FastForwardIcon size={14} />
+              </button>
+              <button
+                onClick={() => setSpeed(3)}
+                className={`h-7 w-7 min-w-7 p-0 m-0 flex items-center justify-center rounded-none ${
+                  speed === 3 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
+                }`}
+                title="3x speed"
+              >
+                <div className="flex items-center -space-x-1">
+                  <PlayIcon size={9} />
+                  <PlayIcon size={9} />
+                </div>
+              </button>
+            </div>
+
+            {/* Exit button */}
+            {onExit && (
+              <button
+                onClick={() => setShowExitDialog(true)}
+                className="h-7 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                title="Exit to Main Menu"
+              >
+                <svg 
+                  className="w-3.5 h-3.5" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            )}
+          </div>
 
         </div>
 

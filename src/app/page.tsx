@@ -91,7 +91,17 @@ function loadSavedCities(): SavedCityMeta[] {
 }
 
 // Sprite Gallery component that renders sprites using canvas (like SpriteTestPanel)
-function SpriteGallery({ count = 16, cols = 4 }: { count?: number; cols?: number }) {
+function SpriteGallery({
+  count = 16,
+  cols = 4,
+  cellSize = 120,
+  cellPadding = 10,
+}: {
+  count?: number;
+  cols?: number;
+  cellSize?: number;
+  cellPadding?: number;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [filteredSheet, setFilteredSheet] = useState<HTMLCanvasElement | null>(null);
   const spritePack = useMemo(() => getSpritePack(DEFAULT_SPRITE_PACK_ID), []);
@@ -145,8 +155,6 @@ function SpriteGallery({ count = 16, cols = 4 }: { count?: number; cols?: number
     
     const dpr = window.devicePixelRatio || 1;
     const rows = Math.ceil(spriteData.length / cols);
-    const cellSize = 120;
-    const padding = 10;
     
     const canvasWidth = cols * cellSize;
     const canvasHeight = rows * cellSize;
@@ -179,7 +187,7 @@ function SpriteGallery({ count = 16, cols = 4 }: { count?: number; cols?: number
       ctx.stroke();
       
       // Calculate destination size preserving aspect ratio
-      const maxSize = cellSize - padding * 2;
+      const maxSize = cellSize - cellPadding * 2;
       const aspectRatio = coords.sh / coords.sw;
       let destWidth = maxSize;
       let destHeight = destWidth * aspectRatio;
@@ -201,7 +209,7 @@ function SpriteGallery({ count = 16, cols = 4 }: { count?: number; cols?: number
         Math.round(destWidth), Math.round(destHeight)
       );
     });
-  }, [filteredSheet, spriteData, cols]);
+  }, [filteredSheet, spriteData, cols, cellSize, cellPadding]);
   
   return (
     <canvas
@@ -300,7 +308,7 @@ export default function HomePage() {
         
         {/* Sprite Gallery - keep visible even when saves exist */}
         <div className="mb-6">
-          <SpriteGallery count={9} cols={3} />
+          <SpriteGallery count={9} cols={3} cellSize={72} cellPadding={6} />
         </div>
         
         {/* Buttons */}

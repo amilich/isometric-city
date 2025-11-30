@@ -1,0 +1,8 @@
+AI Notes:
+
+src/components/game/drawAircraft.ts: +100[0]
+src/components/game/seaplaneSystem.ts: +184-186[0],+188-192[0],+208-209[0],+228[0],+232-233[0]
+
+Conversations:
+
+[0]: 694b95a1-b7a5-4309-a1a7-a0dce27c8856; Update airplane sprite rendering process; claude-4.5-opus-high-thinking;

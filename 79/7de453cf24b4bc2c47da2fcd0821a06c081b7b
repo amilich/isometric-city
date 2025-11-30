@@ -5,8 +5,8 @@ src/components/mobile/MobileTopBar.tsx: +110[0],+112[2],+113-114[3],+115-116[2],
 
 Conversations:
 
-[0]: dd1118bc-b920-4b63-a7bc-07e941933ee8; Disaster toggle design issues; composer-1;
-[1]: f4019c72-f1de-44b2-b207-cd92b7e74f28; Fix mobile UI design issues; claude-4.5-opus-high-thinking;
+[0]: dd1118bc-b920-4b63-a7bc-07e941933ee8; dd1118bc; unknown;
+[1]: f4019c72-f1de-44b2-b207-cd92b7e74f28; f4019c72; unknown;
 [2]: 03d8f1b6-d239-42d5-ad75-ec8b77f52492; Adjusting taxes on mobile devices; claude-4.5-opus-high-thinking;
-[3]: 0ff141e2-5cf7-47a0-8743-f4df1e37bbba; Fix settings bug on load example; claude-4.5-opus-high-thinking;
-[4]: b2c61c11-6f8a-42ea-beab-9a67cee1f7f9; Fix mobile top bar alignment issues; claude-4.5-opus-high-thinking;
+[3]: 0ff141e2-5cf7-47a0-8743-f4df1e37bbba; 0ff141e2; unknown;
+[4]: b2c61c11-6f8a-42ea-beab-9a67cee1f7f9; b2c61c11; unknown;

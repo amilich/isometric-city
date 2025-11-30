@@ -1,0 +1,8 @@
+AI Notes:
+
+src/app/page.tsx: +78[0] -72-75[0],-77-79[0],-81-84[0],-86-128[0],-130-131[0],-133-168[0],-173-176[0],-180[0],-183-198[0],-209-214[0],-216-221[0],-223-228[0],-238-250[0],-255[0]
+src/components/game/TopBar.tsx: -161[0],-166-172[0],-258-276[0]
+
+Conversations:
+
+[0]: b8c42bc3-e195-4a01-9ca8-381e9cabc0ff; Adjust play/pause toggle bar dimensions; composer-1;

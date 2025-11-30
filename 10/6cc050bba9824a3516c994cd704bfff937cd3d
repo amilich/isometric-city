@@ -6,7 +6,7 @@ src/app/page.tsx: +3[1],+5[1],+8[1],+12-14[1],+16-20[1],+22-23[1],+25-27[1],+29-
 Conversations:
 
 [0]: 4b4fa0ef-31fd-4b36-8341-3c4c04563860; Tab Request 4b4fa0ef; unknown;
-[1]: 363bbf10-c830-48c4-9102-90c134bf6c2e; Add Load Example button on homepage; claude-4.5-opus-high-thinking;
-[2]: 0ff141e2-5cf7-47a0-8743-f4df1e37bbba; Fix settings bug on load example; claude-4.5-opus-high-thinking;
+[1]: 363bbf10-c830-48c4-9102-90c134bf6c2e; 363bbf10; unknown;
+[2]: 0ff141e2-5cf7-47a0-8743-f4df1e37bbba; 0ff141e2; unknown;
 [3]: 174562dd-4ee6-40d0-8883-05e83e059e56; 174562dd; unknown;
-[4]: b8c42bc3-e195-4a01-9ca8-381e9cabc0ff; Adjust play/pause toggle bar dimensions; composer-1;
+[4]: b8c42bc3-e195-4a01-9ca8-381e9cabc0ff; b8c42bc3; unknown;

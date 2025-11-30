@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/game/panels/SettingsPanel.tsx: +354[0] -354[0]
+src/components/mobile/MobileTopBar.tsx: +92[1],+111-112[2],+114[2],+117[2],+118[1],+119-120[2],+121[1],+122-123[2],+124-125[1],+126-127[2],+142[1],+145[1],+217-226[1],+229[1],+238-260[1],+264-267[1],+281-284[1],+287-289[1],+292-297[1],+305[1],+319-325[1] -110-111[2],-113[2],-116[1],-117-118[2],-120-121[2],-122-123[1],-124-125[2],-127[1],-129-130[2],-143[1],-146[2],-218[1],-221[1],-232-235[1],-246-250[1],-252-258[1],-260-261[1],-263-276[1],-281-284[1],-292[1]
+
+Conversations:
+
+[0]: f4019c72-f1de-44b2-b207-cd92b7e74f28; Fix mobile UI design issues; claude-4.5-opus-high-thinking;
+[1]: 03d8f1b6-d239-42d5-ad75-ec8b77f52492; Adjusting taxes on mobile devices; claude-4.5-opus-high-thinking;
+[2]: b2c61c11-6f8a-42ea-beab-9a67cee1f7f9; Fix mobile top bar alignment issues; claude-4.5-opus-high-thinking;

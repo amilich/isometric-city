@@ -1,10 +1,11 @@
 AI Notes:
 
 src/components/game/aircraftSystems.ts: +206[0] -206[0]
-src/components/game/drawAircraft.ts: +93[1],+96-97[1],+98[2],+99-100[1],+101[2],+102[1],+103-104[2],+106[1],+107[2],+108-109[1],+110[2],+111[1],+112-113[2],+114-115[1]
+src/components/game/drawAircraft.ts: +93[1],+96-97[1],+98[2],+99-100[1],+101[2],+102[1],+103-104[3],+106[1],+107[2],+108-109[1],+110[2],+111[1],+112-113[3],+114-115[1]
 
 Conversations:
 
 [0]: dcd18aa2-8daa-4854-ba07-de11c34e76b2; dcd18aa2; unknown;
 [1]: 694b95a1-b7a5-4309-a1a7-a0dce27c8856; 694b95a1; unknown;
 [2]: 8e034292-11ea-4f74-b6ef-dd8a4b5bb054; 8e034292; unknown;
+[3]: 4f579c94-4c94-4d10-8710-206891cfe8e0; Offset contrail for trailing planes; claude-4.5-opus-high-thinking;

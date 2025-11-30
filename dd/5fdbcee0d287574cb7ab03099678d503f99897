@@ -1,0 +1,10 @@
+AI Notes:
+
+src/components/game/CanvasIsometricGrid.tsx: +2209-2213[0]
+src/components/game/Sidebar.tsx: +370[0] -370[0]
+src/components/mobile/MobileTopBar.tsx: +199[0] -199[0]
+src/lib/renderConfig.ts: +226[0] -226[0]
+
+Conversations:
+
+[0]: 89502e3b-54e6-42a2-abcf-4f7ae83c285b; Improve railroad crossing safety measures; claude-4.5-opus-high-thinking;

@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/aircraftSystems.ts: +206[0] -206[0]
+src/components/game/drawAircraft.ts: +908[0],+922-923[0] -908[0],-922-923[0]
+src/components/game/seaplaneSystem.ts: +166-168[0] -166-168[0]
+
+Conversations:
+
+[0]: 4f579c94-4c94-4d10-8710-206891cfe8e0; Offset contrail for trailing planes; claude-4.5-opus-high-thinking;

@@ -1,0 +1,9 @@
+AI Notes:
+
+src/components/game/aircraftSystems.ts: +206[0] -206[0]
+src/components/game/drawAircraft.ts: +93[1],+96-104[1],+106-115[1]
+
+Conversations:
+
+[0]: dcd18aa2-8daa-4854-ba07-de11c34e76b2; Offset contrails behind aircraft; claude-4.5-opus-high-thinking;
+[1]: 694b95a1-b7a5-4309-a1a7-a0dce27c8856; Update airplane sprite rendering process; claude-4.5-opus-high-thinking;

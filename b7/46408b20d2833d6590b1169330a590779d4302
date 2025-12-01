@@ -6,4 +6,4 @@ src/lib/renderConfig.ts: +401[1] -401[1]
 Conversations:
 
 [0]: ef788f5e-57b7-4210-9988-4d27e2d8e910; Draw water tiles for marina assets; claude-4.5-opus-high-thinking;
-[1]: 9f6a40e5-9601-4358-aae5-62e1f8d1f73d; Adjust pond park elevation; composer-1;
+[1]: 9f6a40e5-9601-4358-aae5-62e1f8d1f73d; Adjust pond park elevation; claude-4.5-opus-high-thinking;

@@ -4,4 +4,4 @@ src/components/game/drawAircraft.ts: +187-190[0],+194[0]
 
 Conversations:
 
-[0]: ad59d1b1-1872-4c97-99e1-afcc1893a270; Fix clipped wings on seaplanes; claude-4.5-opus-high-thinking;
+[0]: ad59d1b1-1872-4c97-99e1-afcc1893a270; ad59d1b1; unknown;

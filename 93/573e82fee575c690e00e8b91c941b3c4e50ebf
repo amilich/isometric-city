@@ -1,7 +1,7 @@
 AI Notes:
 
-src/components/game/drawAircraft.ts: +187-196[0] -187[0]
+src/components/game/drawAircraft.ts: +193[0],+196[0]
 
 Conversations:
 
-[0]: ad59d1b1-1872-4c97-99e1-afcc1893a270; ad59d1b1; unknown;
+[0]: 3883c2b5-b070-45c9-992e-c2c606873961; Improve aircraft performance; claude-4.5-sonnet-thinking;

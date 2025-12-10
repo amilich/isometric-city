@@ -1,0 +1,238 @@
+Info 0    [13:46:28.508] Starting TS Server
+Info 1    [13:46:28.515] Version: 5.9.3
+Info 2    [13:46:28.519] Arguments: /Users/andrewmilich/Library/Caches/JetBrains/Air/downloaded_artifacts/typescript-language-server-5.1.1.tar.zst_233d09d113ce43142b1d9ad70a347698/node/bin/node /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/tsserver.js --serverMode partialSemantic --useInferredProjectPerProjectRoot --disableAutomaticTypingAcquisition --cancellationPipeName /private/var/folders/w4/c3qwqf6n5752x80tlxjmkc040000gn/T/72a672f5b3b3ab310ce067c664d6d317/tscancellation* --logVerbosity verbose --logFile /Users/andrewmilich/Documents/GitHub/isometric-city/.log/tsserver-log-j0PB6d/tsserver.log --locale en --validateDefaultNpmLocation --useNodeIpc
+Info 3    [13:46:28.519] Platform: darwin NodeVersion: v22.17.1 CaseSensitive: false
+Info 4    [13:46:28.523] ServerMode: 1 hasUnknownServerMode: undefined
+Info 5    [13:46:28.525] currentDirectory:: /Users/andrewmilich/Documents/GitHub/isometric-city useCaseSensitiveFileNames:: false
+Info 6    [13:46:28.527] libs Location:: /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib
+Info 7    [13:46:28.527] globalTypingsCacheLocation:: undefined
+Info 8    [13:46:28.529] request:
+    {
+      "seq": 0,
+      "type": "request",
+      "command": "configure",
+      "arguments": {
+        "hostInfo": "JetBrains Air",
+        "formatOptions": {
+          "newLineCharacter": "\n"
+        },
+        "preferences": {
+          "allowIncompleteCompletions": true,
+          "allowRenameOfImportPath": true,
+          "allowTextChangesInNewFiles": true,
+          "autoImportSpecifierExcludeRegexes": [],
+          "disableLineTextInReferences": true,
+          "disableSuggestions": false,
+          "displayPartsForJSDoc": true,
+          "excludeLibrarySymbolsInNavTo": true,
+          "generateReturnInDocTemplate": true,
+          "importModuleSpecifierEnding": "auto",
+          "importModuleSpecifierPreference": "relative",
+          "includeAutomaticOptionalChainCompletions": true,
+          "includeCompletionsForImportStatements": true,
+          "includeCompletionsForModuleExports": true,
+          "includeCompletionsWithClassMemberSnippets": true,
+          "includeCompletionsWithInsertText": true,
+          "includeCompletionsWithObjectLiteralMethodSnippets": true,
+          "includeCompletionsWithSnippetText": true,
+          "includeInlayEnumMemberValueHints": true,
+          "includeInlayFunctionLikeReturnTypeHints": true,
+          "includeInlayFunctionParameterTypeHints": true,
+          "includeInlayParameterNameHints": "all",
+          "includeInlayParameterNameHintsWhenArgumentMatchesName": false,
+          "includeInlayPropertyDeclarationTypeHints": true,
+          "includeInlayVariableTypeHints": false,
+          "includeInlayVariableTypeHintsWhenTypeMatchesName": true,
+          "includePackageJsonAutoImports": "on",
+          "interactiveInlayHints": true,
+          "jsxAttributeCompletionStyle": "auto",
+          "lazyConfiguredProjectsFromExternalProject": false,
+          "maximumHoverLength": 500,
+          "organizeImportsAccentCollation": true,
+          "organizeImportsCaseFirst": false,
+          "organizeImportsCollation": "ordinal",
+          "organizeImportsLocale": "en",
+          "organizeImportsIgnoreCase": "auto",
+          "organizeImportsNumericCollation": false,
+          "organizeImportsTypeOrder": "last",
+          "preferTypeOnlyAutoImports": false,
+          "providePrefixAndSuffixTextForRename": true,
+          "provideRefactorNotApplicableReason": true,
+          "quotePreference": "auto",
+          "useLabelDetailsInCompletionEntries": true
+        }
+      }
+    }
+Info 9    [13:46:28.531] Host information JetBrains Air
+Info 10   [13:46:28.531] Format host information updated
+Info 11   [13:46:28.531] response:
+    {"seq":0,"type":"response","command":"configure","request_seq":0,"success":true}
+Perf 12   [13:46:28.531] 0::configure: async elapsed time (in milliseconds) 2.4135
+Info 13   [13:47:43.474] request:
+    {
+      "seq": 1,
+      "type": "request",
+      "command": "navto",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+        "searchValue": "t"
+      }
+    }
+Err 14    [13:47:43.475] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 15    [13:47:43.483] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 16    [13:47:43.483] Exception on executing command {
+  "seq": 1,
+  "type": "request",
+  "command": "navto",
+  "arguments": {
+    "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+    "searchValue": "t"
+  }
+}:
+
+    No Project.
+
+    Error: No Project.
+        at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)
+        at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)
+        at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)
+        at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)
+        at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)
+        at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15
+        at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)
+        at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)
+        at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)
+        at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)
+        at process.emit (node:events:518:28)
+        at emit (node:internal/child_process:949:14)
+        at process.processTicksAndRejections (node:internal/process/task_queues:91:21)
+Info 17   [13:47:43.483] response:
+    {"seq":0,"type":"response","command":"navto","request_seq":1,"success":false,"message":"Error processing request. No Project.\nError: No Project.\n    at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)\n    at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)\n    at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)\n    at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)\n    at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)\n    at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15\n    at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)\n    at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)\n    at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)\n    at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)\n    at process.emit (node:events:518:28)\n    at emit (node:internal/child_process:949:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:91:21)"}
+Info 18   [13:47:43.531] request:
+    {
+      "seq": 2,
+      "type": "request",
+      "command": "navto",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+        "searchValue": "to"
+      }
+    }
+Err 19    [13:47:43.531] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 20    [13:47:43.531] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 21    [13:47:43.531] Exception on executing command {
+  "seq": 2,
+  "type": "request",
+  "command": "navto",
+  "arguments": {
+    "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+    "searchValue": "to"
+  }
+}:
+
+    No Project.
+
+    Error: No Project.
+        at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)
+        at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)
+        at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)
+        at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)
+        at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)
+        at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15
+        at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)
+        at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)
+        at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)
+        at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)
+        at process.emit (node:events:518:28)
+        at emit (node:internal/child_process:949:14)
+        at process.processTicksAndRejections (node:internal/process/task_queues:91:21)
+Info 22   [13:47:43.531] response:
+    {"seq":0,"type":"response","command":"navto","request_seq":2,"success":false,"message":"Error processing request. No Project.\nError: No Project.\n    at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)\n    at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)\n    at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)\n    at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)\n    at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)\n    at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15\n    at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)\n    at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)\n    at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)\n    at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)\n    at process.emit (node:events:518:28)\n    at emit (node:internal/child_process:949:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:91:21)"}
+Info 23   [13:47:43.773] request:
+    {
+      "seq": 3,
+      "type": "request",
+      "command": "navto",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+        "searchValue": "tog"
+      }
+    }
+Err 24    [13:47:43.773] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 25    [13:47:43.773] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 26    [13:47:43.773] Exception on executing command {
+  "seq": 3,
+  "type": "request",
+  "command": "navto",
+  "arguments": {
+    "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+    "searchValue": "tog"
+  }
+}:
+
+    No Project.
+
+    Error: No Project.
+        at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)
+        at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)
+        at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)
+        at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)
+        at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)
+        at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15
+        at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)
+        at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)
+        at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)
+        at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)
+        at process.emit (node:events:518:28)
+        at emit (node:internal/child_process:949:14)
+        at process.processTicksAndRejections (node:internal/process/task_queues:91:21)
+Info 27   [13:47:43.773] response:
+    {"seq":0,"type":"response","command":"navto","request_seq":3,"success":false,"message":"Error processing request. No Project.\nError: No Project.\n    at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)\n    at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)\n    at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)\n    at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)\n    at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)\n    at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15\n    at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)\n    at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)\n    at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)\n    at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)\n    at process.emit (node:events:518:28)\n    at emit (node:internal/child_process:949:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:91:21)"}
+Info 28   [13:47:43.906] request:
+    {
+      "seq": 4,
+      "type": "request",
+      "command": "navto",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+        "searchValue": "togg"
+      }
+    }
+Err 29    [13:47:43.906] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 30    [13:47:43.906] Could not find file "/Users/andrewmilich/Documents/GitHub/isometric-city".
+All files are: []
+Err 31    [13:47:43.906] Exception on executing command {
+  "seq": 4,
+  "type": "request",
+  "command": "navto",
+  "arguments": {
+    "file": "/Users/andrewmilich/Documents/GitHub/isometric-city",
+    "searchValue": "togg"
+  }
+}:
+
+    No Project.
+
+    Error: No Project.
+        at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)
+        at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)
+        at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)
+        at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)
+        at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)
+        at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15
+        at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)
+        at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)
+        at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)
+        at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)
+        at process.emit (node:events:518:28)
+        at emit (node:internal/child_process:949:14)
+        at process.processTicksAndRejections (node:internal/process/task_queues:91:21)
+Info 32   [13:47:43.906] response:
+    {"seq":0,"type":"response","command":"navto","request_seq":4,"success":false,"message":"Error processing request. No Project.\nError: No Project.\n    at Object.ThrowNoProject (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:186170:11)\n    at IpcIOSession.getProjects (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:195722:23)\n    at IpcIOSession.getFullNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196322:29)\n    at IpcIOSession.getNavigateToItems (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196280:23)\n    at navto (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:194428:43)\n    at /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196832:15\n    at IpcIOSession.executeWithRequestId (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196821:14)\n    at IpcIOSession.executeCommand (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196830:29)\n    at IpcIOSession.onMessage (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/typescript.js:196878:68)\n    at process.<anonymous> (/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/_tsserver.js:519:14)\n    at process.emit (node:events:518:28)\n    at emit (node:internal/child_process:949:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:91:21)"}

@@ -1,0 +1,290 @@
+Info 0    [18:30:12.747] Starting TS Server
+Info 1    [18:30:12.752] Version: 5.9.3
+Info 2    [18:30:12.752] Arguments: /Users/andrewmilich/Library/Caches/JetBrains/Air/downloaded_artifacts/typescript-language-server-5.1.1.tar.zst_233d09d113ce43142b1d9ad70a347698/node/bin/node /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/tsserver.js --serverMode partialSemantic --useInferredProjectPerProjectRoot --disableAutomaticTypingAcquisition --cancellationPipeName /private/var/folders/w4/c3qwqf6n5752x80tlxjmkc040000gn/T/1d004f3f8664c4a2d3febca88f415bad/tscancellation* --logVerbosity verbose --logFile /Users/andrewmilich/Documents/GitHub/isometric-city/.log/tsserver-log-ZxvRB9/tsserver.log --locale en --validateDefaultNpmLocation --useNodeIpc
+Info 3    [18:30:12.752] Platform: darwin NodeVersion: v22.17.1 CaseSensitive: false
+Info 4    [18:30:12.752] ServerMode: 1 hasUnknownServerMode: undefined
+Info 5    [18:30:12.754] currentDirectory:: /Users/andrewmilich/Documents/GitHub/isometric-city useCaseSensitiveFileNames:: false
+Info 6    [18:30:12.757] libs Location:: /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib
+Info 7    [18:30:12.757] globalTypingsCacheLocation:: undefined
+Info 8    [18:30:12.759] request:
+    {
+      "seq": 0,
+      "type": "request",
+      "command": "configure",
+      "arguments": {
+        "hostInfo": "JetBrains Air",
+        "formatOptions": {
+          "newLineCharacter": "\n"
+        },
+        "preferences": {
+          "allowIncompleteCompletions": true,
+          "allowRenameOfImportPath": true,
+          "allowTextChangesInNewFiles": true,
+          "autoImportSpecifierExcludeRegexes": [],
+          "disableLineTextInReferences": true,
+          "disableSuggestions": false,
+          "displayPartsForJSDoc": true,
+          "excludeLibrarySymbolsInNavTo": true,
+          "generateReturnInDocTemplate": true,
+          "importModuleSpecifierEnding": "auto",
+          "importModuleSpecifierPreference": "relative",
+          "includeAutomaticOptionalChainCompletions": true,
+          "includeCompletionsForImportStatements": true,
+          "includeCompletionsForModuleExports": true,
+          "includeCompletionsWithClassMemberSnippets": true,
+          "includeCompletionsWithInsertText": true,
+          "includeCompletionsWithObjectLiteralMethodSnippets": true,
+          "includeCompletionsWithSnippetText": true,
+          "includeInlayEnumMemberValueHints": true,
+          "includeInlayFunctionLikeReturnTypeHints": true,
+          "includeInlayFunctionParameterTypeHints": true,
+          "includeInlayParameterNameHints": "all",
+          "includeInlayParameterNameHintsWhenArgumentMatchesName": false,
+          "includeInlayPropertyDeclarationTypeHints": true,
+          "includeInlayVariableTypeHints": false,
+          "includeInlayVariableTypeHintsWhenTypeMatchesName": true,
+          "includePackageJsonAutoImports": "on",
+          "interactiveInlayHints": true,
+          "jsxAttributeCompletionStyle": "auto",
+          "lazyConfiguredProjectsFromExternalProject": false,
+          "maximumHoverLength": 500,
+          "organizeImportsAccentCollation": true,
+          "organizeImportsCaseFirst": false,
+          "organizeImportsCollation": "ordinal",
+          "organizeImportsLocale": "en",
+          "organizeImportsIgnoreCase": "auto",
+          "organizeImportsNumericCollation": false,
+          "organizeImportsTypeOrder": "last",
+          "preferTypeOnlyAutoImports": false,
+          "providePrefixAndSuffixTextForRename": true,
+          "provideRefactorNotApplicableReason": true,
+          "quotePreference": "auto",
+          "useLabelDetailsInCompletionEntries": true
+        }
+      }
+    }
+Info 9    [18:30:12.761] Host information JetBrains Air
+Info 10   [18:30:12.761] Format host information updated
+Info 11   [18:30:12.761] response:
+    {"seq":0,"type":"response","command":"configure","request_seq":0,"success":true}
+Perf 12   [18:30:12.767] 0::configure: async elapsed time (in milliseconds) 8.2519
+Info 13   [18:30:54.775] request:
+    {
+      "seq": 1,
+      "type": "request",
+      "command": "open",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx",
+        "fileContent": "import * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\n\nimport { cn } from \"@/lib/utils\"\n\nconst badgeVariants = cva(\n  \"inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2\",\n  {\n    variants: {\n      variant: {\n        default:\n          \"border-transparent bg-primary text-primary-foreground hover:bg-primary/80\",\n        secondary:\n          \"border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80\",\n        destructive:\n          \"border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80\",\n        outline: \"text-foreground\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nexport interface BadgeProps\n  extends React.HTMLAttributes<HTMLDivElement>,\n    VariantProps<typeof badgeVariants> {}\n\nfunction Badge({ className, variant, ...props }: BadgeProps) {\n  return (\n    <div className={cn(badgeVariants({ variant }), className)} {...props} />\n  )\n}\n\nexport { Badge, badgeVariants }\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+        "scriptKindName": "TSX",
+        "projectRootPath": "/Users/andrewmilich/Documents/GitHub/isometric-city"
+      }
+    }
+Info 14   [18:30:54.776] Creating InferredProject: /dev/null/inferredProject1*, currentDirectory: /Users/andrewmilich/Documents/GitHub/isometric-city
+Info 15   [18:30:54.777] Starting updateGraphWorker: Project: /dev/null/inferredProject1*
+Info 16   [18:30:54.954] Finishing updateGraphWorker: Project: /dev/null/inferredProject1* projectStateVersion: 1 projectProgramVersion: 0 structureChanged: true structureIsReused:: Not Elapsed: 177.34754099999554ms
+Info 17   [18:30:54.954] Project '/dev/null/inferredProject1*' (Inferred)
+Info 18   [18:30:54.955] 	Files (8)
+	/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/lib.d.ts
+	/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/lib.es5.d.ts
+	/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/lib.dom.d.ts
+	/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/lib.webworker.importscripts.d.ts
+	/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/lib.scripthost.d.ts
+	/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/lib.decorators.d.ts
+	/Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/lib.decorators.legacy.d.ts
+	/Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx
+
+
+	node_modules/typescript/lib/lib.d.ts
+	  Default library for target 'es5'
+	node_modules/typescript/lib/lib.es5.d.ts
+	  Library referenced via 'es5' from file 'node_modules/typescript/lib/lib.d.ts'
+	node_modules/typescript/lib/lib.dom.d.ts
+	  Library referenced via 'dom' from file 'node_modules/typescript/lib/lib.d.ts'
+	node_modules/typescript/lib/lib.webworker.importscripts.d.ts
+	  Library referenced via 'webworker.importscripts' from file 'node_modules/typescript/lib/lib.d.ts'
+	node_modules/typescript/lib/lib.scripthost.d.ts
+	  Library referenced via 'scripthost' from file 'node_modules/typescript/lib/lib.d.ts'
+	node_modules/typescript/lib/lib.decorators.d.ts
+	  Library referenced via 'decorators' from file 'node_modules/typescript/lib/lib.es5.d.ts'
+	node_modules/typescript/lib/lib.decorators.legacy.d.ts
+	  Library referenced via 'decorators.legacy' from file 'node_modules/typescript/lib/lib.es5.d.ts'
+	src/components/ui/badge.tsx
+	  Root file specified for compilation
+
+Info 19   [18:30:54.955] -----------------------------------------------
+Info 20   [18:30:54.955] Project '/dev/null/inferredProject1*' (Inferred)
+Info 20   [18:30:54.955] 	Files (8)
+
+Info 20   [18:30:54.955] -----------------------------------------------
+Info 20   [18:30:54.955] Open files: 
+Info 20   [18:30:54.955] 	FileName: /Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx ProjectRootPath: /Users/andrewmilich/Documents/GitHub/isometric-city
+Info 20   [18:30:54.955] 		Projects: /dev/null/inferredProject1*
+Info 20   [18:30:54.955] response:
+    {"seq":0,"type":"response","command":"open","request_seq":1,"success":true,"performanceData":{"updateGraphDurationMs":177.34754099999554}}
+Perf 21   [18:30:54.955] 1::open: async elapsed time (in milliseconds) 180.2190
+Info 22   [18:30:54.955] request:
+    {
+      "seq": 2,
+      "type": "request",
+      "command": "configure",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx",
+        "formatOptions": {
+          "tabSize": 2,
+          "insertSpaces": true,
+          "convertTabsToSpaces": true,
+          "indentSize": 2,
+          "newLineCharacter": "\n"
+        },
+        "preferences": {
+          "allowIncompleteCompletions": true,
+          "allowRenameOfImportPath": true,
+          "allowTextChangesInNewFiles": true,
+          "autoImportFileExcludePatterns": [],
+          "autoImportSpecifierExcludeRegexes": [],
+          "disableLineTextInReferences": true,
+          "disableSuggestions": false,
+          "displayPartsForJSDoc": true,
+          "excludeLibrarySymbolsInNavTo": true,
+          "generateReturnInDocTemplate": true,
+          "importModuleSpecifierEnding": "auto",
+          "importModuleSpecifierPreference": "relative",
+          "includeAutomaticOptionalChainCompletions": true,
+          "includeCompletionsForImportStatements": true,
+          "includeCompletionsForModuleExports": true,
+          "includeCompletionsWithClassMemberSnippets": true,
+          "includeCompletionsWithInsertText": true,
+          "includeCompletionsWithObjectLiteralMethodSnippets": true,
+          "includeCompletionsWithSnippetText": true,
+          "includeInlayEnumMemberValueHints": true,
+          "includeInlayFunctionLikeReturnTypeHints": true,
+          "includeInlayFunctionParameterTypeHints": true,
+          "includeInlayParameterNameHints": "all",
+          "includeInlayParameterNameHintsWhenArgumentMatchesName": false,
+          "includeInlayPropertyDeclarationTypeHints": true,
+          "includeInlayVariableTypeHints": false,
+          "includeInlayVariableTypeHintsWhenTypeMatchesName": true,
+          "includePackageJsonAutoImports": "on",
+          "interactiveInlayHints": true,
+          "jsxAttributeCompletionStyle": "auto",
+          "lazyConfiguredProjectsFromExternalProject": false,
+          "maximumHoverLength": 500,
+          "organizeImportsAccentCollation": true,
+          "organizeImportsCaseFirst": false,
+          "organizeImportsCollation": "ordinal",
+          "organizeImportsLocale": "en",
+          "organizeImportsIgnoreCase": "auto",
+          "organizeImportsNumericCollation": false,
+          "organizeImportsTypeOrder": "last",
+          "preferTypeOnlyAutoImports": false,
+          "providePrefixAndSuffixTextForRename": true,
+          "provideRefactorNotApplicableReason": true,
+          "quotePreference": "auto",
+          "useLabelDetailsInCompletionEntries": true
+        }
+      }
+    }
+Info 23   [18:30:54.956] Host configuration update for file /Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx
+Info 24   [18:30:54.956] response:
+    {"seq":0,"type":"response","command":"configure","request_seq":2,"success":true}
+Perf 25   [18:30:54.956] 2::configure: async elapsed time (in milliseconds) 0.1519
+Info 26   [18:30:54.958] request:
+    {
+      "seq": 3,
+      "type": "request",
+      "command": "format",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx",
+        "line": 1,
+        "offset": 1,
+        "endLine": 57,
+        "endOffset": 1,
+        "options": {
+          "tabSize": 2,
+          "insertSpaces": true
+        }
+      }
+    }
+Perf 27   [18:30:54.977] 3::format: elapsed time (in milliseconds) 19.2239
+Info 28   [18:30:54.977] response:
+    {"seq":0,"type":"response","command":"format","request_seq":3,"success":true,"body":[{"start":{"line":28,"offset":1},"end":{"line":28,"offset":5},"newText":"  "},{"start":{"line":28,"offset":41},"end":{"line":28,"offset":41},"newText":" "}]}
+Info 29   [18:30:55.068] request:
+    {
+      "seq": 4,
+      "type": "request",
+      "command": "configure",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx",
+        "formatOptions": {
+          "newLineCharacter": "\n"
+        },
+        "preferences": {
+          "allowIncompleteCompletions": true,
+          "allowRenameOfImportPath": true,
+          "allowTextChangesInNewFiles": true,
+          "autoImportFileExcludePatterns": [],
+          "autoImportSpecifierExcludeRegexes": [],
+          "disableLineTextInReferences": true,
+          "disableSuggestions": false,
+          "displayPartsForJSDoc": true,
+          "excludeLibrarySymbolsInNavTo": true,
+          "generateReturnInDocTemplate": true,
+          "importModuleSpecifierEnding": "auto",
+          "importModuleSpecifierPreference": "relative",
+          "includeAutomaticOptionalChainCompletions": true,
+          "includeCompletionsForImportStatements": true,
+          "includeCompletionsForModuleExports": true,
+          "includeCompletionsWithClassMemberSnippets": true,
+          "includeCompletionsWithInsertText": true,
+          "includeCompletionsWithObjectLiteralMethodSnippets": true,
+          "includeCompletionsWithSnippetText": true,
+          "includeInlayEnumMemberValueHints": true,
+          "includeInlayFunctionLikeReturnTypeHints": true,
+          "includeInlayFunctionParameterTypeHints": true,
+          "includeInlayParameterNameHints": "all",
+          "includeInlayParameterNameHintsWhenArgumentMatchesName": false,
+          "includeInlayPropertyDeclarationTypeHints": true,
+          "includeInlayVariableTypeHints": false,
+          "includeInlayVariableTypeHintsWhenTypeMatchesName": true,
+          "includePackageJsonAutoImports": "on",
+          "interactiveInlayHints": true,
+          "jsxAttributeCompletionStyle": "auto",
+          "lazyConfiguredProjectsFromExternalProject": false,
+          "maximumHoverLength": 500,
+          "organizeImportsAccentCollation": true,
+          "organizeImportsCaseFirst": false,
+          "organizeImportsCollation": "ordinal",
+          "organizeImportsLocale": "en",
+          "organizeImportsIgnoreCase": "auto",
+          "organizeImportsNumericCollation": false,
+          "organizeImportsTypeOrder": "last",
+          "preferTypeOnlyAutoImports": false,
+          "providePrefixAndSuffixTextForRename": true,
+          "provideRefactorNotApplicableReason": true,
+          "quotePreference": "auto",
+          "useLabelDetailsInCompletionEntries": true
+        }
+      }
+    }
+Info 30   [18:30:55.068] Host configuration update for file /Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx
+Info 31   [18:30:55.068] response:
+    {"seq":0,"type":"response","command":"configure","request_seq":4,"success":true}
+Perf 32   [18:30:55.068] 4::configure: async elapsed time (in milliseconds) 0.1672
+Info 33   [18:31:06.549] request:
+    {
+      "seq": 5,
+      "type": "request",
+      "command": "close",
+      "arguments": {
+        "file": "/Users/andrewmilich/Documents/GitHub/isometric-city/src/components/ui/badge.tsx"
+      }
+    }
+Info 34   [18:31:06.551] Project '/dev/null/inferredProject1*' (Inferred)
+Info 34   [18:31:06.551] 	Files (8)
+
+Info 34   [18:31:06.551] -----------------------------------------------
+Info 34   [18:31:06.551] Open files: 
+Info 34   [18:31:06.551] response:
+    {"seq":0,"type":"response","command":"close","request_seq":5,"success":true}
+Perf 35   [18:31:06.552] 5::close: async elapsed time (in milliseconds) 2.8096

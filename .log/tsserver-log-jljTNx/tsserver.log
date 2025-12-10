@@ -1,0 +1,70 @@
+Info 0    [16:43:06.765] Starting TS Server
+Info 1    [16:43:06.770] Version: 5.9.3
+Info 2    [16:43:06.770] Arguments: /Users/andrewmilich/Library/Caches/JetBrains/Air/downloaded_artifacts/typescript-language-server-5.1.1.tar.zst_233d09d113ce43142b1d9ad70a347698/node/bin/node /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib/tsserver.js --serverMode partialSemantic --useInferredProjectPerProjectRoot --disableAutomaticTypingAcquisition --cancellationPipeName /private/var/folders/w4/c3qwqf6n5752x80tlxjmkc040000gn/T/bcf59beebd507b64b8ea7c56a53afb68/tscancellation* --logVerbosity verbose --logFile /Users/andrewmilich/Documents/GitHub/isometric-city/.log/tsserver-log-jljTNx/tsserver.log --locale en --validateDefaultNpmLocation --useNodeIpc
+Info 3    [16:43:06.770] Platform: darwin NodeVersion: v22.17.1 CaseSensitive: false
+Info 4    [16:43:06.770] ServerMode: 1 hasUnknownServerMode: undefined
+Info 5    [16:43:06.772] currentDirectory:: /Users/andrewmilich/Documents/GitHub/isometric-city useCaseSensitiveFileNames:: false
+Info 6    [16:43:06.774] libs Location:: /Users/andrewmilich/Documents/GitHub/isometric-city/node_modules/typescript/lib
+Info 7    [16:43:06.774] globalTypingsCacheLocation:: undefined
+Info 8    [16:43:06.776] request:
+    {
+      "seq": 0,
+      "type": "request",
+      "command": "configure",
+      "arguments": {
+        "hostInfo": "JetBrains Air",
+        "formatOptions": {
+          "newLineCharacter": "\n"
+        },
+        "preferences": {
+          "allowIncompleteCompletions": true,
+          "allowRenameOfImportPath": true,
+          "allowTextChangesInNewFiles": true,
+          "autoImportSpecifierExcludeRegexes": [],
+          "disableLineTextInReferences": true,
+          "disableSuggestions": false,
+          "displayPartsForJSDoc": true,
+          "excludeLibrarySymbolsInNavTo": true,
+          "generateReturnInDocTemplate": true,
+          "importModuleSpecifierEnding": "auto",
+          "importModuleSpecifierPreference": "relative",
+          "includeAutomaticOptionalChainCompletions": true,
+          "includeCompletionsForImportStatements": true,
+          "includeCompletionsForModuleExports": true,
+          "includeCompletionsWithClassMemberSnippets": true,
+          "includeCompletionsWithInsertText": true,
+          "includeCompletionsWithObjectLiteralMethodSnippets": true,
+          "includeCompletionsWithSnippetText": true,
+          "includeInlayEnumMemberValueHints": true,
+          "includeInlayFunctionLikeReturnTypeHints": true,
+          "includeInlayFunctionParameterTypeHints": true,
+          "includeInlayParameterNameHints": "all",
+          "includeInlayParameterNameHintsWhenArgumentMatchesName": false,
+          "includeInlayPropertyDeclarationTypeHints": true,
+          "includeInlayVariableTypeHints": false,
+          "includeInlayVariableTypeHintsWhenTypeMatchesName": true,
+          "includePackageJsonAutoImports": "on",
+          "interactiveInlayHints": true,
+          "jsxAttributeCompletionStyle": "auto",
+          "lazyConfiguredProjectsFromExternalProject": false,
+          "maximumHoverLength": 500,
+          "organizeImportsAccentCollation": true,
+          "organizeImportsCaseFirst": false,
+          "organizeImportsCollation": "ordinal",
+          "organizeImportsLocale": "en",
+          "organizeImportsIgnoreCase": "auto",
+          "organizeImportsNumericCollation": false,
+          "organizeImportsTypeOrder": "last",
+          "preferTypeOnlyAutoImports": false,
+          "providePrefixAndSuffixTextForRename": true,
+          "provideRefactorNotApplicableReason": true,
+          "quotePreference": "auto",
+          "useLabelDetailsInCompletionEntries": true
+        }
+      }
+    }
+Info 9    [16:43:06.776] Host information JetBrains Air
+Info 10   [16:43:06.776] Format host information updated
+Info 11   [16:43:06.776] response:
+    {"seq":0,"type":"response","command":"configure","request_seq":0,"success":true}
+Perf 12   [16:43:06.776] 0::configure: async elapsed time (in milliseconds) 0.4913

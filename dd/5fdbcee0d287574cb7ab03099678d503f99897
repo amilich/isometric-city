@@ -1,11 +1,7 @@
 AI Notes:
 
-src/components/game/CanvasIsometricGrid.tsx: +2209-2212[0],+2213[1]
-src/components/game/Sidebar.tsx: +370[0] -370[0]
-src/components/mobile/MobileTopBar.tsx: +199[0] -199[0]
-src/lib/renderConfig.ts: +226[0] -226[0]
+src/components/game/CanvasIsometricGrid.tsx: +2213[0]
 
 Conversations:
 
-[0]: 89502e3b-54e6-42a2-abcf-4f7ae83c285b; 89502e3b; unknown;
-[1]: e6bf695e-52c1-4541-b410-5de3cd8a5e11; e6bf695e; unknown;
+[0]: 085c7f4b-3104-4f63-8021-b271994fdc7b; Improve aircraft performance; composer-1;

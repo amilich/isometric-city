@@ -291,14 +291,25 @@ export default function HomePage() {
   // Mobile landing page
   if (isMobile) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
+      <main className="min-h-screen hero-gradient geo-pattern flex flex-col items-center justify-center p-6 safe-area-top safe-area-bottom overflow-y-auto relative">
+        {/* Background blur effects */}
+        <div className="absolute top-10 left-5 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 right-5 w-40 h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+        
+        {/* Decorative line */}
+        <div className="w-16 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent mb-4" />
+        
         {/* Title */}
-        <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
+        <h1 className="text-5xl sm:text-6xl font-display font-bold tracking-wide animate-blueShimmer mb-1">
           IsoCity
         </h1>
+        <p className="text-sm text-muted-foreground tracking-widest uppercase font-light mb-6">
+          Metropolis Builder
+        </p>
         
-        {/* Sprite Gallery - keep visible even when saves exist */}
-        <div className="mb-6">
+        {/* Sprite Gallery - with floating animation */}
+        <div className="mb-6 animate-float relative">
+          <div className="absolute -inset-3 border border-primary/20 rounded-sm pointer-events-none" />
           <SpriteGallery count={9} cols={3} cellSize={72} />
         </div>
         
@@ -306,9 +317,9 @@ export default function HomePage() {
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <Button 
             onClick={() => setShowGame(true)}
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+            className="w-full py-6 text-xl font-display tracking-widest bg-primary/20 hover:bg-primary/30 text-white border-2 border-primary/40 hover:border-primary/60 rounded-none transition-all duration-300 animate-pulseGlow"
           >
-            Start
+            New City
           </Button>
           
           <Button 
@@ -318,20 +329,24 @@ export default function HomePage() {
               setShowGame(true);
             }}
             variant="outline"
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+            className="w-full py-5 text-lg font-display tracking-widest bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/20 hover:border-white/40 rounded-none transition-all duration-300"
           >
-            Load Example
+            Explore Demo
           </Button>
         </div>
         
         {/* Saved Cities */}
         {savedCities.length > 0 && (
-          <div className="w-full max-w-xs mt-4">
-            <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-              Saved Cities
-            </h2>
-            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
-              {savedCities.slice(0, 5).map((city) => (
+          <div className="w-full max-w-xs mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-px bg-primary/40" />
+              <h2 className="text-xs font-medium text-white/40 uppercase tracking-widest">
+                Your Cities
+              </h2>
+              <div className="flex-1 h-px bg-primary/20" />
+            </div>
+            <div className="flex flex-col gap-2 max-h-40 overflow-y-auto scrollbar-hide">
+              {savedCities.slice(0, 4).map((city) => (
                 <SavedCityCard
                   key={city.id}
                   city={city}
@@ -341,26 +356,55 @@ export default function HomePage() {
             </div>
           </div>
         )}
+        
+        {/* Bottom decorative line */}
+        <div className="w-24 deco-divider mt-8" />
       </main>
     );
   }
 
   // Desktop landing page
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
-      <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
+    <main className="min-h-screen hero-gradient geo-pattern flex items-center justify-center p-8 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center relative z-10">
         
         {/* Left - Title and Start Button */}
-        <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
-          <h1 className="text-8xl font-light tracking-wider text-white/90">
-            IsoCity
-          </h1>
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col items-center lg:items-start justify-center space-y-8 animate-slideInLeft">
+          {/* Decorative line above title */}
+          <div className="w-32 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+          
+          {/* Main Title */}
+          <div className="space-y-2">
+            <h1 className="text-8xl xl:text-9xl font-display font-bold tracking-wide animate-blueShimmer">
+              IsoCity
+            </h1>
+            <p className="text-lg text-muted-foreground tracking-widest uppercase font-light">
+              Metropolis Builder
+            </p>
+          </div>
+          
+          {/* Decorative stepped line */}
+          <div className="w-48 h-1 deco-stepped" />
+          
+          {/* Description */}
+          <p className="text-white/50 max-w-md text-center lg:text-left leading-relaxed">
+            Build and manage your own isometric city. Place buildings, roads, and infrastructure 
+            while watching your citizens thrive in a living, breathing metropolis.
+          </p>
+          
+          {/* Buttons */}
+          <div className="flex flex-col gap-4 pt-4">
             <Button 
               onClick={() => setShowGame(true)}
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              className="w-72 py-8 text-2xl font-display tracking-widest bg-primary/20 hover:bg-primary/30 text-white border-2 border-primary/40 hover:border-primary/60 rounded-none transition-all duration-300 btn-glow animate-pulseGlow"
             >
-              Start
+              New City
             </Button>
             <Button 
               onClick={async () => {
@@ -369,20 +413,24 @@ export default function HomePage() {
                 setShowGame(true);
               }}
               variant="outline"
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              className="w-72 py-6 text-xl font-display tracking-widest bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/20 hover:border-white/40 rounded-none transition-all duration-300"
             >
-              Load Example
+              Explore Demo
             </Button>
           </div>
           
           {/* Saved Cities */}
           {savedCities.length > 0 && (
-            <div className="w-64">
-              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                Saved Cities
-              </h2>
-              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
-                {savedCities.slice(0, 5).map((city) => (
+            <div className="w-72 pt-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-px bg-primary/40" />
+                <h2 className="text-xs font-medium text-white/40 uppercase tracking-widest">
+                  Your Cities
+                </h2>
+                <div className="flex-1 h-px bg-primary/20" />
+              </div>
+              <div className="flex flex-col gap-2 max-h-48 overflow-y-auto scrollbar-hide">
+                {savedCities.slice(0, 4).map((city) => (
                   <SavedCityCard
                     key={city.id}
                     city={city}
@@ -395,9 +443,29 @@ export default function HomePage() {
         </div>
 
         {/* Right - Sprite Gallery */}
-        <div className="flex justify-center lg:justify-end">
-          <SpriteGallery count={16} />
+        <div className="flex justify-center lg:justify-end animate-slideInRight">
+          <div className="relative">
+            {/* Decorative frame */}
+            <div className="absolute -inset-6 border border-primary/20 rounded-sm pointer-events-none" />
+            <div className="absolute -inset-4 border border-primary/10 rounded-sm pointer-events-none" />
+            
+            {/* Floating sprite gallery */}
+            <div className="animate-float">
+              <SpriteGallery count={16} cols={4} cellSize={110} />
+            </div>
+            
+            {/* Corner decorations */}
+            <div className="absolute -top-6 -left-6 w-4 h-4 border-l-2 border-t-2 border-primary/40" />
+            <div className="absolute -top-6 -right-6 w-4 h-4 border-r-2 border-t-2 border-primary/40" />
+            <div className="absolute -bottom-6 -left-6 w-4 h-4 border-l-2 border-b-2 border-primary/40" />
+            <div className="absolute -bottom-6 -right-6 w-4 h-4 border-r-2 border-b-2 border-primary/40" />
+          </div>
         </div>
+      </div>
+      
+      {/* Bottom decorative line */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+        <div className="w-64 deco-divider" />
       </div>
     </main>
   );

@@ -1,8 +1,7 @@
 AI Notes:
 
-src/components/game/CanvasIsometricGrid.tsx: +1732-1736[0],+1738-1741[0],+1743-1745[0],+1747-1749[0],+1751-1758[0],+1760-1768[0],+1770-1772[0],+1774-1776[0],+1778-1786[0],+1788[0],+1789[1],+1803-1812[0],+1813-1815[1]
+src/components/game/CanvasIsometricGrid.tsx: +1789[0],+1813-1815[0]
 
 Conversations:
 
-[0]: ef788f5e-57b7-4210-9988-4d27e2d8e910; Draw water tiles for marina assets; claude-4.5-opus-high-thinking;
-[1]: e6bf695e-52c1-4541-b410-5de3cd8a5e11; e6bf695e; unknown;
+[0]: 085c7f4b-3104-4f63-8021-b271994fdc7b; Improve aircraft performance; composer-1;

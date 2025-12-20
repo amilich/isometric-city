@@ -144,7 +144,9 @@ export function useSeaplaneSystem(
     // Update existing seaplanes
     const updatedSeaplanes: Seaplane[] = [];
     
-    for (const seaplane of seaplanesRef.current) {
+    for (const seaplane0 of seaplanesRef.current) {
+      // Clone to avoid mutating ref-held objects (eslint react-hooks/immutability)
+      const seaplane: Seaplane = { ...seaplane0, contrail: [...seaplane0.contrail], wake: [...seaplane0.wake] };
       // Update contrail particles when at altitude
       const contrailMaxAge = isMobile ? 0.8 : CONTRAIL_MAX_AGE;
       const contrailSpawnInterval = isMobile ? 0.06 : CONTRAIL_SPAWN_INTERVAL;

@@ -148,7 +148,9 @@ export function useBargeSystem(
     // Update existing barges
     const updatedBarges: Barge[] = [];
     
-    for (const barge of bargesRef.current) {
+    for (const barge0 of bargesRef.current) {
+      // Clone to avoid mutating ref-held objects (eslint react-hooks/immutability)
+      const barge: Barge = { ...barge0, wake: [...barge0.wake] };
       barge.age += delta;
       
       // Update wake particles

@@ -189,7 +189,9 @@ export function useAircraftSystems(
     // Update existing airplanes
     const updatedAirplanes: Airplane[] = [];
     
-    for (const plane of airplanesRef.current) {
+    for (const plane0 of airplanesRef.current) {
+      // Clone to avoid mutating ref-held objects (eslint react-hooks/immutability)
+      const plane: Airplane = { ...plane0, contrail: [...plane0.contrail] };
       // Update contrail particles - shorter duration on mobile for performance
       const contrailMaxAge = isMobile ? 0.8 : CONTRAIL_MAX_AGE;
       const contrailSpawnInterval = isMobile ? 0.06 : CONTRAIL_SPAWN_INTERVAL;
@@ -392,7 +394,9 @@ export function useAircraftSystems(
     // Update existing helicopters
     const updatedHelicopters: Helicopter[] = [];
     
-    for (const heli of helicoptersRef.current) {
+    for (const heli0 of helicoptersRef.current) {
+      // Clone to avoid mutating ref-held objects (eslint react-hooks/immutability)
+      const heli: Helicopter = { ...heli0, rotorWash: [...heli0.rotorWash] };
       // Update rotor animation
       heli.rotorAngle += delta * 25; // Fast rotor spin
       

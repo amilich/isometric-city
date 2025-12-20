@@ -1,7 +1,3 @@
-# IsoCity Railway Template
-
-Deploy IsoCity, a fully-featured open source isometric city builder, on Railway with one click.
-
 ## About IsoCity
 
 IsoCity is an open source city building simulation featuring:

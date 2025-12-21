@@ -258,7 +258,7 @@ export function AdvisorsPanel() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => sendMessage()}
+                        onClick={() => sendMessage('What should I focus on right now?')}
                         disabled={isLoading}
                       >
                         {isLoading ? 'Thinking...' : 'Get advice on current situation'}

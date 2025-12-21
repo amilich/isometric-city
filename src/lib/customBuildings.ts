@@ -2,8 +2,11 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { BuildingCategory, BuildingType, CustomBuilding, ToolInfo, BUILDING_STATS } from '@/types/game';
-import { filterBackgroundColor, resizeImageToDataUrl, AI_BACKGROUND_COLOR, AI_COLOR_THRESHOLD } from '@/components/game/imageLoader';
+import { loadImage, filterBackgroundColor, resizeImageToDataUrl, AI_BACKGROUND_COLOR, AI_COLOR_THRESHOLD } from '@/components/game/imageLoader';
 import { createGeminiClient } from './gemini';
+
+// Maximum number of custom buildings allowed
+export const MAX_CUSTOM_BUILDINGS = 10;
 
 // Stats derived from category (matches BUILDING_STATS pattern)
 const CATEGORY_STATS: Record<BuildingCategory, Record<1 | 2, { maxPop: number; maxJobs: number; pollution: number; landValue: number }>> = {
@@ -75,32 +78,11 @@ export function getCustomToolInfo(building: CustomBuilding): ToolInfo {
   };
 }
 
-// Load and downscale an image to base64
+// Load and downscale an image to base64 (reuses loadImage from imageLoader)
 async function loadAndDownscaleImage(path: string, maxSize: number): Promise<string> {
-  const response = await fetch(path);
-  if (!response.ok) throw new Error(`Failed to load ${path}`);
-
-  const blob = await response.blob();
-
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = maxSize;
-      canvas.height = maxSize;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Could not get canvas context'));
-        return;
-      }
-      ctx.drawImage(img, 0, 0, maxSize, maxSize);
-      const dataUrl = canvas.toDataURL('image/png');
-      resolve(dataUrl.split(',')[1]); // Return base64 without prefix
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${path}`));
-    img.src = URL.createObjectURL(blob);
-  });
+  const img = await loadImage(path);
+  const dataUrl = resizeImageToDataUrl(img, maxSize);
+  return dataUrl.split(',')[1]; // Return base64 without prefix
 }
 
 // Load reference sprites as base64 array (downscaled for efficiency)

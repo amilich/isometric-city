@@ -502,6 +502,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         open={showCreateBuildingDialog}
         onOpenChange={setShowCreateBuildingDialog}
         onBuildingCreated={addCustomBuilding}
+        customBuildingCount={customBuildings.length}
       />
     </div>
   );

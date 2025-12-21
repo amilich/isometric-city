@@ -12,7 +12,7 @@ import {
   TOOL_INFO,
   ZoneType,
 } from '@/types/game';
-import { getCustomToolInfo, registerCustomBuildingStats, unregisterCustomBuildingStats } from '@/lib/customBuildings';
+import { getCustomToolInfo, registerCustomBuildingStats, unregisterCustomBuildingStats, MAX_CUSTOM_BUILDINGS } from '@/lib/customBuildings';
 import {
   bulldozeTile,
   createInitialGameState,
@@ -1164,7 +1164,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Custom building methods
   const addCustomBuilding = useCallback((building: CustomBuilding): boolean => {
-    if (customBuildings.length >= 20) return false; // Max 20 custom buildings
+    if (customBuildings.length >= MAX_CUSTOM_BUILDINGS) return false;
     try {
       const newBuildings = [...customBuildings, building];
       localStorage.setItem(CUSTOM_BUILDINGS_STORAGE_KEY, JSON.stringify(newBuildings));

@@ -12,19 +12,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BuildingCategory, CustomBuilding } from '@/types/game';
-import { generateBuildingSprite, editBuildingSprite, loadReferenceSprites } from '@/lib/customBuildings';
+import { generateBuildingSprite, editBuildingSprite, loadReferenceSprites, MAX_CUSTOM_BUILDINGS } from '@/lib/customBuildings';
 import { hasGeminiApiKey } from '@/lib/gemini';
 
 interface CreateBuildingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBuildingCreated: (building: CustomBuilding) => boolean;
+  customBuildingCount: number;
 }
 
 export function CreateBuildingDialog({
   open,
   onOpenChange,
   onBuildingCreated,
+  customBuildingCount,
 }: CreateBuildingDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -58,6 +60,11 @@ export function CreateBuildingDialog({
       return;
     }
 
+    if (customBuildingCount >= MAX_CUSTOM_BUILDINGS) {
+      setError(`Maximum ${MAX_CUSTOM_BUILDINGS} custom buildings allowed. Delete some to create more.`);
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
     setProgressText('Loading reference sprites...');
@@ -77,7 +84,7 @@ export function CreateBuildingDialog({
       setIsGenerating(false);
       setProgressText('');
     }
-  }, [name, description, size]);
+  }, [name, description, size, customBuildingCount]);
 
   // Apply modifications to current image
   const handleModify = useCallback(async () => {

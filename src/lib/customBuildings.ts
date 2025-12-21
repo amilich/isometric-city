@@ -92,8 +92,8 @@ export async function loadReferenceSprites(): Promise<string[]> {
     try {
       const base64 = await loadAndDownscaleImage(path, REFERENCE_SIZE);
       results.push(base64);
-    } catch {
-      // Skip failed loads, continue with others
+    } catch (e) {
+      console.error('Failed to load reference sprite:', path, e);
     }
   }
   return results;

@@ -987,6 +987,27 @@ function canSpawnMultiTileBuilding(
 const roadAccessQueue = new Int16Array(3 * 256); // Max 256 tiles to check (8*8*4 directions)
 const roadAccessVisited = new Uint8Array(128 * 128); // Max 128x128 grid, reused between calls
 
+// Check if there's a road in any of the 4 adjacent tiles (north, south, east, west)
+function hasAdjacentRoad(grid: Tile[][], x: number, y: number, size: number): boolean {
+  const neighbors = [
+    [x - 1, y], // west
+    [x + 1, y], // east
+    [x, y - 1], // north
+    [x, y + 1]  // south
+  ];
+  
+  for (const [nx, ny] of neighbors) {
+    if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+      const neighbor = grid[ny][nx];
+      if (neighbor.building.type === 'road') {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
 // Check if a tile has road access by looking for a path through the same zone
 // within a limited distance. This allows large contiguous zones to develop even
 // when only the perimeter touches a road.
@@ -1098,8 +1119,20 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   }
 
   // Progress construction if building is not yet complete
-  // Construction requires power and water to progress (except farms)
+  // Construction requires power, water, and an adjacent road to progress
+  // ALL buildings (including starter buildings: houses, shops, factories) require an adjacent road
+  // Starter buildings don't require power/water, but still need roads
   if (building.constructionProgress !== undefined && building.constructionProgress < 100) {
+    // Check for adjacent road - construction cannot proceed without a road in neighboring tiles
+    // This applies to ALL buildings including starter buildings (house_small, shop_small, factory_small)
+    const gridSize = grid.length;
+    const hasRoad = hasAdjacentRoad(grid, x, y, gridSize);
+    
+    if (!hasRoad) {
+      // No adjacent road - construction cannot progress (applies to all buildings)
+      return building;
+    }
+    
     // Construction speed scales with building size (larger buildings take longer)
     const constructionSpeed = getConstructionSpeed(building.type);
     building.constructionProgress = Math.min(100, building.constructionProgress + constructionSpeed);
@@ -1782,7 +1815,8 @@ export function simulateTick(state: GameState): GameState {
           tile.building.constructionProgress < 100 &&
           !NO_CONSTRUCTION_TYPES.includes(tile.building.type)) {
         const isUtilityBuilding = tile.building.type === 'power_plant' || tile.building.type === 'water_tower';
-        const canConstruct = isUtilityBuilding || (tile.building.powered && tile.building.watered);
+        const hasRoad = hasAdjacentRoad(newGrid, x, y, size);
+        const canConstruct = isUtilityBuilding || (tile.building.powered && tile.building.watered && hasRoad);
         
         if (canConstruct) {
           const constructionSpeed = getConstructionSpeed(tile.building.type);
@@ -1822,14 +1856,18 @@ export function simulateTick(state: GameState): GameState {
         const demandFactor = Math.max(0, Math.min(1, (zoneDemandForSpawn + 30) / 80));
         const spawnChance = baseSpawnChance * demandFactor;
 
-        // Starter buildings (house_small, shop_small, farms) can spawn without power/water
+        // Starter buildings (house_small, shop_small, factory_small) can spawn without power/water
+        // BUT all buildings (including starters) require an adjacent road
         const buildingList = tile.zone === 'residential' ? RESIDENTIAL_BUILDINGS :
           tile.zone === 'commercial' ? COMMERCIAL_BUILDINGS : INDUSTRIAL_BUILDINGS;
         const candidate = buildingList[0];
         const wouldBeStarter = isStarterBuilding(x, y, candidate);
         const hasUtilities = hasPower && hasWater;
+        const adjacentRoad = hasAdjacentRoad(newGrid, x, y, size);
         
-        if (roadAccess && (hasUtilities || wouldBeStarter) && Math.random() < spawnChance) {
+        // ALL buildings require adjacent road and road access
+        // Starter buildings don't need utilities, but still need roads
+        if (roadAccess && adjacentRoad && (hasUtilities || wouldBeStarter) && Math.random() < spawnChance) {
           const candidateSize = getBuildingSize(candidate);
           if (canSpawnMultiTileBuilding(newGrid, x, y, candidateSize.width, candidateSize.height, tile.zone, size)) {
             // Pre-clone all rows that will be modified by the building footprint
@@ -2889,12 +2927,22 @@ export function getDevelopmentBlockers(
     return blockers;
   }
   
-  // Check road access
+  // Check road access (within 8 tiles)
   const roadAccess = hasRoadAccess(state.grid, x, y, state.gridSize);
   if (!roadAccess) {
     blockers.push({
       reason: 'No road access',
       details: 'Tile must be within 8 tiles of a road (through same-zone tiles)'
+    });
+  }
+  
+  // Check for adjacent road (required for construction)
+  // ALL buildings including starter buildings (houses, shops, factories) require adjacent roads
+  const adjacentRoad = hasAdjacentRoad(state.grid, x, y, state.gridSize);
+  if (!adjacentRoad) {
+    blockers.push({
+      reason: 'No adjacent road',
+      details: 'All buildings (including houses, shops, and factories) require a road in one of the 4 neighboring tiles (north, south, east, west) to construct'
     });
   }
   
@@ -2958,7 +3006,7 @@ export function getDevelopmentBlockers(
   
   // If no blockers found, it's just waiting for RNG
   const hasUtilities = hasPower && hasWater;
-  if (blockers.length === 0 && roadAccess && (hasUtilities || wouldBeStarter)) {
+  if (blockers.length === 0 && roadAccess && adjacentRoad && (hasUtilities || wouldBeStarter)) {
     blockers.push({
       reason: 'Waiting for development',
       details: wouldBeStarter && !hasUtilities 

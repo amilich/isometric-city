@@ -131,8 +131,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const [offset, setOffset] = useState({ x: isMobile ? 200 : 620, y: isMobile ? 100 : 160 });
   const [isDragging, setIsDragging] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
   const isPanningRef = useRef(false); // Ref for animation loop to check panning state
   const isPinchZoomingRef = useRef(false); // Ref for animation loop to check pinch zoom state
+  const isSpacePressedRef = useRef(false); // Ref for keyboard event handlers
   const zoomRef = useRef(isMobile ? 0.6 : 1); // Ref for animation loop to check zoom level
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
@@ -533,6 +535,17 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
       const key = e.key.toLowerCase();
+
+      // Handle spacebar for panning mode
+      if (key === ' ' || e.code === 'Space') {
+        if (!isSpacePressedRef.current) {
+          isSpacePressedRef.current = true;
+          setIsSpacePressed(true);
+          e.preventDefault();
+        }
+        return;
+      }
+
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
         pressed.add(key);
         e.preventDefault();
@@ -541,6 +554,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
+
+      // Handle spacebar release
+      if (key === ' ' || e.code === 'Space') {
+        isSpacePressedRef.current = false;
+        setIsSpacePressed(false);
+        return;
+      }
+
       pressed.delete(key);
     };
 
@@ -3421,13 +3442,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   }, [grid, gridSize, visualHour, offset, zoom, canvasSize.width, canvasSize.height, isMobile, isPanning]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    // Enable panning with middle mouse button, Alt+left mouse, or spacebar+left mouse
+    if (e.button === 1 || (e.button === 0 && e.altKey) || (e.button === 0 && isSpacePressed)) {
       setIsPanning(true);
       setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
       e.preventDefault();
       return;
     }
-    
+
     if (e.button === 0) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
@@ -3467,7 +3489,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin]);
+  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, isSpacePressed]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
@@ -3838,8 +3860,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden touch-none"
-      style={{ 
-        cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
+      style={{
+        cursor: isPanning ? 'grabbing' : isSpacePressed ? 'grab' : isDragging ? 'crosshair' : 'default',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

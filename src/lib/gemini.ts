@@ -4,6 +4,9 @@ import { GoogleGenAI } from '@google/genai';
 
 export const GEMINI_API_KEY_STORAGE = 'isocity-gemini-api-key';
 
+// Maximum number of messages to include in advisor chat history
+const MAX_CHAT_HISTORY = 6;
+
 // Get API key from localStorage
 export function getGeminiApiKey(): string | null {
   if (typeof window === 'undefined') return null;
@@ -130,7 +133,7 @@ export async function getAdvisorResponse(
   const ai = createGeminiClient();
   const stateText = formatCityState(cityState);
 
-  const historyText = history.slice(-6).map(m =>
+  const historyText = history.slice(-MAX_CHAT_HISTORY).map(m =>
     `${m.role === 'user' ? 'Player' : 'Advisor'}: ${m.content}`
   ).join('\n');
 

@@ -4,6 +4,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { useGame } from '@/context/GameContext';
 import { TOOL_INFO, Tile, BuildingType, AdjacentCity } from '@/types/game';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency } from '@/lib/simulation';
+import { parseCustomBuildingType } from '@/lib/customBuildings';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
 import { getSpriteCoords, BUILDING_TO_SPRITE, SPRITE_VERTICAL_OFFSETS, SPRITE_HORIZONTAL_OFFSETS, getActiveSpritePack } from '@/lib/renderConfig';
 
@@ -1812,14 +1813,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         return;
       }
 
-      // Handle custom buildings (AI-generated, format: custom_${size}_${id})
+      // Handle custom buildings (AI-generated)
       if (buildingType.startsWith('custom_')) {
-        const parts = buildingType.split('_');
-        const customId = parts.slice(2).join('_'); // Handle IDs that might contain underscores
-        const customBuilding = getCustomBuilding(customId);
+        const parsed = parseCustomBuildingType(buildingType);
+        if (!parsed) return;
+        const customBuilding = getCustomBuilding(parsed.id);
         if (!customBuilding) return;
 
-        const customImage = getCustomBuildingImage(customId);
+        const customImage = getCustomBuildingImage(parsed.id);
         if (!customImage) {
           // Image not cached yet - draw placeholder (purple diamond)
           ctx.fillStyle = '#8B5CF6';

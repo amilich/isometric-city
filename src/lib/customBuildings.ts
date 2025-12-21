@@ -8,6 +8,18 @@ import { createGeminiClient } from './gemini';
 // Maximum number of custom buildings allowed
 export const MAX_CUSTOM_BUILDINGS = 10;
 
+// Create a custom building type string from size and id
+export function createCustomBuildingType(size: 1 | 2, id: string): BuildingType {
+  return `custom_${size}_${id}` as BuildingType;
+}
+
+// Parse a custom building type string into size and id
+export function parseCustomBuildingType(type: string): { size: 1 | 2; id: string } | null {
+  const match = type.match(/^custom_([12])_(.+)$/);
+  if (!match) return null;
+  return { size: parseInt(match[1], 10) as 1 | 2, id: match[2] };
+}
+
 // Stats derived from category (matches BUILDING_STATS pattern)
 const CATEGORY_STATS: Record<BuildingCategory, Record<1 | 2, { maxPop: number; maxJobs: number; pollution: number; landValue: number }>> = {
   recreation: {
@@ -53,13 +65,13 @@ export function getCustomBuildingStats(category: BuildingCategory, size: 1 | 2) 
 
 // Register a custom building's stats in BUILDING_STATS
 export function registerCustomBuildingStats(building: CustomBuilding) {
-  const key = `custom_${building.size}_${building.id}` as BuildingType;
+  const key = createCustomBuildingType(building.size, building.id);
   BUILDING_STATS[key] = getCustomBuildingStats(building.category, building.size);
 }
 
 // Unregister a custom building's stats from BUILDING_STATS
 export function unregisterCustomBuildingStats(building: CustomBuilding) {
-  const key = `custom_${building.size}_${building.id}` as BuildingType;
+  const key = createCustomBuildingType(building.size, building.id);
   delete BUILDING_STATS[key];
 }
 

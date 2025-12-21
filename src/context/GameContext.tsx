@@ -12,7 +12,7 @@ import {
   TOOL_INFO,
   ZoneType,
 } from '@/types/game';
-import { getCustomToolInfo, registerCustomBuildingStats, unregisterCustomBuildingStats, MAX_CUSTOM_BUILDINGS } from '@/lib/customBuildings';
+import { getCustomToolInfo, registerCustomBuildingStats, unregisterCustomBuildingStats, MAX_CUSTOM_BUILDINGS, createCustomBuildingType } from '@/lib/customBuildings';
 import {
   bulldozeTile,
   createInitialGameState,
@@ -721,8 +721,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         const customInfo = getCustomToolInfo(customBuilding);
         if (prev.stats.money < customInfo.cost) return prev;
 
-        // Place as a custom building type (format: custom_${size}_${id})
-        const customBuildingType = `custom_${customBuilding.size}_${customId}` as BuildingType;
+        const customBuildingType = createCustomBuildingType(customBuilding.size, customId);
         const nextState = placeBuilding(prev, x, y, customBuildingType, null);
         if (nextState === prev) return prev;
 
@@ -1182,10 +1181,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [customBuildings]);
 
   const removeCustomBuilding = useCallback((id: string) => {
-    // Find the building to get its size for the type string
+    // Find the building to get its type string
     const building = customBuildings.find((b) => b.id === id);
     if (building) {
-      const customType = `custom_${building.size}_${id}`;
+      const customType = createCustomBuildingType(building.size, id);
 
       // Bulldoze all placed instances from the grid (free of charge)
       setState((prevState) => {

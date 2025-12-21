@@ -343,6 +343,22 @@ export function CheckIcon({ size = 18, className }: IconProps) {
   );
 }
 
+export function PlusIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <path {...baseStroke} d="M12 4v16M4 12h16" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <path {...baseStroke} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7M10 11v6M14 11v6M15 7V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  );
+}
+
 export function SubwayIcon({ size = 18, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className}>

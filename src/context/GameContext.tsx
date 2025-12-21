@@ -12,7 +12,7 @@ import {
   TOOL_INFO,
   ZoneType,
 } from '@/types/game';
-import { getCustomBuildingStats, getCustomToolInfo } from '@/lib/customBuildings';
+import { getCustomToolInfo, registerCustomBuildingStats, unregisterCustomBuildingStats } from '@/lib/customBuildings';
 import {
   bulldozeTile,
   createInitialGameState,
@@ -529,7 +529,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedCustomBuildings = localStorage.getItem(CUSTOM_BUILDINGS_STORAGE_KEY);
       if (savedCustomBuildings) {
-        setCustomBuildings(JSON.parse(savedCustomBuildings));
+        const buildings: CustomBuilding[] = JSON.parse(savedCustomBuildings);
+        setCustomBuildings(buildings);
+        // Register stats for all loaded custom buildings
+        buildings.forEach(registerCustomBuildingStats);
       }
     } catch (e) {
       console.error('Failed to load custom buildings:', e);
@@ -1166,6 +1169,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const newBuildings = [...customBuildings, building];
       localStorage.setItem(CUSTOM_BUILDINGS_STORAGE_KEY, JSON.stringify(newBuildings));
       setCustomBuildings(newBuildings);
+      registerCustomBuildingStats(building);
       return true;
     } catch (error) {
       // Handle quota exceeded error
@@ -1195,6 +1199,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
         return newState;
       });
+
+      // Unregister stats from BUILDING_STATS
+      unregisterCustomBuildingStats(building);
     }
 
     // Remove from custom buildings list

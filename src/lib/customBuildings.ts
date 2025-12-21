@@ -1,7 +1,7 @@
 // Custom building generation and helpers for AI-generated buildings
 
 import { GoogleGenAI } from '@google/genai';
-import { BuildingCategory, CustomBuilding, ToolInfo } from '@/types/game';
+import { BuildingCategory, BuildingType, CustomBuilding, ToolInfo, BUILDING_STATS } from '@/types/game';
 import { filterBackgroundColor, resizeImageToDataUrl, AI_BACKGROUND_COLOR, AI_COLOR_THRESHOLD } from '@/components/game/imageLoader';
 import { createGeminiClient } from './gemini';
 
@@ -46,6 +46,18 @@ const REFERENCE_SIZE = 256; // Downscale to this size before sending
 // Get stats for a custom building (extends BUILDING_STATS pattern)
 export function getCustomBuildingStats(category: BuildingCategory, size: 1 | 2) {
   return CATEGORY_STATS[category][size];
+}
+
+// Register a custom building's stats in BUILDING_STATS
+export function registerCustomBuildingStats(building: CustomBuilding) {
+  const key = `custom_${building.size}_${building.id}` as BuildingType;
+  BUILDING_STATS[key] = getCustomBuildingStats(building.category, building.size);
+}
+
+// Unregister a custom building's stats from BUILDING_STATS
+export function unregisterCustomBuildingStats(building: CustomBuilding) {
+  const key = `custom_${building.size}_${building.id}` as BuildingType;
+  delete BUILDING_STATS[key];
 }
 
 // Get size for a custom building (extends BUILDING_SIZES pattern)

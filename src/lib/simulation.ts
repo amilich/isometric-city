@@ -18,12 +18,21 @@ import {
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
   INDUSTRIAL_BUILDINGS,
+  CompetitiveState,
+  CompetitivePlayer,
+  CompetitiveUnit,
+  CompetitiveUnitType,
+  PlayerId,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
 import { isMobile } from 'react-device-detect';
 
 // Default grid size for new games
 export const DEFAULT_GRID_SIZE = isMobile ? 50 : 70;
+
+// Competitive / RTS mode defaults (kept conservative for perf)
+export const COMPETITIVE_GRID_SIZE = isMobile ? 80 : 110;
+export const COMPETITIVE_START_MONEY = 2500;
 
 // Check if a factory_small at this position would render as a farm
 // This matches the deterministic logic in Game.tsx for farm variant selection
@@ -838,6 +847,322 @@ export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityNam
     adjacentCities,
     waterBodies,
     gameVersion: 0,
+    gameMode: 'sandbox',
+  };
+}
+
+function createBooleanGrid(size: number, initial: boolean): boolean[][] {
+  const grid: boolean[][] = new Array(size);
+  for (let y = 0; y < size; y++) {
+    grid[y] = new Array(size).fill(initial);
+  }
+  return grid;
+}
+
+function nextCompetitiveId(state: CompetitiveState): string {
+  return `u${state.lastIdCounter + 1}`;
+}
+
+function getUnitTemplate(type: CompetitiveUnitType): Omit<CompetitiveUnit, 'id' | 'ownerId' | 'x' | 'y' | 'order'> {
+  switch (type) {
+    case 'infantry':
+      return {
+        type,
+        hp: 40,
+        maxHp: 40,
+        speedTilesPerTick: 0.7,
+        attackRangeTiles: 1.1,
+        attackDamagePerTick: 14,
+        igniteChancePerHit: 0.08,
+      };
+    case 'tank':
+      return {
+        type,
+        hp: 140,
+        maxHp: 140,
+        speedTilesPerTick: 0.55,
+        attackRangeTiles: 2.1,
+        attackDamagePerTick: 40,
+        igniteChancePerHit: 0.14,
+      };
+    case 'helicopter':
+      return {
+        type,
+        hp: 110,
+        maxHp: 110,
+        speedTilesPerTick: 0.95,
+        attackRangeTiles: 3.0,
+        attackDamagePerTick: 34,
+        igniteChancePerHit: 0.18,
+      };
+  }
+}
+
+export function getUnitCost(type: CompetitiveUnitType): number {
+  switch (type) {
+    case 'infantry':
+      return 120;
+    case 'tank':
+      return 500;
+    case 'helicopter':
+      return 650;
+  }
+}
+
+export function createCompetitiveUnit(params: {
+  id: string;
+  ownerId: PlayerId;
+  type: CompetitiveUnitType;
+  x: number;
+  y: number;
+  order?: CompetitiveUnit['order'];
+}): CompetitiveUnit {
+  const template = getUnitTemplate(params.type);
+  return {
+    id: params.id,
+    ownerId: params.ownerId,
+    type: params.type,
+    x: params.x,
+    y: params.y,
+    hp: template.hp,
+    maxHp: template.maxHp,
+    speedTilesPerTick: template.speedTilesPerTick,
+    attackRangeTiles: template.attackRangeTiles,
+    attackDamagePerTick: template.attackDamagePerTick,
+    igniteChancePerHit: template.igniteChancePerHit,
+    order: params.order ?? { kind: 'idle' },
+  };
+}
+
+function getDefaultBuildingHp(type: BuildingType): number {
+  if (type === 'city_hall') return 650;
+  if (type === 'water' || type === 'grass' || type === 'tree' || type === 'road' || type === 'rail' || type === 'empty') return 1;
+  const size = getBuildingSize(type);
+  const area = size.width * size.height;
+  const stats = BUILDING_STATS[type];
+  const popFactor = stats ? Math.min(200, Math.floor(stats.maxPop / 4)) : 0;
+  const jobFactor = stats ? Math.min(200, Math.floor(stats.maxJobs / 6)) : 0;
+  return 140 * area + popFactor + jobFactor;
+}
+
+function isAttackableBuildingType(type: BuildingType): boolean {
+  return !(type === 'water' || type === 'grass' || type === 'tree' || type === 'road' || type === 'rail' || type === 'empty');
+}
+
+function nearestOwnerForZonedBuilding(x: number, y: number, players: CompetitivePlayer[]): PlayerId | undefined {
+  let best: { id: PlayerId; d2: number } | null = null;
+  for (const p of players) {
+    if (p.eliminated) continue;
+    const dx = (p.base.x + 0.5) - (x + 0.5);
+    const dy = (p.base.y + 0.5) - (y + 0.5);
+    const d2 = dx * dx + dy * dy;
+    if (!best || d2 < best.d2) best = { id: p.id, d2 };
+  }
+  return best?.id;
+}
+
+function revealCircle(
+  size: number,
+  revealed: boolean[][],
+  setRevealed: (x: number, y: number) => void,
+  cx: number,
+  cy: number,
+  radius: number
+) {
+  const r2 = radius * radius;
+  const minX = Math.max(0, Math.floor(cx - radius));
+  const maxX = Math.min(size - 1, Math.ceil(cx + radius));
+  const minY = Math.max(0, Math.floor(cy - radius));
+  const maxY = Math.min(size - 1, Math.ceil(cy + radius));
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const dx = x - cx;
+      const dy = y - cy;
+      if (dx * dx + dy * dy <= r2 && !revealed[y][x]) {
+        setRevealed(x, y);
+      }
+    }
+  }
+}
+
+function canSpawnCityHallAt(grid: Tile[][], size: number, x: number, y: number): boolean {
+  const footprint = getBuildingSize('city_hall');
+  if (x < 2 || y < 2 || x + footprint.width >= size - 2 || y + footprint.height >= size - 2) return false;
+  for (let dy = 0; dy < footprint.height; dy++) {
+    for (let dx = 0; dx < footprint.width; dx++) {
+      const tile = grid[y + dy]?.[x + dx];
+      if (!tile) return false;
+      if (tile.building.type === 'water') return false;
+      if (tile.building.type !== 'grass' && tile.building.type !== 'tree') return false;
+    }
+  }
+  return true;
+}
+
+function placeCompetitiveCityHall(grid: Tile[][], x: number, y: number, ownerId: PlayerId) {
+  const b = applyBuildingFootprint(grid, x, y, 'city_hall', 'none', 1);
+  b.ownerId = ownerId;
+  b.maxHp = getDefaultBuildingHp('city_hall');
+  b.hp = b.maxHp;
+  b.constructionProgress = 100;
+}
+
+function placeStartingRoads(grid: Tile[][], size: number, x: number, y: number) {
+  // Light road ring around a 2x2 city hall
+  const tiles: Array<{ x: number; y: number }> = [
+    { x: x - 1, y }, { x: x - 1, y: y + 1 },
+    { x: x + 2, y }, { x: x + 2, y: y + 1 },
+    { x, y: y - 1 }, { x: x + 1, y: y - 1 },
+    { x, y: y + 2 }, { x: x + 1, y: y + 2 },
+  ];
+  for (const t of tiles) {
+    if (t.x < 0 || t.y < 0 || t.x >= size || t.y >= size) continue;
+    const tile = grid[t.y][t.x];
+    if (tile.building.type === 'water') continue;
+    tile.building = createBuilding('road');
+    tile.zone = 'none';
+  }
+}
+
+function placeOwnedSingleTileBuilding(
+  grid: Tile[][],
+  size: number,
+  x: number,
+  y: number,
+  type: BuildingType,
+  ownerId: PlayerId
+) {
+  if (x < 0 || y < 0 || x >= size || y >= size) return;
+  const tile = grid[y][x];
+  if (tile.building.type === 'water' || tile.building.type === 'empty') return;
+  if (tile.building.type !== 'grass' && tile.building.type !== 'tree') return;
+  tile.building = createBuilding(type);
+  tile.building.ownerId = ownerId;
+  tile.building.maxHp = getDefaultBuildingHp(type);
+  tile.building.hp = tile.building.maxHp;
+  tile.building.constructionProgress = 100;
+  tile.zone = 'none';
+}
+
+function createCompetitivePlayers(grid: Tile[][], size: number): { players: CompetitivePlayer[]; humanPlayerId: PlayerId } {
+  const desired = isMobile ? 3 : 4; // human + (2-3 AI)
+  const ids: PlayerId[] = ['p1', 'p2', 'p3', 'p4'].slice(0, desired);
+  const colors = ['#60a5fa', '#f97316', '#22c55e', '#e879f9'];
+  const names = ['You', 'Orion', 'Helios', 'Atlas'];
+
+  const spawns: Array<{ x: number; y: number }> = [];
+  const minDist = Math.floor(size * 0.32);
+  const minDist2 = minDist * minDist;
+
+  let attempts = 0;
+  while (spawns.length < desired && attempts < 8000) {
+    attempts++;
+    const x = 3 + Math.floor(Math.random() * (size - 10));
+    const y = 3 + Math.floor(Math.random() * (size - 10));
+    if (!canSpawnCityHallAt(grid, size, x, y)) continue;
+    let ok = true;
+    for (const s of spawns) {
+      const dx = s.x - x;
+      const dy = s.y - y;
+      if (dx * dx + dy * dy < minDist2) {
+        ok = false;
+        break;
+      }
+    }
+    if (!ok) continue;
+    spawns.push({ x, y });
+  }
+
+  // Fallback: if terrain is too watery, just pack spawns in corners
+  if (spawns.length < desired) {
+    spawns.length = 0;
+    const fallback = [
+      { x: 6, y: 6 },
+      { x: size - 10, y: 6 },
+      { x: 6, y: size - 10 },
+      { x: size - 10, y: size - 10 },
+    ];
+    for (let i = 0; i < desired; i++) {
+      spawns.push(fallback[i]);
+    }
+  }
+
+  const players: CompetitivePlayer[] = ids.map((id, i) => ({
+    id,
+    name: names[i] ?? `Player ${i + 1}`,
+    color: colors[i] ?? '#94a3b8',
+    isHuman: i === 0,
+    eliminated: false,
+    money: i === 0 ? COMPETITIVE_START_MONEY : COMPETITIVE_START_MONEY + 300,
+    score: 0,
+    techLevel: 1,
+    base: spawns[i],
+    ai: i === 0 ? undefined : { nextSpawnTick: 10 + i * 5, nextAttackTick: 40 + i * 15 },
+  }));
+
+  return { players, humanPlayerId: players[0].id };
+}
+
+export function createCompetitiveGameState(cityName: string = 'Frontier', sizeOverride?: number): GameState {
+  const size = sizeOverride ?? COMPETITIVE_GRID_SIZE;
+  const { grid, waterBodies } = generateTerrain(size);
+
+  const { players, humanPlayerId } = createCompetitivePlayers(grid, size);
+  for (const p of players) {
+    placeCompetitiveCityHall(grid, p.base.x, p.base.y, p.id);
+    placeStartingRoads(grid, size, p.base.x, p.base.y);
+    // Give each city a few owned buildings so attacks feel meaningful beyond just the city hall
+    placeOwnedSingleTileBuilding(grid, size, p.base.x - 2, p.base.y + 1, 'house_small', p.id);
+    placeOwnedSingleTileBuilding(grid, size, p.base.x + 3, p.base.y + 1, 'house_small', p.id);
+    placeOwnedSingleTileBuilding(grid, size, p.base.x + 1, p.base.y - 2, 'shop_small', p.id);
+  }
+
+  const fogRevealed = createBooleanGrid(size, false);
+  // Reveal around human base (initial scouting vision)
+  revealCircle(size, fogRevealed, (x, y) => { fogRevealed[y][x] = true; }, players[0].base.x + 0.5, players[0].base.y + 0.5, 14);
+
+  const competitive: CompetitiveState = {
+    humanPlayerId,
+    players,
+    units: [],
+    fog: { revealed: fogRevealed },
+    lastIdCounter: 0,
+  };
+
+  // Start with a few infantry for each player
+  for (const p of players) {
+    const template = getUnitTemplate('infantry');
+    for (let i = 0; i < (p.isHuman ? 3 : 2); i++) {
+      competitive.lastIdCounter++;
+      competitive.units.push({
+        id: `u${competitive.lastIdCounter}`,
+        ownerId: p.id,
+        type: 'infantry',
+        x: p.base.x + 0.6 + i * 0.25,
+        y: p.base.y + 1.6,
+        hp: template.hp,
+        maxHp: template.maxHp,
+        speedTilesPerTick: template.speedTilesPerTick,
+        attackRangeTiles: template.attackRangeTiles,
+        attackDamagePerTick: template.attackDamagePerTick,
+        igniteChancePerHit: template.igniteChancePerHit,
+        order: { kind: 'idle' },
+      });
+    }
+  }
+
+  const base = createInitialGameState(size, cityName);
+  // Competitive economy uses the same money field for the human player
+  base.stats.money = COMPETITIVE_START_MONEY;
+
+  return {
+    ...base,
+    gameMode: 'competitive',
+    // Competitive games should not start random fires; combat will ignite intentionally.
+    disastersEnabled: true,
+    adjacentCities: [],
+    waterBodies,
+    competitive,
   };
 }
 
@@ -1699,6 +2024,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
 
 // Main simulation tick
 export function simulateTick(state: GameState): GameState {
+  const isCompetitive = state.gameMode === 'competitive' && !!state.competitive;
   // Optimized: shallow clone rows, deep clone tiles only when modified
   const size = state.gridSize;
   
@@ -1839,13 +2165,35 @@ export function simulateTick(state: GameState): GameState {
                 modifiedRows.add(y + dy);
               }
             }
-            applyBuildingFootprint(newGrid, x, y, candidate, tile.zone, 1, services);
+            const built = applyBuildingFootprint(newGrid, x, y, candidate, tile.zone, 1, services);
+            if (isCompetitive && state.competitive) {
+              const ownerId = nearestOwnerForZonedBuilding(x, y, state.competitive.players);
+              if (ownerId) {
+                built.ownerId = ownerId;
+                built.maxHp = getDefaultBuildingHp(candidate as BuildingType);
+                built.hp = built.maxHp;
+              }
+            }
           }
         }
       } else if (tile.zone !== 'none' && tile.building.type !== 'grass') {
         // Evolve existing building - this may modify multiple tiles for multi-tile buildings
         // The evolveBuilding function handles its own row modifications internally
-        newGrid[y][x].building = evolveBuilding(newGrid, x, y, services, state.stats.demand);
+        const evolved = evolveBuilding(newGrid, x, y, services, state.stats.demand);
+        newGrid[y][x].building = evolved;
+        if (isCompetitive && state.competitive) {
+          // Ensure zoned buildings get a sensible owner + HP for combat
+          if (evolved.type !== 'grass' && evolved.type !== 'water' && evolved.type !== 'road' && evolved.type !== 'tree' && evolved.type !== 'empty') {
+            if (!evolved.ownerId) {
+              const ownerId = nearestOwnerForZonedBuilding(x, y, state.competitive.players);
+              if (ownerId) evolved.ownerId = ownerId;
+            }
+            if (evolved.maxHp === undefined || evolved.hp === undefined) {
+              evolved.maxHp = getDefaultBuildingHp(evolved.type);
+              evolved.hp = evolved.maxHp;
+            }
+          }
+        }
       }
 
       // Update pollution from buildings
@@ -1870,7 +2218,7 @@ export function simulateTick(state: GameState): GameState {
       }
 
       // Random fire start
-      if (state.disastersEnabled && !tile.building.onFire && 
+      if (!isCompetitive && state.disastersEnabled && !tile.building.onFire && 
           tile.building.type !== 'grass' && tile.building.type !== 'water' && 
           tile.building.type !== 'road' && tile.building.type !== 'tree' &&
           tile.building.type !== 'empty' &&
@@ -1954,6 +2302,227 @@ export function simulateTick(state: GameState): GameState {
     }
   }
 
+  let competitive = state.competitive;
+  if (isCompetitive && competitive) {
+    const competitiveState = competitive;
+    // Match tick is monotonic based on in-game time
+    const matchTick = totalTicks;
+
+    // Update tech levels based on match progression
+    const updatedPlayers: CompetitivePlayer[] = competitive.players.map((p) => {
+      if (p.eliminated) return p;
+      const techLevel: 1 | 2 | 3 = matchTick > 900 ? 3 : matchTick > 320 ? 2 : 1;
+      return techLevel === p.techLevel ? p : { ...p, techLevel };
+    });
+
+    // Update fog-of-war (human only) incrementally
+    const prevRevealed = competitive.fog.revealed;
+    const fogRows = prevRevealed.slice();
+    const modifiedFogRows = new Set<number>();
+    const setRevealed = (x: number, y: number) => {
+      if (x < 0 || y < 0 || x >= size || y >= size) return;
+      if (prevRevealed[y][x]) return;
+      if (!modifiedFogRows.has(y)) {
+        fogRows[y] = prevRevealed[y].slice();
+        modifiedFogRows.add(y);
+      }
+      fogRows[y][x] = true;
+    };
+
+    const human = updatedPlayers.find(p => p.id === competitiveState.humanPlayerId);
+    if (human && !human.eliminated) {
+      revealCircle(size, prevRevealed, setRevealed, human.base.x + 0.5, human.base.y + 0.5, 12);
+    }
+    for (const u of competitiveState.units) {
+      if (u.ownerId !== competitiveState.humanPlayerId) continue;
+      revealCircle(size, prevRevealed, setRevealed, u.x, u.y, u.type === 'helicopter' ? 9 : 6);
+    }
+
+    // Helper: find player by id
+    const playerById = new Map<PlayerId, CompetitivePlayer>(updatedPlayers.map(p => [p.id, p]));
+
+    // AI: spawn and order units
+    const aiPlayers = updatedPlayers.filter(p => !p.isHuman && !p.eliminated && p.ai);
+    let units: CompetitiveUnit[] = competitiveState.units;
+    let lastIdCounter = competitive.lastIdCounter;
+    const humanBase = human?.base ?? updatedPlayers[0].base;
+
+    const spawnUnitForPlayer = (pid: PlayerId, type: CompetitiveUnitType, spawnX: number, spawnY: number) => {
+      const template = getUnitTemplate(type);
+      lastIdCounter++;
+      units = units.concat([{
+        id: `u${lastIdCounter}`,
+        ownerId: pid,
+        type,
+        x: spawnX,
+        y: spawnY,
+        hp: template.hp,
+        maxHp: template.maxHp,
+        speedTilesPerTick: template.speedTilesPerTick,
+        attackRangeTiles: template.attackRangeTiles,
+        attackDamagePerTick: template.attackDamagePerTick,
+        igniteChancePerHit: template.igniteChancePerHit,
+        order: { kind: 'idle' },
+      }]);
+    };
+
+    const nextPlayers: CompetitivePlayer[] = updatedPlayers.map((p) => {
+      if (p.eliminated || !p.ai) return p;
+
+      let money = p.money;
+      // Passive income (AoE-like trickle) scales with tech
+      money += p.techLevel === 1 ? 8 : p.techLevel === 2 ? 12 : 16;
+
+      let ai = p.ai;
+      if (!ai) return { ...p, money };
+
+      if (matchTick >= ai.nextSpawnTick) {
+        const options: CompetitiveUnitType[] =
+          p.techLevel === 1 ? ['infantry'] :
+          p.techLevel === 2 ? ['infantry', 'tank'] :
+          ['infantry', 'tank', 'helicopter'];
+        const pick = options[Math.floor(Math.random() * options.length)];
+        const cost = getUnitCost(pick);
+        if (money >= cost) {
+          money -= cost;
+          spawnUnitForPlayer(p.id, pick, p.base.x + 0.6, p.base.y + 1.6);
+        }
+        ai = { ...ai, nextSpawnTick: matchTick + 12 + Math.floor(Math.random() * 8) };
+      }
+
+      if (matchTick >= ai.nextAttackTick) {
+        // Order half of this player's units to attack the human base
+        const myUnits = units.filter(u => u.ownerId === p.id);
+        const toSend = myUnits.slice(0, Math.max(1, Math.floor(myUnits.length / 2))).map(u => u.id);
+        if (toSend.length > 0) {
+          units = units.map(u => toSend.includes(u.id) ? { ...u, order: { kind: 'attack', target: humanBase } } : u);
+        }
+        ai = { ...ai, nextAttackTick: matchTick + 55 + Math.floor(Math.random() * 35) };
+      }
+
+      return { ...p, money, ai };
+    });
+
+    // Unit movement + combat
+    const updatedUnits: CompetitiveUnit[] = [];
+    for (const u of units) {
+      const owner = playerById.get(u.ownerId);
+      if (!owner || owner.eliminated) continue;
+
+      let unit = u;
+      const order = unit.order;
+      const target = order.kind === 'move' || order.kind === 'attack' ? order.target : null;
+      const isFlying = unit.type === 'helicopter';
+
+      if (target) {
+        const tx = target.x + 0.5;
+        const ty = target.y + 0.5;
+        const dx = tx - unit.x;
+        const dy = ty - unit.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+
+        const inRange = order.kind === 'attack' ? dist <= unit.attackRangeTiles : dist <= 0.35;
+        if (!inRange) {
+          const step = Math.min(unit.speedTilesPerTick, dist);
+          const nx = unit.x + (dx / dist) * step;
+          const ny = unit.y + (dy / dist) * step;
+          if (!isFlying) {
+            const checkX = Math.max(0, Math.min(size - 1, Math.floor(nx)));
+            const checkY = Math.max(0, Math.min(size - 1, Math.floor(ny)));
+            if (state.grid[checkY][checkX].building.type === 'water') {
+              unit = { ...unit, order: { kind: 'idle' } };
+            } else {
+              unit = { ...unit, x: nx, y: ny };
+            }
+          } else {
+            unit = { ...unit, x: nx, y: ny };
+          }
+        } else if (order.kind === 'attack') {
+          const t = state.grid[target.y]?.[target.x];
+          if (!t) {
+            unit = { ...unit, order: { kind: 'idle' } };
+          } else {
+            // For multi-tile buildings, always damage the origin tile
+            const origin = findBuildingOrigin(newGrid, target.x, target.y, size) ?? {
+              originX: target.x,
+              originY: target.y,
+              buildingType: t.building.type,
+            };
+            const ox = origin.originX;
+            const oy = origin.originY;
+            const originTile = state.grid[oy]?.[ox];
+            if (!originTile || !isAttackableBuildingType(origin.buildingType)) {
+              unit = { ...unit, order: { kind: 'idle' } };
+            } else {
+              const modTile = getModifiableTile(ox, oy);
+              const b = modTile.building;
+
+              // Only attack enemy-controlled buildings
+              const targetOwner = b.ownerId;
+              if (targetOwner && targetOwner === unit.ownerId) {
+                unit = { ...unit, order: { kind: 'idle' } };
+              } else {
+                if (b.maxHp === undefined || b.hp === undefined) {
+                  b.maxHp = getDefaultBuildingHp(b.type);
+                  b.hp = b.maxHp;
+                }
+                b.hp = Math.max(0, (b.hp ?? 0) - unit.attackDamagePerTick);
+
+                if (!b.onFire && Math.random() < unit.igniteChancePerHit) {
+                  b.onFire = true;
+                  b.fireProgress = 0;
+                }
+
+                if ((b.hp ?? 0) <= 0) {
+                  // Let the existing fire mechanic "burn down" the building instead of instantly deleting it.
+                  // This creates the AoE-style feedback loop: attack → ignite → burn → rubble/grass.
+                  b.hp = 1;
+                  b.onFire = true;
+                  b.fireProgress = Math.max(b.fireProgress ?? 0, 85);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      updatedUnits.push(unit);
+    }
+
+    // Elimination check: if a player's city hall is destroyed, they are eliminated
+    const eliminatedPlayers: CompetitivePlayer[] = nextPlayers.map((p) => {
+      if (p.eliminated) return p;
+      const baseTile = newGrid[p.base.y]?.[p.base.x];
+      const stillAlive = baseTile?.building.type === 'city_hall';
+      return stillAlive ? p : { ...p, eliminated: true };
+    });
+
+    const eliminatedIds = new Set(eliminatedPlayers.filter(p => p.eliminated).map(p => p.id));
+    const prunedUnits = updatedUnits.filter(u => !eliminatedIds.has(u.ownerId));
+
+    // Scoreboard: money + surviving units + tech bonus
+    const scoredPlayers = eliminatedPlayers.map((p) => {
+      const money = p.isHuman ? newStats.money : p.money;
+      const unitCount = prunedUnits.filter(u => u.ownerId === p.id).length;
+      const score = money + unitCount * 40 + (p.techLevel - 1) * 250 + (p.eliminated ? 0 : 600);
+      return { ...p, money, score };
+    });
+
+    // Human economy: trickle income (small) to enable unit production
+    const humanAlive = scoredPlayers.find(p => p.id === competitiveState.humanPlayerId);
+    if (humanAlive && !humanAlive.eliminated) {
+      newStats.money = Math.max(0, newStats.money + (humanAlive.techLevel === 1 ? 10 : humanAlive.techLevel === 2 ? 14 : 18));
+    }
+
+    competitive = {
+      ...competitiveState,
+      lastIdCounter,
+      players: scoredPlayers,
+      units: prunedUnits,
+      fog: { revealed: fogRows },
+    };
+  }
+
   return {
     ...state,
     grid: newGrid,
@@ -1969,6 +2538,7 @@ export function simulateTick(state: GameState): GameState {
     advisorMessages,
     notifications: newNotifications,
     history,
+    competitive,
   };
 }
 

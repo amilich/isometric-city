@@ -5,16 +5,20 @@ import React, { createContext, useCallback, useContext, useEffect, useState, use
 import {
   Budget,
   BuildingType,
+  CompetitiveUnitType,
   GameState,
   SavedCityMeta,
   Tool,
   TOOL_INFO,
+  UnitOrder,
   ZoneType,
 } from '@/types/game';
 import {
   bulldozeTile,
+  createCompetitiveUnit,
   createInitialGameState,
   DEFAULT_GRID_SIZE,
+  getUnitCost,
   placeBuilding,
   placeSubway,
   simulateTick,
@@ -85,6 +89,10 @@ type GameContextValue = {
   loadSavedCity: (cityId: string) => boolean;
   deleteSavedCity: (cityId: string) => void;
   renameSavedCity: (cityId: string, newName: string) => void;
+
+  // Competitive / RTS actions (no-ops in sandbox mode)
+  spawnMilitaryUnit: (unitType: CompetitiveUnitType) => void;
+  issueUnitOrders: (unitIds: string[], order: UnitOrder) => void;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -677,6 +685,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (!tile) return prev;
       if (cost > 0 && prev.stats.money < cost) return prev;
 
+      // Competitive: can't build in unexplored fog
+      if (prev.gameMode === 'competitive' && prev.competitive?.fog?.revealed) {
+        const revealed = prev.competitive.fog.revealed;
+        if (!revealed[y]?.[x]) return prev;
+      }
+
       // Prevent wasted spend if nothing would change
       if (tool === 'bulldoze' && tile.building.type === 'grass' && tile.zone === 'none') {
         return prev;
@@ -717,6 +731,22 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (nextState === prev) return prev;
+
+      // Competitive: assign ownership + HP to placed buildings (origin tile only)
+      if (prev.gameMode === 'competitive' && prev.competitive && building) {
+        if (building !== 'road' && building !== 'rail' && building !== 'tree' && building !== 'grass' && building !== 'water' && building !== 'empty') {
+          const b = nextState.grid[y]?.[x]?.building;
+          if (b) {
+            b.ownerId = prev.competitive.humanPlayerId;
+            if (b.maxHp === undefined || b.hp === undefined) {
+              // Keep simple defaults consistent with combat system
+              const size = info?.size ?? 1;
+              b.maxHp = 160 * size;
+              b.hp = b.maxHp;
+            }
+          }
+        }
+      }
 
       if (cost > 0) {
         nextState = {
@@ -1118,6 +1148,61 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.id]);
 
+  // ============================================================================
+  // Competitive / RTS actions
+  // ============================================================================
+
+  const spawnMilitaryUnit = useCallback((unitType: CompetitiveUnitType) => {
+    setState((prev) => {
+      if (prev.gameMode !== 'competitive' || !prev.competitive) return prev;
+      const comp = prev.competitive;
+      const cost = getUnitCost(unitType);
+      if (prev.stats.money < cost) return prev;
+
+      const human = comp.players.find(p => p.id === comp.humanPlayerId);
+      if (!human || human.eliminated) return prev;
+
+      const nextCounter = comp.lastIdCounter + 1;
+      const id = `u${nextCounter}`;
+      const spawnX = human.base.x + 0.6 + (nextCounter % 3) * 0.22;
+      const spawnY = human.base.y + 1.6;
+
+      const unit = createCompetitiveUnit({
+        id,
+        ownerId: comp.humanPlayerId,
+        type: unitType,
+        x: spawnX,
+        y: spawnY,
+      });
+
+      return {
+        ...prev,
+        selectedTool: 'select',
+        stats: { ...prev.stats, money: prev.stats.money - cost },
+        competitive: {
+          ...comp,
+          lastIdCounter: nextCounter,
+          units: comp.units.concat([unit]),
+        },
+      };
+    });
+  }, []);
+
+  const issueUnitOrders = useCallback((unitIds: string[], order: UnitOrder) => {
+    setState((prev) => {
+      if (prev.gameMode !== 'competitive' || !prev.competitive) return prev;
+      if (unitIds.length === 0) return prev;
+      const set = new Set(unitIds);
+      return {
+        ...prev,
+        competitive: {
+          ...prev.competitive,
+          units: prev.competitive.units.map(u => set.has(u.id) ? { ...u, order } : u),
+        },
+      };
+    });
+  }, []);
+
   const value: GameContextValue = {
     state,
     setTool,
@@ -1157,6 +1242,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     loadSavedCity,
     deleteSavedCity,
     renameSavedCity,
+    spawnMilitaryUnit,
+    issueUnitOrders,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -34,6 +34,8 @@ interface MiniMapProps {
 export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: MiniMapProps) {
   const { state } = useGame();
   const { grid, gridSize, tick } = state;
+  const isCompetitive = state.gameMode === 'competitive' && !!state.competitive;
+  const fogRevealed = state.competitive?.fog.revealed;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gridImageRef = useRef<ImageData | null>(null);
   const lastGridRenderTickRef = useRef(-1);
@@ -60,7 +62,7 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
     // Re-render grid portion every 10 ticks OR when grid changes (building placed, etc.)
     // This ensures immediate updates when user places buildings while keeping CPU usage low
     const shouldRenderGrid = lastGridRenderTickRef.current === -1 || 
-                             tick - lastGridRenderTickRef.current >= 10 ||
+                             tick - lastGridRenderTickRef.current >= (isCompetitive ? 2 : 10) ||
                              gridChanged;
     
     if (shouldRenderGrid) {
@@ -72,6 +74,11 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
       for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
           const tile = grid[y][x];
+          if (isCompetitive && fogRevealed && !fogRevealed[y]?.[x]) {
+            ctx.fillStyle = '#05070a';
+            ctx.fillRect(x * scale, y * scale, Math.ceil(scale), Math.ceil(scale));
+            continue;
+          }
           const buildingType = tile.building.type;
           let color = '#2d5a3d';
           
@@ -130,7 +137,7 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
       ctx.closePath();
       ctx.stroke();
     }
-  }, [grid, gridSize, viewport, tick, serviceBuildings, parkBuildings]);
+  }, [grid, gridSize, viewport, tick, serviceBuildings, parkBuildings, isCompetitive, fogRevealed]);
 
   const [isDragging, setIsDragging] = useState(false);
   

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
-import { TOOL_INFO, Tile, BuildingType, AdjacentCity } from '@/types/game';
+import { TOOL_INFO, Tile, BuildingType, AdjacentCity, CompetitiveUnit } from '@/types/game';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
 import { getSpriteCoords, BUILDING_TO_SPRITE, SPRITE_VERTICAL_OFFSETS, SPRITE_HORIZONTAL_OFFSETS, getActiveSpritePack } from '@/lib/renderConfig';
@@ -118,7 +118,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, issueUnitOrders } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -145,6 +145,29 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     screenY: number;
   } | null>(null);
   const [zoom, setZoom] = useState(isMobile ? 0.6 : 1);
+
+  // Competitive / RTS overlays (units, fog, orders)
+  const isCompetitive = state.gameMode === 'competitive' && !!state.competitive;
+  const competitiveUnits = useMemo<CompetitiveUnit[]>(() => state.competitive?.units ?? [], [state.competitive?.units]);
+  const fogRevealed = state.competitive?.fog.revealed;
+  const humanPlayerId = state.competitive?.humanPlayerId;
+  const playerColorById = useMemo(() => {
+    const entries = state.competitive?.players?.map(p => [p.id, p.color] as const) ?? [];
+    return new Map(entries);
+  }, [state.competitive?.players]);
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
+  const selectedUnitIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    selectedUnitIdsRef.current = selectedUnitIds;
+  }, [selectedUnitIds]);
+  const pendingSelectTileRef = useRef<{ x: number; y: number } | null>(null);
+  const [unitDragStartWorld, setUnitDragStartWorld] = useState<{ x: number; y: number } | null>(null);
+  const [unitDragEndWorld, setUnitDragEndWorld] = useState<{ x: number; y: number } | null>(null);
+  const [isUnitSelecting, setIsUnitSelecting] = useState(false);
+  
+  // Note: unit selection is intentionally local UI state; we avoid resetting it in an effect
+  // to comply with the project's lint rules around setState-in-effect.
+
   const carsRef = useRef<Car[]>([]);
   const carIdRef = useRef(0);
   const carSpawnTimerRef = useRef(0);
@@ -3023,9 +3046,179 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
+
+    // Competitive: unit drag-selection rectangle (screen-space)
+    if (isCompetitive && isUnitSelecting && unitDragStartWorld && unitDragEndWorld) {
+      const minX = Math.min(unitDragStartWorld.x, unitDragEndWorld.x);
+      const minY = Math.min(unitDragStartWorld.y, unitDragEndWorld.y);
+      const maxX = Math.max(unitDragStartWorld.x, unitDragEndWorld.x);
+      const maxY = Math.max(unitDragStartWorld.y, unitDragEndWorld.y);
+      const w = Math.max(0, maxX - minX);
+      const h = Math.max(0, maxY - minY);
+      if (w > 1 && h > 1) {
+        ctx.fillStyle = 'rgba(96, 165, 250, 0.14)';
+        ctx.strokeStyle = 'rgba(96, 165, 250, 0.75)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.rect(minX, minY, w, h);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, offset, zoom, gridSize, grid]);
+  }, [hoveredTile, selectedTile, offset, zoom, gridSize, grid, isCompetitive, isUnitSelecting, unitDragStartWorld, unitDragEndWorld]);
+
+  const drawMilitaryUnits = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!isCompetitive || !humanPlayerId) return;
+    if (competitiveUnits.length === 0) return;
+    if (!grid || gridSize <= 0) return;
+
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+
+    ctx.save();
+    ctx.scale(dpr * zoom, dpr * zoom);
+    ctx.translate(offset.x / zoom, offset.y / zoom);
+
+    const viewWidth = canvas.width / (dpr * zoom);
+    const viewHeight = canvas.height / (dpr * zoom);
+    const viewLeft = -offset.x / zoom - TILE_WIDTH * 2;
+    const viewTop = -offset.y / zoom - TILE_HEIGHT * 4;
+    const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH * 2;
+    const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 4;
+
+    const selected = new Set(selectedUnitIdsRef.current);
+
+    for (const u of competitiveUnits) {
+      const tileX = Math.max(0, Math.min(gridSize - 1, Math.floor(u.x)));
+      const tileY = Math.max(0, Math.min(gridSize - 1, Math.floor(u.y)));
+
+      // Hide enemy units in fog
+      if (fogRevealed && u.ownerId !== humanPlayerId && !fogRevealed[tileY]?.[tileX]) {
+        continue;
+      }
+
+      const { screenX, screenY } = gridToScreen(u.x, u.y, 0, 0);
+      const cx = screenX + TILE_WIDTH / 2;
+      const cy = screenY + TILE_HEIGHT / 2;
+
+      if (cx < viewLeft - 80 || cx > viewRight + 80 || cy < viewTop - 80 || cy > viewBottom + 80) continue;
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 6, 10, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const color = playerColorById.get(u.ownerId) ?? '#e2e8f0';
+      const isSelected = selected.has(u.id);
+
+      // Unit body
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 1.5;
+
+      if (u.type === 'infantry') {
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (u.type === 'tank') {
+        ctx.beginPath();
+        ctx.roundRect(cx - 8, cy - 5, 16, 10, 2);
+        ctx.fill();
+        ctx.stroke();
+        // turret
+        ctx.beginPath();
+        ctx.roundRect(cx - 3, cy - 8, 6, 6, 2);
+        ctx.fill();
+      } else {
+        // helicopter
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 9);
+        ctx.lineTo(cx + 9, cy + 6);
+        ctx.lineTo(cx - 9, cy + 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Selection ring
+      if (isSelected) {
+        ctx.strokeStyle = 'rgba(96,165,250,0.95)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Low health indicator
+      if (u.hp < u.maxHp) {
+        const pct = Math.max(0, Math.min(1, u.hp / u.maxHp));
+        const barW = 18;
+        const barH = 3;
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillRect(cx - barW / 2, cy - 18, barW, barH);
+        ctx.fillStyle = pct > 0.6 ? '#22c55e' : pct > 0.3 ? '#f59e0b' : '#ef4444';
+        ctx.fillRect(cx - barW / 2, cy - 18, barW * pct, barH);
+      }
+    }
+
+    ctx.restore();
+  }, [isCompetitive, humanPlayerId, competitiveUnits, fogRevealed, playerColorById, grid, gridSize, offset.x, offset.y, zoom]);
+
+  const drawFogOfWar = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!isCompetitive || !fogRevealed) return;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+
+    ctx.save();
+    ctx.scale(dpr * zoom, dpr * zoom);
+    ctx.translate(offset.x / zoom, offset.y / zoom);
+
+    const viewWidth = canvas.width / (dpr * zoom);
+    const viewHeight = canvas.height / (dpr * zoom);
+    const viewLeft = -offset.x / zoom - TILE_WIDTH * 2;
+    const viewTop = -offset.y / zoom - TILE_HEIGHT * 4;
+    const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH * 2;
+    const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 4;
+
+    // Approximate visible grid range based on center
+    const centerWorldX = viewWidth / 2 - offset.x / zoom;
+    const centerWorldY = viewHeight / 2 - offset.y / zoom;
+    const centerGrid = screenToGrid(centerWorldX, centerWorldY, 0, 0);
+    const range = Math.ceil(Math.max(viewWidth / (TILE_WIDTH / 2), viewHeight / (TILE_HEIGHT / 2))) + 10;
+    const minGX = Math.max(0, Math.floor(centerGrid.gridX - range));
+    const maxGX = Math.min(gridSize - 1, Math.ceil(centerGrid.gridX + range));
+    const minGY = Math.max(0, Math.floor(centerGrid.gridY - range));
+    const maxGY = Math.min(gridSize - 1, Math.ceil(centerGrid.gridY + range));
+
+    ctx.fillStyle = 'rgba(0,0,0,0.82)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+
+    for (let y = minGY; y <= maxGY; y++) {
+      for (let x = minGX; x <= maxGX; x++) {
+        if (fogRevealed[y]?.[x]) continue;
+        const { screenX, screenY } = gridToScreen(x, y, 0, 0);
+        const cx = screenX + TILE_WIDTH / 2;
+        const cy = screenY + TILE_HEIGHT / 2;
+        if (cx < viewLeft - 64 || cx > viewRight + 64 || cy < viewTop - 64 || cy > viewBottom + 64) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(screenX + TILE_WIDTH / 2, screenY);
+        ctx.lineTo(screenX + TILE_WIDTH, screenY + TILE_HEIGHT / 2);
+        ctx.lineTo(screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT);
+        ctx.lineTo(screenX, screenY + TILE_HEIGHT / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }, [isCompetitive, fogRevealed, gridSize, offset.x, offset.y, zoom]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
@@ -3145,14 +3338,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           drawHelicopters(airCtx); // Draw helicopters (skip when panning zoomed out on desktop)
           drawSeaplanes(airCtx); // Draw seaplanes (skip when panning zoomed out on desktop)
         }
+        drawMilitaryUnits(airCtx); // Competitive RTS units (above buildings)
         drawAirplanes(airCtx); // Draw airplanes above everything
         drawFireworks(airCtx); // Draw fireworks above everything (nighttime only)
+        drawFogOfWar(airCtx); // Fog-of-war overlay (covers everything)
       }
     };
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile, grid, gridSize, speed]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, drawMilitaryUnits, drawFogOfWar, visualHour, isMobile, grid, gridSize, speed]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {
@@ -3433,16 +3628,59 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       if (rect) {
         const mouseX = (e.clientX - rect.left) / zoom;
         const mouseY = (e.clientY - rect.top) / zoom;
+        const worldX = mouseX - offset.x / zoom;
+        const worldY = mouseY - offset.y / zoom;
         const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
         
         if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
           if (selectedTool === 'select') {
-            // For multi-tile buildings, select the origin tile
-            const origin = findBuildingOrigin(gridX, gridY);
-            if (origin) {
-              setSelectedTile({ x: origin.originX, y: origin.originY });
+            // Competitive RTS: click/drag selects units; click selects tile if no unit drag
+            if (isCompetitive && humanPlayerId) {
+              // Try to select a friendly unit under cursor first
+              const hitRadius = 26;
+              const friendlyUnits = competitiveUnits.filter(u => u.ownerId === humanPlayerId);
+              let hitUnit: CompetitiveUnit | null = null;
+              for (const u of friendlyUnits) {
+                const { screenX, screenY } = gridToScreen(u.x, u.y, 0, 0);
+                const cx = screenX + TILE_WIDTH / 2;
+                const cy = screenY + TILE_HEIGHT / 2;
+                const dist = Math.hypot(worldX - cx, worldY - cy);
+                if (dist <= hitRadius) {
+                  hitUnit = u;
+                  break;
+                }
+              }
+
+              if (hitUnit) {
+                setSelectedTile(null);
+                setIsUnitSelecting(false);
+                setUnitDragStartWorld(null);
+                setUnitDragEndWorld(null);
+                pendingSelectTileRef.current = null;
+
+                setSelectedUnitIds((prev) => {
+                  if (e.shiftKey) {
+                    return prev.includes(hitUnit!.id)
+                      ? prev.filter(id => id !== hitUnit!.id)
+                      : prev.concat([hitUnit!.id]);
+                  }
+                  return [hitUnit!.id];
+                });
+              } else {
+                // Start drag selection; tile selection happens on mouse up if no drag distance
+                pendingSelectTileRef.current = { x: gridX, y: gridY };
+                setIsUnitSelecting(true);
+                setUnitDragStartWorld({ x: worldX, y: worldY });
+                setUnitDragEndWorld({ x: worldX, y: worldY });
+              }
             } else {
-              setSelectedTile({ x: gridX, y: gridY });
+              // Sandbox: For multi-tile buildings, select the origin tile
+              const origin = findBuildingOrigin(gridX, gridY);
+              if (origin) {
+                setSelectedTile({ x: origin.originX, y: origin.originY });
+              } else {
+                setSelectedTile({ x: gridX, y: gridY });
+              }
             }
           } else if (showsDragGrid) {
             // Start drag rectangle selection for zoning tools
@@ -3467,7 +3705,43 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin]);
+  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, isCompetitive, humanPlayerId, competitiveUnits]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    if (!isCompetitive || !humanPlayerId) return;
+    e.preventDefault();
+
+    const unitIds = selectedUnitIdsRef.current;
+    if (unitIds.length === 0) return;
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const mouseX = (e.clientX - rect.left) / zoom;
+    const mouseY = (e.clientY - rect.top) / zoom;
+    const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
+
+    if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return;
+
+    // Can't command into unrevealed fog
+    if (fogRevealed && !fogRevealed[gridY]?.[gridX]) return;
+
+    const tile = grid[gridY]?.[gridX];
+    if (!tile) return;
+
+    const buildingType = tile.building.type;
+    const isAttackable = !(buildingType === 'water' || buildingType === 'grass' || buildingType === 'tree' || buildingType === 'road' || buildingType === 'rail' || buildingType === 'empty');
+
+    if (isAttackable && tile.building.ownerId && tile.building.ownerId !== humanPlayerId) {
+      // Attack enemy building (use origin tile for multi-tile buildings)
+      const origin = findBuildingOrigin(gridX, gridY);
+      const target = origin ? { x: origin.originX, y: origin.originY } : { x: gridX, y: gridY };
+      issueUnitOrders(unitIds, { kind: 'attack', target });
+    } else {
+      // Move command
+      issueUnitOrders(unitIds, { kind: 'move', target: { x: gridX, y: gridY } });
+    }
+  }, [isCompetitive, humanPlayerId, grid, gridSize, offset.x, offset.y, zoom, fogRevealed, findBuildingOrigin, issueUnitOrders]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
@@ -3538,11 +3812,18 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (rect) {
       const mouseX = (e.clientX - rect.left) / zoom;
       const mouseY = (e.clientY - rect.top) / zoom;
+      const worldX = mouseX - offset.x / zoom;
+      const worldY = mouseY - offset.y / zoom;
       const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
       
       if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
         // Only update hovered tile if it actually changed to avoid unnecessary re-renders
         setHoveredTile(prev => (prev?.x === gridX && prev?.y === gridY) ? prev : { x: gridX, y: gridY });
+
+        // Competitive: update unit selection rectangle
+        if (isCompetitive && isUnitSelecting && unitDragStartWorld) {
+          setUnitDragEndWorld({ x: worldX, y: worldY });
+        }
         
         // Check for fire or crime incidents at this tile for tooltip display
         const tile = grid[gridY]?.[gridX];
@@ -3623,9 +3904,52 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [isPanning, dragStart, offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile, clampOffset, grid]);
+  }, [isPanning, dragStart, offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile, clampOffset, grid, isCompetitive, isUnitSelecting, unitDragStartWorld]);
   
   const handleMouseUp = useCallback(() => {
+    // Competitive: finish unit drag-selection / click-to-select-tile
+    if (isCompetitive && isUnitSelecting && unitDragStartWorld && unitDragEndWorld && humanPlayerId) {
+      const dx = Math.abs(unitDragEndWorld.x - unitDragStartWorld.x);
+      const dy = Math.abs(unitDragEndWorld.y - unitDragStartWorld.y);
+      const didDrag = dx > 6 || dy > 6;
+
+      if (didDrag) {
+        const minX = Math.min(unitDragStartWorld.x, unitDragEndWorld.x);
+        const minY = Math.min(unitDragStartWorld.y, unitDragEndWorld.y);
+        const maxX = Math.max(unitDragStartWorld.x, unitDragEndWorld.x);
+        const maxY = Math.max(unitDragStartWorld.y, unitDragEndWorld.y);
+
+        const picked: string[] = [];
+        for (const u of competitiveUnits) {
+          if (u.ownerId !== humanPlayerId) continue;
+          const { screenX, screenY } = gridToScreen(u.x, u.y, 0, 0);
+          const cx = screenX + TILE_WIDTH / 2;
+          const cy = screenY + TILE_HEIGHT / 2;
+          if (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY) {
+            picked.push(u.id);
+          }
+        }
+
+        setSelectedTile(null);
+        setSelectedUnitIds(picked);
+      } else {
+        // Treat as a click on a tile (and clear unit selection)
+        const pending = pendingSelectTileRef.current;
+        if (pending) {
+          const origin = findBuildingOrigin(pending.x, pending.y);
+          if (origin) setSelectedTile({ x: origin.originX, y: origin.originY });
+          else setSelectedTile({ x: pending.x, y: pending.y });
+        }
+        setSelectedUnitIds([]);
+      }
+
+      pendingSelectTileRef.current = null;
+      setIsUnitSelecting(false);
+      setUnitDragStartWorld(null);
+      setUnitDragEndWorld(null);
+      return;
+    }
+
     // Fill the drag rectangle when mouse is released (only for zoning tools)
     if (isDragging && dragStartTile && dragEndTile && showsDragGrid) {
       const minX = Math.min(dragStartTile.x, dragEndTile.x);
@@ -3664,7 +3988,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!containerRef.current) {
       setHoveredTile(null);
     }
-  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities]);
+  }, [isCompetitive, isUnitSelecting, unitDragStartWorld, unitDragEndWorld, humanPlayerId, competitiveUnits, setSelectedTile, findBuildingOrigin, isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -3845,6 +4169,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onContextMenu={handleContextMenu}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

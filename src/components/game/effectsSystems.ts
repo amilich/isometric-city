@@ -185,8 +185,16 @@ export function useEffectsSystems(
     // Update existing fireworks
     const updatedFireworks: Firework[] = [];
     
-    for (const firework of fireworksRef.current) {
-      firework.age += delta;
+    for (const firework0 of fireworksRef.current) {
+      // Work on an immutable copy to satisfy eslint immutability rules
+      const firework: Firework = {
+        ...firework0,
+        age: firework0.age + delta,
+        particles: firework0.particles.map((p) => ({
+          ...p,
+          trail: p.trail.map((tp) => ({ ...tp })),
+        })),
+      };
       
       switch (firework.state) {
         case 'launching': {
@@ -445,7 +453,13 @@ export function useEffectsSystems(
     }
     
     // Update each factory's smog
-    for (const smog of factorySmogRef.current) {
+    const updatedSmog: FactorySmog[] = [];
+    for (const smog0 of factorySmogRef.current) {
+      // Work on a copy (avoid mutating refs/args directly)
+      const smog: FactorySmog = {
+        ...smog0,
+        particles: smog0.particles.map(p => ({ ...p })),
+      };
       // Update spawn timer with mobile multiplier
       const baseSpawnInterval = smog.buildingType === 'factory_large' 
         ? SMOG_SPAWN_INTERVAL_LARGE 
@@ -510,7 +524,11 @@ export function useEffectsSystems(
         
         return true;
       });
+      
+      updatedSmog.push(smog);
     }
+    
+    factorySmogRef.current = updatedSmog;
   }, [worldStateRef, gridVersionRef, factorySmogRef, smogLastGridVersionRef, findSmogFactoriesCallback, isMobile]);
 
   // Draw smog particles

@@ -27,6 +27,7 @@ import {
 import { MiniMap } from '@/components/game/MiniMap';
 import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
+import { Scoreboard } from '@/components/game/Scoreboard';
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = ['containers', 'bulk materials', 'oil'];
@@ -267,6 +268,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               onBargeDelivery={handleBargeDelivery}
             />
             <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
+            <Scoreboard />
             <MiniMap onNavigate={(x, y) => setNavigationTarget({ x, y })} viewport={viewport} />
           </div>
         </div>

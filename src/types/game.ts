@@ -214,6 +214,14 @@ export interface Building {
   constructionProgress: number; // 0-100, building is under construction until 100
   abandoned: boolean; // Building is abandoned due to low demand, produces nothing
   flipped?: boolean; // Horizontally mirror the sprite (used for waterfront buildings to face water)
+  /**
+   * Competitive mode extensions
+   * - ownerId: which player controls this building (set on the origin tile for multi-tile buildings)
+   * - hp/maxHp: used for RTS combat; when hp reaches 0, the building is destroyed (converted to grass)
+   */
+  ownerId?: string;
+  hp?: number;
+  maxHp?: number;
 }
 
 export interface Tile {
@@ -338,6 +346,78 @@ export interface GameState {
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];
   gameVersion: number; // Increments when a new game starts - used to clear transient state like vehicles
+
+  /**
+   * Game mode
+   * - sandbox: classic SimCity-like mode (default)
+   * - competitive: RTS-like mode with players/units/fog
+   */
+  gameMode?: 'sandbox' | 'competitive';
+
+  /** Competitive mode state (present only when gameMode === 'competitive') */
+  competitive?: CompetitiveState;
+}
+
+// ============================================================================
+// Competitive / RTS Mode Types
+// ============================================================================
+
+export type PlayerId = string;
+
+export type CompetitiveUnitType = 'infantry' | 'tank' | 'helicopter';
+
+export type UnitOrder =
+  | { kind: 'idle' }
+  | { kind: 'move'; target: { x: number; y: number } }
+  | { kind: 'attack'; target: { x: number; y: number } };
+
+export interface CompetitiveUnit {
+  id: string;
+  ownerId: PlayerId;
+  type: CompetitiveUnitType;
+  // Position in tile space (fractional allowed for movement smoothing)
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  // Movement/combat tuning
+  speedTilesPerTick: number;
+  attackRangeTiles: number;
+  attackDamagePerTick: number;
+  igniteChancePerHit: number; // 0-1
+  order: UnitOrder;
+}
+
+export interface CompetitivePlayer {
+  id: PlayerId;
+  name: string;
+  color: string;
+  isHuman: boolean;
+  eliminated: boolean;
+  money: number;
+  score: number;
+  techLevel: 1 | 2 | 3;
+  base: { x: number; y: number }; // city hall origin tile
+  ai?: {
+    nextSpawnTick: number;
+    nextAttackTick: number;
+  };
+}
+
+export interface CompetitiveFog {
+  /**
+   * Fog-of-war for the human player only (true = explored/revealed).
+   * This keeps memory and CPU predictable vs per-player fog.
+   */
+  revealed: boolean[][];
+}
+
+export interface CompetitiveState {
+  humanPlayerId: PlayerId;
+  players: CompetitivePlayer[];
+  units: CompetitiveUnit[];
+  fog: CompetitiveFog;
+  lastIdCounter: number; // deterministic-ish ID source
 }
 
 // Saved city metadata for the multi-save system

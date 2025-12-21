@@ -148,8 +148,8 @@ export function useBargeSystem(
     // Update existing barges
     const updatedBarges: Barge[] = [];
     
-    for (const barge of bargesRef.current) {
-      barge.age += delta;
+    for (const barge0 of bargesRef.current) {
+      let barge: Barge = { ...barge0, age: barge0.age + delta };
       
       // Update wake particles
       const wakeMaxAge = isMobile ? 0.8 : WAKE_MAX_AGE;

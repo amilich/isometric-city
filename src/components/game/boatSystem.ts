@@ -144,8 +144,8 @@ export function useBoatSystem(
     // Update existing boats
     const updatedBoats: Boat[] = [];
     
-    for (const boat of boatsRef.current) {
-      boat.age += delta;
+    for (const boat0 of boatsRef.current) {
+      let boat: Boat = { ...boat0, age: boat0.age + delta };
       
       // Update wake particles (similar to contrails) - shorter on mobile
       const wakeMaxAge = isMobile ? 0.6 : WAKE_MAX_AGE;
@@ -510,7 +510,7 @@ export function useBoatSystem(
     }
     
     ctx.restore();
-  }, [worldStateRef, boatsRef, visualHour]);
+  }, [worldStateRef, boatsRef, visualHour, isMobile]);
 
   return {
     updateBoats,

@@ -6,6 +6,7 @@ import { GameProvider } from '@/context/GameContext';
 import Game from '@/components/Game';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
+import { createCompetitiveGameState } from '@/lib/simulation';
 import { SavedCityMeta } from '@/types/game';
 
 const STORAGE_KEY = 'isocity-game-state';
@@ -310,6 +311,18 @@ export default function HomePage() {
           >
             Start
           </Button>
+
+          <Button
+            onClick={() => {
+              const competitive = createCompetitiveGameState('Frontier');
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(competitive));
+              setShowGame(true);
+            }}
+            variant="outline"
+            className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+          >
+            Start Competitive
+          </Button>
           
           <Button 
             onClick={async () => {
@@ -361,6 +374,18 @@ export default function HomePage() {
               className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
               Start
+            </Button>
+
+            <Button
+              onClick={() => {
+                const competitive = createCompetitiveGameState('Frontier');
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(competitive));
+                setShowGame(true);
+              }}
+              variant="outline"
+              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+            >
+              Start Competitive
             </Button>
             <Button 
               onClick={async () => {

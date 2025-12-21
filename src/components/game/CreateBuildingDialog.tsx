@@ -290,6 +290,16 @@ export function CreateBuildingDialog({
     setHasApiKey(hasGeminiApiKey());
   }, [open]);
 
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setPreviewImage(null);
+      setModifications('');
+      setError(null);
+      setProgressText('');
+    }
+  }, [open]);
+
   // Reset to form view
   const handleStartOver = useCallback(() => {
     setPreviewImage(null);

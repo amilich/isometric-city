@@ -104,6 +104,11 @@ import {
 } from '@/components/game/trainSystem';
 import { Train } from '@/components/game/types';
 
+// Custom building rendering constants
+const CUSTOM_BUILDING_SCALE = 1.2;
+const CUSTOM_BUILDING_SINGLE_TILE_VERTICAL_OFFSET = 0.15;
+const CUSTOM_BUILDING_MULTI_TILE_VERTICAL_OFFSET = 0.5;
+
 // Props interface for CanvasIsometricGrid
 export interface CanvasIsometricGridProps {
   overlayMode: OverlayMode;
@@ -1816,7 +1821,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
         const customImage = getCustomBuildingImage(customId);
         if (!customImage) {
-          // Image not cached yet - draw placeholder
+          // Image not cached yet - draw placeholder (purple diamond)
           ctx.fillStyle = '#8B5CF6';
           ctx.beginPath();
           ctx.moveTo(x + w / 2, y);
@@ -1846,7 +1851,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
         // Calculate destination size preserving aspect ratio
         const scaleMultiplier = isMultiTile ? 2 : 1;
-        const destWidth = w * 1.2 * scaleMultiplier;
+        const destWidth = w * CUSTOM_BUILDING_SCALE * scaleMultiplier;
         const imgW = customImage.naturalWidth || customImage.width;
         const imgH = customImage.naturalHeight || customImage.height;
         const aspectRatio = imgH / imgW;
@@ -1854,7 +1859,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
         // Position: center horizontally, anchor bottom at tile bottom
         const drawX = drawPosX + w / 2 - destWidth / 2;
-        const verticalPush = isMultiTile ? h * 0.5 : destHeight * 0.15;
+        const verticalPush = isMultiTile ? h * CUSTOM_BUILDING_MULTI_TILE_VERTICAL_OFFSET : destHeight * CUSTOM_BUILDING_SINGLE_TILE_VERTICAL_OFFSET;
         const drawY = drawPosY + h - destHeight + verticalPush;
 
         ctx.drawImage(

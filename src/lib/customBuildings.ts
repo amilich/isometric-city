@@ -8,6 +8,9 @@ import { createGeminiClient } from './gemini';
 // Maximum number of custom buildings allowed
 export const MAX_CUSTOM_BUILDINGS = 10;
 
+// Model for image generation
+const IMAGE_MODEL = 'gemini-2.5-flash-image';
+
 // Create a custom building type string from size and id
 export function createCustomBuildingType(size: 1 | 2, id: string): BuildingType {
   return `custom_${size}_${id}` as BuildingType;
@@ -153,7 +156,7 @@ export async function editBuildingSprite(
   onProgress?.('Applying modifications...');
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
+    model: IMAGE_MODEL,
     contents: [
       { inlineData: { mimeType: 'image/png', data: currentImageBase64 } },
       `Edit this isometric building sprite with the following changes: ${modifications}
@@ -208,7 +211,7 @@ SIZE: ${size}x${size} tiles`;
   contents.push(prompt);
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
+    model: IMAGE_MODEL,
     contents,
   });
 

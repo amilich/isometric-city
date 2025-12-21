@@ -3,6 +3,9 @@
 import { GameState } from '@/types/game';
 import { createGeminiClient } from './gemini';
 
+// Model for advisor chat
+const ADVISOR_MODEL = 'gemini-2.5-flash';
+
 // Maximum number of messages to include in advisor chat history
 const MAX_CHAT_HISTORY = 6;
 
@@ -106,7 +109,7 @@ ${stateText}
 ${userMessage ? `Player question: ${userMessage}` : 'Give brief advice on the current situation.'}`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: ADVISOR_MODEL,
     contents: prompt,
   });
 

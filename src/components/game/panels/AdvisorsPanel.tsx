@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
 import { hasGeminiApiKey } from '@/lib/gemini';
-import { getAdvisorResponse, CityState } from '@/lib/advisor';
+import { getAdvisorResponse } from '@/lib/advisor';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,40 +39,6 @@ const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
-}
-
-// Build city state for the advisor API
-function buildCityState(state: ReturnType<typeof useGame>['state']): CityState {
-  let unpowered = 0;
-  let unwatered = 0;
-  let abandoned = 0;
-
-  for (const row of state.grid) {
-    for (const tile of row) {
-      if (tile.zone !== 'none' && tile.building.type !== 'grass') {
-        if (!tile.building.powered) unpowered++;
-        if (!tile.building.watered) unwatered++;
-      }
-      if (tile.building.abandoned) abandoned++;
-    }
-  }
-
-  return {
-    cityName: state.cityName,
-    year: state.year,
-    month: state.month,
-    population: state.stats.population,
-    money: state.stats.money,
-    income: state.stats.income,
-    expenses: state.stats.expenses,
-    happiness: state.stats.happiness,
-    health: state.stats.health,
-    education: state.stats.education,
-    safety: state.stats.safety,
-    environment: state.stats.environment,
-    demand: state.stats.demand,
-    issues: { unpowered, unwatered, abandoned },
-  };
 }
 
 export function AdvisorsPanel() {
@@ -130,8 +96,7 @@ export function AdvisorsPanel() {
     }
 
     try {
-      const cityState = buildCityState(state);
-      const responseText = await getAdvisorResponse(cityState, userMessage, messages);
+      const responseText = await getAdvisorResponse(state, userMessage, messages);
       setMessages((prev) => [...prev, { role: 'assistant', content: responseText }]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to get advice';

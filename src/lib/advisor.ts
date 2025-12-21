@@ -1,5 +1,6 @@
 // Advisor chat functionality
 
+import { GameState } from '@/types/game';
 import { createGeminiClient } from './gemini';
 
 // Maximum number of messages to include in advisor chat history
@@ -51,38 +52,34 @@ export interface AdvisorMessage {
   content: string;
 }
 
-export interface CityState {
-  cityName: string;
-  year: number;
-  month: number;
-  population: number;
-  money: number;
-  income: number;
-  expenses: number;
-  happiness: number;
-  health: number;
-  education: number;
-  safety: number;
-  environment: number;
-  demand: { residential: number; commercial: number; industrial: number };
-  issues: { unpowered: number; unwatered: number; abandoned: number };
-}
-
-// Format city state as compact text
-function formatCityState(s: CityState): string {
-  const net = s.income - s.expenses;
-  const avg = (s.happiness + s.health + s.education + s.safety + s.environment) / 5;
+// Format game state as compact text for the advisor prompt
+function formatGameState(state: GameState): string {
+  const { stats } = state;
+  const net = stats.income - stats.expenses;
+  const avg = (stats.happiness + stats.health + stats.education + stats.safety + stats.environment) / 5;
   const grade = avg >= 90 ? 'A+' : avg >= 80 ? 'A' : avg >= 70 ? 'B' : avg >= 60 ? 'C' : avg >= 50 ? 'D' : 'F';
   const fmt = (n: number) => n >= 1e6 ? `${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `${(n/1e3).toFixed(1)}K` : String(n);
 
-  let text = `${s.cityName} Y${s.year}M${s.month}: Pop ${fmt(s.population)}, $${fmt(s.money)} (${net >= 0 ? '+' : ''}${fmt(net)}/mo), Grade ${grade}\n`;
-  text += `Ratings: Happy ${s.happiness}, Health ${s.health}, Edu ${s.education}, Safety ${s.safety}, Env ${s.environment}\n`;
-  text += `Demand: R${s.demand.residential >= 0 ? '+' : ''}${s.demand.residential} C${s.demand.commercial >= 0 ? '+' : ''}${s.demand.commercial} I${s.demand.industrial >= 0 ? '+' : ''}${s.demand.industrial}`;
+  let text = `${state.cityName} Y${state.year}M${state.month}: Pop ${fmt(stats.population)}, $${fmt(stats.money)} (${net >= 0 ? '+' : ''}${fmt(net)}/mo), Grade ${grade}\n`;
+  text += `Ratings: Happy ${stats.happiness}, Health ${stats.health}, Edu ${stats.education}, Safety ${stats.safety}, Env ${stats.environment}\n`;
+  text += `Demand: R${stats.demand.residential >= 0 ? '+' : ''}${stats.demand.residential} C${stats.demand.commercial >= 0 ? '+' : ''}${stats.demand.commercial} I${stats.demand.industrial >= 0 ? '+' : ''}${stats.demand.industrial}`;
+
+  // Count issues from grid
+  let unpowered = 0, unwatered = 0, abandoned = 0;
+  for (const row of state.grid) {
+    for (const tile of row) {
+      if (tile.zone !== 'none' && tile.building.type !== 'grass') {
+        if (!tile.building.powered) unpowered++;
+        if (!tile.building.watered) unwatered++;
+      }
+      if (tile.building.abandoned) abandoned++;
+    }
+  }
 
   const issues = [];
-  if (s.issues.unpowered > 0) issues.push(`${s.issues.unpowered} unpowered`);
-  if (s.issues.unwatered > 0) issues.push(`${s.issues.unwatered} unwatered`);
-  if (s.issues.abandoned > 0) issues.push(`${s.issues.abandoned} abandoned`);
+  if (unpowered > 0) issues.push(`${unpowered} unpowered`);
+  if (unwatered > 0) issues.push(`${unwatered} unwatered`);
+  if (abandoned > 0) issues.push(`${abandoned} abandoned`);
   if (issues.length > 0) text += `\nIssues: ${issues.join(', ')}`;
 
   return text;
@@ -90,12 +87,12 @@ function formatCityState(s: CityState): string {
 
 // Get advisor response
 export async function getAdvisorResponse(
-  cityState: CityState,
+  gameState: GameState,
   userMessage: string | undefined,
   history: AdvisorMessage[]
 ): Promise<string> {
   const ai = createGeminiClient();
-  const stateText = formatCityState(cityState);
+  const stateText = formatGameState(gameState);
 
   const historyText = history.slice(-MAX_CHAT_HISTORY).map(m =>
     `${m.role === 'user' ? 'Player' : 'Advisor'}: ${m.content}`

@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -194,9 +193,6 @@ function BuildingPreview({
           Preview: {name}
           <span className="text-[10px] font-medium text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Experimental</span>
         </DialogTitle>
-        <DialogDescription>
-          Review your building or request modifications
-        </DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 py-2">
@@ -211,8 +207,7 @@ function BuildingPreview({
         </div>
 
         {/* Modifications Input */}
-        <div className="space-y-2">
-          <Label htmlFor="modifications">Request Changes (optional)</Label>
+        <div>
           <Input
             id="modifications"
             value={modifications}

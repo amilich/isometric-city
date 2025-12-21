@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useGame } from '@/context/GameContext';
-import { hasGeminiApiKey, getAdvisorResponse, CityState } from '@/lib/gemini';
+import { hasGeminiApiKey } from '@/lib/gemini';
+import { getAdvisorResponse, CityState } from '@/lib/advisor';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

@@ -3657,6 +3657,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     
     // Clamp and set the new offset - this is a legitimate use case for responding to navigation requests
     const bounds = getMapBounds(zoom, canvasSize.width, canvasSize.height);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOffset({
       x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, newOffset.x)),
       y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
@@ -3857,7 +3858,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!containerRef.current) {
       setHoveredTile(null);
     }
-  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities, unitSelectStart, unitSelectEnd, state.mode, gridSize, offset, zoom]);
+  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities, unitSelectStart, unitSelectEnd, state.mode, gridSize, offset, zoom, state.units, state.currentPlayerId]);
   
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     if (state.mode !== 'competitive') return;
@@ -3886,7 +3887,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     } else {
       issueUnitOrder(tx, ty);
     }
-  }, [state.mode, selectedUnits, zoom, offset, gridSize, grid, issueUnitOrder, state.currentPlayerId, state.units]);
+  }, [state.mode, selectedUnits, zoom, offset, gridSize, grid, issueUnitOrder, state.currentPlayerId]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();

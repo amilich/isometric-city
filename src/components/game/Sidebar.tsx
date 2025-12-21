@@ -2,7 +2,9 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
-import { Tool, TOOL_INFO } from '@/types/game';
+import { Tool, TOOL_INFO, CustomBuilding } from '@/types/game';
+import { CreateBuildingDialog } from './CreateBuildingDialog';
+import { getCustomToolInfo } from '@/lib/customBuildings';
 import {
   BudgetIcon,
   ChartIcon,
@@ -21,6 +23,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+// Helper to get tool info for both regular and custom tools
+function getToolInfo(tool: Tool, customBuildings: CustomBuilding[]) {
+  if (tool.startsWith('custom_')) {
+    const customId = tool.replace('custom_', '');
+    const building = customBuildings.find((b) => b.id === customId);
+    if (building) return getCustomToolInfo(building);
+    return null;
+  }
+  return TOOL_INFO[tool] || null;
+}
+
 // Hover Submenu Component for collapsible tool categories
 // Implements triangle-rule safe zone for forgiving cursor navigation
 const HoverSubmenu = React.memo(function HoverSubmenu({
@@ -30,6 +43,9 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
   money,
   onSelectTool,
   forceOpenUpward = false,
+  customBuildings = [],
+  onDeleteCustomBuilding,
+  onCreateNew,
 }: {
   label: string;
   tools: Tool[];
@@ -37,6 +53,9 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
   money: number;
   onSelectTool: (tool: Tool) => void;
   forceOpenUpward?: boolean;
+  customBuildings?: CustomBuilding[];
+  onDeleteCustomBuilding?: (id: string) => void;
+  onCreateNew?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, buttonHeight: 0, openUpward: false });
@@ -177,9 +196,9 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
       
       {/* Flyout Submenu - uses fixed positioning to escape all parent containers */}
       {isOpen && (
-        <div 
+        <div
           ref={submenuRef}
-          className="fixed w-52 bg-sidebar backdrop-blur-sm border border-sidebar-border rounded-md shadow-xl overflow-hidden animate-submenu-in"
+          className="fixed w-56 bg-sidebar backdrop-blur-sm border border-sidebar-border rounded-md shadow-xl overflow-hidden animate-submenu-in"
           style={{ 
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(96, 165, 250, 0.1)',
             zIndex: 9999,
@@ -191,32 +210,68 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
           onMouseEnter={handleSubmenuEnter}
           onMouseLeave={handleSubmenuLeave}
         >
-          <div className="px-3 py-2 border-b border-sidebar-border/50 bg-muted/30">
+          <div className="px-3 py-2 border-b border-sidebar-border/50 bg-muted/30 flex items-center justify-between">
             <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">{label}</span>
+            {onCreateNew && (
+              <span className="text-[8px] font-medium text-amber-500/70 normal-case tracking-normal">Experimental</span>
+            )}
           </div>
           <div className="p-1.5 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+            {onCreateNew && (
+              <Button
+                onClick={() => {
+                  onCreateNew();
+                  setIsOpen(false);
+                }}
+                variant="ghost"
+                className="justify-start gap-2 px-3 py-2 h-auto text-sm hover:bg-muted/60 text-primary"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Create New...</span>
+              </Button>
+            )}
             {tools.map(tool => {
-              const info = TOOL_INFO[tool];
+              const info = getToolInfo(tool, customBuildings);
               if (!info) return null;
               const isSelected = selectedTool === tool;
               const canAfford = money >= info.cost;
-              
+              const isCustom = tool.startsWith('custom_');
+              const customId = isCustom ? tool.replace('custom_', '') : null;
+
               return (
-                <Button
-                  key={tool}
-                  onClick={() => onSelectTool(tool)}
-                  disabled={!canAfford && info.cost > 0}
-                  variant={isSelected ? 'default' : 'ghost'}
-                  className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 ${
-                    isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted/60'
-                  }`}
-                  title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
-                >
-                  <span className="flex-1 text-left truncate">{info.name}</span>
-                  {info.cost > 0 && (
-                    <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>${info.cost.toLocaleString()}</span>
+                <div key={tool} className="flex items-center gap-1">
+                  <Button
+                    onClick={() => onSelectTool(tool)}
+                    disabled={!canAfford && info.cost > 0}
+                    variant={isSelected ? 'default' : 'ghost'}
+                    className={`flex-1 justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 ${
+                      isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted/60'
+                    }`}
+                    title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
+                  >
+                    <span className="flex-1 text-left truncate">{info.name}</span>
+                    {info.cost > 0 && (
+                      <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>${info.cost.toLocaleString()}</span>
+                    )}
+                  </Button>
+                  {isCustom && customId && onDeleteCustomBuilding && (
+                    <Button
+                      variant="ghost"
+                      className="px-2 py-2 h-auto text-muted-foreground hover:text-destructive shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteCustomBuilding(customId);
+                      }}
+                      title="Delete custom building"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </Button>
                   )}
-                </Button>
+                </div>
               );
             })}
           </div>
@@ -269,9 +324,10 @@ function ExitDialog({
 
 // Memoized Sidebar Component
 export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => void }) {
-  const { state, setTool, setActivePanel, saveCity } = useGame();
+  const { state, setTool, setActivePanel, saveCity, customBuildings, addCustomBuilding, removeCustomBuilding } = useGame();
   const { selectedTool, stats, activePanel } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showCreateBuildingDialog, setShowCreateBuildingDialog] = useState(false);
   
   const handleSaveAndExit = useCallback(() => {
     saveCity();
@@ -291,50 +347,20 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   }), []);
   
   // Submenu categories (hover to expand) - includes all new assets from main
-  const submenuCategories = useMemo(() => [
-    { 
-      key: 'services', 
-      label: 'Services', 
-      tools: ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[]
-    },
-    { 
-      key: 'parks', 
-      label: 'Parks', 
-      tools: ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[]
-    },
-    { 
-      key: 'sports', 
-      label: 'Sports', 
-      tools: ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[]
-    },
-    { 
-      key: 'recreation', 
-      label: 'Recreation', 
-      tools: ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[]
-    },
-    { 
-      key: 'waterfront', 
-      label: 'Waterfront', 
-      tools: ['marina_docks_small', 'pier_large'] as Tool[]
-    },
-    { 
-      key: 'community', 
-      label: 'Community', 
-      tools: ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[]
-    },
-    { 
-      key: 'utilities', 
-      label: 'Utilities', 
-      tools: ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
-      forceOpenUpward: true
-    },
-    { 
-      key: 'special', 
-      label: 'Special', 
-      tools: ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[],
-      forceOpenUpward: true
-    },
-  ], []);
+  const submenuCategories = useMemo(() => {
+    return [
+      { key: 'services', label: 'Services', tools: ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[] },
+      { key: 'parks', label: 'Parks', tools: ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[] },
+      { key: 'sports', label: 'Sports', tools: ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[] },
+      { key: 'recreation', label: 'Recreation', tools: ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[] },
+      { key: 'waterfront', label: 'Waterfront', tools: ['marina_docks_small', 'pier_large'] as Tool[] },
+      { key: 'community', label: 'Community', tools: ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[] },
+      { key: 'utilities', label: 'Utilities', tools: ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[], forceOpenUpward: true },
+      { key: 'special', label: 'Special', tools: ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[], forceOpenUpward: true },
+      // Custom category at bottom - always shown with Create New option
+      { key: 'custom', label: 'Custom', tools: customBuildings.map((b) => `custom_${b.id}` as Tool), forceOpenUpward: true },
+    ];
+  }, [customBuildings]);
   
   return (
     <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-40">
@@ -435,6 +461,9 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
               money={stats.money}
               onSelectTool={setTool}
               forceOpenUpward={forceOpenUpward}
+              customBuildings={customBuildings}
+              onDeleteCustomBuilding={key === 'custom' ? removeCustomBuilding : undefined}
+              onCreateNew={key === 'custom' ? () => setShowCreateBuildingDialog(true) : undefined}
             />
           ))}
         </div>
@@ -467,6 +496,12 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         onOpenChange={setShowExitDialog}
         onSaveAndExit={handleSaveAndExit}
         onExitWithoutSaving={handleExitWithoutSaving}
+      />
+
+      <CreateBuildingDialog
+        open={showCreateBuildingDialog}
+        onOpenChange={setShowCreateBuildingDialog}
+        onBuildingCreated={addCustomBuilding}
       />
     </div>
   );

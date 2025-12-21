@@ -57,7 +57,7 @@ import {
   getOverlayFillStyle,
 } from '@/components/game/overlays';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
-import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
+import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage, loadCustomBuildingImage, getCustomBuildingImage } from '@/components/game/imageLoader';
 import { TileInfoPanel } from '@/components/game/panels';
 import {
   findMarinasAndPiers,
@@ -118,7 +118,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, customBuildings, getCustomBuilding } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -823,9 +823,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const timer = setTimeout(loadSecondarySheets, 50);
     return () => clearTimeout(timer);
   }, [currentSpritePack]);
-  
+
+  // Pre-cache custom building images when customBuildings changes
+  useEffect(() => {
+    customBuildings.forEach((building) => {
+      loadCustomBuildingImage(building.id, building.imageDataUrl).catch(console.error);
+    });
+  }, [customBuildings]);
+
   // Building helper functions moved to buildingHelpers.ts
-  
+
   // Update canvas size on resize with high-DPI support
   useEffect(() => {
     const updateSize = () => {
@@ -1799,7 +1806,65 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         drawRoad(ctx, x, y, tile.x, tile.y, zoom);
         return;
       }
-      
+
+      // Handle custom buildings (AI-generated, format: custom_${size}_${id})
+      if (buildingType.startsWith('custom_')) {
+        const parts = buildingType.split('_');
+        const customId = parts.slice(2).join('_'); // Handle IDs that might contain underscores
+        const customBuilding = getCustomBuilding(customId);
+        if (!customBuilding) return;
+
+        const customImage = getCustomBuildingImage(customId);
+        if (!customImage) {
+          // Image not cached yet - draw placeholder
+          ctx.fillStyle = '#8B5CF6';
+          ctx.beginPath();
+          ctx.moveTo(x + w / 2, y);
+          ctx.lineTo(x + w, y + h / 2);
+          ctx.lineTo(x + w / 2, y + h);
+          ctx.lineTo(x, y + h / 2);
+          ctx.closePath();
+          ctx.fill();
+          return;
+        }
+
+        // Calculate size and position based on building size (1x1 or 2x2)
+        const buildingSize = customBuilding.size;
+        const isMultiTile = buildingSize === 2;
+
+        // Calculate draw position for multi-tile buildings
+        let drawPosX = x;
+        let drawPosY = y;
+        if (isMultiTile) {
+          const frontmostOffsetX = buildingSize - 1;
+          const frontmostOffsetY = buildingSize - 1;
+          const screenOffsetX = (frontmostOffsetX - frontmostOffsetY) * (w / 2);
+          const screenOffsetY = (frontmostOffsetX + frontmostOffsetY) * (h / 2);
+          drawPosX = x + screenOffsetX;
+          drawPosY = y + screenOffsetY;
+        }
+
+        // Calculate destination size preserving aspect ratio
+        const scaleMultiplier = isMultiTile ? 2 : 1;
+        const destWidth = w * 1.2 * scaleMultiplier;
+        const imgW = customImage.naturalWidth || customImage.width;
+        const imgH = customImage.naturalHeight || customImage.height;
+        const aspectRatio = imgH / imgW;
+        const destHeight = destWidth * aspectRatio;
+
+        // Position: center horizontally, anchor bottom at tile bottom
+        const drawX = drawPosX + w / 2 - destWidth / 2;
+        const verticalPush = isMultiTile ? h * 0.5 : destHeight * 0.15;
+        const drawY = drawPosY + h - destHeight + verticalPush;
+
+        ctx.drawImage(
+          customImage,
+          Math.round(drawX), Math.round(drawY),
+          Math.round(destWidth), Math.round(destHeight)
+        );
+        return;
+      }
+
       // Draw water tiles underneath marina/pier buildings
       if (buildingType === 'marina_docks_small' || buildingType === 'pier_large') {
         const buildingSize = getBuildingSize(buildingType);

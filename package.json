@@ -10,6 +10,7 @@
     "crop-screenshots": "bash scripts/crop-screenshots.sh"
   },
   "dependencies": {
+    "@google/genai": "^1.34.0",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-progress": "^1.1.0",
@@ -20,6 +21,7 @@
     "@radix-ui/react-switch": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.3",
+    "@radix-ui/react-visually-hidden": "^1.2.4",
     "@vercel/analytics": "^1.6.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",

@@ -12,7 +12,9 @@ interface Location {
 
 const PRESET_LOCATIONS: Location[] = [
   { name: 'New York', lat: 40.7, lng: -74.0 },
+  { name: 'San Francisco', lat: 37.7749, lng: -122.4194 },
   { name: 'London', lat: 51.5, lng: -0.1 },
+  { name: 'Dublin', lat: 53.3498, lng: -6.2603 },
   { name: 'Tokyo', lat: 35.7, lng: 139.8 },
   { name: 'Sydney', lat: -33.9, lng: 151.2 },
 ];

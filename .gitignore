@@ -39,6 +39,13 @@ next-env.d.ts
 CLOUD.pdf
 README.pdf
 
+# Cursor/editor history junk (should never be committed)
+.history/
+
+# Local screenshots
+public/Screenshot*.png
+
+
 # Earth terrain data (too large for git, processed tiles stored in Convex)
 public/assets/planets/earth/*.tif
 public/assets/planets/earth/*.zip

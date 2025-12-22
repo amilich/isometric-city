@@ -172,7 +172,47 @@ async function uploadTile(lat: number, lng: number, webpBuffer: Buffer) {
 /**
  * Process all tiles (or a test region)
  */
-async function processAllTiles(testMode: boolean = false) {
+type Mode =
+  | { kind: 'test' }
+  | { kind: 'full' }
+  | { kind: 'tile'; lat: number; lng: number }
+  | { kind: 'bbox'; minLat: number; maxLat: number; minLng: number; maxLng: number }
+
+function parseArgs(argv: string[]): Mode {
+  if (argv.includes('--test') || argv.includes('-t')) return { kind: 'test' }
+
+  const tileIdx = argv.findIndex((a) => a === '--tile')
+  if (tileIdx != -1) {
+    const lat = Number(argv[tileIdx + 1])
+    const lng = Number(argv[tileIdx + 2])
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      throw new Error('Usage: --tile <latInt> <lngInt>  (example: --tile 51 -1)')
+    }
+    return { kind: 'tile', lat, lng }
+  }
+
+  const bboxIdx = argv.findIndex((a) => a === '--bbox')
+  if (bboxIdx != -1) {
+    const minLat = Number(argv[bboxIdx + 1])
+    const maxLat = Number(argv[bboxIdx + 2])
+    const minLng = Number(argv[bboxIdx + 3])
+    const maxLng = Number(argv[bboxIdx + 4])
+    if (
+      !Number.isFinite(minLat)
+      || ! Number.isFinite(maxLat)
+      || ! Number.isFinite(minLng)
+      || ! Number.isFinite(maxLng)
+    ) {
+      throw new Error('Usage: --bbox <minLatInt> <maxLatInt> <minLngInt> <maxLngInt>')
+    }
+    return { kind: 'bbox', minLat, maxLat, minLng, maxLng }
+  }
+
+  return { kind: 'full' }
+}
+
+
+async function processAllTiles(mode: Mode) {
   console.log('Loading GeoTIFF...')
   const tiff = await fromFile(ETOPO1_PATH)
   
@@ -181,9 +221,23 @@ async function processAllTiles(testMode: boolean = false) {
   const [width, height] = [image.getWidth(), image.getHeight()]
   console.log(`GeoTIFF dimensions: ${width}×${height}`)
   
-  // Test mode: process only a small region (e.g., New York area)
-  const latRange = testMode ? { min: 40, max: 41 } : { min: -90, max: 90 }
-  const lngRange = testMode ? { min: -75, max: -74 } : { min: -180, max: 180 }
+  const latRange =
+    mode.kind === 'test'
+      ? { min: 40, max: 41 }
+      : mode.kind === 'tile'
+        ? { min: mode.lat, max: mode.lat + 1 }
+        : mode.kind === 'bbox'
+          ? { min: mode.minLat, max: mode.maxLat }
+          : { min: -90, max: 90 }
+
+  const lngRange =
+    mode.kind === 'test'
+      ? { min: -75, max: -74 }
+      : mode.kind === 'tile'
+        ? { min: mode.lng, max: mode.lng + 1 }
+        : mode.kind === 'bbox'
+          ? { min: mode.minLng, max: mode.maxLng }
+          : { min: -180, max: 180 }
   
   console.log(`Processing tiles: lat ${latRange.min} to ${latRange.max}, lng ${lngRange.min} to ${lngRange.max}`)
   
@@ -224,14 +278,20 @@ async function processAllTiles(testMode: boolean = false) {
 
 // Run if executed directly
 if (require.main === module) {
-  const testMode = process.argv.includes('--test') || process.argv.includes('-t')
-  if (testMode) {
+  const mode = parseArgs(process.argv.slice(2))
+
+  if (mode.kind === 'test') {
     console.log('🧪 Running in TEST MODE - processing small region only')
+  } else if (mode.kind === 'tile') {
+    console.log(`🧩 Processing SINGLE TILE: (${mode.lat}, ${mode.lng})`)
+  } else if (mode.kind === 'bbox') {
+    console.log(`🗺️  Processing BBOX: lat ${mode.minLat}..${mode.maxLat}, lng ${mode.minLng}..${mode.maxLng}`)
   } else {
     console.log('🌍 Processing FULL EARTH - this will take a while!')
-    console.log('   Use --test flag to process a small region first')
+    console.log('   Use --test, --tile, or --bbox for smaller runs')
   }
-  processAllTiles(testMode).catch(console.error)
+
+  processAllTiles(mode).catch(console.error)
 }
 
 export { processAllTiles, extractTile, elevationToWebP, uploadTile }

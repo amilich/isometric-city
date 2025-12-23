@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npx convex codegen",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

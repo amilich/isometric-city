@@ -172,8 +172,8 @@ async function loadElevationTileFromConvex(tileLat: number, tileLng: number): Pr
   const convex = new ConvexHttpClient(convexUrl)
   
   // Get tile file URL from Convex
-  const { api } = await import('../convex/_generated/api')
-  const tileData = await convex.query(api.elevation.getTile, {
+  // Use string-based query to avoid build-time import issues
+  const tileData = await (convex as any).query('elevation:getTile', {
     lat: tileLat,
     lng: tileLng,
   })

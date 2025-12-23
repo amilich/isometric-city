@@ -23,9 +23,17 @@ interface LocationSelectorProps {
   onSelectLocation: (lat: number, lng: number) => void;
   onStartRandom: () => void;
   isMobile?: boolean;
+  disabled?: boolean;
+  busyLabel?: string;
 }
 
-export function LocationSelector({ onSelectLocation, onStartRandom, isMobile = false }: LocationSelectorProps) {
+export function LocationSelector({
+  onSelectLocation,
+  onStartRandom,
+  isMobile = false,
+  disabled = false,
+  busyLabel,
+}: LocationSelectorProps) {
   const [showCustom, setShowCustom] = useState(false);
   const [customLat, setCustomLat] = useState('');
   const [customLng, setCustomLng] = useState('');
@@ -65,8 +73,9 @@ export function LocationSelector({ onSelectLocation, onStartRandom, isMobile = f
       <Button 
         onClick={onStartRandom}
         className={buttonClass}
+        disabled={disabled}
       >
-        Start Random City
+        {disabled ? (busyLabel ?? 'Starting…') : 'Start Random City'}
       </Button>
       
       <div className="text-xs font-medium text-white/40 uppercase tracking-wider mb-1 mt-2">
@@ -79,6 +88,7 @@ export function LocationSelector({ onSelectLocation, onStartRandom, isMobile = f
           onClick={() => onSelectLocation(location.lat, location.lng)}
           variant="outline"
           className={presetButtonClass}
+          disabled={disabled}
         >
           Start in {location.name}
         </Button>
@@ -89,6 +99,7 @@ export function LocationSelector({ onSelectLocation, onStartRandom, isMobile = f
           onClick={() => setShowCustom(true)}
           variant="outline"
           className={presetButtonClass}
+          disabled={disabled}
         >
           Custom Location
         </Button>
@@ -101,6 +112,7 @@ export function LocationSelector({ onSelectLocation, onStartRandom, isMobile = f
             onChange={(e) => setCustomLat(e.target.value)}
             className="bg-white/5 border-white/15 text-white placeholder:text-white/40 rounded-none"
             step="any"
+            disabled={disabled}
           />
           <Input
             type="number"
@@ -109,12 +121,14 @@ export function LocationSelector({ onSelectLocation, onStartRandom, isMobile = f
             onChange={(e) => setCustomLng(e.target.value)}
             className="bg-white/5 border-white/15 text-white placeholder:text-white/40 rounded-none"
             step="any"
+            disabled={disabled}
           />
           <div className="flex gap-2">
             <Button
               onClick={handleCustomLocation}
               variant="outline"
               className="flex-1 py-2 text-sm font-light bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
+              disabled={disabled}
             >
               Start
             </Button>
@@ -126,6 +140,7 @@ export function LocationSelector({ onSelectLocation, onStartRandom, isMobile = f
               }}
               variant="outline"
               className="flex-1 py-2 text-sm font-light bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none"
+              disabled={disabled}
             >
               Cancel
             </Button>

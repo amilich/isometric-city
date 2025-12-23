@@ -235,6 +235,9 @@ const SAVED_CITY_PREFIX = 'isocity-city-';
 function HomePageContent() {
   const [showGame, setShowGame] = useState(false);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+  const [hasSave, setHasSave] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [startingLabel, setStartingLabel] = useState<string | null>(null);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
   const { newGame, newGameFromEarth } = useGame();
@@ -243,13 +246,15 @@ function HomePageContent() {
   useEffect(() => {
     const checkSavedGame = () => {
       setSavedCities(loadSavedCities());
-      if (hasSavedGame()) {
-        setShowGame(true);
-      }
+      setHasSave(hasSavedGame());
     };
     // Use requestAnimationFrame to avoid synchronous setState in effect
     requestAnimationFrame(checkSavedGame);
   }, []);
+
+  const handleContinue = () => {
+    setShowGame(true);
+  };
 
   // Handle exit from game - refresh saved cities list
   const handleExitGame = () => {
@@ -271,13 +276,27 @@ function HomePageContent() {
   };
 
   const handleStartRandom = () => {
-    newGame('IsoCity');
-    setShowGame(true);
+    setIsStarting(true);
+    setStartingLabel('Starting random city…');
+    try {
+      newGame('IsoCity');
+      setShowGame(true);
+    } finally {
+      setIsStarting(false);
+      setStartingLabel(null);
+    }
   };
 
   const handleSelectEarthLocation = async (lat: number, lng: number) => {
-    await newGameFromEarth(lat, lng, 'IsoCity');
-    setShowGame(true);
+    setIsStarting(true);
+    setStartingLabel(`Loading Earth terrain…`);
+    try {
+      await newGameFromEarth(lat, lng, 'IsoCity');
+      setShowGame(true);
+    } finally {
+      setIsStarting(false);
+      setStartingLabel(null);
+    }
   };
 
   if (showGame) {
@@ -292,6 +311,13 @@ function HomePageContent() {
   if (isMobile) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
+        {isStarting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="px-4 py-3 border border-white/15 bg-black/60 text-white rounded-none">
+              {startingLabel ?? 'Starting…'}
+            </div>
+          </div>
+        )}
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
           IsoCity
@@ -304,10 +330,22 @@ function HomePageContent() {
         
         {/* Buttons */}
         <div className="flex flex-col gap-3 w-full max-w-xs">
+          {hasSave && (
+            <Button
+              onClick={handleContinue}
+              className="w-full py-6 text-xl font-light tracking-wide bg-white/15 hover:bg-white/25 text-white border border-white/25 rounded-none transition-all duration-300"
+              disabled={isStarting}
+            >
+              Continue
+            </Button>
+          )}
+
           <LocationSelector
             onSelectLocation={handleSelectEarthLocation}
             onStartRandom={handleStartRandom}
             isMobile={true}
+            disabled={isStarting}
+            busyLabel={startingLabel ?? undefined}
           />
           
           <Button 
@@ -347,6 +385,13 @@ function HomePageContent() {
   // Desktop landing page
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
+      {isStarting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="px-4 py-3 border border-white/15 bg-black/60 text-white rounded-none">
+            {startingLabel ?? 'Starting…'}
+          </div>
+        </div>
+      )}
       <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
         
         {/* Left - Title and Start Button */}
@@ -355,10 +400,22 @@ function HomePageContent() {
             IsoCity
           </h1>
           <div className="flex flex-col gap-3">
+            {hasSave && (
+              <Button
+                onClick={handleContinue}
+                className="w-64 py-6 text-xl font-light tracking-wide bg-white/15 hover:bg-white/25 text-white border border-white/25 rounded-none transition-all duration-300"
+                disabled={isStarting}
+              >
+                Continue
+              </Button>
+            )}
+
             <LocationSelector
               onSelectLocation={handleSelectEarthLocation}
               onStartRandom={handleStartRandom}
               isMobile={false}
+              disabled={isStarting}
+              busyLabel={startingLabel ?? undefined}
             />
             <Button 
               onClick={async () => {

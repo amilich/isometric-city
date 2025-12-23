@@ -54,10 +54,9 @@ export const getTile = query({
     }
 
     // Get file URL from Convex storage
-    const fileUrl = await ctx.storage.getUrl(tile.fileId)
+    const url = await ctx.storage.getUrl(tile.fileId)
     return {
-      fileId: tile.fileId,
-      fileUrl,
+      url,
       lat: tile.lat,
       lng: tile.lng,
       size: tile.size,
@@ -65,39 +64,35 @@ export const getTile = query({
   },
 })
 
-// Batch get multiple tiles
+// Get tiles in a bounding box
 export const getTiles = query({
   args: {
-    tiles: v.array(v.object({
-      lat: v.number(),
-      lng: v.number(),
-    })),
+    minLat: v.number(),
+    maxLat: v.number(),
+    minLng: v.number(),
+    maxLng: v.number(),
   },
   handler: async (ctx, args) => {
-    const results = await Promise.all(
-      args.tiles.map(async (tile) => {
-        const record = await ctx.db
-          .query("elevationTiles")
-          .withIndex("by_lat_lng", (q) => 
-            q.eq("lat", tile.lat).eq("lng", tile.lng)
-          )
-          .first()
+    const tiles = await ctx.db
+      .query("elevationTiles")
+      .filter((q) =>
+        q.and(
+          q.gte(q.field("lat"), args.minLat),
+          q.lte(q.field("lat"), args.maxLat),
+          q.gte(q.field("lng"), args.minLng),
+          q.lte(q.field("lng"), args.maxLng)
+        )
+      )
+      .collect()
 
-        if (!record) {
-          return { lat: tile.lat, lng: tile.lng, fileUrl: null }
-        }
-
-        const fileUrl = await ctx.storage.getUrl(record.fileId)
-        return {
-          lat: record.lat,
-          lng: record.lng,
-          fileUrl,
-          fileId: record.fileId,
-        }
-      })
+    return Promise.all(
+      tiles.map(async (tile) => ({
+        lat: tile.lat,
+        lng: tile.lng,
+        url: await ctx.storage.getUrl(tile.fileId),
+        size: tile.size,
+      }))
     )
-
-    return results
   },
 })
 

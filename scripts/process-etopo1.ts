@@ -159,10 +159,11 @@ async function uploadTile(lat: number, lng: number, webpBuffer: Buffer) {
   const { storageId } = await uploadResponse.json()
   
   // Store metadata
-  await (convex as any).mutation('elevation:completeUpload', {
+  const { api } = await import('../convex/_generated/api')
+  await convex.mutation(api.elevation.completeUpload, {
     lat,
     lng,
-    storageId,
+    storageId: storageId as any,
     size: webpBuffer.length,
   })
   

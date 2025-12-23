@@ -172,17 +172,27 @@ async function loadElevationTileFromConvex(tileLat: number, tileLng: number): Pr
   const convex = new ConvexHttpClient(convexUrl)
   
   // Get tile file URL from Convex
-  const tileData = await (convex as any).query('elevation:getTile', {
+  const { api } = await import('../convex/_generated/api')
+  const tileData = await convex.query(api.elevation.getTile, {
     lat: tileLat,
     lng: tileLng,
   })
   
-  if (!tileData || !tileData.fileUrl) {
-    throw new Error(`Elevation tile not found: (${tileLat}, ${tileLng})`)
+  if (!tileData || !tileData.url) {
+    console.warn(`Elevation tile not found in Convex: (${tileLat}, ${tileLng}). Using fallback elevation.`)
+    // Return a flat elevation array (sea level) as fallback
+    const fallback: number[][] = []
+    for (let y = 0; y < ELEVATION_TILE_SIZE; y++) {
+      fallback[y] = []
+      for (let x = 0; x < ELEVATION_TILE_SIZE; x++) {
+        fallback[y][x] = 0 // Sea level
+      }
+    }
+    return fallback
   }
   
   // Fetch WebP file
-  const response = await fetch(tileData.fileUrl)
+  const response = await fetch(tileData.url)
   if (!response.ok) {
     throw new Error(`Failed to fetch elevation tile: ${response.statusText}`)
   }

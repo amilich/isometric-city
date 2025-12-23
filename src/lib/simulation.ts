@@ -921,7 +921,10 @@ export async function createInitialGameStateFromEarth(
   // Apply hand-tuned overlays for preset cities (NYC/SF MVP) so geography looks sane.
   const presetCity = detectPresetCity(centerLat, centerLng);
   if (presetCity) {
+    console.log(`[Earth] Detected preset city: ${presetCity} at (${centerLat}, ${centerLng})`);
     applyCityOverlay(grid, presetCity);
+  } else {
+    console.log(`[Earth] No preset city detected for (${centerLat}, ${centerLng})`);
   }
 
   // Extract water bodies from the chunk region

@@ -73,20 +73,20 @@ export const getTiles = query({
     maxLng: v.number(),
   },
   handler: async (ctx, args) => {
-    const tiles = await ctx.db
-      .query("elevationTiles")
-      .filter((q) =>
-        q.and(
-          q.gte(q.field("lat"), args.minLat),
-          q.lte(q.field("lat"), args.maxLat),
-          q.gte(q.field("lng"), args.minLng),
-          q.lte(q.field("lng"), args.maxLng)
-        )
-      )
-      .collect()
+    // Query all tiles and filter in memory (Convex filter has limitations)
+    // For better performance with many tiles, we'd need a different index structure
+    const allTiles = await ctx.db.query("elevationTiles").collect()
+    
+    const filtered = allTiles.filter(
+      (tile) =>
+        tile.lat >= args.minLat &&
+        tile.lat <= args.maxLat &&
+        tile.lng >= args.minLng &&
+        tile.lng <= args.maxLng
+    )
 
     return Promise.all(
-      tiles.map(async (tile) => ({
+      filtered.map(async (tile) => ({
         lat: tile.lat,
         lng: tile.lng,
         url: await ctx.storage.getUrl(tile.fileId),

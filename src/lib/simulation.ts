@@ -857,6 +857,7 @@ export async function createInitialGameStateFromEarth(
   const { loadEarthChunk, getChunkKey } = await import('./earthChunks');
   const { getElevation } = await import('./earthElevation');
   const { determineBiome, createTerrainBuilding } = await import('./biomes');
+  const { applyCityOverlay, detectPresetCity } = await import('./cityOverlays');
 
   // Get the chunk containing the center point
   const centerChunk = getChunkForLatLng(centerLat, centerLng);
@@ -916,7 +917,13 @@ export async function createInitialGameStateFromEarth(
       }
     }
   }
-  
+
+  // Apply hand-tuned overlays for preset cities (NYC/SF MVP) so geography looks sane.
+  const presetCity = detectPresetCity(centerLat, centerLng);
+  if (presetCity) {
+    applyCityOverlay(grid, presetCity);
+  }
+
   // Extract water bodies from the chunk region
   const waterBodies: WaterBody[] = [];
   // Simple water body detection from the grid
@@ -957,8 +964,9 @@ export async function createInitialGameStateFromEarth(
           
           waterBodies.push({
             id: `water-${waterBodies.length}`,
-            name: generateWaterName('lake'),
-            type: waterTiles.length > 50 ? 'ocean' : 'lake',
+            // Deterministic naming (no "Caspian Sea" in San Francisco)
+            name: (waterTiles.some((t) => t.x === 0 || t.y === 0 || t.x === gridSize - 1 || t.y === gridSize - 1) || waterTiles.length > 200) ? 'Ocean' : 'Lake',
+            type: (waterTiles.some((t) => t.x === 0 || t.y === 0 || t.x === gridSize - 1 || t.y === gridSize - 1) || waterTiles.length > 200) ? 'ocean' : 'lake',
             tiles: waterTiles,
             centerX: Math.round(avgX),
             centerY: Math.round(avgY),

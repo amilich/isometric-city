@@ -10,8 +10,11 @@ import { BuildingType } from '@/types/game'
 export type Biome = 'ocean' | 'coast' | 'desert' | 'grassland' | 'forest' | 'tundra' | 'mountain'
 
 // Elevation thresholds (in meters)
-const OCEAN_THRESHOLD = 0 // Below sea level or at sea level
-const COAST_THRESHOLD = 10 // 0-10m above sea level
+// NOTE: elevation tiles are currently quantized (8-bit) which can push
+// near-sea-level land slightly below 0. Use a negative threshold to avoid
+// drowning coastal cities (NYC/SF/etc).
+const OCEAN_THRESHOLD = -80 // treat <= -80m as ocean water
+const COAST_THRESHOLD = 40 // -80m..40m is coastal band
 const MOUNTAIN_THRESHOLD = 2000 // Above 2000m
 
 // Latitude thresholds (absolute value, degrees)
@@ -69,7 +72,7 @@ export function createTerrainBuilding(biome: Biome, elevation: number): Building
     
     case 'coast':
       // Mix of water and grass near coast
-      return elevation < 5 ? 'water' : 'grass'
+      return elevation < 0 ? 'water' : 'grass'
     
     case 'desert':
       // Desert is represented as grass in the game (no desert-specific sprite)

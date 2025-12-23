@@ -4,9 +4,13 @@
 // Handles loading and caching of sprite images with optional background filtering
 
 // Background color to filter from sprite sheets
+// AI-generated backgrounds like those from Nano Banana Pro produce near-red colors
+// (around RGB 248,6,5) rather than pure red (255,0,0).
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
 // Color distance threshold - pixels within this distance will be made transparent
-const COLOR_THRESHOLD = 155; // Adjust this value to be more/less aggressive
+// A threshold of 50 captures all background variation while preserving actual
+// image content like brick textures, dark reds, and terracotta colors.
+const COLOR_THRESHOLD = 50;
 
 // Image cache for building sprites
 const imageCache = new Map<string, HTMLImageElement>();

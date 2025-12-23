@@ -12,8 +12,11 @@ const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
 
 // Background color to filter from sprite sheets (red)
+// AI-generated backgrounds like those from Nano Banana Pro produce near-red colors
+// (around RGB 248,6,5) rather than pure red (255,0,0). A threshold of 50 captures
+// all background variation while preserving actual image content like brick textures.
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
-const COLOR_THRESHOLD = 155;
+const COLOR_THRESHOLD = 50;
 
 // Filter red background from sprite sheet
 function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {

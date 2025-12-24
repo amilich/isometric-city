@@ -8,6 +8,9 @@ const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
 // Color distance threshold - pixels within this distance will be made transparent
 const COLOR_THRESHOLD = 155; // Adjust this value to be more/less aggressive
 
+// Toggle verbose console logging for image processing
+const DEBUG_IMAGE_LOADING = false;
+
 // Image cache for building sprites
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -62,76 +65,61 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 export function filterBackgroundColor(img: HTMLImageElement, threshold: number = COLOR_THRESHOLD): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     try {
-      console.log('Starting background color filtering...', { 
-        imageSize: `${img.naturalWidth || img.width}x${img.naturalHeight || img.height}`,
-        threshold,
-        backgroundColor: BACKGROUND_COLOR
-      });
-      
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+
+      if (DEBUG_IMAGE_LOADING) {
+        // eslint-disable-next-line no-console
+        console.debug('[imageLoader] Filtering background color', { width, height, threshold, background: BACKGROUND_COLOR });
+      }
+
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      
-      const ctx = canvas.getContext('2d');
+      canvas.width = width;
+      canvas.height = height;
+
+      // `willReadFrequently` helps browsers optimize for getImageData-heavy usage
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) {
         reject(new Error('Could not get canvas context'));
         return;
       }
-      
-      // Draw the original image to the canvas
+
       ctx.drawImage(img, 0, 0);
-      
-      // Get image data
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
-      
-      console.log(`Processing ${data.length / 4} pixels...`);
-      
-      // Process each pixel
-      let filteredCount = 0;
+
+      // Compare squared distances to avoid expensive sqrt/pow in a tight loop
+      const thresholdSq = threshold * threshold;
+      const br = BACKGROUND_COLOR.r;
+      const bg = BACKGROUND_COLOR.g;
+      const bb = BACKGROUND_COLOR.b;
+
       for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        // Calculate color distance using Euclidean distance in RGB space
-        const distance = Math.sqrt(
-          Math.pow(r - BACKGROUND_COLOR.r, 2) +
-          Math.pow(g - BACKGROUND_COLOR.g, 2) +
-          Math.pow(b - BACKGROUND_COLOR.b, 2)
-        );
-        
-        // If the color is close to the background color, make it transparent
-        if (distance <= threshold) {
-          data[i + 3] = 0; // Set alpha to 0 (transparent)
-          filteredCount++;
+        // Skip already transparent pixels
+        if (data[i + 3] === 0) continue;
+
+        const dr = data[i] - br;
+        const dg = data[i + 1] - bg;
+        const db = data[i + 2] - bb;
+
+        if (dr * dr + dg * dg + db * db <= thresholdSq) {
+          data[i + 3] = 0; // alpha -> transparent
         }
       }
-      
-      // Debug: log filtering results
-      const totalPixels = data.length / 4;
-      const percentage = filteredCount > 0 ? ((filteredCount / totalPixels) * 100).toFixed(2) : '0.00';
-      console.log(`Filtered ${filteredCount} pixels (${percentage}%) from sprite sheet`);
-      
-      // Put the modified image data back
+
       ctx.putImageData(imageData, 0, 0);
-      
-      // Create a new image from the processed canvas
+
       const filteredImg = new Image();
-      filteredImg.onload = () => {
-        console.log('Filtered image created successfully');
-        resolve(filteredImg);
-      };
-      filteredImg.onerror = (error) => {
-        console.error('Failed to create filtered image:', error);
-        reject(new Error('Failed to create filtered image'));
-      };
+      filteredImg.onload = () => resolve(filteredImg);
+      filteredImg.onerror = () => reject(new Error('Failed to create filtered image'));
       filteredImg.src = canvas.toDataURL();
     } catch (error) {
       reject(error);
     }
   });
 }
+
 
 /**
  * Loads an image and applies background color filtering if it's a sprite sheet
@@ -142,20 +130,31 @@ export function filterBackgroundColor(img: HTMLImageElement, threshold: number =
 export function loadSpriteImage(src: string, applyFilter: boolean = true): Promise<HTMLImageElement> {
   // Check if this is already cached (as filtered version)
   const cacheKey = applyFilter ? `${src}_filtered` : src;
-  if (imageCache.has(cacheKey)) {
-    return Promise.resolve(imageCache.get(cacheKey)!);
+  const cached = imageCache.get(cacheKey);
+  if (cached) {
+    return Promise.resolve(cached);
   }
-  
+
   return loadImage(src).then((img) => {
-    if (applyFilter) {
-      return filterBackgroundColor(img).then((filteredImg: HTMLImageElement) => {
+    if (!applyFilter) return img;
+
+    return filterBackgroundColor(img)
+      .then((filteredImg) => {
         imageCache.set(cacheKey, filteredImg);
+        notifyImageLoaded(); // Notify listeners that the filtered version is ready
         return filteredImg;
+      })
+      .catch((error) => {
+        // If filtering fails for any reason, fall back to the unfiltered sprite sheet
+        // eslint-disable-next-line no-console
+        console.error('[imageLoader] Failed to filter sprite sheet background:', error);
+        imageCache.set(cacheKey, img);
+        notifyImageLoaded();
+        return img;
       });
-    }
-    return img;
   });
 }
+
 
 /**
  * Check if an image is cached

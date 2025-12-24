@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 export type CheatTrigger = 
   | { type: 'konami'; amount: 50000 }
   | { type: 'vinnie' }
-  | { type: 'motherlode'; amount: 50000 }
+  | { type: 'motherlode'; amount: 1000000 }
   | { type: 'fund'; amount: 10000 };
 
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -84,7 +84,7 @@ export function useCheatCodes() {
           typedBufferRef.current = '';
         } else if (normalizedBuffer.includes('motherlode')) {
           console.log('🎮 Cheat activated: motherlode');
-          setTriggeredCheat({ type: 'motherlode', amount: 50000 });
+          setTriggeredCheat({ type: 'motherlode', amount: 1000000 });
           typedBufferRef.current = '';
         } else if (normalizedBuffer.includes('fund')) {
           console.log('🎮 Cheat activated: fund');

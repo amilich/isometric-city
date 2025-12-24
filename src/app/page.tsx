@@ -18,32 +18,38 @@ const COLOR_THRESHOLD = 155;
 // Filter red background from sprite sheet
 function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  
-  const ctx = canvas.getContext('2d');
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+  canvas.width = width;
+  canvas.height = height;
+
+  // `willReadFrequently` helps browsers optimize for getImageData-heavy usage
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return canvas;
-  
+
   ctx.drawImage(img, 0, 0);
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
-  
+
+  // Compare squared distances to avoid sqrt/pow in a tight loop
+  const thresholdSq = COLOR_THRESHOLD * COLOR_THRESHOLD;
+  const br = BACKGROUND_COLOR.r;
+  const bg = BACKGROUND_COLOR.g;
+  const bb = BACKGROUND_COLOR.b;
+
   for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    
-    const distance = Math.sqrt(
-      Math.pow(r - BACKGROUND_COLOR.r, 2) +
-      Math.pow(g - BACKGROUND_COLOR.g, 2) +
-      Math.pow(b - BACKGROUND_COLOR.b, 2)
-    );
-    
-    if (distance <= COLOR_THRESHOLD) {
+    // Skip already transparent pixels
+    if (data[i + 3] === 0) continue;
+
+    const dr = data[i] - br;
+    const dg = data[i + 1] - bg;
+    const db = data[i + 2] - bb;
+
+    if (dr * dr + dg * dg + db * db <= thresholdSq) {
       data[i + 3] = 0; // Make transparent
     }
   }
-  
+
   ctx.putImageData(imageData, 0, 0);
   return canvas;
 }
@@ -94,8 +100,19 @@ function loadSavedCities(): SavedCityMeta[] {
 function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: number; cols?: number; cellSize?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [filteredSheet, setFilteredSheet] = useState<HTMLCanvasElement | null>(null);
-  const spritePack = useMemo(() => getSpritePack(DEFAULT_SPRITE_PACK_ID), []);
-  
+  const [spritePackId, setSpritePackId] = useState(DEFAULT_SPRITE_PACK_ID);
+  const spritePack = useMemo(() => getSpritePack(spritePackId), [spritePackId]);
+
+  // Try to match the user's last selected sprite pack on the landing page
+  useEffect(() => {
+    try {
+      const savedPack = localStorage.getItem('isocity-sprite-pack');
+      if (savedPack) setSpritePackId(savedPack);
+    } catch {
+      // Ignore storage errors (private mode, blocked storage, etc.)
+    }
+  }, []);
+
   // Get random sprite keys from the sprite order, pre-validated to have valid coords
   const randomSpriteKeys = useMemo(() => {
     // Filter to only sprites that have valid building type mappings
@@ -110,6 +127,7 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
   
   // Load and filter sprite sheet
   useEffect(() => {
+    setFilteredSheet(null);
     const img = new Image();
     img.onload = () => {
       const filtered = filterBackgroundColor(img);
@@ -173,7 +191,15 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4, 4);
+      const maybeRoundRect = (
+        ctx as unknown as { roundRect?: (x: number, y: number, w: number, h: number, r: number) => void }
+      ).roundRect;
+      if (typeof maybeRoundRect === 'function') {
+        maybeRoundRect.call(ctx, cellX + 2, cellY + 2, cellSize - 4, cellSize - 4, 4);
+      } else {
+        // Fallback for older browsers that don't support CanvasRenderingContext2D.roundRect
+        ctx.rect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4);
+      }
       ctx.fill();
       ctx.stroke();
       

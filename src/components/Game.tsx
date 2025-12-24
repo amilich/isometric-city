@@ -12,6 +12,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCheatCodes } from '@/hooks/useCheatCodes';
 import { VinnieDialog } from '@/components/VinnieDialog';
 import { CommandMenu } from '@/components/ui/CommandMenu';
+import { NotificationsToasts } from '@/components/NotificationsToasts';
 
 // Import game components
 import { OverlayMode } from '@/components/game/types';
@@ -154,38 +155,55 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   }, [state.activePanel, state.selectedTool, state.speed, selectedTile, setActivePanel, setTool, setSpeed, overlayMode]);
 
   // Handle cheat code triggers
-  useEffect(() => {
-    if (!triggeredCheat) return;
+useEffect(() => {
+  if (!triggeredCheat) return;
 
-    switch (triggeredCheat.type) {
-      case 'konami':
-        addMoney(triggeredCheat.amount);
-        addNotification(
-          'Retro Cheat Activated!',
-          'Your accountants are confused but not complaining. You received $50,000!',
-          'trophy'
-        );
-        clearTriggeredCheat();
-        break;
+  const fmt = (amount: number) => `$${amount.toLocaleString()}`;
 
-      case 'motherlode':
-        addMoney(triggeredCheat.amount);
-        addNotification(
-          'Motherlode!',
-          'Your treasury just got a lot heavier. You received $1,000,000!',
-          'trophy'
-        );
-        clearTriggeredCheat();
-        break;
-
-      case 'vinnie':
-        // Vinnie dialog is handled by VinnieDialog component
-        clearTriggeredCheat();
-        break;
+  switch (triggeredCheat.type) {
+    case 'konami': {
+      const amount = triggeredCheat.amount;
+      addMoney(amount);
+      addNotification(
+        'Retro Cheat Activated!',
+        `Your accountants are confused but not complaining. You received ${fmt(amount)}!`,
+        'trophy'
+      );
+      clearTriggeredCheat();
+      break;
     }
-  }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
-  
-  // Track barge deliveries to show occasional notifications
+
+    case 'motherlode': {
+      const amount = triggeredCheat.amount;
+      addMoney(amount);
+      addNotification(
+        'Motherlode!',
+        `Your treasury just got a lot heavier. You received ${fmt(amount)}!`,
+        'trophy'
+      );
+      clearTriggeredCheat();
+      break;
+    }
+
+    case 'fund': {
+      const amount = triggeredCheat.amount;
+      addMoney(amount);
+      addNotification(
+        'Funds Secured',
+        `A small grant came through. You received ${fmt(amount)}!`,
+        'trophy'
+      );
+      clearTriggeredCheat();
+      break;
+    }
+
+    case 'vinnie':
+      // Vinnie dialog is handled by VinnieDialog component
+      clearTriggeredCheat();
+      break;
+  }
+}, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
+// Track barge deliveries to show occasional notifications
   const bargeDeliveryCountRef = useRef(0);
   
   // Handle barge cargo delivery - adds money to the city treasury
@@ -209,6 +227,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     return (
       <TooltipProvider>
         <div className="w-full h-full overflow-hidden bg-background flex flex-col">
+          <NotificationsToasts isMobile={true} />
           {/* Mobile Top Bar */}
           <MobileTopBar 
             selectedTile={selectedTile && state.selectedTool === 'select' ? state.grid[selectedTile.y][selectedTile.x] : null}
@@ -251,6 +270,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   return (
     <TooltipProvider>
       <div className="w-full h-full min-h-[720px] overflow-hidden bg-background flex">
+        <NotificationsToasts isMobile={false} />
         <Sidebar onExit={onExit} />
         
         <div className="flex-1 flex flex-col">

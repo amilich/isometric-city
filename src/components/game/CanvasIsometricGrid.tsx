@@ -256,7 +256,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const [roadDrawDirection, setRoadDrawDirection] = useState<'h' | 'v' | null>(null);
   const placedRoadTilesRef = useRef<Set<string>>(new Set());
   // Track progressive image loading - start true to render immediately with placeholders
-  const [imagesLoaded, setImagesLoaded] = useState(true);
+  const [imagesLoaded] = useState(true);
   // Counter to trigger re-renders when new images become available
   const [imageLoadVersion, setImageLoadVersion] = useState(0);
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });

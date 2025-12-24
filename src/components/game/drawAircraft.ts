@@ -224,6 +224,29 @@ export function drawAirplanes(
   const planeSprite = getCachedImage(AIRPLANE_SPRITE_CACHE_KEY, false);
 
   for (const plane of airplanes) {
+    // Draw ground trail (tire smoke/dust) first
+    if (plane.groundTrail.length > 0) {
+      ctx.save();
+      for (const particle of plane.groundTrail) {
+        if (
+          particle.x < viewBounds.viewLeft ||
+          particle.x > viewBounds.viewRight ||
+          particle.y < viewBounds.viewTop ||
+          particle.y > viewBounds.viewBottom
+        ) {
+          continue;
+        }
+
+        const size = 2 + particle.age * 10;
+        const opacity = particle.opacity * 0.25 * Math.max(0, 1 - plane.altitude);
+        ctx.fillStyle = `rgba(120, 120, 120, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     // Draw contrails first (behind plane)
     if (plane.contrail.length > 0) {
       ctx.save();

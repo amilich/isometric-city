@@ -63,6 +63,8 @@ export const AIRPLANE_MIN_POPULATION = 2000; // Minimum population required for 
 export const AIRPLANE_COLORS = ['#ffffff', '#1e40af', '#dc2626', '#059669', '#7c3aed']; // Airline liveries (fallback)
 export const CONTRAIL_MAX_AGE = 3.0; // seconds
 export const CONTRAIL_SPAWN_INTERVAL = 0.02; // seconds between contrail particles
+export const GROUND_TRAIL_MAX_AGE = 1.1; // seconds - tire smoke/dust during runway roll
+export const GROUND_TRAIL_SPAWN_INTERVAL = 0.035; // seconds between ground trail particles
 
 // Airplane sprite sheet configuration
 export const AIRPLANE_SPRITE_SRC = '/assets/sprites_red_water_new_planes.png';

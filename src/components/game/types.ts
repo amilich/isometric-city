@@ -23,7 +23,15 @@ export type Car = {
 };
 
 // Airplane types for airport animation
-export type AirplaneState = 'flying' | 'landing' | 'taking_off' | 'taxiing';
+export type AirplaneState =
+  | 'taxi_out'
+  | 'takeoff_roll'
+  | 'climb_out'
+  | 'flying'
+  | 'approach'
+  | 'flare'
+  | 'rollout'
+  | 'taxi_in';
 
 // Plane model types from the sprite sheet
 export type PlaneType = '737' | '777' | '747' | 'a380' | 'g650' | 'seaplane';
@@ -53,16 +61,32 @@ export type Airplane = {
   // Airport tile coordinates (for landing/takeoff reference)
   airportX: number;
   airportY: number;
-  // Progress for landing/takeoff (0-1)
+  // Progress accumulator for contrail spawning
   stateProgress: number;
   // Contrail particles
   contrail: ContrailParticle[];
+  // Ground trail particles (tire smoke/dust during takeoff/landing rolls)
+  groundTrail: WakeParticle[];
+  // Progress for ground trail spawning
+  groundTrailSpawnProgress: number;
   // Time until despawn (for flying planes)
   lifeTime: number;
+  // Timer for the current phase (seconds)
+  phaseTime: number;
   // Plane color/style (legacy, for fallback rendering)
   color: string;
   // Plane model type from sprite sheet
   planeType: PlaneType;
+  // Cached airport geometry in screen space (updated at phase transitions)
+  runwayStartX: number;
+  runwayStartY: number;
+  runwayEndX: number;
+  runwayEndY: number;
+  gateX: number;
+  gateY: number;
+  // Taxi path points (in screen space)
+  taxiPath: Array<{ x: number; y: number }>;
+  taxiPathIndex: number;
 };
 
 // Seaplane types for bay/water operations

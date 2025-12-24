@@ -170,18 +170,22 @@ export function useAircraftSystems(
         });
       } else {
         // Arrival: Start from distance, fly to approach, land on runway
-        // Calculate spawn point - spawn from the direction opposite to runway
+        // Landing direction is OPPOSITE to takeoff direction
+        const landingAngle = airport.runwayAngle + Math.PI;
+        
+        // Spawn the plane far away, coming from the direction it will land
+        // (spawn in the direction of landing approach, so plane flies toward runway)
         const approachDistance = currentGridSize * TILE_WIDTH * 0.6; // Approach from some distance
-        const spawnAngle = airport.runwayAngle + Math.PI; // Opposite direction
-        const startX = airport.runwayEndX + Math.cos(spawnAngle) * approachDistance;
-        const startY = airport.runwayEndY + Math.sin(spawnAngle) * approachDistance;
+        // Spawn position: offset from runway threshold in the direction planes approach FROM
+        const startX = airport.runwayEndX - Math.cos(landingAngle) * approachDistance;
+        const startY = airport.runwayEndY - Math.sin(landingAngle) * approachDistance;
         
         airplanesRef.current.push({
           id: airplaneIdRef.current++,
           x: startX,
           y: startY,
-          angle: airport.runwayAngle, // Already pointing toward runway
-          targetAngle: airport.runwayAngle,
+          angle: landingAngle, // Point toward runway threshold
+          targetAngle: landingAngle,
           state: 'flying',
           speed: AIRPLANE_CRUISE_SPEED_MIN + Math.random() * (AIRPLANE_CRUISE_SPEED_MAX - AIRPLANE_CRUISE_SPEED_MIN),
           altitude: 1,
@@ -404,18 +408,18 @@ export function useAircraftSystems(
             plane.angle = lerpAngle(plane.angle, plane.targetAngle, AIRPLANE_TURN_RATE * 0.5);
           } else {
             // Arrivals head toward runway for approach
+            // Landing direction is opposite to takeoff
+            const landingAngle = plane.runwayAngle + Math.PI;
             const distToRunwayEnd = Math.hypot(plane.x - plane.runwayEndX, plane.y - plane.runwayEndY);
             
             // Start approach when getting close
             if (distToRunwayEnd < TILE_WIDTH * 6) {
               plane.state = 'approaching';
-              // Set target angle to runway heading (land toward runway start)
-              plane.targetAngle = plane.runwayAngle;
+              // Set target angle to landing heading
+              plane.targetAngle = landingAngle;
             } else {
-              // Fly toward runway approach point
-              const approachPointX = plane.runwayEndX - Math.cos(plane.runwayAngle) * TILE_WIDTH * 4;
-              const approachPointY = plane.runwayEndY - Math.sin(plane.runwayAngle) * TILE_HEIGHT * 4;
-              plane.targetAngle = Math.atan2(approachPointY - plane.y, approachPointX - plane.x);
+              // Fly toward runway threshold (runwayEndX/Y is where planes touch down)
+              plane.targetAngle = Math.atan2(plane.runwayEndY - plane.y, plane.runwayEndX - plane.x);
               plane.angle = lerpAngle(plane.angle, plane.targetAngle, AIRPLANE_TURN_RATE * 0.8);
             }
           }
@@ -424,7 +428,9 @@ export function useAircraftSystems(
         
         case 'approaching': {
           // Line up with runway and begin descent
-          plane.targetAngle = plane.runwayAngle;
+          // Landing direction is opposite to takeoff
+          const landingAngle = plane.runwayAngle + Math.PI;
+          plane.targetAngle = landingAngle;
           plane.angle = lerpAngle(plane.angle, plane.targetAngle, AIRPLANE_TURN_RATE * 1.2);
           plane.speed = Math.max(AIRPLANE_APPROACH_SPEED, plane.speed - delta * 15);
           plane.altitude = Math.max(0.3, plane.altitude - AIRPLANE_DESCENT_RATE * delta);
@@ -434,9 +440,10 @@ export function useAircraftSystems(
           
           // Check if aligned and close enough for final approach
           const distToRunwayEnd = Math.hypot(plane.x - plane.runwayEndX, plane.y - plane.runwayEndY);
-          const angleDiff = Math.abs(plane.angle - plane.runwayAngle);
+          let angleDiff = Math.abs(plane.angle - landingAngle);
+          if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
           
-          if (distToRunwayEnd < TILE_WIDTH * 3 && angleDiff < 0.15) {
+          if (distToRunwayEnd < TILE_WIDTH * 3 && angleDiff < 0.2) {
             plane.state = 'final_approach';
           }
           break;
@@ -444,7 +451,8 @@ export function useAircraftSystems(
         
         case 'final_approach': {
           // Final descent to runway
-          plane.angle = plane.runwayAngle; // Lock to runway heading
+          const landingAngle = plane.runwayAngle + Math.PI;
+          plane.angle = landingAngle; // Lock to landing heading
           plane.speed = Math.max(AIRPLANE_FLARE_SPEED, plane.speed - delta * 10);
           plane.altitude = Math.max(AIRPLANE_FLARE_ALTITUDE, plane.altitude - AIRPLANE_DESCENT_RATE * 1.5 * delta);
           plane.pitchAngle = -0.05; // Slight nose down

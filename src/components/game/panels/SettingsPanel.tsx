@@ -126,17 +126,17 @@ export function SettingsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[400px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>Ayarlar</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Game Settings</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Oyun Ayarları</div>
             
             <div className="flex items-center justify-between py-2 gap-4">
               <div className="flex-1 min-w-0">
-                <Label>Disasters</Label>
-                <p className="text-muted-foreground text-xs">Enable random fires and disasters</p>
+                <Label>Afetler</Label>
+                <p className="text-muted-foreground text-xs">Rastgele yangınları ve afetleri etkinleştir</p>
               </div>
               <Switch
                 checked={disastersEnabled}
@@ -145,8 +145,8 @@ export function SettingsPanel() {
             </div>
             
             <div className="py-2">
-              <Label>Sprite Pack</Label>
-              <p className="text-muted-foreground text-xs mb-2">Choose building artwork style</p>
+              <Label>Görünüm Paketi</Label>
+              <p className="text-muted-foreground text-xs mb-2">Bina çizim stilini seç</p>
               <div className="grid grid-cols-1 gap-2">
                 {availableSpritePacks.map((pack) => (
                   <button
@@ -182,19 +182,19 @@ export function SettingsPanel() {
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">City Information</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Şehir Bilgileri</div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>City Name</span>
+                <span>Şehir Adı</span>
                 <span className="text-foreground">{cityName}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Grid Size</span>
+                <span>Izgara Boyutu</span>
                 <span className="text-foreground">{gridSize} x {gridSize}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Auto-Save</span>
-                <span className="text-green-400">Enabled</span>
+                <span>Otomatik Kayıt</span>
+                <span className="text-green-400">Etkin</span>
               </div>
             </div>
           </div>
@@ -203,8 +203,8 @@ export function SettingsPanel() {
           
           {/* Saved Cities Section */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Saved Cities</div>
-            <p className="text-muted-foreground text-xs mb-3">Save multiple cities and switch between them</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Kayıtlı Şehirler</div>
+            <p className="text-muted-foreground text-xs mb-3">Birden fazla şehri kaydet ve aralarında geçiş yap</p>
             
             {/* Save Current City Button */}
             <Button
@@ -216,7 +216,7 @@ export function SettingsPanel() {
                 setTimeout(() => setSaveCitySuccess(false), 2000);
               }}
             >
-              {saveCitySuccess ? '✓ City Saved!' : `Save "${cityName}"`}
+              {saveCitySuccess ? '✓ Şehir Kaydedildi!' : `Kaydet "${cityName}"`}
             </Button>
             
             {/* Saved Cities List */}
@@ -236,7 +236,7 @@ export function SettingsPanel() {
                         <Input
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
-                          placeholder="New city name..."
+                          placeholder="Yeni şehir adı..."
                           className="h-8 text-sm"
                           autoFocus
                         />
@@ -250,7 +250,7 @@ export function SettingsPanel() {
                               setRenameValue('');
                             }}
                           >
-                            Cancel
+                            İptal
                           </Button>
                           <Button
                             variant="default"
@@ -264,13 +264,13 @@ export function SettingsPanel() {
                               setRenameValue('');
                             }}
                           >
-                            Save
+                            Kaydet
                           </Button>
                         </div>
                       </div>
                     ) : cityToDelete?.id === city.id ? (
                       <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground text-center">Delete this city?</p>
+                        <p className="text-xs text-muted-foreground text-center">Bu şehri sil?</p>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -278,7 +278,7 @@ export function SettingsPanel() {
                             className="flex-1 h-7 text-xs"
                             onClick={() => setCityToDelete(null)}
                           >
-                            Cancel
+                            İptal
                           </Button>
                           <Button
                             variant="destructive"
@@ -289,7 +289,7 @@ export function SettingsPanel() {
                               setCityToDelete(null);
                             }}
                           >
-                            Delete
+                            Sil
                           </Button>
                         </div>
                       </div>
@@ -299,17 +299,17 @@ export function SettingsPanel() {
                           <div className="font-medium text-sm truncate flex-1">
                             {city.cityName}
                             {city.id === currentCityId && (
-                              <span className="ml-2 text-[10px] text-primary">(current)</span>
+                              <span className="ml-2 text-[10px] text-primary">(mevcut)</span>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-                          <span>Pop: {formatPopulation(city.population)}</span>
+                          <span>Nüfus: {formatPopulation(city.population)}</span>
                           <span>{formatMoney(city.money)}</span>
                           <span>{city.gridSize}×{city.gridSize}</span>
                         </div>
                         <div className="text-[10px] text-muted-foreground mb-2">
-                          Saved {formatDate(city.savedAt)}
+                          Kayıt {formatDate(city.savedAt)}
                         </div>
                         <div className="flex gap-2">
                           {city.id !== currentCityId && (
@@ -322,7 +322,7 @@ export function SettingsPanel() {
                                 setActivePanel('none');
                               }}
                             >
-                              Load
+                              Yükle
                             </Button>
                           )}
                           <Button
@@ -334,7 +334,7 @@ export function SettingsPanel() {
                               setRenameValue(city.cityName);
                             }}
                           >
-                            Rename
+                            Yeniden Adlandır
                           </Button>
                           <Button
                             variant="outline"
@@ -342,7 +342,7 @@ export function SettingsPanel() {
                             className="flex-1 h-7 text-xs hover:bg-destructive hover:text-destructive-foreground"
                             onClick={() => setCityToDelete(city)}
                           >
-                            Delete
+                            Sil
                           </Button>
                         </div>
                       </>
@@ -352,7 +352,7 @@ export function SettingsPanel() {
               </div>
             ) : (
               <p className="text-muted-foreground text-xs text-center py-3 border border-dashed rounded-md">
-                No saved cities yet.
+                Henüz kayıtlı şehir yok.
               </p>
             )}
           </div>
@@ -369,10 +369,10 @@ export function SettingsPanel() {
                   setActivePanel('none');
                 }}
               >
-                Restore {savedCityInfo.cityName}
+                Geri Yükle {savedCityInfo.cityName}
               </Button>
               <p className="text-muted-foreground text-xs text-center">
-                Your city was saved before viewing a shared city
+                Şehriniz paylaşılan bir şehri görüntülemeden önce kaydedildi
               </p>
               <Separator />
             </div>
@@ -384,15 +384,15 @@ export function SettingsPanel() {
               className="w-full"
               onClick={() => setShowNewGameConfirm(true)}
             >
-              Start New Game
+              Yeni Oyun Başlat
             </Button>
           ) : (
             <div className="space-y-3">
-              <p className="text-muted-foreground text-sm text-center">Are you sure? This will reset all progress.</p>
+              <p className="text-muted-foreground text-sm text-center">Emin misiniz? Bu işlem tüm ilerlemeyi sıfırlayacaktır.</p>
               <Input
                 value={newCityName}
                 onChange={(e) => setNewCityName(e.target.value)}
-                placeholder="New city name..."
+                placeholder="Yeni şehir adı..."
               />
               <div className="flex gap-2">
                 <Button
@@ -400,17 +400,17 @@ export function SettingsPanel() {
                   className="flex-1"
                   onClick={() => setShowNewGameConfirm(false)}
                 >
-                  Cancel
+                  İptal
                 </Button>
                 <Button
                   variant="destructive"
                   className="flex-1"
                   onClick={() => {
-                    newGame(newCityName || 'New City', gridSize);
+                    newGame(newCityName || 'Yeni Şehir', gridSize);
                     setActivePanel('none');
                   }}
                 >
-                  Reset
+                  Sıfırla
                 </Button>
               </div>
             </div>
@@ -419,23 +419,23 @@ export function SettingsPanel() {
           <Separator />
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Export Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Copy your game state to share or backup</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Oyunu Dışa Aktar</div>
+            <p className="text-muted-foreground text-xs mb-2">Paylaşmak veya yedeklemek için oyun durumunu kopyala</p>
             <Button
               variant="outline"
               className="w-full"
               onClick={handleCopyExport}
             >
-              {exportCopied ? '✓ Copied!' : 'Copy Game State'}
+              {exportCopied ? '✓ Kopyalandı!' : 'Oyun Durumunu Kopyala'}
             </Button>
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Paste a game state to load it</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Oyunu İçe Aktar</div>
+            <p className="text-muted-foreground text-xs mb-2">Yüklemek için bir oyun durumu yapıştırın</p>
             <textarea
               className="w-full h-20 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder="Paste game state here..."
+              placeholder="Oyun durumunu buraya yapıştırın..."
               value={importValue}
               onChange={(e) => {
                 setImportValue(e.target.value);
@@ -444,10 +444,10 @@ export function SettingsPanel() {
               }}
             />
             {importError && (
-              <p className="text-red-400 text-xs mt-1">Invalid game state. Please check and try again.</p>
+              <p className="text-red-400 text-xs mt-1">Geçersiz oyun durumu. Lütfen kontrol edip tekrar deneyin.</p>
             )}
             {importSuccess && (
-              <p className="text-green-400 text-xs mt-1">Game loaded successfully!</p>
+              <p className="text-green-400 text-xs mt-1">Oyun başarıyla yüklendi!</p>
             )}
             <Button
               variant="outline"
@@ -455,18 +455,18 @@ export function SettingsPanel() {
               onClick={handleImport}
               disabled={!importValue.trim()}
             >
-              Load Game State
+              Oyun Durumunu Yükle
             </Button>
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Developer Tools</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Geliştirici Araçları</div>
             <Button
               variant="outline"
               className="w-full"
               onClick={() => setShowSpriteTest(true)}
             >
-              Open Sprite Test View
+              Sprite Test Görünümünü Aç
             </Button>
             <Button
               variant="outline"
@@ -477,7 +477,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State
+              Örnek Durumu Yükle
             </Button>
             <Button
               variant="outline"
@@ -568,8 +568,8 @@ export function SettingsPanel() {
               Load Example State 9
             </Button>
             <div className="mt-4 pt-4 border-t border-border">
-              <Label>Day/Night Mode</Label>
-              <p className="text-muted-foreground text-xs mb-2">Override the time-of-day appearance without affecting time progression</p>
+              <Label>Gece/Gündüz Modu</Label>
+              <p className="text-muted-foreground text-xs mb-2">Zaman akışını etkilemeden günün saatini değiştir</p>
               <div className="flex rounded-md border border-border overflow-hidden">
                 {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
                   <button
@@ -581,9 +581,9 @@ export function SettingsPanel() {
                         : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {mode === 'auto' && 'Auto'}
-                    {mode === 'day' && 'Day'}
-                    {mode === 'night' && 'Night'}
+                    {mode === 'auto' && 'Otomatik'}
+                    {mode === 'day' && 'Gündüz'}
+                    {mode === 'night' && 'Gece'}
                   </button>
                 ))}
               </div>

@@ -26,12 +26,12 @@ import {
 
 // Tool category icons
 const CategoryIcons: Record<string, React.ReactNode> = {
-  'TOOLS': (
+  'ARAÇLAR': (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
     </svg>
   ),
-  'ZONES': (
+  'BÖLGELER': (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="3" y="3" width="7" height="7" />
       <rect x="14" y="3" width="7" height="7" />
@@ -39,7 +39,7 @@ const CategoryIcons: Record<string, React.ReactNode> = {
       <rect x="3" y="14" width="7" height="7" />
     </svg>
   ),
-  'SERVICES': (
+  'HİZMETLER': (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M3 21h18" />
       <path d="M5 21V7l8-4v18" />
@@ -50,14 +50,14 @@ const CategoryIcons: Record<string, React.ReactNode> = {
       <path d="M9 18v.01" />
     </svg>
   ),
-  'PARKS': <TreeIcon size={20} />,
-  'SPORTS': (
+  'PARKLAR': <TreeIcon size={20} />,
+  'SPOR': (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v12M6 12h12" />
     </svg>
   ),
-  'RECREATION': (
+  'EĞLENCE': (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="10" />
       <path d="M8 14s1.5 2 4 2 4-2 4-2" />
@@ -65,8 +65,8 @@ const CategoryIcons: Record<string, React.ReactNode> = {
       <line x1="15" y1="9" x2="15.01" y2="9" />
     </svg>
   ),
-  'WATERFRONT': <WaterIcon size={20} />,
-  'COMMUNITY': (
+  'SAHİL': <WaterIcon size={20} />,
+  'TOPLULUK': (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
@@ -74,8 +74,8 @@ const CategoryIcons: Record<string, React.ReactNode> = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ),
-  'UTILITIES': <PowerIcon size={20} />,
-  'SPECIAL': (
+  'ALTYAPI': <PowerIcon size={20} />,
+  'ÖZEL': (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
@@ -190,16 +190,16 @@ const QuickToolIcons: Partial<Record<Tool, React.ReactNode>> = {
 };
 
 const toolCategories = {
-  'TOOLS': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
-  'ZONES': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
-  'UTILITIES': ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
-  'SERVICES': ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[],
-  'PARKS': ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[],
-  'SPORTS': ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[],
-  'RECREATION': ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[],
-  'WATERFRONT': ['marina_docks_small', 'pier_large'] as Tool[],
-  'COMMUNITY': ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[],
-  'SPECIAL': ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[],
+  'ARAÇLAR': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
+  'BÖLGELER': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
+  'ALTYAPI': ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
+  'HİZMETLER': ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[],
+  'PARKLAR': ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[],
+  'SPOR': ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[],
+  'EĞLENCE': ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[],
+  'SAHİL': ['marina_docks_small', 'pier_large'] as Tool[],
+  'TOPLULUK': ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[],
+  'ÖZEL': ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[],
 };
 
 type OverlayMode = 'none' | 'power' | 'water' | 'fire' | 'police' | 'health' | 'education' | 'subway';
@@ -353,7 +353,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
             {/* City Management section at top */}
             <div className="p-3 border-b border-border flex-shrink-0">
               <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                City Management
+                Şehir Yönetimi
               </div>
               <div className="grid grid-cols-4 gap-2">
                 <Button
@@ -362,7 +362,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('budget'); setShowMenu(false); }}
                 >
-                  Budget
+                  Bütçe
                 </Button>
                 <Button
                   variant="ghost"
@@ -370,7 +370,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('statistics'); setShowMenu(false); }}
                 >
-                  Stats
+                  İstatistik
                 </Button>
                 <Button
                   variant="ghost"
@@ -378,7 +378,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('advisors'); setShowMenu(false); }}
                 >
-                  Advisors
+                  Danışmanlar
                 </Button>
                 <Button
                   variant="ghost"
@@ -386,7 +386,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
                 >
-                  Settings
+                  Ayarlar
                 </Button>
               </div>
             </div>
@@ -395,7 +395,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
             {setOverlayMode && (
               <div className="p-3 border-b border-border flex-shrink-0">
                 <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                  View Overlays
+                  Kaplamaları Görüntüle
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   <Button
@@ -404,7 +404,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className="h-10 w-full text-xs"
                     onClick={() => setOverlayMode('none')}
                   >
-                    None
+                    Yok
                   </Button>
                   <Button
                     variant={overlayMode === 'power' ? 'default' : 'ghost'}
@@ -412,7 +412,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'power' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
                     onClick={() => setOverlayMode('power')}
                   >
-                    Power
+                    Güç
                   </Button>
                   <Button
                     variant={overlayMode === 'water' ? 'default' : 'ghost'}
@@ -420,7 +420,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'water' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
                     onClick={() => setOverlayMode('water')}
                   >
-                    Water
+                    Su
                   </Button>
                   <Button
                     variant={overlayMode === 'fire' ? 'default' : 'ghost'}
@@ -428,7 +428,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'fire' ? 'bg-red-500 hover:bg-red-600' : ''}`}
                     onClick={() => setOverlayMode('fire')}
                   >
-                    Fire
+                    Yangın
                   </Button>
                   <Button
                     variant={overlayMode === 'police' ? 'default' : 'ghost'}
@@ -436,7 +436,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'police' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                     onClick={() => setOverlayMode('police')}
                   >
-                    Police
+                    Polis
                   </Button>
                   <Button
                     variant={overlayMode === 'health' ? 'default' : 'ghost'}
@@ -444,7 +444,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'health' ? 'bg-green-500 hover:bg-green-600' : ''}`}
                     onClick={() => setOverlayMode('health')}
                   >
-                    Health
+                    Sağlık
                   </Button>
                   <Button
                     variant={overlayMode === 'education' ? 'default' : 'ghost'}
@@ -452,7 +452,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'education' ? 'bg-purple-500 hover:bg-purple-600' : ''}`}
                     onClick={() => setOverlayMode('education')}
                   >
-                    Education
+                    Eğitim
                   </Button>
                   <Button
                     variant={overlayMode === 'subway' ? 'default' : 'ghost'}
@@ -460,7 +460,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'subway' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
                     onClick={() => setOverlayMode('subway')}
                   >
-                    Subway
+                    Metro
                   </Button>
                 </div>
               </div>

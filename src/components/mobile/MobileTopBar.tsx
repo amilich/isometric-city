@@ -101,7 +101,7 @@ export function MobileTopBar({
     onExit?.();
   }, [onExit]);
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
   return (
     <>
@@ -119,7 +119,7 @@ export function MobileTopBar({
                   {cityName}
                 </span>
                 {isSaving && (
-                  <span className="text-[8px] text-muted-foreground animate-pulse">•</span>
+                  <span className="text-[8px] text-muted-foreground animate-pulse">• Kaydediliyor</span>
                 )}
               </div>
               <span className="text-muted-foreground text-[10px] font-mono">
@@ -130,13 +130,13 @@ export function MobileTopBar({
               <span className="text-xs font-mono font-semibold text-foreground">
                 {stats.population >= 1000 ? `${(stats.population / 1000).toFixed(1)}k` : stats.population}
               </span>
-              <span className="text-[9px] text-muted-foreground">Pop</span>
+              <span className="text-[9px] text-muted-foreground">Nüfus</span>
             </div>
             <div className="flex flex-col items-start">
               <span className={`text-xs font-mono font-semibold ${stats.money < 0 ? 'text-red-500' : stats.money < 1000 ? 'text-amber-500' : 'text-green-500'}`}>
                 ${stats.money >= 1000000 ? `${(stats.money / 1000000).toFixed(1)}M` : stats.money >= 1000 ? `${(stats.money / 1000).toFixed(0)}k` : stats.money}
               </span>
-              <span className="text-[9px] text-muted-foreground">Funds</span>
+              <span className="text-[9px] text-muted-foreground">Fon</span>
             </div>
           </button>
 
@@ -148,7 +148,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Pause"
+                title="Duraklat"
               >
                 <PauseIcon size={12} />
               </button>
@@ -157,7 +157,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Normal speed"
+                title="Normal hız"
               >
                 <PlayIcon size={12} />
               </button>
@@ -166,7 +166,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="2x speed"
+                title="2x hız"
               >
                 <div className="flex items-center -space-x-[5px]">
                   <PlayIcon size={12} />
@@ -178,7 +178,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 3 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="3x speed"
+                title="3x hız"
               >
                 <div className="flex items-center -space-x-[7px]">
                   <PlayIcon size={12} />
@@ -193,7 +193,7 @@ export function MobileTopBar({
               <button
                 onClick={() => setShowExitDialog(true)}
                 className="h-6 w-5 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
-                title="Exit to Main Menu"
+                title="Ana Menüye Dön"
               >
                 <svg 
                   className="w-3 h-3 -scale-x-100" 
@@ -227,13 +227,13 @@ export function MobileTopBar({
               }
             }}
           >
-            <span className="text-[9px] text-muted-foreground">Tax</span>
+            <span className="text-[9px] text-muted-foreground">Vergi</span>
             <span className="text-[10px] font-mono text-foreground">{taxRate}%</span>
           </button>
 
           <div className="flex items-center gap-1">
             <span className={`text-[10px] font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {stats.income - stats.expenses >= 0 ? '+' : ''}${(stats.income - stats.expenses).toLocaleString()}/mo
+              {stats.income - stats.expenses >= 0 ? '+' : ''}${(stats.income - stats.expenses).toLocaleString()}/ay
             </span>
           </div>
         </div>
@@ -241,7 +241,7 @@ export function MobileTopBar({
         {/* Tax Slider Row */}
         {showTaxSlider && !selectedTile && (
           <div className="border-t border-sidebar-border/50 bg-secondary/30 px-3 py-0.5 flex items-center gap-2 text-[10px]">
-            <span className="text-muted-foreground whitespace-nowrap">Tax Rate</span>
+            <span className="text-muted-foreground whitespace-nowrap">Vergi Oranı</span>
             <Slider
               value={[taxRate]}
               onValueChange={(value) => setTaxRate(value[0])}
@@ -272,7 +272,7 @@ export function MobileTopBar({
               }`} />
               <span className="text-xs font-medium text-foreground capitalize">
                 {selectedTile.building.type === 'empty' 
-                  ? (selectedTile.zone === 'none' ? 'Empty Lot' : `${selectedTile.zone} Zone`)
+                  ? (selectedTile.zone === 'none' ? 'Boş Arazi' : `${selectedTile.zone} Bölgesi`)
                   : selectedTile.building.type.replace(/_/g, ' ')}
               </span>
             </div>
@@ -285,15 +285,15 @@ export function MobileTopBar({
               </div>
             )}
             {selectedTile.building.jobs > 0 && (
-              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} jobs</span>
+              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} iş</span>
             )}
             
             {/* Utilities */}
             <span className={`shrink-0 ${selectedTile.building.powered ? 'text-yellow-400' : 'text-muted-foreground/60'}`}>
-              {selectedTile.building.powered ? 'Has power' : 'No power'}
+              {selectedTile.building.powered ? 'Elektrik var' : 'Elektrik yok'}
             </span>
             <span className={`shrink-0 ${selectedTile.building.watered ? 'text-cyan-400' : 'text-muted-foreground/60'}`}>
-              {selectedTile.building.watered ? 'Has water' : 'No water'}
+              {selectedTile.building.watered ? 'Su var' : 'Su yok'}
             </span>
             
             {/* Land value */}
@@ -344,31 +344,31 @@ export function MobileTopBar({
             <div className="p-4 grid grid-cols-5 gap-3">
               <StatItem
                 icon={<HappyIcon size={16} />}
-                label="Happiness"
+                label="Mutluluk"
                 value={stats.happiness}
                 color={stats.happiness >= 70 ? 'text-green-500' : stats.happiness >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<HealthIcon size={16} />}
-                label="Health"
+                label="Sağlık"
                 value={stats.health}
                 color={stats.health >= 70 ? 'text-green-500' : stats.health >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<EducationIcon size={16} />}
-                label="Education"
+                label="Eğitim"
                 value={stats.education}
                 color={stats.education >= 70 ? 'text-green-500' : stats.education >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<SafetyIcon size={16} />}
-                label="Safety"
+                label="Güvenlik"
                 value={stats.safety}
                 color={stats.safety >= 70 ? 'text-green-500' : stats.safety >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<EnvironmentIcon size={16} />}
-                label="Environ"
+                label="Çevre"
                 value={stats.environment}
                 color={stats.environment >= 70 ? 'text-green-500' : stats.environment >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
@@ -379,23 +379,23 @@ export function MobileTopBar({
             {/* Detailed finances */}
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Population</span>
+                <span className="text-sm text-muted-foreground">Nüfus</span>
                 <span className="text-sm font-mono text-foreground">{stats.population.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Jobs</span>
+                <span className="text-sm text-muted-foreground">İşler</span>
                 <span className="text-sm font-mono text-foreground">{stats.jobs.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Income</span>
+                <span className="text-sm text-muted-foreground">Aylık Gelir</span>
                 <span className="text-sm font-mono text-green-400">${stats.income.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Expenses</span>
+                <span className="text-sm text-muted-foreground">Aylık Gider</span>
                 <span className="text-sm font-mono text-red-400">${stats.expenses.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Weekly Net</span>
+                <span className="text-sm text-muted-foreground">Haftalık Net</span>
                 <span className={`text-sm font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   ${Math.floor((stats.income - stats.expenses) / 4).toLocaleString()}
                 </span>
@@ -407,7 +407,7 @@ export function MobileTopBar({
             {/* Tax slider */}
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Tax Rate</span>
+                <span className="text-sm text-muted-foreground">Vergi Oranı</span>
                 <span className="text-sm font-mono text-foreground">{taxRate}%</span>
               </div>
               <Slider
@@ -431,9 +431,9 @@ export function MobileTopBar({
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Exit to Main Menu</DialogTitle>
+            <DialogTitle>Ana Menüye Dön</DialogTitle>
             <DialogDescription>
-              Would you like to save your city before exiting?
+              Çıkmadan önce şehrinizi kaydetmek ister misiniz?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -442,13 +442,13 @@ export function MobileTopBar({
               onClick={handleExitWithoutSaving}
               className="w-full sm:w-auto"
             >
-              Exit Without Saving
+              Kaydetmeden Çık
             </Button>
             <Button
               onClick={handleSaveAndExit}
               className="w-full sm:w-auto"
             >
-              Save & Exit
+              Kaydet ve Çık
             </Button>
           </DialogFooter>
         </DialogContent>

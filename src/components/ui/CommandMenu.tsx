@@ -31,17 +31,17 @@ interface MenuItem {
 }
 
 const MENU_CATEGORIES = [
-  { key: 'tools', label: 'Tools' },
-  { key: 'zones', label: 'Zones' },
-  { key: 'services', label: 'Services' },
-  { key: 'parks', label: 'Parks' },
-  { key: 'sports', label: 'Sports' },
-  { key: 'recreation', label: 'Recreation' },
-  { key: 'waterfront', label: 'Waterfront' },
-  { key: 'community', label: 'Community' },
-  { key: 'utilities', label: 'Utilities' },
-  { key: 'special', label: 'Special' },
-  { key: 'panels', label: 'Panels' },
+  { key: 'tools', label: 'Araçlar' },
+  { key: 'zones', label: 'Bölgeler' },
+  { key: 'services', label: 'Hizmetler' },
+  { key: 'parks', label: 'Parklar' },
+  { key: 'sports', label: 'Spor' },
+  { key: 'recreation', label: 'Eğlence' },
+  { key: 'waterfront', label: 'Sahil' },
+  { key: 'community', label: 'Topluluk' },
+  { key: 'utilities', label: 'Altyapı' },
+  { key: 'special', label: 'Özel' },
+  { key: 'panels', label: 'Paneller' },
 ] as const;
 
 // Build menu items from tools
@@ -210,10 +210,10 @@ function buildMenuItems(): MenuItem[] {
 
   // Panels
   const panels: { panel: 'budget' | 'statistics' | 'advisors' | 'settings'; name: string; description: string; keywords: string[] }[] = [
-    { panel: 'budget', name: 'Budget', description: 'Manage city finances and funding', keywords: ['budget', 'money', 'finance', 'tax', 'funding'] },
-    { panel: 'statistics', name: 'Statistics', description: 'View city statistics and charts', keywords: ['statistics', 'stats', 'charts', 'data', 'info'] },
-    { panel: 'advisors', name: 'Advisors', description: 'Get advice from city advisors', keywords: ['advisors', 'advice', 'help', 'tips'] },
-    { panel: 'settings', name: 'Settings', description: 'Game settings and preferences', keywords: ['settings', 'options', 'preferences', 'config'] },
+    { panel: 'budget', name: 'Bütçe', description: 'Şehir finansmanını ve fonlamayı yönet', keywords: ['bütçe', 'para', 'finans', 'vergi', 'fonlama'] },
+    { panel: 'statistics', name: 'İstatistikler', description: 'Şehir istatistiklerini ve grafikleri görüntüle', keywords: ['istatistikler', 'istatistik', 'grafikler', 'veri', 'bilgi'] },
+    { panel: 'advisors', name: 'Danışmanlar', description: 'Şehir danışmanlarından tavsiye al', keywords: ['danışmanlar', 'tavsiye', 'yardım', 'ipuçları'] },
+    { panel: 'settings', name: 'Ayarlar', description: 'Oyun ayarları ve tercihler', keywords: ['ayarlar', 'seçenekler', 'tercihler', 'yapılandırma'] },
   ];
 
   panels.forEach(({ panel, name, description, keywords }) => {
@@ -380,7 +380,7 @@ export function CommandMenu() {
         onKeyDown={handleKeyDown}
       >
         <VisuallyHidden.Root>
-          <DialogTitle>Command Menu</DialogTitle>
+          <DialogTitle>Komut Menüsü</DialogTitle>
         </VisuallyHidden.Root>
         
         {/* Search input */}
@@ -397,7 +397,7 @@ export function CommandMenu() {
             ref={inputRef}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search tools, buildings, panels..."
+            placeholder="Araçları, binaları, panelleri ara..."
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent h-12 text-sm"
           />
           <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-sidebar-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
@@ -410,7 +410,7 @@ export function CommandMenu() {
           <div ref={listRef} className="p-2">
             {flatItems.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                No results found.
+                Sonuç bulunamadı.
               </div>
             ) : (
               MENU_CATEGORIES.map(category => {
@@ -476,17 +476,17 @@ export function CommandMenu() {
             <span className="flex items-center gap-1">
               <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">↑</kbd>
               <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">↓</kbd>
-              <span>navigate</span>
+              <span>gezin</span>
             </span>
             <span className="flex items-center gap-1">
               <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">↵</kbd>
-              <span>select</span>
+              <span>seç</span>
             </span>
           </div>
           <span className="flex items-center gap-1">
             <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">⌘</kbd>
             <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">K</kbd>
-            <span>to toggle</span>
+            <span>aç/kapa</span>
           </span>
         </div>
       </DialogContent>

@@ -25,23 +25,23 @@ export function BudgetPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Budget</DialogTitle>
+          <DialogTitle>Bütçe</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           <div className="grid grid-cols-3 gap-4 pb-4 border-b border-border">
             <div>
-              <div className="text-muted-foreground text-xs mb-1">Income</div>
-              <div className="text-green-400 font-mono">${stats.income.toLocaleString()}/mo</div>
+              <div className="text-muted-foreground text-xs mb-1">Gelir</div>
+              <div className="text-green-400 font-mono">${stats.income.toLocaleString()}/ay</div>
             </div>
             <div>
-              <div className="text-muted-foreground text-xs mb-1">Expenses</div>
-              <div className="text-red-400 font-mono">${stats.expenses.toLocaleString()}/mo</div>
+              <div className="text-muted-foreground text-xs mb-1">Giderler</div>
+              <div className="text-red-400 font-mono">${stats.expenses.toLocaleString()}/ay</div>
             </div>
             <div>
               <div className="text-muted-foreground text-xs mb-1">Net</div>
               <div className={`font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                ${(stats.income - stats.expenses).toLocaleString()}/mo
+                ${(stats.income - stats.expenses).toLocaleString()}/ay
               </div>
             </div>
           </div>

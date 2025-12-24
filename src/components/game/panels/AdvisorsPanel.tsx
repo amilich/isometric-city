@@ -43,7 +43,7 @@ export function AdvisorsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[500px] max-h-[600px]">
         <DialogHeader>
-          <DialogTitle>City Advisors</DialogTitle>
+          <DialogTitle>Şehir Danışmanları</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -54,8 +54,8 @@ export function AdvisorsPanel() {
               {grade}
             </div>
             <div>
-              <div className="text-foreground font-semibold">Overall City Rating</div>
-              <div className="text-muted-foreground text-sm">Based on happiness, health, education, safety & environment</div>
+              <div className="text-foreground font-semibold">Genel Şehir Değerlendirmesi</div>
+              <div className="text-muted-foreground text-sm">Mutluluk, sağlık, eğitim, güvenlik ve çevreye dayalı</div>
             </div>
           </Card>
           
@@ -64,8 +64,8 @@ export function AdvisorsPanel() {
               {advisorMessages.length === 0 ? (
                 <Card className="text-center py-8 text-muted-foreground bg-primary/10 border-primary/30">
                   <AdvisorIcon size={32} className="mx-auto mb-3 opacity-50" />
-                  <div className="text-sm">No urgent issues to report!</div>
-                  <div className="text-xs mt-1">Your city is running smoothly.</div>
+                  <div className="text-sm">Bildirilecek acil bir sorun yok!</div>
+                  <div className="text-xs mt-1">Şehriniz sorunsuz işliyor.</div>
                 </Card>
               ) : (
                 advisorMessages.map((advisor, i) => (

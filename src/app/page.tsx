@@ -294,7 +294,7 @@ export default function HomePage() {
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
-          IsoCity
+          Truncgil MyCity
         </h1>
         
         {/* Sprite Gallery - keep visible even when saves exist */}
@@ -353,7 +353,7 @@ export default function HomePage() {
         {/* Left - Title and Start Button */}
         <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
           <h1 className="text-8xl font-light tracking-wider text-white/90">
-            IsoCity
+            Truncgil MyCity
           </h1>
           <div className="flex flex-col gap-3">
             <Button 

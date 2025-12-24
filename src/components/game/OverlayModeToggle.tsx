@@ -57,7 +57,7 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
   return (
     <Card className="absolute bottom-4 left-4 p-2 shadow-lg bg-card/90 border-border/70 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        View Overlay
+        Kaplamaları Görüntüle
       </div>
       <div className="flex gap-1">
         {(Object.keys(OVERLAY_CONFIG) as OverlayMode[]).map((mode) => {

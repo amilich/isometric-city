@@ -2,7 +2,7 @@
 
 Truncgil MyCity, **Next.js**, **TypeScript** ve **Tailwind CSS** ile oluşturulmuş açık kaynaklı bir izometrik şehir kurma simülasyon oyunudur. HTML5 Canvas API'sini kullanarak yüksek performanslı izometrik grafikler sunar ve ekonomik simülasyon, trenler, uçaklar, deniz uçakları, helikopterler, arabalar, yayalar ve daha fazlası için karmaşık sistemler içerir.
 
-![IsoCity Banner](public/og-image.png)
+![Truncgil MyCity Banner](public/og-image.png)
 
 ## Özellikler
 

@@ -141,11 +141,11 @@ export const StatsPanel = React.memo(function StatsPanel() {
   
   return (
     <div className="h-8 bg-secondary/50 border-b border-border flex items-center justify-center gap-8 text-xs">
-      <MiniStat icon={<HappyIcon size={12} />} label="Happiness" value={stats.happiness} />
-      <MiniStat icon={<HealthIcon size={12} />} label="Health" value={stats.health} />
-      <MiniStat icon={<EducationIcon size={12} />} label="Education" value={stats.education} />
-      <MiniStat icon={<SafetyIcon size={12} />} label="Safety" value={stats.safety} />
-      <MiniStat icon={<EnvironmentIcon size={12} />} label="Environment" value={stats.environment} />
+      <MiniStat icon={<HappyIcon size={12} />} label="Mutluluk" value={stats.happiness} />
+      <MiniStat icon={<HealthIcon size={12} />} label="Sağlık" value={stats.health} />
+      <MiniStat icon={<EducationIcon size={12} />} label="Eğitim" value={stats.education} />
+      <MiniStat icon={<SafetyIcon size={12} />} label="Güvenlik" value={stats.safety} />
+      <MiniStat icon={<EnvironmentIcon size={12} />} label="Çevre" value={stats.environment} />
     </div>
   );
 });
@@ -158,7 +158,7 @@ export const TopBar = React.memo(function TopBar() {
   const { state, setSpeed, setTaxRate, isSaving, visualHour } = useGame();
   const { stats, year, month, day, speed, taxRate, cityName } = state;
   
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
   
   return (
@@ -168,7 +168,7 @@ export const TopBar = React.memo(function TopBar() {
           <div className="flex items-center gap-2">
             <h1 className="text-foreground font-semibold text-sm">{cityName}</h1>
             {isSaving && (
-              <span className="text-muted-foreground text-xs italic animate-pulse">Saving...</span>
+              <span className="text-muted-foreground text-xs italic animate-pulse">Kaydediliyor...</span>
             )}
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono tabular-nums">
@@ -192,7 +192,7 @@ export const TopBar = React.memo(function TopBar() {
               variant={speed === s ? 'default' : 'ghost'}
               size="icon-sm"
               className="h-7 w-7 p-0 m-0"
-              title={s === 0 ? 'Pause' : s === 1 ? 'Normal' : s === 2 ? 'Fast' : 'Very Fast'}
+              title={s === 0 ? 'Duraklat' : s === 1 ? 'Normal' : s === 2 ? 'Hızlı' : 'Çok Hızlı'}
             >
               {s === 0 ? <PauseIcon size={12} /> : 
                s === 1 ? <PlayIcon size={12} /> : 
@@ -213,17 +213,17 @@ export const TopBar = React.memo(function TopBar() {
       </div>
       
       <div className="flex items-center gap-8">
-        <StatBadge value={stats.population.toLocaleString()} label="Population" />
-        <StatBadge value={stats.jobs.toLocaleString()} label="Jobs" />
+        <StatBadge value={stats.population.toLocaleString()} label="Nüfus" />
+        <StatBadge value={stats.jobs.toLocaleString()} label="İşler" />
         <StatBadge 
           value={`$${stats.money.toLocaleString()}`} 
-          label="Funds"
+          label="Fonlar"
           variant={stats.money < 0 ? 'destructive' : stats.money < 1000 ? 'warning' : 'success'}
         />
         <Separator orientation="vertical" className="h-8" />
         <StatBadge 
           value={`$${(stats.income - stats.expenses).toLocaleString()}`} 
-          label="Monthly"
+          label="Aylık"
           variant={stats.income - stats.expenses >= 0 ? 'success' : 'destructive'}
         />
       </div>
@@ -238,7 +238,7 @@ export const TopBar = React.memo(function TopBar() {
         <Separator orientation="vertical" className="h-8" />
         
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs">Tax</span>
+          <span className="text-muted-foreground text-xs">Vergi</span>
           <Slider
             value={[taxRate]}
             onValueChange={(value) => setTaxRate(value[0])}

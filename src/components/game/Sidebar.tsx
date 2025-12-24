@@ -242,9 +242,9 @@ function ExitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Exit to Main Menu</DialogTitle>
+          <DialogTitle>Ana Menüye Dön</DialogTitle>
           <DialogDescription>
-            Would you like to save your city before exiting?
+            Çıkmadan önce şehrinizi kaydetmek ister misiniz?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -253,13 +253,13 @@ function ExitDialog({
             onClick={onExitWithoutSaving}
             className="w-full sm:w-auto"
           >
-            Exit Without Saving
+            Kaydetmeden Çık
           </Button>
           <Button
             onClick={onSaveAndExit}
             className="w-full sm:w-auto"
           >
-            Save & Exit
+            Kaydet ve Çık
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -267,7 +267,7 @@ function ExitDialog({
   );
 }
 
-// Memoized Sidebar Component
+// Memoized Sidebar Component  
 export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => void }) {
   const { state, setTool, setActivePanel, saveCity } = useGame();
   const { selectedTool, stats, activePanel } = state;
@@ -286,51 +286,51 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   
   // Direct tool categories (shown inline)
   const directCategories = useMemo(() => ({
-    'TOOLS': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
-    'ZONES': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
+    'ARAÇLAR': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
+    'BÖLGELER': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
   }), []);
   
   // Submenu categories (hover to expand) - includes all new assets from main
   const submenuCategories = useMemo(() => [
     { 
       key: 'services', 
-      label: 'Services', 
+      label: 'Hizmetler', 
       tools: ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[]
     },
     { 
       key: 'parks', 
-      label: 'Parks', 
+      label: 'Parklar', 
       tools: ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[]
     },
     { 
       key: 'sports', 
-      label: 'Sports', 
+      label: 'Spor', 
       tools: ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[]
     },
     { 
       key: 'recreation', 
-      label: 'Recreation', 
+      label: 'Eğlence', 
       tools: ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[]
     },
     { 
       key: 'waterfront', 
-      label: 'Waterfront', 
+      label: 'Sahil', 
       tools: ['marina_docks_small', 'pier_large'] as Tool[]
     },
     { 
       key: 'community', 
-      label: 'Community', 
+      label: 'Topluluk', 
       tools: ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[]
     },
     { 
       key: 'utilities', 
-      label: 'Utilities', 
+      label: 'Altyapı', 
       tools: ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
       forceOpenUpward: true
     },
     { 
       key: 'special', 
-      label: 'Special', 
+      label: 'Özel', 
       tools: ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[],
       forceOpenUpward: true
     },
@@ -340,13 +340,13 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-40">
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
-          <span className="text-sidebar-foreground font-bold tracking-tight">ISOCITY</span>
+          <span className="text-sidebar-foreground font-bold tracking-tight">Truncgil MyCity</span>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={openCommandMenu}
-              title="Search (⌘K)"
+              title="Ara (⌘K)"
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
               <svg 
@@ -363,7 +363,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setShowExitDialog(true)}
-                title="Exit to Main Menu"
+                title="Ana Menüye Dön"
                 className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
               >
                 <svg 
@@ -421,7 +421,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         
         {/* Buildings header */}
         <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground">
-          BUILDINGS
+          BİNALAR
         </div>
         
         {/* Submenu categories */}
@@ -443,10 +443,10 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
       <div className="border-t border-sidebar-border p-2">
         <div className="grid grid-cols-4 gap-1">
           {[
-            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: 'Budget' },
-            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: 'Statistics' },
-            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: 'Advisors' },
-            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: 'Settings' },
+            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: 'Bütçe' },
+            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: 'İstatistikler' },
+            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: 'Danışmanlar' },
+            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: 'Ayarlar' },
           ].map(({ panel, icon, label }) => (
             <Button
               key={panel}

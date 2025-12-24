@@ -23,10 +23,10 @@ export const metadata: Metadata = {
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000'
   ),
-  title: 'ISOCITY — Metropolis Builder',
+  title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
   description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
   openGraph: {
-    title: 'ISOCITY — Metropolis Builder',
+    title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
     description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
     type: 'website',
     images: [
@@ -35,27 +35,27 @@ export const metadata: Metadata = {
         width: 1179,
         height: 1406,
         type: 'image/png',
-        alt: 'ISOCITY - Isometric city builder game screenshot',
+        alt: 'Truncgil MyCity - Isometric city builder game screenshot',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ISOCITY — Metropolis Builder',
+    title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
     description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
     images: [
       {
         url: '/opengraph-image',
         width: 1179,
         height: 1406,
-        alt: 'ISOCITY - Isometric city builder game screenshot',
+        alt: 'Truncgil MyCity - Isometric city builder game screenshot',
       },
     ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'IsoCity',
+    title: 'Truncgil MyCity',
   },
   formatDetection: {
     telephone: false,

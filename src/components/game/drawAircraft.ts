@@ -282,6 +282,36 @@ export function drawAirplanes(
       ctx.restore();
     }
 
+    // Subtle runway effects for airplanes: tire smoke/heat haze during takeoff roll and rollout
+    if ((plane.state === 'takeoff_roll' || plane.state === 'rollout') && plane.altitude < 0.12 && plane.speed > 55) {
+      const opacity = Math.min(0.45, (plane.speed - 55) / 120) * (0.25 + (1 - plane.altitude) * 0.75);
+      ctx.save();
+      ctx.translate(plane.x, plane.y);
+      ctx.rotate(plane.angle);
+
+      // Smoke behind the main gear
+      const smokeLen = 10 + plane.speed * 0.12;
+      const smokeWid = 4 + plane.speed * 0.05;
+      const behind = -18;
+
+      const grad = ctx.createLinearGradient(behind, 0, behind - smokeLen, 0);
+      grad.addColorStop(0, `rgba(180, 180, 180, ${opacity})`);
+      grad.addColorStop(1, `rgba(180, 180, 180, 0)`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(behind - smokeLen * 0.5, 0, smokeLen, smokeWid, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // A second, smaller puff for variation (slightly offset)
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.ellipse(behind - smokeLen * 0.3, 3, smokeLen * 0.7, smokeWid * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
     // Draw airplane sprite
     if (planeSprite) {
       const spriteInfo = getPlaneSprite(

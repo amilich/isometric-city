@@ -23,7 +23,17 @@ export type Car = {
 };
 
 // Airplane types for airport animation
-export type AirplaneState = 'flying' | 'landing' | 'taking_off' | 'taxiing';
+// Expanded state machine to support runway-aligned taxi/takeoff/landing.
+export type AirplaneState =
+  | 'flying'          // Enroute/cruising
+  | 'approach'        // Lining up with runway centerline + descending
+  | 'flare'           // Short flare just before touchdown
+  | 'rollout'         // Ground roll after touchdown
+  | 'taxi_to_gate'    // Taxi off runway toward terminal/apron
+  | 'taxi_to_runway'  // Taxi from gate/apron to runway threshold
+  | 'lineup'          // Align on runway centerline before takeoff
+  | 'takeoff_roll'    // Ground acceleration down runway
+  | 'climb_out';      // Initial climb out after rotation
 
 // Plane model types from the sprite sheet
 export type PlaneType = '737' | '777' | '747' | 'a380' | 'g650' | 'seaplane';

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
 import Game from '@/components/Game';
@@ -110,7 +111,7 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
   
   // Load and filter sprite sheet
   useEffect(() => {
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => {
       const filtered = filterBackgroundColor(img);
       setFilteredSheet(filtered);
@@ -352,9 +353,15 @@ export default function HomePage() {
         
         {/* Left - Title and Start Button */}
         <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
-          <h1 className="text-8xl font-light tracking-wider text-white/90">
-            Truncgil MyCity
-          </h1>
+          <div className="relative w-full max-w-md h-32 mb-4">
+            <Image
+              src="/truncgil-mycity2.png"
+              alt="Truncgil MyCity"
+              fill
+              className="object-contain object-left"
+              priority
+            />
+          </div>
           <div className="flex flex-col gap-3">
             <Button 
               onClick={() => setShowGame(true)}

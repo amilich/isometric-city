@@ -14,6 +14,7 @@ import {
 import {
   bulldozeTile,
   createInitialGameState,
+  createInitialGameStateFromEarth,
   DEFAULT_GRID_SIZE,
   placeBuilding,
   placeSubway,
@@ -59,6 +60,7 @@ type GameContextValue = {
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
   setDisastersEnabled: (enabled: boolean) => void;
   newGame: (name?: string, size?: number) => void;
+  newGameFromEarth: (lat: number, lng: number, name?: string, size?: number) => Promise<void>;
   loadState: (stateString: string) => boolean;
   exportState: () => string;
   generateRandomCity: () => void;
@@ -859,6 +861,38 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const newGameFromEarth = useCallback(async (lat: number, lng: number, name?: string, size?: number) => {
+    clearGameState(); // Clear saved state when starting fresh
+    try {
+      const fresh = await createInitialGameStateFromEarth(lat, lng, size ?? DEFAULT_GRID_SIZE, name || 'IsoCity');
+      // Increment gameVersion from current state to ensure vehicles/entities are cleared
+      setState((prev) => ({
+        ...fresh,
+        gameVersion: (prev.gameVersion ?? 0) + 1,
+      }));
+    } catch (error) {
+      console.error('Failed to create game from Earth location:', error);
+      // Fallback to regular game - addNotification will be available after it's defined
+      newGame(name, size);
+      // Try to add notification after state is set (will be handled by the addNotification effect)
+      setTimeout(() => {
+        setState((prev) => ({
+          ...prev,
+          notifications: [
+            {
+              id: `earth-error-${Date.now()}`,
+              title: 'Failed to Load Earth Terrain',
+              description: 'Could not load elevation data for this location. Falling back to random terrain.',
+              icon: 'error',
+              timestamp: Date.now(),
+            },
+            ...prev.notifications.slice(0, 9),
+          ],
+        }));
+      }, 100);
+    }
+  }, [newGame]);
+
   const loadState = useCallback((stateString: string): boolean => {
     try {
       const parsed = JSON.parse(stateString);
@@ -1131,6 +1165,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     checkAndDiscoverCities,
     setDisastersEnabled,
     newGame,
+    newGameFromEarth,
     loadState,
     exportState,
     generateRandomCity,

@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "crop-screenshots": "bash scripts/crop-screenshots.sh"
+    "crop-screenshots": "bash scripts/crop-screenshots.sh",
+    "process-earth": "tsx scripts/process-etopo1.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",
@@ -24,12 +25,15 @@
     "@vercel/analytics": "^1.6.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "convex": "^1.31.2",
+    "geotiff": "^2.1.4-beta.1",
     "lucide-react": "^0.453.0",
     "lz-string": "^1.5.0",
     "next": "^16.0.7",
     "react": "^19.2.1",
     "react-device-detect": "^2.2.3",
     "react-dom": "^19.2.1",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7"
   },
@@ -45,6 +49,7 @@
     "eslint-config-next": "^16.0.7",
     "postcss": "^8",
     "tailwindcss": "^3.4.14",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

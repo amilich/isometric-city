@@ -4,6 +4,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { useGame } from '@/context/GameContext';
 import { Tool } from '@/types/game';
 import { useMobile } from '@/hooks/useMobile';
+import { getChunksToLoad, getChunkKey, loadEarthChunk } from '@/lib/earthChunks';
 import { MobileToolbar } from '@/components/mobile/MobileToolbar';
 import { MobileTopBar } from '@/components/mobile/MobileTopBar';
 
@@ -40,6 +41,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const isInitialMount = useRef(true);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
+  const chunkLoadingRef = useRef<Set<string>>(new Set()); // Track chunks currently being loaded
   
   // Cheat code system
   const {
@@ -57,7 +59,49 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     currentSelectedToolRef.current = state.selectedTool;
   }, [state.selectedTool]);
-  
+
+  // Viewport chunk management for Earth mode
+  useEffect(() => {
+    // Only manage chunks if we're in Earth mode
+    if (!state.centerLatLng || !state.currentChunk) {
+      return;
+    }
+
+    const centerChunk = state.currentChunk;
+    const chunksToLoad = getChunksToLoad(centerChunk.x, centerChunk.y);
+    
+    // Load chunks that aren't already loaded
+    chunksToLoad.forEach(async ({ x, y }) => {
+      const chunkKey = getChunkKey(x, y);
+      
+      // Skip if already loaded or currently loading
+      if (state.loadedChunks?.[chunkKey] || chunkLoadingRef.current.has(chunkKey)) {
+        return;
+      }
+      
+      chunkLoadingRef.current.add(chunkKey);
+      
+      try {
+        const chunk = await loadEarthChunk(x, y);
+        
+        // Update state with loaded chunk
+        // Note: This would require a new context method to update loadedChunks
+        // For now, chunks are loaded but not persisted to state
+        // This is a foundation for future viewport panning
+        console.log(`Loaded chunk (${x}, ${y})`);
+      } catch (error) {
+        console.error(`Failed to load chunk (${x}, ${y}):`, error);
+      } finally {
+        chunkLoadingRef.current.delete(chunkKey);
+      }
+    });
+
+    // Unload chunks that are too far away (if we have a way to update state)
+    // This would require a context method to remove chunks from loadedChunks
+    // For now, we just load chunks but don't unload them (memory will grow)
+    // In production, you'd want to implement chunk unloading
+  }, [state.currentChunk, state.centerLatLng, state.loadedChunks]);
+
   // Track the initial selectedTool after localStorage loads (with a small delay to allow state to load)
   useEffect(() => {
     if (!hasCapturedInitialTool.current) {

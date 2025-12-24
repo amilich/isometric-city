@@ -313,6 +313,19 @@ export interface WaterBody {
   centerY: number;
 }
 
+// Earth chunk for infinite world system
+export interface EarthChunk {
+  chunkX: number;
+  chunkY: number;
+  tiles: Tile[][];
+  bounds: {
+    minLat: number;
+    maxLat: number;
+    minLng: number;
+    maxLng: number;
+  };
+}
+
 export interface GameState {
   id: string; // Unique UUID for this game
   grid: Tile[][];
@@ -338,6 +351,10 @@ export interface GameState {
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];
   gameVersion: number; // Increments when a new game starts - used to clear transient state like vehicles
+  // Earth mode fields (optional for backward compatibility)
+  currentChunk?: { x: number; y: number };
+  centerLatLng?: { lat: number; lng: number };
+  loadedChunks?: Record<string, EarthChunk>; // Map serialized as object for JSON compatibility
 }
 
 // Saved city metadata for the multi-save system

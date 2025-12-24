@@ -166,7 +166,6 @@ export const TopBar = React.memo(function TopBar() {
       <div className="flex items-center gap-6">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-foreground font-semibold text-sm">{cityName}</h1>
             {isSaving && (
               <span className="text-muted-foreground text-xs italic animate-pulse">Saving...</span>
             )}
@@ -213,6 +212,10 @@ export const TopBar = React.memo(function TopBar() {
       </div>
       
       <div className="flex items-center gap-8">
+        <div className="flex items-center gap-2">
+          <span className="text-foreground font-semibold text-sm">{cityName}</span>
+          <Separator orientation="vertical" className="h-6" />
+        </div>
         <StatBadge value={stats.population.toLocaleString()} label="Population" />
         <StatBadge value={stats.jobs.toLocaleString()} label="Jobs" />
         <StatBadge 

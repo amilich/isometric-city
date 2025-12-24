@@ -14,6 +14,7 @@ import {
   Notification,
   AdjacentCity,
   WaterBody,
+  EarthChunk,
   BUILDING_STATS,
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
@@ -838,6 +839,181 @@ export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityNam
     adjacentCities,
     waterBodies,
     gameVersion: 0,
+  };
+}
+
+/**
+ * Create initial game state from Earth location
+ * Loads real elevation data and generates terrain based on lat/lng
+ */
+export async function createInitialGameStateFromEarth(
+  centerLat: number,
+  centerLng: number,
+  gridSize: number = DEFAULT_GRID_SIZE,
+  cityName: string = 'New City'
+): Promise<GameState> {
+  // Import Earth modules dynamically to avoid SSR issues
+  const { getChunkForLatLng, getChunkBounds, CHUNK_SIZE_TILES } = await import('./earthProjection');
+  const { loadEarthChunk, getChunkKey } = await import('./earthChunks');
+  const { getElevation } = await import('./earthElevation');
+  const { determineBiome, createTerrainBuilding } = await import('./biomes');
+  const { applyCityOverlay, detectPresetCity } = await import('./cityOverlays');
+
+  // Get the chunk containing the center point
+  const centerChunk = getChunkForLatLng(centerLat, centerLng);
+  
+  // Load the center chunk
+  const chunk = await loadEarthChunk(centerChunk.x, centerChunk.y, CHUNK_SIZE_TILES);
+  
+  // Extract a gridSize×gridSize region from the center of the chunk
+  const chunkBounds = chunk.bounds;
+  const centerTileX = Math.floor(CHUNK_SIZE_TILES / 2);
+  const centerTileY = Math.floor(CHUNK_SIZE_TILES / 2);
+  
+  // Calculate offset to center the grid on the requested lat/lng
+  const startX = Math.max(0, centerTileX - Math.floor(gridSize / 2));
+  const startY = Math.max(0, centerTileY - Math.floor(gridSize / 2));
+  const endX = Math.min(CHUNK_SIZE_TILES, startX + gridSize);
+  const endY = Math.min(CHUNK_SIZE_TILES, startY + gridSize);
+  
+  // Extract grid from chunk
+  const grid: Tile[][] = [];
+  for (let y = 0; y < gridSize; y++) {
+    grid[y] = [];
+    for (let x = 0; x < gridSize; x++) {
+      const chunkX = startX + x;
+      const chunkY = startY + y;
+      
+      if (chunkX < CHUNK_SIZE_TILES && chunkY < CHUNK_SIZE_TILES) {
+        // Copy tile from chunk
+        const chunkTile = chunk.tiles[chunkY][chunkX];
+        grid[y][x] = {
+          ...chunkTile,
+          x,
+          y,
+        };
+      } else {
+        // Generate tile for areas outside chunk bounds
+        const latProgress = (chunkBounds.minLat + (chunkBounds.maxLat - chunkBounds.minLat) * (chunkY / CHUNK_SIZE_TILES));
+        const lngProgress = (chunkBounds.minLng + (chunkBounds.maxLng - chunkBounds.minLng) * (chunkX / CHUNK_SIZE_TILES));
+        
+        const lat = latProgress;
+        const lng = lngProgress;
+        const elevation = await getElevation(lat, lng);
+        const biome = determineBiome(lat, elevation);
+        const buildingType = createTerrainBuilding(biome, elevation);
+        
+        grid[y][x] = {
+          x,
+          y,
+          building: createBuilding(buildingType as BuildingType),
+          zone: 'none',
+          landValue: 50,
+          pollution: 0,
+          crime: 0,
+          traffic: 0,
+          hasSubway: false,
+        };
+      }
+    }
+  }
+
+  // Apply hand-tuned overlays for preset cities (NYC/SF MVP) so geography looks sane.
+  const presetCity = detectPresetCity(centerLat, centerLng);
+  if (presetCity) {
+    console.log(`[Earth] Detected preset city: ${presetCity} at (${centerLat}, ${centerLng})`);
+    applyCityOverlay(grid, presetCity);
+  } else {
+    console.log(`[Earth] No preset city detected for (${centerLat}, ${centerLng})`);
+  }
+
+  // Extract water bodies from the chunk region
+  const waterBodies: WaterBody[] = [];
+  // Simple water body detection from the grid
+  const visited = new Set<string>();
+  
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      if (grid[y][x].building.type === 'water' && !visited.has(`${x},${y}`)) {
+        // Flood fill to find connected water tiles
+        const waterTiles: { x: number; y: number }[] = [];
+        const queue: { x: number; y: number }[] = [{ x, y }];
+        
+        while (queue.length > 0) {
+          const tile = queue.shift()!;
+          const key = `${tile.x},${tile.y}`;
+          
+          if (visited.has(key)) continue;
+          visited.add(key);
+          
+          if (grid[tile.y]?.[tile.x]?.building.type === 'water') {
+            waterTiles.push(tile);
+            
+            // Check neighbors
+            for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+              const nx = tile.x + dx;
+              const ny = tile.y + dy;
+              if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize) {
+                queue.push({ x: nx, y: ny });
+              }
+            }
+          }
+        }
+        
+        if (waterTiles.length > 5) {
+          // Only create water body if it's large enough
+          const avgX = waterTiles.reduce((sum, t) => sum + t.x, 0) / waterTiles.length;
+          const avgY = waterTiles.reduce((sum, t) => sum + t.y, 0) / waterTiles.length;
+          
+          waterBodies.push({
+            id: `water-${waterBodies.length}`,
+            // Deterministic naming (no "Caspian Sea" in San Francisco)
+            name: (waterTiles.some((t) => t.x === 0 || t.y === 0 || t.x === gridSize - 1 || t.y === gridSize - 1) || waterTiles.length > 200) ? 'Ocean' : 'Lake',
+            type: (waterTiles.some((t) => t.x === 0 || t.y === 0 || t.x === gridSize - 1 || t.y === gridSize - 1) || waterTiles.length > 200) ? 'ocean' : 'lake',
+            tiles: waterTiles,
+            centerX: Math.round(avgX),
+            centerY: Math.round(avgY),
+          });
+        }
+      }
+    }
+  }
+  
+  const adjacentCities = generateAdjacentCities();
+  
+  // Store chunk info for future loading
+  const loadedChunks: Record<string, EarthChunk> = {};
+  loadedChunks[getChunkKey(centerChunk.x, centerChunk.y)] = chunk;
+
+  return {
+    id: generateUUID(),
+    grid,
+    gridSize,
+    cityName,
+    year: 2024,
+    month: 1,
+    day: 1,
+    hour: 12,
+    tick: 0,
+    speed: 1,
+    selectedTool: 'select',
+    taxRate: 9,
+    effectiveTaxRate: 9,
+    stats: createInitialStats(),
+    budget: createInitialBudget(),
+    services: createServiceCoverage(gridSize),
+    notifications: [],
+    advisorMessages: [],
+    history: [],
+    activePanel: 'none',
+    disastersEnabled: true,
+    adjacentCities,
+    waterBodies,
+    gameVersion: 0,
+    // Earth mode fields
+    currentChunk: centerChunk,
+    centerLatLng: { lat: centerLat, lng: centerLng },
+    loadedChunks,
   };
 }
 

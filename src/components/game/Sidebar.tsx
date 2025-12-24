@@ -320,7 +320,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     { 
       key: 'community', 
       label: 'Community', 
-      tools: ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[]
+      tools: ['community_center', 'animal_pens_farm', 'office_building_small', 'irish_pub'] as Tool[]
     },
     { 
       key: 'utilities', 

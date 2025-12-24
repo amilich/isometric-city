@@ -63,6 +63,8 @@ import {
 import { SERVICE_CONFIG } from '@/lib/simulation';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
 import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
+
+const IRISH_PUB_SRC = '/assets/buildings/irish_pub.png';
 import { TileInfoPanel } from '@/components/game/panels';
 import {
   findMarinasAndPiers,
@@ -1805,6 +1807,32 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       // Handle roads separately with adjacency
       if (buildingType === 'road') {
         drawRoad(ctx, x, y, tile.x, tile.y, zoom);
+        return;
+      }
+
+      // Custom standalone-image buildings
+      if (buildingType === 'irish_pub') {
+        const img = getCachedImage(IRISH_PUB_SRC);
+        if (!img) {
+          // Fire-and-forget load; placeholder will render until it arrives
+          loadImage(IRISH_PUB_SRC).catch(() => {});
+          drawPlaceholderBuilding(ctx, x, y, buildingType, TILE_WIDTH, TILE_HEIGHT);
+          return;
+        }
+
+        const imgW = img.naturalWidth || img.width;
+        const imgH = img.naturalHeight || img.height;
+        const aspect = imgH / imgW;
+
+        // Scale relative to tile size; tuned for 1x1 footprint
+        const destW = Math.round(TILE_WIDTH * 1.9);
+        const destH = Math.round(destW * aspect);
+
+        // Anchor the building to sit on the tile
+        const drawX = Math.round(x + TILE_WIDTH / 2 - destW / 2);
+        const drawY = Math.round(y + TILE_HEIGHT / 2 - destH * 0.85);
+
+        ctx.drawImage(img, drawX, drawY, destW, destH);
         return;
       }
       

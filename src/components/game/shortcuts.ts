@@ -8,6 +8,11 @@ export const KEYBOARD_SHORTCUTS = {
   SEARCH: { key: 'k', meta: true, label: '⌘K' }, // CommandMenu
   HELP: { key: '?', label: '?' },
   
+  // Additional Tools
+  RAIL: { key: 'l', label: 'L' },
+  SUBWAY: { key: 'm', label: 'M' },
+  DEZONE: { key: '4', label: '4' },
+  
   // Future/Suggested
   ROAD: { key: 'r', label: 'R' },
   RESIDENTIAL: { key: '1', label: '1' },

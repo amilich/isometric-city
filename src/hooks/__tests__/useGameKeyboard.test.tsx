@@ -169,6 +169,42 @@ describe('useGameKeyboard', () => {
     expect(mockSetTool).toHaveBeenCalledWith('zone_industrial');
   });
 
+  it('selects dezone on 4', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('4');
+    expect(mockSetTool).toHaveBeenCalledWith('zone_dezone');
+  });
+
+  it('selects rail on L', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('l');
+    expect(mockSetTool).toHaveBeenCalledWith('rail');
+  });
+
+  it('selects subway on M', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('m');
+    expect(mockSetTool).toHaveBeenCalledWith('subway');
+  });
+
   it('calls onToggleHelp on "?"', () => {
     const mockOnToggleHelp = vi.fn();
     runHook({

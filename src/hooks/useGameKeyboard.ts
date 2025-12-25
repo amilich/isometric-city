@@ -61,6 +61,15 @@ export function useGameKeyboard({
       } else if (e.key === '3') {
         e.preventDefault();
         setTool('zone_industrial');
+      } else if (e.key === '4') {
+        e.preventDefault();
+        setTool('zone_dezone');
+      } else if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
+        setTool('rail');
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        setTool('subway');
       } else if (e.key === '?') {
         e.preventDefault();
         onToggleHelp?.();

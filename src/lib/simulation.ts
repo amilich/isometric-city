@@ -1618,7 +1618,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Finance Advisor',
       icon: 'cash',
-      messages: [`City is running a deficit of $${Math.abs(netIncome)}/month. Consider raising taxes or cutting services.`],
+      messages: [`City is running a deficit of ₺${Math.abs(netIncome)}/month. Consider raising taxes or cutting services.`],
       priority: netIncome < -500 ? 'critical' : 'high',
     });
   }

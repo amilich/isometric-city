@@ -212,13 +212,13 @@ export const TopBar = React.memo(function TopBar() {
         <StatBadge value={stats.population.toLocaleString()} label="Nüfus" />
         <StatBadge value={stats.jobs.toLocaleString()} label="İşler" />
         <StatBadge 
-          value={`$${stats.money.toLocaleString()}`} 
+          value={`₺${stats.money.toLocaleString()}`} 
           label="Fonlar"
           variant={stats.money < 0 ? 'destructive' : stats.money < 1000 ? 'warning' : 'success'}
         />
         <Separator orientation="vertical" className="h-8" />
         <StatBadge 
-          value={`$${(stats.income - stats.expenses).toLocaleString()}`} 
+          value={`₺${(stats.income - stats.expenses).toLocaleString()}`}  
           label="Aylık"
           variant={stats.income - stats.expenses >= 0 ? 'success' : 'destructive'}
         />

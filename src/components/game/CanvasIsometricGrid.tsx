@@ -3971,8 +3971,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
                 <div className="text-sm text-muted-foreground">
                   {city.name} ile bağlantı kurmak bir ticaret yolu oluşturacak ve size şunları sağlayacak:
                   <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Tek seferlik 5.000$ bonus</li>
-                    <li>Aylık 200$ ek gelir</li>
+                  <li>Tek seferlik 5.000₺ bonus</li>
+                  <li>Aylık 200₺ ek gelir</li>
                   </ul>
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -4024,7 +4024,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             {isDragging && dragStartTile && dragEndTile && showsDragGrid ? (
               <>
                 {TOOL_INFO[selectedTool].name} - {Math.abs(dragEndTile.x - dragStartTile.x) + 1}x{Math.abs(dragEndTile.y - dragStartTile.y) + 1} area
-                {TOOL_INFO[selectedTool].cost > 0 && ` - $${TOOL_INFO[selectedTool].cost * (Math.abs(dragEndTile.x - dragStartTile.x) + 1) * (Math.abs(dragEndTile.y - dragStartTile.y) + 1)}`}
+                {TOOL_INFO[selectedTool].cost > 0 && ` - ₺${TOOL_INFO[selectedTool].cost * (Math.abs(dragEndTile.x - dragStartTile.x) + 1) * (Math.abs(dragEndTile.y - dragStartTile.y) + 1)}`}
               </>
             ) : isWaterfrontPlacementInvalid ? (
               <>
@@ -4033,7 +4033,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             ) : (
               <>
                 {TOOL_INFO[selectedTool].name} at ({hoveredTile.x}, {hoveredTile.y})
-                {TOOL_INFO[selectedTool].cost > 0 && ` - $${TOOL_INFO[selectedTool].cost}`}
+                {TOOL_INFO[selectedTool].cost > 0 && ` - ₺${TOOL_INFO[selectedTool].cost}`}
                 {showsDragGrid && ' - Drag to zone area'}
                 {supportsDragPlace && !showsDragGrid && ' - Drag to place'}
               </>

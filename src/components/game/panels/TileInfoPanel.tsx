@@ -90,7 +90,7 @@ export function TileInfoPanel({
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Arsa Değeri</span>
-          <span>${tile.landValue}</span>
+          <span>₺{tile.landValue}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Kirlilik</span>

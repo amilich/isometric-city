@@ -101,12 +101,12 @@ export function StatisticsPanel() {
             </Card>
             <Card className="p-2 sm:p-3">
               <div className="text-muted-foreground text-[10px] sm:text-xs mb-1">Hazine</div>
-              <div className="font-mono tabular-nums font-semibold text-amber-400 text-sm sm:text-base truncate">${stats.money.toLocaleString()}</div>
+              <div className="font-mono tabular-nums font-semibold text-amber-400 text-sm sm:text-base truncate">₺{stats.money.toLocaleString()}</div>
             </Card>
             <Card className="p-2 sm:p-3">
               <div className="text-muted-foreground text-[10px] sm:text-xs mb-1">Haftalık</div>
               <div className={`font-mono tabular-nums font-semibold text-sm sm:text-base truncate ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                ${Math.floor((stats.income - stats.expenses) / 4).toLocaleString()}
+                ₺{Math.floor((stats.income - stats.expenses) / 4).toLocaleString()}
               </div>
             </Card>
           </div>

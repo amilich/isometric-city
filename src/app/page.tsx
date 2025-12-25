@@ -224,7 +224,7 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
       </h3>
       <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
         <span>Pop: {city.population.toLocaleString()}</span>
-        <span>${city.money.toLocaleString()}</span>
+        <span>₺{city.money.toLocaleString()}</span>
       </div>
     </button>
   );

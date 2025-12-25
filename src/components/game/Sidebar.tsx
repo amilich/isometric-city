@@ -224,7 +224,7 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                       <div className="flex flex-col gap-1">
                         <span className="font-bold">{info.name}</span>
                         <span className="text-xs text-muted-foreground">{info.description}</span>
-                        {info.cost > 0 && <span className="text-xs font-mono text-green-400">${info.cost.toLocaleString()}</span>}
+                        {info.cost > 0 && <span className="text-xs font-mono text-green-400">₺{info.cost.toLocaleString()}</span>}
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -417,7 +417,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                       <div className="flex flex-col gap-1">
                         <span className="font-bold">{info.name}</span>
                         <span className="text-xs text-muted-foreground">{info.description}</span>
-                        {info.cost > 0 && <span className="text-xs font-mono text-green-400">${info.cost.toLocaleString()}</span>}
+                        {info.cost > 0 && <span className="text-xs font-mono text-green-400">₺{info.cost.toLocaleString()}</span>}
                       </div>
                     </TooltipContent>
                   </Tooltip>

@@ -34,9 +34,9 @@ function formatPopulation(pop: number): string {
 
 // Format money for display
 function formatMoney(money: number): string {
-  if (money >= 1000000) return `$${(money / 1000000).toFixed(1)}M`;
-  if (money >= 1000) return `$${(money / 1000).toFixed(1)}K`;
-  return `$${money}`;
+  if (money >= 1000000) return `₺${(money / 1000000).toFixed(1)}M`;
+  if (money >= 1000) return `₺${(money / 1000).toFixed(1)}K`;
+  return `₺${money}`;
 }
 
 export function SettingsPanel() {

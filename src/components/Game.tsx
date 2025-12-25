@@ -162,7 +162,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         addMoney(triggeredCheat.amount);
         addNotification(
           'Retro Cheat Activated!',
-          'Your accountants are confused but not complaining. You received $50,000!',
+          'Your accountants are confused but not complaining. You received ₺50,000!',
           'trophy'
         );
         clearTriggeredCheat();
@@ -172,7 +172,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         addMoney(triggeredCheat.amount);
         addNotification(
           'Motherlode!',
-          'Your treasury just got a lot heavier. You received $1,000,000!',
+          'Your treasury just got a lot heavier. You received ₺1,000,000!',
           'trophy'
         );
         clearTriggeredCheat();

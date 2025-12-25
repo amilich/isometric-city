@@ -32,16 +32,16 @@ export function BudgetPanel() {
           <div className="grid grid-cols-3 gap-4 pb-4 border-b border-border">
             <div>
               <div className="text-muted-foreground text-xs mb-1">Gelir</div>
-              <div className="text-green-400 font-mono">${stats.income.toLocaleString()}/ay</div>
+              <div className="text-green-400 font-mono">₺{stats.income.toLocaleString()}/ay</div>
             </div>
             <div>
               <div className="text-muted-foreground text-xs mb-1">Giderler</div>
-              <div className="text-red-400 font-mono">${stats.expenses.toLocaleString()}/ay</div>
+              <div className="text-red-400 font-mono">₺{stats.expenses.toLocaleString()}/ay</div>
             </div>
             <div>
               <div className="text-muted-foreground text-xs mb-1">Net</div>
               <div className={`font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                ${(stats.income - stats.expenses).toLocaleString()}/ay
+                ₺{(stats.income - stats.expenses).toLocaleString()}/ay
               </div>
             </div>
           </div>

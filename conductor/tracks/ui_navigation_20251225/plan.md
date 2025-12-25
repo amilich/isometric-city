@@ -37,7 +37,7 @@
     - [ ] Audit touch targets for help buttons on mobile
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Polish & Mobile Optimization' (Protocol in workflow.md) [da5ba79]
 
-## Phase 4: Comprehensive Shortcuts
+## Phase 4: Comprehensive Shortcuts [checkpoint: 3b10ff3]
 
 - [x] Task: Implement remaining top-level tool shortcuts [057f4de]
     - [ ] Update `shortcuts.ts` with Rail (L), Subway (M), Dezone (4)
@@ -50,4 +50,4 @@
 - [x] Task: Update Help Panel and Tooltips [54a80e1]
     - [ ] Update `ShortcutsHelpPanel` to list new category shortcuts
     - [ ] Update Sidebar tooltips to show the cycling shortcut (e.g., "Police Station (S)")
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Comprehensive Shortcuts' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Comprehensive Shortcuts' (Protocol in workflow.md) [3b10ff3]

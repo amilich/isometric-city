@@ -7,12 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CloseIcon } from '@/components/ui/Icons';
-import { isServiceBuildingConnectedToRoad } from '@/lib/simulation';
-
-// Service buildings that require road connection
-const SERVICE_BUILDINGS_REQUIRING_ROAD = new Set([
-  'police_station', 'fire_station', 'hospital', 'school', 'university'
-]);
+import { SERVICE_CONFIG, hasRequiredRoadAccess } from '@/lib/simulation';
 
 interface TileInfoPanelProps {
   tile: Tile;
@@ -40,11 +35,10 @@ export function TileInfoPanel({
 }: TileInfoPanelProps) {
   const { x, y } = tile;
   
-  // Check if this is a service building that requires road connection
-  const requiresRoadConnection = SERVICE_BUILDINGS_REQUIRING_ROAD.has(tile.building.type);
-  const hasRoadConnection = requiresRoadConnection 
-    ? isServiceBuildingConnectedToRoad(grid, gridSize, x, y) 
-    : true;
+  // Check if this building requires road connection
+  const config = SERVICE_CONFIG[tile.building.type as keyof typeof SERVICE_CONFIG];
+  const requiresRoadConnection = config?.requiresRoad === true;
+  const hasRoadConnection = hasRequiredRoadAccess(grid, gridSize, x, y, tile.building.type);
   
   return (
     <Card 

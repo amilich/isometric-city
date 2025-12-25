@@ -60,7 +60,7 @@ import {
   OVERLAY_CIRCLE_FILL_COLORS,
   OVERLAY_HIGHLIGHT_COLORS,
 } from '@/components/game/overlays';
-import { SERVICE_CONFIG, isServiceBuildingConnectedToRoad } from '@/lib/simulation';
+import { SERVICE_CONFIG, hasRequiredRoadAccess } from '@/lib/simulation';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
 import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
 import { TileInfoPanel } from '@/components/game/panels';
@@ -2924,11 +2924,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           const circleFillColor = OVERLAY_CIRCLE_FILL_COLORS[overlayMode];
           const highlightColor = OVERLAY_HIGHLIGHT_COLORS[overlayMode];
           
-          // Service buildings that require road connection (not utilities like power/water)
-          const SERVICE_BUILDINGS_REQUIRING_ROAD = new Set([
-            'police_station', 'fire_station', 'hospital', 'school', 'university'
-          ]);
-          
           // Find all service buildings of this type and draw their radii
           for (let y = 0; y < gridSize; y++) {
             for (let x = 0; x < gridSize; x++) {
@@ -2947,9 +2942,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               
               const range = config.range;
               
-              // Check if this service building requires road connection and if it's connected
-              const requiresRoad = SERVICE_BUILDINGS_REQUIRING_ROAD.has(tile.building.type);
-              const isConnected = !requiresRoad || isServiceBuildingConnectedToRoad(grid, gridSize, x, y);
+              // Check if this service building has required road access
+              const isConnected = hasRequiredRoadAccess(grid, gridSize, x, y, tile.building.type);
               
               // NOTE: For multi-tile service buildings (e.g. 2x2 hospital, 3x3 university),
               // coverage is computed from the building's anchor tile (top-left of footprint)

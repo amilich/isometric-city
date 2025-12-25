@@ -844,43 +844,39 @@ export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityNam
 // Service building configuration - defined once, reused across calls
 // Exported so overlay rendering can access radii
 export const SERVICE_CONFIG = {
-  police_station: { range: 13, rangeSquared: 169, type: 'police' as const },
-  fire_station: { range: 18, rangeSquared: 324, type: 'fire' as const },
-  hospital: { range: 12, rangeSquared: 144, type: 'health' as const },
-  school: { range: 11, rangeSquared: 121, type: 'education' as const },
-  university: { range: 19, rangeSquared: 361, type: 'education' as const },
-  power_plant: { range: 15, rangeSquared: 225 },
-  water_tower: { range: 12, rangeSquared: 144 },
+  police_station: { range: 13, rangeSquared: 169, type: 'police' as const, requiresRoad: true },
+  fire_station: { range: 18, rangeSquared: 324, type: 'fire' as const, requiresRoad: true },
+  hospital: { range: 12, rangeSquared: 144, type: 'health' as const, requiresRoad: true },
+  school: { range: 11, rangeSquared: 121, type: 'education' as const, requiresRoad: true },
+  university: { range: 19, rangeSquared: 361, type: 'education' as const, requiresRoad: true },
+  power_plant: { range: 15, rangeSquared: 225, requiresRoad: false },
+  water_tower: { range: 12, rangeSquared: 144, requiresRoad: false },
 } as const;
 
-// Service buildings that require road connection to provide coverage
-// Utilities (power_plant, water_tower) don't need road connection - they provide infrastructure
-const SERVICE_BUILDINGS_REQUIRING_ROAD = new Set([
-  'police_station', 'fire_station', 'hospital', 'school', 'university'
-]);
-
-// Check if a service building has road access (adjacent road tile)
-// Returns true if a road exists within 1 tile (orthogonal or diagonal)
-export function isServiceBuildingConnectedToRoad(
+export function hasRequiredRoadAccess(
   grid: Tile[][],
   gridSize: number,
-  buildingX: number,
-  buildingY: number
+  x: number,
+  y: number,
+  buildingType: string
 ): boolean {
-  // Check all 8 adjacent tiles (orthogonal + diagonal)
+  const config = SERVICE_CONFIG[buildingType as keyof typeof SERVICE_CONFIG];
+  
+  if (!config || !config.requiresRoad) {
+    return true;
+  }
+  
   const directions = [
-    [-1, 0], [1, 0], [0, -1], [0, 1],  // orthogonal
-    [-1, -1], [-1, 1], [1, -1], [1, 1]  // diagonal
+    [-1, 0], [1, 0], [0, -1], [0, 1],
+    [-1, -1], [-1, 1], [1, -1], [1, 1]
   ];
   
   for (const [dx, dy] of directions) {
-    const nx = buildingX + dx;
-    const ny = buildingY + dy;
+    const nx = x + dx;
+    const ny = y + dy;
     
-    // Check bounds
     if (nx < 0 || ny < 0 || nx >= gridSize || ny >= gridSize) continue;
     
-    // Check if this tile is a road
     if (grid[ny][nx].building.type === 'road') {
       return true;
     }
@@ -920,12 +916,9 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
         continue;
       }
       
-      // Skip service buildings (police, fire, hospital, school, university) that aren't connected to roads
-      // Utilities (power_plant, water_tower) don't need road connection
-      if (SERVICE_BUILDINGS_REQUIRING_ROAD.has(buildingType)) {
-        if (!isServiceBuildingConnectedToRoad(grid, size, x, y)) {
-          continue;
-        }
+
+      if (!hasRequiredRoadAccess(grid, size, x, y, buildingType)) {
+        continue;
       }
       
       serviceBuildings.push({ x, y, type: buildingType });

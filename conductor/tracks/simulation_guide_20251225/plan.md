@@ -1,0 +1,29 @@
+# Plan: Simulation Dynamics Player Guide
+
+## Phase 1: Setup & Building Catalog
+
+- [x] Task: Create `PLAYER_GUIDE.md` with initial directory structure and Overview [Red: Verify file missing] 49eceb6
+- [ ] Task: Document Service Buildings (Police, Fire, Hospital, School) extracting data from `src/game/constants.ts`
+- [ ] Task: Document Infrastructure mechanics (Roads, Power, Water connectivity rules)
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Setup & Building Catalog' (Protocol in workflow.md)
+
+## Phase 2: Zoning & Growth Mechanics
+
+- [ ] Task: Document Zone Types (Residential, Commercial, Industrial) and their basic functions
+- [ ] Task: Document Growth Logic (Requirements for placement vs. development)
+- [ ] Task: Document Leveling Up and Abandonment criteria based on `simulation.ts` logic
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Zoning & Growth Mechanics' (Protocol in workflow.md)
+
+## Phase 3: Systems & Economy
+
+- [ ] Task: Document Traffic simulation rules (Congestion effects, pathfinding behavior summary)
+- [ ] Task: Document Land Value mechanics and influencers
+- [ ] Task: Document Crime & Safety propagation rules
+- [ ] Task: Document Economy (Tax income sources, Maintenance expense calculations)
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Systems & Economy' (Protocol in workflow.md)
+
+## Phase 4: Review & Verification
+
+- [ ] Task: Manual Data Audit - Randomly sample 5 building stats in the guide and verify against `constants.ts`
+- [ ] Task: Readability Pass - Ensure language is player-facing and avoids internal variable names
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Review & Verification' (Protocol in workflow.md)

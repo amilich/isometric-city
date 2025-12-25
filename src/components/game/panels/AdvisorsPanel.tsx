@@ -41,13 +41,30 @@ export function AdvisorsPanel() {
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[500px] max-h-[600px]">
+      <DialogContent className="max-w-[500px] max-h-[600px] flex flex-col">
         <DialogHeader>
           <DialogTitle>City Advisors</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <Card className="flex items-center gap-4 p-4 bg-primary/10 border-primary/30">
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #6b7280;
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #9ca3af;
+          }
+        `}</style>
+        
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+          <div className="pr-6"></div>
+          <Card className="flex items-center gap-4 p-4 bg-primary/10 border-primary/30 flex-shrink-0">
             <div 
               className={`w-16 h-16 flex items-center justify-center text-3xl font-black rounded-md ${gradeColor} bg-primary/20`}
             >
@@ -59,8 +76,11 @@ export function AdvisorsPanel() {
             </div>
           </Card>
           
-          <ScrollArea className="max-h-[350px]">
-            <div className="space-y-3">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 -mr-6 custom-scrollbar" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#6b7280 transparent'
+          }}>
+            <div className="space-y-3 pr-6">
               {advisorMessages.length === 0 ? (
                 <Card className="text-center py-8 text-muted-foreground bg-primary/10 border-primary/30">
                   <AdvisorIcon size={32} className="mx-auto mb-3 opacity-50" />
@@ -96,7 +116,7 @@ export function AdvisorsPanel() {
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

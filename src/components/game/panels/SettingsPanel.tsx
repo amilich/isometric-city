@@ -66,6 +66,7 @@ export function SettingsPanel() {
   const [showSpriteTest, setShowSpriteTest] = useState(spriteTestFromUrl);
   const lastUrlValueRef = useRef(spriteTestFromUrl);
   const isUpdatingFromStateRef = useRef(false);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
   
   // Sync state with query parameter when URL changes externally
   useEffect(() => {
@@ -105,6 +106,54 @@ export function SettingsPanel() {
     await navigator.clipboard.writeText(exported);
     setExportCopied(true);
     setTimeout(() => setExportCopied(false), 2000);
+  };
+
+  const handleDownloadExport = () => {
+    const exported = exportState();
+    const blob = new Blob([exported], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const safeName = (state.cityName || 'isocity')
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    const date = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safeName || 'isocity'}-${date}.isocity.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const file = e.target.files?.[0];
+    // Allow re-selecting the same file by resetting the value
+    e.target.value = '';
+    if (!file) return;
+
+    setImportError(false);
+    setImportSuccess(false);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '').trim();
+      if (!text) {
+        setImportError(true);
+        return;
+      }
+      const success = loadState(text);
+      if (success) {
+        setImportSuccess(true);
+        setImportValue('');
+        setTimeout(() => setImportSuccess(false), 2000);
+        setActivePanel('none');
+      } else {
+        setImportError(true);
+      }
+    };
+    reader.onerror = () => {
+      setImportError(true);
+    };
+    reader.readAsText(file);
   };
   
   const handleImport = () => {
@@ -295,21 +344,36 @@ export function SettingsPanel() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="font-medium text-sm truncate flex-1">
-                            {city.cityName}
-                            {city.id === currentCityId && (
-                              <span className="ml-2 text-[10px] text-primary">(current)</span>
+                        <div className="flex gap-3">
+                          <div className="w-14 h-14 flex-shrink-0 bg-muted/20 border border-border overflow-hidden">
+                            {city.preview ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={city.preview} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                                No preview
+                              </div>
                             )}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-                          <span>Pop: {formatPopulation(city.population)}</span>
-                          <span>{formatMoney(city.money)}</span>
-                          <span>{city.gridSize}×{city.gridSize}</span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground mb-2">
-                          Saved {formatDate(city.savedAt)}
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between mb-1">
+                              <div className="font-medium text-sm truncate flex-1">
+                                {city.cityName}
+                                {city.id === currentCityId && (
+                                  <span className="ml-2 text-[10px] text-primary">(current)</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2 flex-wrap">
+                              <span>Pop: {formatPopulation(city.population)}</span>
+                              <span>{formatMoney(city.money)}</span>
+                              <span>{city.gridSize}×{city.gridSize}</span>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground mb-2">
+                              Saved {formatDate(city.savedAt)}
+                            </div>
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           {city.id !== currentCityId && (
@@ -428,11 +492,32 @@ export function SettingsPanel() {
             >
               {exportCopied ? '✓ Copied!' : 'Copy Game State'}
             </Button>
+            <Button
+              variant="outline"
+              className="w-full mt-2"
+              onClick={handleDownloadExport}
+            >
+              Download Save File
+            </Button>
           </div>
           
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import Game</div>
             <p className="text-muted-foreground text-xs mb-2">Paste a game state to load it</p>
+            <input
+              ref={importFileInputRef}
+              type="file"
+              accept=".json,.isocity.json,application/json,text/plain"
+              className="hidden"
+              onChange={handleImportFile}
+            />
+            <Button
+              variant="outline"
+              className="w-full mb-2"
+              onClick={() => importFileInputRef.current?.click()}
+            >
+              Import from File
+            </Button>
             <textarea
               className="w-full h-20 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
               placeholder="Paste game state here..."

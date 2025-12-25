@@ -33,7 +33,18 @@ import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
 const CARGO_TYPE_NAMES = ['containers', 'bulk materials', 'oil'];
 
 export default function Game({ onExit }: { onExit?: () => void }) {
-  const { state, setTool, setActivePanel, addMoney, addNotification, setSpeed } = useGame();
+  const {
+    state,
+    setTool,
+    setActivePanel,
+    addMoney,
+    addNotification,
+    setSpeed,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
@@ -129,6 +140,23 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         return;
       }
 
+      // Undo / Redo
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (canRedo) redo();
+        } else {
+          if (canUndo) undo();
+        }
+        return;
+      }
+      if (mod && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault();
+        if (canRedo) redo();
+        return;
+      }
+
       if (e.key === 'Escape') {
         if (overlayMode !== 'none') {
           setOverlayMode('none');
@@ -152,7 +180,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.activePanel, state.selectedTool, state.speed, selectedTile, setActivePanel, setTool, setSpeed, overlayMode]);
+  }, [state.activePanel, state.selectedTool, state.speed, selectedTile, setActivePanel, setTool, setSpeed, overlayMode, undo, redo, canUndo, canRedo]);
 
   // Handle cheat code triggers
 useEffect(() => {

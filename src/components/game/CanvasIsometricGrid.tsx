@@ -118,7 +118,16 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const {
+    state,
+    placeAtTile,
+    beginUserAction,
+    endUserAction,
+    connectToCity,
+    checkAndDiscoverCities,
+    currentSpritePack,
+    visualHour,
+  } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -3472,6 +3481,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           setIsDragging(true);
         } else if (supportsDragPlace) {
           panCandidateRef.current = null;
+          // Begin an undoable user action. The snapshot is only committed
+          // if a placement actually changes game state.
+          beginUserAction();
           // For roads, bulldoze, and other tools, start drag-to-place
           setDragStartTile({ x: gridX, y: gridY });
           setDragEndTile({ x: gridX, y: gridY });
@@ -3488,7 +3500,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
+  }, [offset, gridSize, selectedTool, placeAtTile, beginUserAction, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
@@ -3678,6 +3690,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     // Fill the drag rectangle when mouse is released (only for zoning tools)
     if (isDragging && dragStartTile && dragEndTile && showsDragGrid) {
+      // Zoning rect is committed on mouse up, so take the undo snapshot now.
+      beginUserAction();
       const minX = Math.min(dragStartTile.x, dragEndTile.x);
       const maxX = Math.max(dragStartTile.x, dragEndTile.x);
       const minY = Math.min(dragStartTile.y, dragEndTile.y);
@@ -3688,6 +3702,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           placeAtTile(x, y);
         }
       }
+
+      endUserAction();
+    } else if (isDragging && selectedTool !== 'select') {
+      // Drag-to-place tools begin on mouse down
+      endUserAction();
     }
     
     // After placing roads or rail, check if any cities should be discovered
@@ -3714,7 +3733,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!containerRef.current) {
       setHoveredTile(null);
     }
-  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
+  }, [isDragging, showsDragGrid, dragStartTile, dragEndTile, selectedTool, placeAtTile, beginUserAction, endUserAction, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();

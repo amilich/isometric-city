@@ -350,6 +350,11 @@ export interface SavedCityMeta {
   month: number;
   gridSize: number;
   savedAt: number; // timestamp
+  /**
+   * Small preview image for UI (data URL, usually PNG).
+   * Optional for backward compatibility with older saves.
+   */
+  preview?: string;
 }
 
 // Building evolution paths based on zone and level

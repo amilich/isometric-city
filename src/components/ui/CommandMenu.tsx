@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 import { useMobile } from '@/hooks/useMobile';
+import { copyShareUrl } from '@/lib/shareState';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,9 +21,11 @@ export function openCommandMenu() {
 // Define all menu items with categories
 interface MenuItem {
   id: string;
-  type: 'tool' | 'panel';
+  type: 'tool' | 'panel' | 'action';
   tool?: Tool;
   panel?: 'budget' | 'statistics' | 'advisors' | 'settings';
+  action?: 'undo' | 'redo' | 'share' | 'save_city' | 'toggle_pause';
+  disabled?: boolean;
   name: string;
   description: string;
   cost?: number;
@@ -31,6 +34,7 @@ interface MenuItem {
 }
 
 const MENU_CATEGORIES = [
+  { key: 'actions', label: 'Actions' },
   { key: 'tools', label: 'Tools' },
   { key: 'zones', label: 'Zones' },
   { key: 'services', label: 'Services' },
@@ -231,12 +235,78 @@ function buildMenuItems(): MenuItem[] {
   return items;
 }
 
-const ALL_MENU_ITEMS = buildMenuItems();
+const BASE_MENU_ITEMS = buildMenuItems();
 
 export function CommandMenu() {
   const { isMobileDevice } = useMobile();
-  const { state, setTool, setActivePanel } = useGame();
+  const {
+    state,
+    setTool,
+    setActivePanel,
+    setSpeed,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    saveCity,
+    addNotification,
+  } = useGame();
   const { stats } = state;
+
+  const actionItems = useMemo<MenuItem[]>(() => {
+    const isPaused = state.speed === 0;
+    return [
+      {
+        id: 'undo',
+        type: 'action',
+        action: 'undo',
+        name: 'Undo',
+        description: 'Revert your last placement/change',
+        category: 'actions',
+        keywords: ['undo', 'revert', 'ctrl z', 'cmd z'],
+        disabled: !canUndo,
+      },
+      {
+        id: 'redo',
+        type: 'action',
+        action: 'redo',
+        name: 'Redo',
+        description: 'Reapply the last undone change',
+        category: 'actions',
+        keywords: ['redo', 'ctrl y', 'cmd shift z'],
+        disabled: !canRedo,
+      },
+      {
+        id: 'share',
+        type: 'action',
+        action: 'share',
+        name: 'Copy share link',
+        description: 'Copy a link that opens this exact city',
+        category: 'actions',
+        keywords: ['share', 'link', 'copy', 'url'],
+      },
+      {
+        id: 'save_city',
+        type: 'action',
+        action: 'save_city',
+        name: 'Save city snapshot',
+        description: 'Save this city to your Saved Cities list',
+        category: 'actions',
+        keywords: ['save', 'snapshot', 'city'],
+      },
+      {
+        id: 'toggle_pause',
+        type: 'action',
+        action: 'toggle_pause',
+        name: isPaused ? 'Resume simulation' : 'Pause simulation',
+        description: isPaused ? 'Set speed to 1×' : 'Set speed to 0×',
+        category: 'actions',
+        keywords: ['pause', 'resume', 'speed', 'time'],
+      },
+    ];
+  }, [state.speed, canUndo, canRedo]);
+
+  const allItems = useMemo<MenuItem[]>(() => [...actionItems, ...BASE_MENU_ITEMS], [actionItems]);
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -270,10 +340,10 @@ export function CommandMenu() {
 
   // Filter items based on search
   const filteredItems = useMemo(() => {
-    if (!search.trim()) return ALL_MENU_ITEMS;
+    if (!search.trim()) return allItems;
 
     const searchLower = search.toLowerCase().trim();
-    return ALL_MENU_ITEMS.filter(item => {
+    return allItems.filter(item => {
       // Check name
       if (item.name.toLowerCase().includes(searchLower)) return true;
       // Check description
@@ -327,14 +397,47 @@ export function CommandMenu() {
   }, [isMobileDevice]);
 
   // Handle item selection
-  const handleSelect = useCallback((item: MenuItem) => {
-    if (item.type === 'tool' && item.tool) {
-      setTool(item.tool);
-    } else if (item.type === 'panel' && item.panel) {
-      setActivePanel(state.activePanel === item.panel ? 'none' : item.panel);
-    }
-    setOpen(false);
-  }, [setTool, setActivePanel, state.activePanel]);
+  const handleSelect = useCallback(
+    (item: MenuItem) => {
+      if (item.disabled) {
+        return;
+      }
+
+      if (item.type === 'tool' && item.tool) {
+        setTool(item.tool);
+      } else if (item.type === 'panel' && item.panel) {
+        setActivePanel(state.activePanel === item.panel ? 'none' : item.panel);
+      } else if (item.type === 'action' && item.action) {
+        switch (item.action) {
+          case 'undo':
+            undo();
+            break;
+          case 'redo':
+            redo();
+            break;
+          case 'toggle_pause':
+            setSpeed(state.speed === 0 ? 1 : 0);
+            break;
+          case 'save_city':
+            saveCity();
+            addNotification('City saved', 'Snapshot added to your saved cities list.', '💾');
+            break;
+          case 'share':
+            void copyShareUrl(state).then((ok) => {
+              if (ok) {
+                addNotification('Share link copied', 'Paste it anywhere to load this city.', '🔗');
+              } else {
+                addNotification('Unable to copy link', 'Your browser blocked clipboard access. Try Export in Settings.', '⚠️');
+              }
+            });
+            break;
+        }
+      }
+
+      setOpen(false);
+    },
+    [setTool, setActivePanel, state, undo, redo, setSpeed, saveCity, addNotification],
+  );
 
   // Scroll selected item into view
   useEffect(() => {
@@ -397,7 +500,7 @@ export function CommandMenu() {
             ref={inputRef}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search tools, buildings, panels..."
+            placeholder="Search tools, actions, panels..."
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent h-12 text-sm"
           />
           <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-sidebar-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
@@ -427,19 +530,20 @@ export function CommandMenu() {
                         const globalIndex = flatItems.indexOf(item);
                         const isSelected = globalIndex === selectedIndex;
                         const canAfford = item.cost === undefined || item.cost === 0 || stats.money >= item.cost;
+                        const isDisabled = !!item.disabled || !canAfford;
 
                         return (
                           <button
                             key={item.id}
                             data-index={globalIndex}
                             onClick={() => handleSelect(item)}
-                            disabled={!canAfford}
+                            disabled={isDisabled}
                             className={cn(
                               'flex items-center justify-between gap-2 px-3 py-2 rounded-sm text-sm transition-colors text-left w-full',
                               isSelected 
                                 ? 'bg-primary text-primary-foreground' 
                                 : 'hover:bg-muted/60',
-                              !canAfford && 'opacity-50 cursor-not-allowed'
+                              isDisabled && 'opacity-50 cursor-not-allowed'
                             )}
                           >
                             <div className="flex flex-col gap-0.5 min-w-0">

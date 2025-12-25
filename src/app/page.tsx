@@ -7,9 +7,25 @@ import Game from '@/components/Game';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { SavedCityMeta } from '@/types/game';
+import { decompressFromUTF16 } from 'lz-string';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
+
+// Must match the encoding used in GameContext.tsx
+const STORAGE_VALUE_PREFIX = 'v2:'; // lz-string UTF16 compressed JSON
+
+function parseFromStorage<T>(raw: string): T | null {
+  try {
+    const json = raw.startsWith(STORAGE_VALUE_PREFIX)
+      ? decompressFromUTF16(raw.slice(STORAGE_VALUE_PREFIX.length))
+      : raw;
+    if (!json) return null;
+    return JSON.parse(json) as T;
+  } catch {
+    return null;
+  }
+}
 
 // Background color to filter from sprite sheets (red)
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -70,8 +86,8 @@ function hasSavedGame(): boolean {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.grid && parsed.gridSize && parsed.stats;
+      const parsed = parseFromStorage<any>(saved);
+      return !!(parsed && parsed.grid && parsed.gridSize && parsed.stats);
     }
   } catch {
     return false;
@@ -85,8 +101,8 @@ function loadSavedCities(): SavedCityMeta[] {
   try {
     const saved = localStorage.getItem(SAVED_CITIES_INDEX_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
+      const parsed = parseFromStorage<any>(saved);
+      if (parsed && Array.isArray(parsed)) {
         return parsed as SavedCityMeta[];
       }
     }
@@ -244,12 +260,31 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
       onClick={onLoad}
       className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200 group"
     >
-      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
-        {city.cityName}
-      </h3>
-      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>Pop: {city.population.toLocaleString()}</span>
-        <span>${city.money.toLocaleString()}</span>
+      <div className="flex gap-3 items-center">
+        <div className="w-16 h-16 flex-shrink-0 bg-white/5 border border-white/10 overflow-hidden">
+          {city.preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={city.preview}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[10px] text-white/30">
+              No preview
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
+            {city.cityName}
+          </h3>
+          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+            <span>Pop: {city.population.toLocaleString()}</span>
+            <span>${city.money.toLocaleString()}</span>
+          </div>
+        </div>
       </div>
     </button>
   );

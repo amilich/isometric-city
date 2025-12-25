@@ -335,6 +335,28 @@ export function ShareIcon({ size = 18, className }: IconProps) {
   );
 }
 
+export function UndoIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      {/* Arrow */}
+      <path {...baseStroke} d="M7 7l-4 4 4 4" />
+      {/* Curve */}
+      <path {...baseStroke} d="M3 11h10a6 6 0 1 1 0 12H11" />
+    </svg>
+  );
+}
+
+export function RedoIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      {/* Arrow */}
+      <path {...baseStroke} d="M17 7l4 4-4 4" />
+      {/* Curve */}
+      <path {...baseStroke} d="M21 11H11a6 6 0 1 0 0 12h2" />
+    </svg>
+  );
+}
+
 export function CheckIcon({ size = 18, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className}>

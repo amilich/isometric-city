@@ -21,7 +21,7 @@
     - [ ] Write tests for `ShortcutsHelpPanel` rendering and visibility toggling
     - [ ] Create `ShortcutsHelpPanel.tsx` using `radix-ui` dialog or sheet
     - [ ] List shortcuts from `src/components/game/constants.ts` or a new config file
-- [ ] Task: Add global '?' key listener and UI button to trigger help panel
+- [x] Task: Add global '?' key listener and UI button to trigger help panel [6103598]
     - [ ] Write tests for the keyboard listener and button click handler
     - [ ] Implement '?' key listener in `Game.tsx` or a dedicated hook
     - [ ] Add '?' help icon to `TopBar.tsx`

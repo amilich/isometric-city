@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
@@ -40,7 +41,7 @@ function formatMoney(money: number): string {
 }
 
 export function SettingsPanel() {
-  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
+  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, zoomSensitivity, setZoomSensitivity, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -142,6 +143,22 @@ export function SettingsPanel() {
                 checked={disastersEnabled}
                 onCheckedChange={setDisastersEnabled}
               />
+            </div>
+
+            <div className="py-2 mb-2">
+              <div className="flex items-center justify-between mb-2">
+                <Label>Yakınlaştırma Hassasiyeti</Label>
+                <span className="text-xs text-muted-foreground">{zoomSensitivity}</span>
+              </div>
+              <Slider
+                value={[zoomSensitivity]}
+                min={1}
+                max={10}
+                step={1}
+                onValueChange={(vals) => setZoomSensitivity(vals[0])}
+                className="py-2"
+              />
+              <p className="text-muted-foreground text-xs mt-1">Mouse tekerleği ile yakınlaştırma hızını ayarlar</p>
             </div>
             
             <div className="py-2">

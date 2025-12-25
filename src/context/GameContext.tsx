@@ -35,6 +35,7 @@ const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index'; // Index of all sav
 const SAVED_CITY_PREFIX = 'isocity-city-'; // Prefix for individual saved city states
 const SPRITE_PACK_STORAGE_KEY = 'isocity-sprite-pack';
 const DAY_NIGHT_MODE_STORAGE_KEY = 'isocity-day-night-mode';
+const ZOOM_SENSITIVITY_STORAGE_KEY = 'isocity-zoom-sensitivity';
 
 export type DayNightMode = 'auto' | 'day' | 'night';
 
@@ -74,6 +75,9 @@ type GameContextValue = {
   dayNightMode: DayNightMode;
   setDayNightMode: (mode: DayNightMode) => void;
   visualHour: number; // The hour to use for rendering (respects day/night mode override)
+  // Zoom sensitivity
+  zoomSensitivity: number;
+  setZoomSensitivity: (sensitivity: number) => void;
   // Save/restore city for shared links
   saveCurrentCityForRestore: () => void;
   restoreSavedCity: () => boolean;
@@ -329,6 +333,33 @@ function saveDayNightMode(mode: DayNightMode): void {
   }
 }
 
+// Load zoom sensitivity from localStorage
+function loadZoomSensitivity(): number {
+  if (typeof window === 'undefined') return 5;
+  try {
+    const saved = localStorage.getItem(ZOOM_SENSITIVITY_STORAGE_KEY);
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 10) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load zoom sensitivity preference:', e);
+  }
+  return 5;
+}
+
+// Save zoom sensitivity to localStorage
+function saveZoomSensitivity(sensitivity: number): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ZOOM_SENSITIVITY_STORAGE_KEY, sensitivity.toString());
+  } catch (e) {
+    console.error('Failed to save zoom sensitivity preference:', e);
+  }
+}
+
 // Save current city for later restoration (when viewing shared cities)
 function saveCityForRestore(state: GameState): void {
   if (typeof window === 'undefined') return;
@@ -495,6 +526,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Day/night mode state
   const [dayNightMode, setDayNightModeState] = useState<DayNightMode>('auto');
   
+  // Zoom sensitivity state
+  const [zoomSensitivity, setZoomSensitivityState] = useState<number>(5);
+
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   
@@ -510,6 +544,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const savedDayNightMode = loadDayNightMode();
     setDayNightModeState(savedDayNightMode);
     
+    // Load zoom sensitivity preference
+    const savedZoomSensitivity = loadZoomSensitivity();
+    setZoomSensitivityState(savedZoomSensitivity);
+
     // Load saved cities index
     const cities = loadSavedCitiesIndex();
     setSavedCities(cities);
@@ -841,6 +879,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     saveDayNightMode(mode);
   }, []);
 
+  const setZoomSensitivity = useCallback((sensitivity: number) => {
+    const clamped = clamp(sensitivity, 1, 10);
+    setZoomSensitivityState(clamped);
+    saveZoomSensitivity(clamped);
+  }, []);
+
   // Compute the visual hour based on the day/night mode override
   // This doesn't affect time progression, just the rendering
   const visualHour = dayNightMode === 'auto' 
@@ -1146,6 +1190,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dayNightMode,
     setDayNightMode,
     visualHour,
+    // Zoom sensitivity
+    zoomSensitivity,
+    setZoomSensitivity,
     // Save/restore city for shared links
     saveCurrentCityForRestore,
     restoreSavedCity,

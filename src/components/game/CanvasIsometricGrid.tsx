@@ -118,7 +118,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, zoomSensitivity } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -3727,7 +3727,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const mouseY = e.clientY - rect.top;
     
     // Calculate new zoom
-    const zoomDelta = e.deltaY > 0 ? -0.05 : 0.05;
+    // Base speed 0.1 (faster than previous 0.05), adjusted by sensitivity (1-10, default 5)
+    const baseSpeed = 0.1;
+    const sensitivityFactor = zoomSensitivity / 5;
+    const speed = baseSpeed * sensitivityFactor;
+    
+    const zoomDelta = e.deltaY > 0 ? -speed : speed;
     const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + zoomDelta));
     
     if (newZoom === zoom) return;
@@ -3747,7 +3752,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     
     setOffset(clampedOffset);
     setZoom(newZoom);
-  }, [zoom, offset, clampOffset]);
+  }, [zoom, offset, clampOffset, zoomSensitivity]);
 
   // Touch handlers for mobile
   const getTouchDistance = useCallback((touch1: React.Touch, touch2: React.Touch) => {

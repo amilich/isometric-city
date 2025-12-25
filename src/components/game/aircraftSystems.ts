@@ -120,34 +120,51 @@ export function useAircraftSystems(
       // Runway is drawn along the top-right (east) diagonal in the default asset.
       // When the sprite is horizontally mirrored, the runway aligns to the top-left (north) diagonal.
       if (!isFlipped) {
-        // Default: runway centerline along grid "east" (y axis, decreasing y visually).
+        // Default: runway centerline along grid "east" (y axis / left-most column).
         const runwayXOffset = 0; // left-most column of the 4x4 footprint
-        const runwayA = tileCenter(airportX + runwayXOffset, airportY + size.height - 1);
-        const runwayB = tileCenter(airportX + runwayXOffset, airportY);
+        const runwayA = tileCenter(airportX + runwayXOffset, airportY + size.height - 1); // "south" end
+        const runwayB = tileCenter(airportX + runwayXOffset, airportY); // "north" end
+
+        // Keep taxi points INSIDE the footprint
+        const apronMid = tileCenter(airportX + 2, airportY + 2);
+        const holdShortA = tileCenter(airportX + 1, airportY + 2); // near runwayA
+        const holdShortB = tileCenter(airportX + 1, airportY + 1); // near runwayB
         const gate = tileCenter(airportX + size.width - 1, airportY + 1);
-        return { runwayA, runwayB, gate };
+
+        return { runwayA, runwayB, gate, apronMid, holdShortA, holdShortB };
       }
 
       // Flipped: runway centerline along grid "north" (x axis, decreasing x visually).
       const runwayYOffset = 0; // top-most row of the 4x4 footprint
-      const runwayA = tileCenter(airportX + size.width - 1, airportY + runwayYOffset);
-      const runwayB = tileCenter(airportX, airportY + runwayYOffset);
+      const runwayA = tileCenter(airportX + size.width - 1, airportY + runwayYOffset); // "east" end
+      const runwayB = tileCenter(airportX, airportY + runwayYOffset); // "west" end
+
+      // Keep taxi points INSIDE the footprint
+      const apronMid = tileCenter(airportX + 2, airportY + 2);
+      const holdShortA = tileCenter(airportX + 2, airportY + 1); // near runwayA
+      const holdShortB = tileCenter(airportX + 1, airportY + 1); // near runwayB
       const gate = tileCenter(airportX + 1, airportY + size.height - 1);
-      return { runwayA, runwayB, gate };
+
+      return { runwayA, runwayB, gate, apronMid, holdShortA, holdShortB };
     };
 
-    const buildTaxiPath = (gate: { x: number; y: number }, runwayStart: { x: number; y: number }, runwayEnd: { x: number; y: number }) => {
-      const h = vecNorm(runwayEnd.x - runwayStart.x, runwayEnd.y - runwayStart.y);
-      const p = { x: -h.y, y: h.x };
-      const toGate = { x: gate.x - runwayStart.x, y: gate.y - runwayStart.y };
-      const sideSign = Math.sign(dot(toGate.x, toGate.y, p.x, p.y)) || 1;
+    const buildTaxiOutPath = (
+      geom: NonNullable<ReturnType<typeof computeAirportGeometry>>,
+      runwayStart: { x: number; y: number }
+    ) => {
+      const distToA = Math.hypot(runwayStart.x - geom.runwayA.x, runwayStart.y - geom.runwayA.y);
+      const distToB = Math.hypot(runwayStart.x - geom.runwayB.x, runwayStart.y - geom.runwayB.y);
+      const holdShort = distToA <= distToB ? geom.holdShortA : geom.holdShortB;
+      return [geom.gate, geom.apronMid, holdShort, runwayStart];
+    };
 
-      const hold = {
-        x: runwayStart.x - h.x * 28 + p.x * sideSign * 34,
-        y: runwayStart.y - h.y * 28 + p.y * sideSign * 34,
-      };
-
-      return [gate, hold, runwayStart];
+    const buildTaxiInPath = (
+      geom: NonNullable<ReturnType<typeof computeAirportGeometry>>,
+      runwayExit: { x: number; y: number }
+    ) => {
+      // Simple, footprint-safe taxi path back to the gate.
+      // (Avoids any perpendicular "hold" points that can drift outside the airport bounds.)
+      return [runwayExit, geom.apronMid, geom.gate];
     };
 
     const steerAndMoveToward = (plane: Airplane, target: { x: number; y: number }, maxTurnRate: number, maxSpeed: number, accel: number) => {
@@ -213,7 +230,7 @@ export function useAircraftSystems(
         const useAB = Math.random() < 0.5;
         const runwayStart = useAB ? runwayA : runwayB;
         const runwayEnd = useAB ? runwayB : runwayA;
-        const taxiPath = buildTaxiPath(gate, runwayStart, runwayEnd);
+        const taxiPath = buildTaxiOutPath(geom, runwayStart);
         const initialAngle = Math.atan2(taxiPath[1].y - gate.y, taxiPath[1].x - gate.x);
 
         const planeType = PLANE_TYPES[Math.floor(Math.random() * PLANE_TYPES.length)] as PlaneType;
@@ -389,7 +406,7 @@ export function useAircraftSystems(
             plane.runwayEndY = runwayEnd.y;
             plane.gateX = gate.x;
             plane.gateY = gate.y;
-            plane.taxiPath = buildTaxiPath(gate, runwayStart, runwayEnd);
+            plane.taxiPath = buildTaxiOutPath(geom, runwayStart);
             plane.taxiPathIndex = 1;
             plane.x = gate.x;
             plane.y = gate.y;
@@ -655,13 +672,18 @@ export function useAircraftSystems(
             plane.phaseTime = 0;
             plane.speed = Math.min(24, Math.max(10, plane.speed));
 
-            const gate = { x: plane.gateX, y: plane.gateY };
-            const runwayExit = { x: plane.x, y: plane.y };
-            const taxiPath = buildTaxiPath(gate, runwayExit, { x: plane.runwayEndX, y: plane.runwayEndY });
-            // Replace first point with current position
-            taxiPath[0] = runwayExit;
-            plane.taxiPath = taxiPath;
-            plane.taxiPathIndex = 1;
+            const geom = computeAirportGeometry(plane.airportX, plane.airportY);
+            if (geom) {
+              plane.gateX = geom.gate.x;
+              plane.gateY = geom.gate.y;
+              const runwayExit = { x: plane.x, y: plane.y };
+              plane.taxiPath = buildTaxiInPath(geom, runwayExit);
+              plane.taxiPathIndex = 1;
+            } else {
+              // Fallback: taxi directly to cached gate
+              plane.taxiPath = [{ x: plane.x, y: plane.y }, { x: plane.gateX, y: plane.gateY }];
+              plane.taxiPathIndex = 1;
+            }
           }
 
           break;

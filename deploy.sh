@@ -1,14 +1,5 @@
 #!/bin/bash
 
-# Hata durumunda işlemi durdur
-set -e
-
-echo "🚀 Temiz build işlemi başlatılıyor..."
-
-echo "🧹 Eski dosyalar ve önbellek temizleniyor..."
-rm -rf .next
-rm -rf node_modules
-# package-lock.json dosyasını silmiyoruz, versiyon tutarlılığı için kalması daha iyi.
 
 echo "📦 Bağımlılıklar sıfırdan yükleniyor..."
 npm install

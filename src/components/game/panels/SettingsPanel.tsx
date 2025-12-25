@@ -208,7 +208,7 @@ export function SettingsPanel() {
             
             {/* Save Current City Button */}
             <Button
-              variant="default"
+              variant="game"
               className="w-full mb-3"
               onClick={() => {
                 saveCity();
@@ -242,7 +242,7 @@ export function SettingsPanel() {
                         />
                         <div className="flex gap-2">
                           <Button
-                            variant="outline"
+                            variant="game-secondary"
                             size="sm"
                             className="flex-1 h-7 text-xs"
                             onClick={() => {
@@ -253,7 +253,7 @@ export function SettingsPanel() {
                             İptal
                           </Button>
                           <Button
-                            variant="default"
+                            variant="game"
                             size="sm"
                             className="flex-1 h-7 text-xs"
                             onClick={() => {
@@ -273,7 +273,7 @@ export function SettingsPanel() {
                         <p className="text-xs text-muted-foreground text-center">Bu şehri sil?</p>
                         <div className="flex gap-2">
                           <Button
-                            variant="outline"
+                            variant="game-secondary"
                             size="sm"
                             className="flex-1 h-7 text-xs"
                             onClick={() => setCityToDelete(null)}
@@ -281,7 +281,7 @@ export function SettingsPanel() {
                             İptal
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="game-danger"
                             size="sm"
                             className="flex-1 h-7 text-xs"
                             onClick={() => {
@@ -314,7 +314,7 @@ export function SettingsPanel() {
                         <div className="flex gap-2">
                           {city.id !== currentCityId && (
                             <Button
-                              variant="default"
+                              variant="game"
                               size="sm"
                               className="flex-1 h-7 text-xs"
                               onClick={() => {
@@ -326,7 +326,7 @@ export function SettingsPanel() {
                             </Button>
                           )}
                           <Button
-                            variant="outline"
+                            variant="game-secondary"
                             size="sm"
                             className="flex-1 h-7 text-xs"
                             onClick={() => {
@@ -337,7 +337,7 @@ export function SettingsPanel() {
                             Yeniden Adlandır
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="game-secondary"
                             size="sm"
                             className="flex-1 h-7 text-xs hover:bg-destructive hover:text-destructive-foreground"
                             onClick={() => setCityToDelete(city)}
@@ -361,7 +361,7 @@ export function SettingsPanel() {
           {savedCityInfo && (
             <div className="space-y-2">
               <Button
-                variant="default"
+                variant="game"
                 className="w-full"
                 onClick={() => {
                   restoreSavedCity();
@@ -380,7 +380,7 @@ export function SettingsPanel() {
           
           {!showNewGameConfirm ? (
             <Button
-              variant="destructive"
+              variant="game-danger"
               className="w-full"
               onClick={() => setShowNewGameConfirm(true)}
             >
@@ -396,14 +396,14 @@ export function SettingsPanel() {
               />
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
+                  variant="game-secondary"
                   className="flex-1"
                   onClick={() => setShowNewGameConfirm(false)}
                 >
                   İptal
                 </Button>
                 <Button
-                  variant="destructive"
+                  variant="game-danger"
                   className="flex-1"
                   onClick={() => {
                     newGame(newCityName || 'Yeni Şehir', gridSize);
@@ -422,7 +422,7 @@ export function SettingsPanel() {
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Oyunu Dışa Aktar</div>
             <p className="text-muted-foreground text-xs mb-2">Paylaşmak veya yedeklemek için oyun durumunu kopyala</p>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full"
               onClick={handleCopyExport}
             >
@@ -450,7 +450,7 @@ export function SettingsPanel() {
               <p className="text-green-400 text-xs mt-1">Oyun başarıyla yüklendi!</p>
             )}
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={handleImport}
               disabled={!importValue.trim()}
@@ -462,14 +462,14 @@ export function SettingsPanel() {
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Geliştirici Araçları</div>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full"
               onClick={() => setShowSpriteTest(true)}
             >
               Sprite Test Görünümünü Aç
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState } = await import('@/resources/example_state.json');
@@ -480,7 +480,7 @@ export function SettingsPanel() {
               Örnek Durumu Yükle
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState2 } = await import('@/resources/example_state_2.json');
@@ -491,7 +491,7 @@ export function SettingsPanel() {
               Load Example State 2
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState3 } = await import('@/resources/example_state_3.json');
@@ -502,7 +502,7 @@ export function SettingsPanel() {
               Load Example State 3
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState4 } = await import('@/resources/example_state_4.json');
@@ -513,7 +513,7 @@ export function SettingsPanel() {
               Load Example State 4
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState5 } = await import('@/resources/example_state_5.json');
@@ -524,7 +524,7 @@ export function SettingsPanel() {
               Load Example State 5
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState6 } = await import('@/resources/example_state_6.json');
@@ -535,7 +535,7 @@ export function SettingsPanel() {
               Load Example State 6
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState7 } = await import('@/resources/example_state_7.json');
@@ -546,7 +546,7 @@ export function SettingsPanel() {
               Load Example State 7
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState8 } = await import('@/resources/example_state_8.json');
@@ -557,7 +557,7 @@ export function SettingsPanel() {
               Load Example State 8
             </Button>
             <Button
-              variant="outline"
+              variant="game-secondary"
               className="w-full mt-2"
               onClick={async () => {
                 const { default: exampleState9 } = await import('@/resources/example_state_9.json');

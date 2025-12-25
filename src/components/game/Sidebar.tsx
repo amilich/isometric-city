@@ -8,6 +8,9 @@ import {
   ChartIcon,
   AdvisorIcon,
   SettingsIcon,
+  SearchIcon,
+  ExitIcon,
+  ChevronRightIcon,
 } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -143,20 +146,15 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
       {/* Category Header Button */}
       <Button
         ref={buttonRef}
-        variant={hasSelectedTool ? 'default' : 'ghost'}
+        variant={hasSelectedTool ? 'game-tool-selected' : 'game-tool'}
         className={`w-full justify-between gap-2 px-3 py-2.5 h-auto text-sm group transition-all duration-200 ${
-          hasSelectedTool ? 'bg-primary text-primary-foreground' : ''
-        } ${isOpen ? 'bg-muted/80' : ''}`}
+          isOpen && !hasSelectedTool ? 'bg-slate-700/80 border-slate-500 text-white' : ''
+        }`}
       >
         <span className="font-medium">{label}</span>
-        <svg 
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+        <div className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
+          <ChevronRightIcon size={16} />
+        </div>
       </Button>
       
       {/* Invisible bridge/safe-zone between button and submenu for triangle rule */}
@@ -201,17 +199,15 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
               const isSelected = selectedTool === tool;
               const canAfford = money >= info.cost;
               
-              return (
-                <Button
-                  key={tool}
-                  onClick={() => onSelectTool(tool)}
-                  disabled={!canAfford && info.cost > 0}
-                  variant={isSelected ? 'default' : 'ghost'}
-                  className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 ${
-                    isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted/60'
-                  }`}
-                  title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
-                >
+                return (
+                  <Button
+                    key={tool}
+                    onClick={() => onSelectTool(tool)}
+                    disabled={!canAfford && info.cost > 0}
+                    variant={isSelected ? 'game-tool-selected' : 'game-tool'}
+                    className="w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150"
+                    title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
+                  >
                   <span className="flex-1 text-left truncate">{info.name}</span>
                   {info.cost > 0 && (
                     <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>${info.cost.toLocaleString()}</span>
@@ -249,7 +245,7 @@ function ExitDialog({
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button
-            variant="outline"
+            variant="game-danger"
             onClick={onExitWithoutSaving}
             className="w-full sm:w-auto"
           >
@@ -257,6 +253,7 @@ function ExitDialog({
           </Button>
           <Button
             onClick={onSaveAndExit}
+            variant="game-success"
             className="w-full sm:w-auto"
           >
             Kaydet ve Çık
@@ -343,37 +340,21 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
           <span className="text-sidebar-foreground font-bold tracking-tight">Truncgil MyCity</span>
           <div className="flex items-center gap-1">
             <Button
-              variant="ghost"
-              size="icon-sm"
+              variant="game-icon"
               onClick={openCommandMenu}
               title="Ara (⌘K)"
-              className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+              className="text-muted-foreground hover:text-sidebar-foreground"
             >
-              <svg 
-                className="w-4 h-4" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <SearchIcon size={16} />
             </Button>
             {onExit && (
               <Button
-                variant="ghost"
-                size="icon-sm"
+                variant="game-icon"
                 onClick={() => setShowExitDialog(true)}
                 title="Ana Menüye Dön"
-                className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+                className="text-muted-foreground hover:text-sidebar-foreground"
               >
-                <svg 
-                  className="w-4 h-4 -scale-x-100" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+                <ExitIcon size={16} />
               </Button>
             )}
           </div>
@@ -399,10 +380,8 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                     key={tool}
                     onClick={() => setTool(tool)}
                     disabled={!canAfford && info.cost > 0}
-                    variant={isSelected ? 'default' : 'ghost'}
-                    className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm ${
-                      isSelected ? 'bg-primary text-primary-foreground' : ''
-                    }`}
+                    variant={isSelected ? 'game-tool-selected' : 'game-tool'}
+                    className="w-full justify-start gap-3 px-3 py-2 h-auto text-sm"
                     title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
                   >
                     <span className="flex-1 text-left truncate">{info.name}</span>
@@ -451,9 +430,8 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
             <Button
               key={panel}
               onClick={() => setActivePanel(activePanel === panel ? 'none' : panel)}
-              variant={activePanel === panel ? 'default' : 'ghost'}
-              size="icon-sm"
-              className="w-full"
+              variant={activePanel === panel ? 'game-icon-selected' : 'game-icon'}
+              className="w-full h-9 justify-center"
               title={label}
             >
               {icon}

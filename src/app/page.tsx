@@ -274,7 +274,7 @@ export default function HomePage() {
   if (isChecking) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-white/60">Loading...</div>
+        <div className="text-white/60">Yükleniyor...</div>
       </main>
     );
   }
@@ -307,9 +307,10 @@ export default function HomePage() {
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <Button 
             onClick={() => setShowGame(true)}
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+            variant="game"
+            className="w-full py-6 text-xl"
           >
-            Start
+            Oyna
           </Button>
           
           <Button 
@@ -318,10 +319,10 @@ export default function HomePage() {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
               setShowGame(true);
             }}
-            variant="outline"
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+            variant="game-success"
+            className="w-full py-6 text-xl"
           >
-            Load Example
+            Örnek Şehir
           </Button>
         </div>
         
@@ -329,7 +330,7 @@ export default function HomePage() {
         {savedCities.length > 0 && (
           <div className="w-full max-w-xs mt-4">
             <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-              Saved Cities
+              Kayıtlı Şehirler
             </h2>
             <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
               {savedCities.slice(0, 5).map((city) => (
@@ -355,7 +356,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
           <div className="relative w-full max-w-md h-32 mb-4">
             <Image
-              src="/truncgil-mycity2.png"
+              src="/truncgil-mycity3.png"
               alt="Truncgil MyCity"
               fill
               className="object-contain object-left"
@@ -365,9 +366,10 @@ export default function HomePage() {
           <div className="flex flex-col gap-3">
             <Button 
               onClick={() => setShowGame(true)}
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              variant="game"
+              className="w-64 py-8 text-2xl"
             >
-              Start
+              Oyna
             </Button>
             <Button 
               onClick={async () => {
@@ -375,10 +377,10 @@ export default function HomePage() {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
                 setShowGame(true);
               }}
-              variant="outline"
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              variant="game-success"
+              className="w-64 py-8 text-2xl"
             >
-              Load Example
+              Örnek Şehir
             </Button>
           </div>
           
@@ -386,7 +388,7 @@ export default function HomePage() {
           {savedCities.length > 0 && (
             <div className="w-64">
               <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                Saved Cities
+                Kayıtlı Şehirler
               </h2>
               <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
                 {savedCities.slice(0, 5).map((city) => (

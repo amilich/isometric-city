@@ -33,25 +33,22 @@ export const TimeOfDayIcon = ({ hour }: TimeOfDayIconProps) => {
   const isDusk = hour >= 18 && hour < 20;
   
   if (isNight) {
-    // Moon icon
     return (
-      <svg className="w-4 h-4 text-blue-300" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-      </svg>
+      <span className="material-symbols-rounded text-blue-300" style={{ fontSize: '16px' }}>
+        dark_mode
+      </span>
     );
   } else if (isDawn || isDusk) {
-    // Sunrise/sunset icon
     return (
-      <svg className="w-4 h-4 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-      </svg>
+      <span className="material-symbols-rounded text-orange-400" style={{ fontSize: '16px' }}>
+        wb_twilight
+      </span>
     );
   } else {
-    // Sun icon
     return (
-      <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-      </svg>
+      <span className="material-symbols-rounded text-yellow-400" style={{ fontSize: '16px' }}>
+        light_mode
+      </span>
     );
   }
 };
@@ -189,9 +186,8 @@ export const TopBar = React.memo(function TopBar() {
             <Button
               key={s}
               onClick={() => setSpeed(s as 0 | 1 | 2 | 3)}
-              variant={speed === s ? 'default' : 'ghost'}
-              size="icon-sm"
-              className="h-7 w-7 p-0 m-0"
+              variant={speed === s ? 'game-icon-selected' : 'game-icon'}
+              className="h-9 w-9 p-0 m-0"
               title={s === 0 ? 'Duraklat' : s === 1 ? 'Normal' : s === 2 ? 'Hızlı' : 'Çok Hızlı'}
             >
               {s === 0 ? <PauseIcon size={12} /> : 
@@ -241,7 +237,7 @@ export const TopBar = React.memo(function TopBar() {
           <span className="text-muted-foreground text-xs">Vergi</span>
           <Slider
             value={[taxRate]}
-            onValueChange={(value) => setTaxRate(value[0])}
+            onValueChange={(value: number[]) => setTaxRate(value[0])}
             min={0}
             max={100}
             step={1}

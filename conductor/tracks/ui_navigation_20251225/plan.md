@@ -15,7 +15,7 @@
     - [ ] Implement robust Escape key handling to reset building/tool modes
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Mode Indication & Core Navigation' (Protocol in workflow.md) [f218a9c]
 
-## Phase 2: Keyboard Shortcut Help Panel
+## Phase 2: Keyboard Shortcut Help Panel [checkpoint: cd1e589]
 
 - [x] Task: Design and implement `ShortcutsHelpPanel` component [6b5e8b3]
     - [ ] Write tests for `ShortcutsHelpPanel` rendering and visibility toggling
@@ -25,7 +25,7 @@
     - [ ] Write tests for the keyboard listener and button click handler
     - [ ] Implement '?' key listener in `Game.tsx` or a dedicated hook
     - [ ] Add '?' help icon to `TopBar.tsx`
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Keyboard Shortcut Help Panel' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Keyboard Shortcut Help Panel' (Protocol in workflow.md) [cd1e589]
 
 ## Phase 3: Polish & Mobile Optimization
 

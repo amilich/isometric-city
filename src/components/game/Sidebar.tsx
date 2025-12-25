@@ -219,7 +219,8 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                         {Icon ? <Icon size={20} /> : <span className="text-xs">{info.name.substring(0, 2)}</span>}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={10}>
+                    {/* Use Portal to render tooltip outside of overflow-hidden container */}
+                    <TooltipContent side="right" sideOffset={10} className="z-[99999]">
                       <div className="flex flex-col gap-1">
                         <span className="font-bold">{info.name}</span>
                         <span className="text-xs text-muted-foreground">{info.description}</span>

@@ -31,6 +31,9 @@
       ],
       "@radix-ui/react-slot": [
         "./node_modules/@radix-ui/react-slot/dist/index.d.ts"
+      ],
+      "class-variance-authority": [
+        "./node_modules/class-variance-authority"
       ]
     }
   },

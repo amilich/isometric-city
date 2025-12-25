@@ -53,7 +53,7 @@ export function PedestrianInfoPanel({ pedestrian, onClose }: PedestrianInfoPanel
   };
 
   return (
-    <Card className="fixed bottom-20 left-4 p-4 shadow-lg bg-card/95 border-border/70 max-w-sm z-50">
+    <Card className="fixed bottom-20 right-4 p-4 shadow-lg bg-card/95 border-border/70 max-w-sm z-50">
       {/* 关闭按钮 */}
       {onClose && (
         <Button

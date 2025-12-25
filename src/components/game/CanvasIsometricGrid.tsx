@@ -3960,19 +3960,19 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             setDragStartTile(null);
             setDragEndTile(null);
           }}>
-            <DialogContent className="max-w-[400px]">
+            <DialogContent className="max-w-[500px] border-2 border-amber-400 rounded-xl">
               <DialogHeader>
-                <DialogTitle>City Discovered!</DialogTitle>
+                <DialogTitle>Yeni Şehir Keşfedildi!</DialogTitle>
                 <DialogDescription>
-                  Your road has reached the {cityConnectionDialog.direction} border! You&apos;ve discovered {city.name}.
+                  Yolunuz {cityConnectionDialog.direction} sınırına ulaştı! {city.name} şehrini keşfettiniz.
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-4 mt-4">
                 <div className="text-sm text-muted-foreground">
-                  Connecting to {city.name} will establish a trade route, providing:
+                  {city.name} ile bağlantı kurmak bir ticaret yolu oluşturacak ve size şunları sağlayacak:
                   <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>$5,000 one-time bonus</li>
-                    <li>$200/month additional income</li>
+                    <li>Tek seferlik 5.000$ bonus</li>
+                    <li>Aylık 200$ ek gelir</li>
                   </ul>
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -3984,7 +3984,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
                       setDragEndTile(null);
                     }}
                   >
-                    Maybe Later
+                    Belki Sonra
                   </Button>
                   <Button
                     onClick={() => {
@@ -3994,7 +3994,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
                       setDragEndTile(null);
                     }}
                   >
-                    Connect to {city.name}
+                    {city.name} ile Bağlantı Kur
                   </Button>
                 </div>
               </div>

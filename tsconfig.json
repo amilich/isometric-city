@@ -28,6 +28,9 @@
       ],
       "@vercel/analytics/next": [
         "./node_modules/@vercel/analytics/dist/next/index.d.ts"
+      ],
+      "@radix-ui/react-slot": [
+        "./node_modules/@radix-ui/react-slot/dist/index.d.ts"
       ]
     }
   },

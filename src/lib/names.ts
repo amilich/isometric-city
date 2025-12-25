@@ -1,20 +1,20 @@
 // Name generation utilities for cities and water bodies
 
 const CITY_NAME_PARTS = [
-  'Spring', 'Riverside', 'Harbor', 'Valley', 'Hill', 'Bay', 'Creek', 'Park',
-  'Lake', 'Mountain', 'Beach', 'Forest', 'Bridge', 'Port', 'View', 'Heights',
-  'Grove', 'Meadow', 'Ridge', 'Point', 'Falls', 'Brook', 'Pine', 'Oak',
-  'Maple', 'Cedar', 'Elm', 'Willow', 'Ash', 'Birch', 'Green', 'Blue',
-  'White', 'Black', 'Red', 'New', 'Old', 'East', 'West', 'North', 'South',
-  'Grand', 'Little', 'Big', 'Upper', 'Lower', 'Central', 'Fair', 'Bright',
-  'Sunny', 'Clear', 'Rock', 'Stone', 'Iron', 'Gold', 'Silver', 'Copper',
-  'Mill', 'Town', 'City', 'Ville', 'Burg', 'Field', 'Land', 'Wood',
+  'Bahar', 'Nehribaşı', 'Liman', 'Vadi', 'Tepe', 'Körfez', 'Dere', 'Park',
+  'Göl', 'Dağ', 'Plaj', 'Orman', 'Köprü', 'İskele', 'Manzara', 'Yükseklik',
+  'Koruluk', 'Çayır', 'Sırt', 'Burun', 'Şelale', 'Pınar', 'Çam', 'Meşe',
+  'Akağaç', 'Sedir', 'Karaağaç', 'Söğüt', 'Dişbudak', 'Huş', 'Yeşil', 'Mavi',
+  'Beyaz', 'Kara', 'Kızıl', 'Yeni', 'Eski', 'Doğu', 'Batı', 'Kuzey', 'Güney',
+  'Büyük', 'Küçük', 'Yukarı', 'Aşağı', 'Merkez', 'Adil', 'Parlak',
+  'Güneşli', 'Açık', 'Kaya', 'Taş', 'Demir', 'Altın', 'Gümüş', 'Bakır',
+  'Değirmen', 'Kasaba', 'Şehir', 'Köy', 'Belde', 'Tarla', 'Ülke', 'Ormanlık',
 ];
 
 const CITY_SUFFIXES = [
-  'City', 'Town', 'Ville', 'Burg', 'Port', 'Harbor', 'Bay', 'Beach',
-  'Park', 'Heights', 'Hills', 'Valley', 'Ridge', 'Point', 'Falls',
-  'Springs', 'Grove', 'Meadow', 'Field', 'Woods', 'Lake', 'River',
+  'Şehir', 'Kasaba', 'Köy', 'Belde', 'Liman', 'İskele', 'Körfez', 'Plaj',
+  'Park', 'Yükseklik', 'Tepeler', 'Vadi', 'Sırt', 'Burun', 'Şelale',
+  'Pınarlar', 'Koruluk', 'Çayır', 'Tarla', 'Ormanlar', 'Göl', 'Nehir',
 ];
 
 const LAKE_NAMES = [

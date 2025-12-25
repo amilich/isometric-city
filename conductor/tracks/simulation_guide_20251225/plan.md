@@ -16,10 +16,10 @@
 
 ## Phase 3: Systems & Economy
 
-- [ ] Task: Document Traffic simulation rules (Congestion effects, pathfinding behavior summary)
-- [ ] Task: Document Land Value mechanics and influencers
-- [ ] Task: Document Crime & Safety propagation rules
-- [ ] Task: Document Economy (Tax income sources, Maintenance expense calculations)
+- [x] Task: Document Traffic simulation rules (Congestion effects, pathfinding behavior summary) 20439db
+- [x] Task: Document Land Value mechanics and influencers 20439db
+- [x] Task: Document Crime & Safety propagation rules 20439db
+- [x] Task: Document Economy (Tax income sources, Maintenance expense calculations) 20439db
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Systems & Economy' (Protocol in workflow.md)
 
 ## Phase 4: Review & Verification

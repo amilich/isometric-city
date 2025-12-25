@@ -25,9 +25,13 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@vercel/analytics/next": [
+        "./node_modules/@vercel/analytics/dist/next/index.d.ts"
       ]
     }
   },
+  // Include project files
   "include": [
     "next-env.d.ts",
     "**/*.ts",

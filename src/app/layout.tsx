@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, DM_Sans, Freckle_Face } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
+import { Playfair_Display, DM_Sans, Quicksand } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/react'; // Fixed
 import './globals.css';
 
 const playfair = Playfair_Display({
@@ -17,11 +17,11 @@ const dmSans = DM_Sans({
   weight: ['400', '500', '600', '700'],
 });
 
-const freckleFace = Freckle_Face({
+const quicksand = Quicksand({
   subsets: ['latin'],
-  variable: '--font-freckle',
+  variable: '--font-quicksand',
   display: 'swap',
-  weight: ['400'],
+  weight: ['300', '400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -80,7 +80,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${playfair.variable} ${dmSans.variable} ${freckleFace.variable}`}>
+    <html lang="en" className={`dark ${playfair.variable} ${dmSans.variable} ${quicksand.variable}`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/assets/buildings/residential.png" />

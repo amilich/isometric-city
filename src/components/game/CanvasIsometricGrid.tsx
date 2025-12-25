@@ -4033,7 +4033,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               </>
             ) : isWaterfrontPlacementInvalid ? (
               <>
-                {TOOL_INFO[selectedTool].name} must be placed next to water
+                {TOOL_INFO[selectedTool].name} suya yakın olmalıdır
               </>
             ) : (
               <>

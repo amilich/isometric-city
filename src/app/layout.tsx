@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, DM_Sans } from 'next/font/google';
+import { Playfair_Display, DM_Sans, Freckle_Face } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
@@ -15,6 +15,13 @@ const dmSans = DM_Sans({
   variable: '--font-sans',
   display: 'swap',
   weight: ['400', '500', '600', '700'],
+});
+
+const freckleFace = Freckle_Face({
+  subsets: ['latin'],
+  variable: '--font-freckle',
+  display: 'swap',
+  weight: ['400'],
 });
 
 export const metadata: Metadata = {
@@ -73,7 +80,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${playfair.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`dark ${playfair.variable} ${dmSans.variable} ${freckleFace.variable}`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/assets/buildings/residential.png" />

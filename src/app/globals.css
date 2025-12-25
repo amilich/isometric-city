@@ -59,6 +59,10 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  h1, h2, h3, h4, h5, h6, button, .btn {
+    font-family: var(--font-freckle), cursive;
+  }
 }
 
 /* Custom Art Deco scrollbar */

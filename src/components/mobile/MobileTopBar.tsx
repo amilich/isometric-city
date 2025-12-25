@@ -130,13 +130,13 @@ export function MobileTopBar({
               <span className="text-xs font-mono font-semibold text-foreground">
                 {stats.population >= 1000 ? `${(stats.population / 1000).toFixed(1)}k` : stats.population}
               </span>
-              <span className="text-[9px] text-muted-foreground">Pop</span>
+              <span className="text-[9px] text-muted-foreground">人口</span>
             </div>
             <div className="flex flex-col items-start">
               <span className={`text-xs font-mono font-semibold ${stats.money < 0 ? 'text-red-500' : stats.money < 1000 ? 'text-amber-500' : 'text-green-500'}`}>
                 ${stats.money >= 1000000 ? `${(stats.money / 1000000).toFixed(1)}M` : stats.money >= 1000 ? `${(stats.money / 1000).toFixed(0)}k` : stats.money}
               </span>
-              <span className="text-[9px] text-muted-foreground">Funds</span>
+              <span className="text-[9px] text-muted-foreground">资金</span>
             </div>
           </button>
 
@@ -272,7 +272,7 @@ export function MobileTopBar({
               }`} />
               <span className="text-xs font-medium text-foreground capitalize">
                 {selectedTile.building.type === 'empty' 
-                  ? (selectedTile.zone === 'none' ? 'Empty Lot' : `${selectedTile.zone} Zone`)
+                  ? (selectedTile.zone === 'none' ? '空地' : `${selectedTile.zone} 分区`)
                   : selectedTile.building.type.replace(/_/g, ' ')}
               </span>
             </div>
@@ -285,15 +285,15 @@ export function MobileTopBar({
               </div>
             )}
             {selectedTile.building.jobs > 0 && (
-              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} jobs</span>
+              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} 工作</span>
             )}
             
             {/* Utilities */}
             <span className={`shrink-0 ${selectedTile.building.powered ? 'text-yellow-400' : 'text-muted-foreground/60'}`}>
-              {selectedTile.building.powered ? 'Has power' : 'No power'}
+              {selectedTile.building.powered ? '有电' : '无电'}
             </span>
             <span className={`shrink-0 ${selectedTile.building.watered ? 'text-cyan-400' : 'text-muted-foreground/60'}`}>
-              {selectedTile.building.watered ? 'Has water' : 'No water'}
+              {selectedTile.building.watered ? '有水' : '无水'}
             </span>
             
             {/* Land value */}
@@ -379,23 +379,23 @@ export function MobileTopBar({
             {/* Detailed finances */}
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Population</span>
+                <span className="text-sm text-muted-foreground">人口</span>
                 <span className="text-sm font-mono text-foreground">{stats.population.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Jobs</span>
+                <span className="text-sm text-muted-foreground">工作</span>
                 <span className="text-sm font-mono text-foreground">{stats.jobs.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Income</span>
+                <span className="text-sm text-muted-foreground">月度收入</span>
                 <span className="text-sm font-mono text-green-400">${stats.income.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Expenses</span>
+                <span className="text-sm text-muted-foreground">月度支出</span>
                 <span className="text-sm font-mono text-red-400">${stats.expenses.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Weekly Net</span>
+                <span className="text-sm text-muted-foreground">周度净收入</span>
                 <span className={`text-sm font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   ${Math.floor((stats.income - stats.expenses) / 4).toLocaleString()}
                 </span>
@@ -407,7 +407,7 @@ export function MobileTopBar({
             {/* Tax slider */}
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Tax Rate</span>
+                <span className="text-sm text-muted-foreground">税率</span>
                 <span className="text-sm font-mono text-foreground">{taxRate}%</span>
               </div>
               <Slider
@@ -431,9 +431,9 @@ export function MobileTopBar({
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Exit to Main Menu</DialogTitle>
+            <DialogTitle>返回主菜单</DialogTitle>
             <DialogDescription>
-              Would you like to save your city before exiting?
+              退出前要保存你的城市吗？
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -442,13 +442,13 @@ export function MobileTopBar({
               onClick={handleExitWithoutSaving}
               className="w-full sm:w-auto"
             >
-              Exit Without Saving
+              不保存退出
             </Button>
             <Button
               onClick={handleSaveAndExit}
               className="w-full sm:w-auto"
             >
-              Save & Exit
+              保存并退出
             </Button>
           </DialogFooter>
         </DialogContent>

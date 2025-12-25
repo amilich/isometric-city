@@ -237,7 +237,10 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                       isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted/60'
                     }`}
                   >
-                    <span className="flex-1 text-left truncate">{info.name}</span>
+                    <span className="flex-1 text-left truncate">
+                      {info.name}
+                      {shortcut && <span className="ml-1.5 text-[10px] opacity-60 font-mono">({shortcut})</span>}
+                    </span>
                     {info.cost > 0 && (
                       <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>${info.cost.toLocaleString()}</span>
                     )}

@@ -96,7 +96,7 @@ describe('useGameKeyboard', () => {
     expect(mockSetTool).toHaveBeenCalledWith('select');
   });
 
-  it('toggles pause on P', () => {
+  it('toggles pause on Space', () => {
     mockState.speed = 1;
     runHook({
       overlayMode: 'none',
@@ -105,7 +105,7 @@ describe('useGameKeyboard', () => {
       setSelectedTile: mockSetSelectedTile,
     });
 
-    triggerKeyDown('p');
+    triggerKeyDown(' ');
     expect(mockSetSpeed).toHaveBeenCalledWith(0);
   });
 

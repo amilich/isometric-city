@@ -4,7 +4,7 @@ export const KEYBOARD_SHORTCUTS = {
   SELECT: { key: 'Escape', label: 'Esc' }, // Contextual, but often resets to select
   
   // Controls
-  PAUSE: { key: 'p', label: 'P' },
+  PAUSE: { key: ' ', label: 'Space' },
   SEARCH: { key: 'k', meta: true, label: '⌘K' }, // CommandMenu
   HELP: { key: '?', label: '?' },
   

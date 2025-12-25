@@ -45,7 +45,7 @@ export function useGameKeyboard({
       } else if (e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         setTool('bulldoze');
-      } else if (e.key === 'p' || e.key === 'P') {
+      } else if (e.key === ' ') {
         e.preventDefault();
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)
         // If running, pause (speed 0)

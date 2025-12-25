@@ -206,11 +206,12 @@ type OverlayMode = 'none' | 'power' | 'water' | 'fire' | 'police' | 'health' | '
 
 interface MobileToolbarProps {
   onOpenPanel: (panel: 'budget' | 'statistics' | 'advisors' | 'settings') => void;
+  onShowHelp?: () => void;
   overlayMode?: OverlayMode;
   setOverlayMode?: (mode: OverlayMode) => void;
 }
 
-export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMode }: MobileToolbarProps) {
+export function MobileToolbar({ onOpenPanel, onShowHelp, overlayMode = 'none', setOverlayMode }: MobileToolbarProps) {
   const { state, setTool } = useGame();
   const { selectedTool, stats } = state;
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -355,7 +356,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
               <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
                 City Management
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -387,6 +388,14 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
                 >
                   Settings
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-full text-xs"
+                  onClick={() => { onShowHelp?.(); setShowMenu(false); }}
+                >
+                  Shortcuts
                 </Button>
               </div>
             </div>

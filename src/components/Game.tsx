@@ -210,6 +210,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {/* Mobile Bottom Toolbar */}
           <MobileToolbar 
             onOpenPanel={(panel) => setActivePanel(panel)}
+            onShowHelp={() => setShowShortcutsHelp(true)}
             overlayMode={overlayMode}
             setOverlayMode={setOverlayMode}
           />

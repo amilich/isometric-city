@@ -3082,30 +3082,64 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     
     // Draw hovered tile highlight (with multi-tile preview for buildings)
     if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
-      // Check if selectedTool is a building type (not a non-building tool)
       const nonBuildingTools: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'];
       const isBuildingTool = selectedTool && !nonBuildingTools.includes(selectedTool);
       
+      const info = TOOL_INFO[selectedTool];
+      const canAfford = state.stats.money >= (info?.cost ?? 0);
+      let isValidPlacement = canAfford;
+      
       if (isBuildingTool) {
-        // Get building size and draw preview for all tiles in footprint
         const buildingType = selectedTool as BuildingType;
         const buildingSize = getBuildingSize(buildingType);
         
-        // Draw highlight for each tile in the building footprint
+        if (requiresWaterAdjacency(buildingType)) {
+          const { hasWater } = getWaterAdjacency(grid, hoveredTile.x, hoveredTile.y, buildingSize.width, buildingSize.height, gridSize);
+          if (!hasWater) isValidPlacement = false;
+        }
+
+        for (let dx = 0; dx < buildingSize.width; dx++) {
+          for (let dy = 0; dy < buildingSize.height; dy++) {
+            const tx = hoveredTile.x + dx;
+            const ty = hoveredTile.y + dy;
+            if (tx < 0 || tx >= gridSize || ty < 0 || ty >= gridSize) {
+              isValidPlacement = false;
+              continue;
+            }
+            const tile = grid[ty][tx];
+            if ((tile.building.type === 'water' && buildingType !== 'water') || 
+                (tile.building.type !== 'grass' && tile.building.type !== 'empty')) {
+              isValidPlacement = false;
+            }
+          }
+        }
+
+        const color = isValidPlacement ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.3)';
+        const strokeColor = isValidPlacement ? '#4ade80' : '#f87171';
+
         for (let dx = 0; dx < buildingSize.width; dx++) {
           for (let dy = 0; dy < buildingSize.height; dy++) {
             const tx = hoveredTile.x + dx;
             const ty = hoveredTile.y + dy;
             if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
               const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
-              drawHighlight(screenX, screenY);
+              drawHighlight(screenX, screenY, color, strokeColor);
             }
           }
         }
-      } else {
-        // Single tile highlight for non-building tools
+      } else if (selectedTool !== 'select') {
+        if (selectedTool === 'bulldoze') {
+          const tile = grid[hoveredTile.y][hoveredTile.x];
+          if (tile.building.type === 'grass' && tile.zone === 'none') {
+            isValidPlacement = false;
+          }
+        }
+        
+        const color = isValidPlacement ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.3)';
+        const strokeColor = isValidPlacement ? '#4ade80' : '#f87171';
+
         const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
-        drawHighlight(screenX, screenY);
+        drawHighlight(screenX, screenY, color, strokeColor);
       }
     }
     

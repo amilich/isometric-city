@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated optimized image assets (build/dev step)
+public/assets/**/*.webp
+public/assets/**/*.avif

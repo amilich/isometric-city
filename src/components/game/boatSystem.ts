@@ -144,14 +144,16 @@ export function useBoatSystem(
     // Update existing boats
     const updatedBoats: Boat[] = [];
     
-    for (const boat of boatsRef.current) {
-      boat.age += delta;
-      
-      // Update wake particles (similar to contrails) - shorter on mobile
+    for (const boat0 of boatsRef.current) {
+      // Work immutably: clone once and never mutate the ref-held object.
       const wakeMaxAge = isMobile ? 0.6 : WAKE_MAX_AGE;
-      boat.wake = boat.wake
-        .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / wakeMaxAge) }))
-        .filter(p => p.age < wakeMaxAge);
+      const boat: Boat = {
+        ...boat0,
+        age: boat0.age + delta,
+        wake: boat0.wake
+          .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / wakeMaxAge) }))
+          .filter(p => p.age < wakeMaxAge),
+      };
       
       // Distance to destination
       const distToDest = Math.hypot(boat.x - boat.destScreenX, boat.y - boat.destScreenY);
@@ -510,7 +512,7 @@ export function useBoatSystem(
     }
     
     ctx.restore();
-  }, [worldStateRef, boatsRef, visualHour]);
+  }, [worldStateRef, boatsRef, visualHour, isMobile]);
 
   return {
     updateBoats,

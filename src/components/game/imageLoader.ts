@@ -31,6 +31,15 @@ function notifyImageLoaded() {
   imageLoadCallbacks.forEach(cb => cb());
 }
 
+function getOptimizedImageCandidates(src: string): string[] {
+  // Only attempt alternate formats for PNGs served from /public
+  if (!/\.png$/i.test(src)) return [src];
+
+  const base = src.replace(/\.png$/i, '');
+  // Prefer AVIF then WebP, fall back to PNG.
+  return [`${base}.avif`, `${base}.webp`, src];
+}
+
 /**
  * Load an image from a source URL
  * @param src The image source path
@@ -42,14 +51,36 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   }
   
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      imageCache.set(src, img);
-      notifyImageLoaded(); // Notify listeners that a new image is available
-      resolve(img);
+    const candidates = getOptimizedImageCandidates(src);
+
+    const tryLoad = (index: number) => {
+      const candidate = candidates[index];
+      if (!candidate) {
+        reject(new Error(`Failed to load image: ${src}`));
+        return;
+      }
+
+      if (imageCache.has(candidate)) {
+        const cached = imageCache.get(candidate)!;
+        imageCache.set(src, cached);
+        resolve(cached);
+        return;
+      }
+
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        // Cache under both the candidate path and the requested src
+        imageCache.set(candidate, img);
+        imageCache.set(src, img);
+        notifyImageLoaded(); // Notify listeners that a new image is available
+        resolve(img);
+      };
+      img.onerror = () => tryLoad(index + 1);
+      img.src = candidate;
     };
-    img.onerror = reject;
-    img.src = src;
+
+    tryLoad(0);
   });
 }
 
@@ -62,12 +93,6 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 export function filterBackgroundColor(img: HTMLImageElement, threshold: number = COLOR_THRESHOLD): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     try {
-      console.log('Starting background color filtering...', { 
-        imageSize: `${img.naturalWidth || img.width}x${img.naturalHeight || img.height}`,
-        threshold,
-        backgroundColor: BACKGROUND_COLOR
-      });
-      
       const canvas = document.createElement('canvas');
       canvas.width = img.naturalWidth || img.width;
       canvas.height = img.naturalHeight || img.height;
@@ -84,8 +109,6 @@ export function filterBackgroundColor(img: HTMLImageElement, threshold: number =
       // Get image data
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
-      
-      console.log(`Processing ${data.length / 4} pixels...`);
       
       // Process each pixel
       let filteredCount = 0;
@@ -108,25 +131,39 @@ export function filterBackgroundColor(img: HTMLImageElement, threshold: number =
         }
       }
       
-      // Debug: log filtering results
-      const totalPixels = data.length / 4;
-      const percentage = filteredCount > 0 ? ((filteredCount / totalPixels) * 100).toFixed(2) : '0.00';
-      console.log(`Filtered ${filteredCount} pixels (${percentage}%) from sprite sheet`);
-      
       // Put the modified image data back
       ctx.putImageData(imageData, 0, 0);
       
-      // Create a new image from the processed canvas
-      const filteredImg = new Image();
-      filteredImg.onload = () => {
-        console.log('Filtered image created successfully');
-        resolve(filteredImg);
-      };
-      filteredImg.onerror = (error) => {
-        console.error('Failed to create filtered image:', error);
-        reject(new Error('Failed to create filtered image'));
-      };
-      filteredImg.src = canvas.toDataURL();
+      // Create a new image from the processed canvas.
+      // Prefer a Blob URL (less memory pressure than a base64 data URL).
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            // Fallback if blob creation fails for some reason.
+            const filteredImg = new Image();
+            filteredImg.onload = () => resolve(filteredImg);
+            filteredImg.onerror = () => reject(new Error('Failed to create filtered image'));
+            filteredImg.src = canvas.toDataURL();
+            return;
+          }
+
+          const objectUrl = URL.createObjectURL(blob);
+          const filteredImg = new Image();
+          filteredImg.decoding = 'async';
+          filteredImg.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(filteredImg);
+          };
+          filteredImg.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Failed to create filtered image'));
+          };
+          filteredImg.src = objectUrl;
+        },
+        // Request WebP where supported; browsers will fall back to PNG if not supported.
+        'image/webp',
+        0.92
+      );
     } catch (error) {
       reject(error);
     }

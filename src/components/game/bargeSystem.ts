@@ -148,14 +148,16 @@ export function useBargeSystem(
     // Update existing barges
     const updatedBarges: Barge[] = [];
     
-    for (const barge of bargesRef.current) {
-      barge.age += delta;
-      
-      // Update wake particles
+    for (const barge0 of bargesRef.current) {
+      // Work immutably: clone once and never mutate the ref-held object.
       const wakeMaxAge = isMobile ? 0.8 : WAKE_MAX_AGE;
-      barge.wake = barge.wake
-        .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / wakeMaxAge) }))
-        .filter(p => p.age < wakeMaxAge);
+      const barge: Barge = {
+        ...barge0,
+        age: barge0.age + delta,
+        wake: barge0.wake
+          .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / wakeMaxAge) }))
+          .filter(p => p.age < wakeMaxAge),
+      };
       
       // Distance to target
       const distToTarget = Math.hypot(barge.x - barge.targetScreenX, barge.y - barge.targetScreenY);

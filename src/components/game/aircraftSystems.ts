@@ -189,28 +189,33 @@ export function useAircraftSystems(
     // Update existing airplanes
     const updatedAirplanes: Airplane[] = [];
     
-    for (const plane of airplanesRef.current) {
-      // Update contrail particles - shorter duration on mobile for performance
+    for (const plane0 of airplanesRef.current) {
+      // Work immutably: clone once and never mutate the ref-held object.
       const contrailMaxAge = isMobile ? 0.8 : CONTRAIL_MAX_AGE;
       const contrailSpawnInterval = isMobile ? 0.06 : CONTRAIL_SPAWN_INTERVAL;
-      plane.contrail = plane.contrail
+
+      let contrail = plane0.contrail
         .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / contrailMaxAge) }))
         .filter(p => p.age < contrailMaxAge);
-      
+
+      let stateProgress = plane0.stateProgress;
+
       // Add new contrail particles at high altitude (less frequent on mobile)
-      if (plane.altitude > 0.7) {
-        plane.stateProgress += delta;
-        if (plane.stateProgress >= contrailSpawnInterval) {
-          plane.stateProgress -= contrailSpawnInterval;
+      if (plane0.altitude > 0.7) {
+        stateProgress += delta;
+        if (stateProgress >= contrailSpawnInterval) {
+          stateProgress -= contrailSpawnInterval;
           // Single centered contrail particle - offset behind plane and down
           const behindOffset = 40; // Distance behind the plane
           const downOffset = 8; // Vertical offset down
-          const contrailX = plane.x - Math.cos(plane.angle) * behindOffset;
-          const contrailY = plane.y - Math.sin(plane.angle) * behindOffset + downOffset;
-          plane.contrail.push({ x: contrailX, y: contrailY, age: 0, opacity: 1 });
+          const contrailX = plane0.x - Math.cos(plane0.angle) * behindOffset;
+          const contrailY = plane0.y - Math.sin(plane0.angle) * behindOffset + downOffset;
+          contrail = [...contrail, { x: contrailX, y: contrailY, age: 0, opacity: 1 }];
         }
       }
-      
+
+      const plane: Airplane = { ...plane0, contrail, stateProgress };
+
       // Update based on state
       switch (plane.state) {
         case 'taking_off': {
@@ -392,21 +397,23 @@ export function useAircraftSystems(
     // Update existing helicopters
     const updatedHelicopters: Helicopter[] = [];
     
-    for (const heli of helicoptersRef.current) {
-      // Update rotor animation
-      heli.rotorAngle += delta * 25; // Fast rotor spin
-      
-      // Update searchlight sweep animation (sinusoidal motion)
-      heli.searchlightAngle += delta * heli.searchlightSweepSpeed;
-      // Update base angle to follow helicopter direction for more natural sweep
-      heli.searchlightBaseAngle = heli.angle + Math.PI / 2;
-      
-      // Update rotor wash particles - shorter duration on mobile
+    for (const heli0 of helicoptersRef.current) {
+      // Work immutably: clone once and never mutate the ref-held object.
       const washMaxAge = isMobile ? 0.4 : ROTOR_WASH_MAX_AGE;
       const washSpawnInterval = isMobile ? 0.08 : ROTOR_WASH_SPAWN_INTERVAL;
-      heli.rotorWash = heli.rotorWash
+
+      let rotorWash = heli0.rotorWash
         .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / washMaxAge) }))
         .filter(p => p.age < washMaxAge);
+
+      const heli: Helicopter = {
+        ...heli0,
+        rotorAngle: heli0.rotorAngle + delta * 25, // Fast rotor spin
+        searchlightAngle: heli0.searchlightAngle + delta * heli0.searchlightSweepSpeed,
+        // Update base angle to follow helicopter direction for more natural sweep
+        searchlightBaseAngle: heli0.angle + Math.PI / 2,
+        rotorWash,
+      };
       
       // Add new rotor wash particles when flying
       if (heli.altitude > 0.2 && heli.state === 'flying') {
@@ -416,12 +423,15 @@ export function useAircraftSystems(
           // Single small rotor wash particle behind helicopter
           const behindAngle = heli.angle + Math.PI;
           const offsetDist = 6;
-          heli.rotorWash.push({
-            x: heli.x + Math.cos(behindAngle) * offsetDist,
-            y: heli.y + Math.sin(behindAngle) * offsetDist,
-            age: 0,
-            opacity: 1
-          });
+          heli.rotorWash = [
+            ...heli.rotorWash,
+            {
+              x: heli.x + Math.cos(behindAngle) * offsetDist,
+              y: heli.y + Math.sin(behindAngle) * offsetDist,
+              age: 0,
+              opacity: 1,
+            },
+          ];
         }
       }
       

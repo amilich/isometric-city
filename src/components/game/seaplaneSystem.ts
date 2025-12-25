@@ -144,19 +144,22 @@ export function useSeaplaneSystem(
     // Update existing seaplanes
     const updatedSeaplanes: Seaplane[] = [];
     
-    for (const seaplane of seaplanesRef.current) {
-      // Update contrail particles when at altitude
+    for (const seaplane0 of seaplanesRef.current) {
+      // Work immutably: clone once and never mutate the ref-held object.
       const contrailMaxAge = isMobile ? 0.8 : CONTRAIL_MAX_AGE;
       const contrailSpawnInterval = isMobile ? 0.06 : CONTRAIL_SPAWN_INTERVAL;
-      seaplane.contrail = seaplane.contrail
+      const wakeMaxAge = isMobile ? 0.6 : WAKE_MAX_AGE;
+
+      let contrail = seaplane0.contrail
         .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / contrailMaxAge) }))
         .filter(p => p.age < contrailMaxAge);
-      
-      // Update wake particles when on water
-      const wakeMaxAge = isMobile ? 0.6 : WAKE_MAX_AGE;
-      seaplane.wake = seaplane.wake
+
+      const wake = seaplane0.wake
         .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / wakeMaxAge) }))
         .filter(p => p.age < wakeMaxAge);
+
+      let stateProgress = seaplane0.stateProgress;
+      const seaplane: Seaplane = { ...seaplane0, contrail, wake, stateProgress };
 
       // Add contrail particles at high altitude
       if (seaplane.altitude > 0.7) {
@@ -168,7 +171,7 @@ export function useSeaplaneSystem(
           const downOffset = -2; // Vertical offset up
           const contrailX = seaplane.x - Math.cos(seaplane.angle) * behindOffset;
           const contrailY = seaplane.y - Math.sin(seaplane.angle) * behindOffset + downOffset;
-          seaplane.contrail.push({ x: contrailX, y: contrailY, age: 0, opacity: 1 });
+          seaplane.contrail = [...seaplane.contrail, { x: contrailX, y: contrailY, age: 0, opacity: 1 }];
         }
       }
 

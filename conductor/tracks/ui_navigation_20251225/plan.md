@@ -36,3 +36,18 @@
     - [ ] Ensure the Help panel is easily accessible via the Mobile toolbar
     - [ ] Audit touch targets for help buttons on mobile
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Polish & Mobile Optimization' (Protocol in workflow.md) [da5ba79]
+
+## Phase 4: Comprehensive Shortcuts
+
+- [x] Task: Implement remaining top-level tool shortcuts [057f4de]
+    - [ ] Update `shortcuts.ts` with Rail (L), Subway (M), Dezone (4)
+    - [ ] Implement handling in `useGameKeyboard`
+    - [ ] Add tests for new shortcuts
+- [x] Task: Implement Category Cycling logic [9e303d1]
+    - [ ] Define category mappings in `shortcuts.ts` or a new config
+    - [ ] Implement logic in `useGameKeyboard` to cycle tools within a category
+    - [ ] Add tests for category cycling behavior
+- [x] Task: Update Help Panel and Tooltips [54a80e1]
+    - [ ] Update `ShortcutsHelpPanel` to list new category shortcuts
+    - [ ] Update Sidebar tooltips to show the cycling shortcut (e.g., "Police Station (S)")
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Comprehensive Shortcuts' (Protocol in workflow.md)

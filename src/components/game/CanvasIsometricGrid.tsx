@@ -3135,8 +3135,25 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
         }
         
-        const color = isValidPlacement ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.3)';
-        const strokeColor = isValidPlacement ? '#4ade80' : '#f87171';
+        let color = isValidPlacement ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.3)';
+        let strokeColor = isValidPlacement ? '#4ade80' : '#f87171';
+
+        // Use specific colors for zones if valid
+        if (selectedTool.startsWith('zone_') && isValidPlacement) {
+          if (selectedTool === 'zone_residential') {
+            color = 'rgba(34, 197, 94, 0.35)';
+            strokeColor = '#22c55e';
+          } else if (selectedTool === 'zone_commercial') {
+            color = 'rgba(59, 130, 246, 0.35)';
+            strokeColor = '#3b82f6';
+          } else if (selectedTool === 'zone_industrial') {
+            color = 'rgba(245, 158, 11, 0.35)';
+            strokeColor = '#f59e0b';
+          } else if (selectedTool === 'zone_dezone') {
+            color = 'rgba(148, 163, 184, 0.35)';
+            strokeColor = '#94a3b8';
+          }
+        }
 
         const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
         drawHighlight(screenX, screenY, color, strokeColor);

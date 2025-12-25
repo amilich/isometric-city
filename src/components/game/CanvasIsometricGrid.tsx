@@ -2666,15 +2666,40 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
         }
         
-        // For subway overlay, show ALL non-water tiles (valid placement areas + existing subway)
-        // For other overlays, show buildings only
+        // Overlay visibility rules (keep heavy heatmaps from drawing on every grass tile).
         const showOverlay =
           overlayMode !== 'none' &&
-          (overlayMode === 'subway' 
-            ? tile.building.type !== 'water'  // For subway mode, show all non-water tiles
-            : (tile.building.type !== 'grass' &&
-               tile.building.type !== 'water' &&
-               tile.building.type !== 'road'));
+          (() => {
+            if (overlayMode === 'subway') {
+              return tile.building.type !== 'water';
+            }
+
+            if (overlayMode === 'traffic') {
+              return tile.building.type === 'road';
+            }
+
+            if (overlayMode === 'crime') {
+              // Crime is most relevant to zoned areas.
+              return tile.building.type !== 'water' && tile.zone !== 'none';
+            }
+
+            if (overlayMode === 'landValue') {
+              // Show zoned tiles (even if undeveloped) plus any non-grass features.
+              return tile.building.type !== 'water' && (tile.zone !== 'none' || tile.building.type !== 'grass');
+            }
+
+            if (overlayMode === 'pollution') {
+              // Show buildings/roads, and any tiles with noticeable pollution.
+              return tile.building.type !== 'water' && (tile.building.type !== 'grass' || tile.pollution > 2);
+            }
+
+            // Service/utility overlays (power/water/fire/police/health/education): buildings only
+            return (
+              tile.building.type !== 'grass' &&
+              tile.building.type !== 'water' &&
+              tile.building.type !== 'road'
+            );
+          })();
         if (showOverlay) {
           overlayQueue.push({ screenX, screenY, tile });
         }
@@ -2896,18 +2921,27 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         
         // Draw overlays on the buildings canvas so they appear ON TOP of buildings
         // (The buildings canvas is layered above the main canvas, so overlays must be drawn here)
+        // Reuse a single object to avoid per-tile allocations.
+        const servicesAt = {
+          fire: 0,
+          police: 0,
+          health: 0,
+          education: 0,
+          power: false,
+          water: false,
+        };
         // PERF: Use for loop instead of forEach
         for (let i = 0; i < overlayQueue.length; i++) {
           const { tile, screenX, screenY } = overlayQueue[i];
-          // Get service coverage for this tile
-          const coverage = {
-            fire: state.services.fire[tile.y][tile.x],
-            police: state.services.police[tile.y][tile.x],
-            health: state.services.health[tile.y][tile.x],
-            education: state.services.education[tile.y][tile.x],
-          };
-          
-          buildingsCtx.fillStyle = getOverlayFillStyle(overlayMode, tile, coverage);
+
+          servicesAt.fire = state.services.fire[tile.y][tile.x];
+          servicesAt.police = state.services.police[tile.y][tile.x];
+          servicesAt.health = state.services.health[tile.y][tile.x];
+          servicesAt.education = state.services.education[tile.y][tile.x];
+          servicesAt.power = state.services.power[tile.y][tile.x];
+          servicesAt.water = state.services.water[tile.y][tile.x];
+
+          buildingsCtx.fillStyle = getOverlayFillStyle(overlayMode, tile, servicesAt, grid, gridSize);
           buildingsCtx.beginPath();
           buildingsCtx.moveTo(screenX + halfTileWidth, screenY);
           buildingsCtx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
@@ -3963,6 +3997,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         <TileInfoPanel
           tile={grid[selectedTile.y][selectedTile.x]}
           services={state.services}
+          grid={grid}
+          gridSize={gridSize}
           onClose={() => setSelectedTile(null)}
         />
       )}

@@ -12,6 +12,10 @@ import {
   HealthIcon,
   EducationIcon,
   SubwayIcon,
+  RoadIcon,
+  EnvironmentIcon,
+  MoneyIcon,
+  AlertIcon,
 } from '@/components/ui/Icons';
 import { OverlayMode } from './types';
 import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
@@ -39,6 +43,10 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   health: <HealthIcon size={14} />,
   education: <EducationIcon size={14} />,
   subway: <SubwayIcon size={14} />,
+  traffic: <RoadIcon size={14} />,
+  pollution: <EnvironmentIcon size={14} />,
+  landValue: <MoneyIcon size={14} />,
+  crime: <AlertIcon size={14} />,
 };
 
 // ============================================================================
@@ -54,12 +62,23 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
   overlayMode,
   setOverlayMode,
 }: OverlayModeToggleProps) {
+  const showHeatLegend =
+    overlayMode === 'traffic' ||
+    overlayMode === 'pollution' ||
+    overlayMode === 'crime' ||
+    overlayMode === 'landValue';
+
+  const legendGradient =
+    overlayMode === 'landValue'
+      ? 'bg-gradient-to-r from-red-500 via-yellow-500 to-green-500'
+      : 'bg-gradient-to-r from-green-500 via-yellow-500 to-red-500';
+
   return (
     <Card className="absolute bottom-4 left-4 p-2 shadow-lg bg-card/90 border-border/70 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
         View Overlay
       </div>
-      <div className="flex gap-1">
+      <div className="grid grid-cols-6 gap-1">
         {(Object.keys(OVERLAY_CONFIG) as OverlayMode[]).map((mode) => {
           const config = OVERLAY_CONFIG[mode];
           const isActive = overlayMode === mode;
@@ -70,7 +89,7 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
               variant={isActive ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setOverlayMode(mode)}
-              className={`h-8 px-3 ${getOverlayButtonClass(mode, isActive)}`}
+              className={`h-8 w-9 px-0 ${getOverlayButtonClass(mode, isActive)}`}
               title={config.title}
             >
               {OVERLAY_ICONS[mode]}
@@ -78,6 +97,16 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
           );
         })}
       </div>
+
+      {showHeatLegend && (
+        <div className="mt-2">
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+            <span>Low</span>
+            <span>High</span>
+          </div>
+          <div className={`h-2 w-full rounded ${legendGradient}`} />
+        </div>
+      )}
     </Card>
   );
 });

@@ -462,6 +462,38 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   >
                     Subway
                   </Button>
+                  <Button
+                    variant={overlayMode === 'traffic' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'traffic' ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                    onClick={() => setOverlayMode('traffic')}
+                  >
+                    Traffic
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'pollution' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'pollution' ? 'bg-zinc-500 hover:bg-zinc-600' : ''}`}
+                    onClick={() => setOverlayMode('pollution')}
+                  >
+                    Pollution
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'landValue' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'landValue' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                    onClick={() => setOverlayMode('landValue')}
+                  >
+                    Land
+                  </Button>
+                  <Button
+                    variant={overlayMode === 'crime' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-10 w-full text-xs ${overlayMode === 'crime' ? 'bg-fuchsia-600 hover:bg-fuchsia-700' : ''}`}
+                    onClick={() => setOverlayMode('crime')}
+                  >
+                    Crime
+                  </Button>
                 </div>
               </div>
             )}

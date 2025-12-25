@@ -7,9 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CloseIcon } from '@/components/ui/Icons';
+import {
+  TileServicesAt,
+  clamp,
+  computeCrimeIndex,
+  computeLandValueIndex,
+  computeTrafficIndex,
+} from '@/lib/tileMetrics';
 
 interface TileInfoPanelProps {
   tile: Tile;
+  grid: Tile[][];
+  gridSize: number;
   services: {
     police: number[][];
     fire: number[][];
@@ -24,11 +33,49 @@ interface TileInfoPanelProps {
 
 export function TileInfoPanel({ 
   tile, 
+  grid,
+  gridSize,
   services, 
   onClose,
   isMobile = false
 }: TileInfoPanelProps) {
   const { x, y } = tile;
+
+  // Derived local metrics (used for overlays + growth logic). These are *not* directly stored
+  // in the tile to avoid extra simulation churn.
+  const servicesAt: TileServicesAt = {
+    fire: services.fire[y][x],
+    police: services.police[y][x],
+    health: services.health[y][x],
+    education: services.education[y][x],
+    power: services.power[y][x],
+    water: services.water[y][x],
+  };
+
+  const pollutionIndex = clamp(tile.pollution, 0, 100);
+  const landValueIndex = computeLandValueIndex(tile, servicesAt, grid, x, y, gridSize);
+  const crimeIndex = computeCrimeIndex(tile, servicesAt, grid, x, y, gridSize);
+  const trafficIndex = (() => {
+    if (tile.building.type === 'road') {
+      return computeTrafficIndex(grid, x, y, gridSize);
+    }
+    // For non-road tiles, show the max nearby road traffic (if any).
+    let best = 0;
+    const dirs: Array<[number, number]> = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ];
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= gridSize || ny >= gridSize) continue;
+      if (grid[ny][nx].building.type !== 'road') continue;
+      best = Math.max(best, computeTrafficIndex(grid, nx, ny, gridSize));
+    }
+    return best;
+  })();
   
   return (
     <Card 
@@ -90,12 +137,50 @@ export function TileInfoPanel({
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Land Value</span>
-          <span>${tile.landValue}</span>
+          <span
+            className={
+              landValueIndex > 70
+                ? 'text-green-400'
+                : landValueIndex > 40
+                  ? 'text-amber-400'
+                  : 'text-red-400'
+            }
+          >
+            {Math.round(landValueIndex)}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Pollution</span>
           <span className={tile.pollution > 50 ? 'text-red-400' : tile.pollution > 25 ? 'text-amber-400' : 'text-green-400'}>
             {Math.round(tile.pollution)}%
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Traffic</span>
+          <span
+            className={
+              trafficIndex > 70
+                ? 'text-red-400'
+                : trafficIndex > 40
+                  ? 'text-amber-400'
+                  : 'text-green-400'
+            }
+          >
+            {Math.round(trafficIndex)}%
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Crime</span>
+          <span
+            className={
+              crimeIndex > 70
+                ? 'text-red-400'
+                : crimeIndex > 40
+                  ? 'text-amber-400'
+                  : 'text-green-400'
+            }
+          >
+            {Math.round(crimeIndex)}%
           </span>
         </div>
         

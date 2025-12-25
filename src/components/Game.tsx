@@ -16,7 +16,7 @@ import { NotificationsToasts } from '@/components/NotificationsToasts';
 
 // Import game components
 import { OverlayMode } from '@/components/game/types';
-import { getOverlayForTool } from '@/components/game/overlays';
+import { getOverlayForTool, OVERLAY_MODES } from '@/components/game/overlays';
 import { OverlayModeToggle } from '@/components/game/OverlayModeToggle';
 import { Sidebar } from '@/components/game/Sidebar';
 import {
@@ -175,6 +175,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)
         // If running, pause (speed 0)
         setSpeed(state.speed === 0 ? 1 : 0);
+      } else if (e.key === 'o' || e.key === 'O') {
+        // Cycle overlay mode (Shift reverses)
+        e.preventDefault();
+        const idx = OVERLAY_MODES.indexOf(overlayMode);
+        const delta = e.shiftKey ? -1 : 1;
+        const next = OVERLAY_MODES[(idx + delta + OVERLAY_MODES.length) % OVERLAY_MODES.length];
+        setOverlayMode(next);
+      } else if (e.key === '[') {
+        e.preventDefault();
+        setSpeed(Math.max(0, state.speed - 1));
+      } else if (e.key === ']') {
+        e.preventDefault();
+        setSpeed(Math.min(3, state.speed + 1));
       }
     };
     

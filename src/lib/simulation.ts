@@ -20,6 +20,7 @@ import {
   INDUSTRIAL_BUILDINGS,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import { clamp, computeLandValueIndex } from './tileMetrics';
 import { isMobile } from 'react-device-detect';
 
 // Default grid size for new games
@@ -1088,7 +1089,23 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
 
   const hasPower = building.powered;
   const hasWater = building.watered;
-  const landValue = tile.landValue;
+  // Dynamic land value derived from nearby amenities, pollution, and services.
+  // We intentionally keep this as a derived metric (no mutation) for sim performance.
+  const landValue = computeLandValueIndex(
+    tile,
+    {
+      police: services.police[y][x],
+      fire: services.fire[y][x],
+      health: services.health[y][x],
+      education: services.education[y][x],
+      power: services.power[y][x],
+      water: services.water[y][x],
+    },
+    grid,
+    x,
+    y,
+    grid.length,
+  );
   
   // Starter buildings (farms, house_small, shop_small) don't require power/water
   const isStarter = isStarterBuilding(x, y, building.type);
@@ -1461,23 +1478,25 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   const avgHealthCoverage = calculateAverageCoverage(services.health);
   const avgEducationCoverage = calculateAverageCoverage(services.education);
 
-  const safety = Math.min(100, avgPoliceCoverage * 0.7 + avgFireCoverage * 0.3);
-  const health = Math.min(100, avgHealthCoverage * 0.8 + (100 - totalPollution / (size * size)) * 0.2);
-  const education = Math.min(100, avgEducationCoverage);
+  // Clamp ratings to 0..100 to avoid negative values cascading into happiness.
+  const avgPollution = totalPollution / (size * size);
+  const safety = clamp(avgPoliceCoverage * 0.7 + avgFireCoverage * 0.3, 0, 100);
+  const health = clamp(avgHealthCoverage * 0.8 + (100 - avgPollution) * 0.2, 0, 100);
+  const education = clamp(avgEducationCoverage, 0, 100);
   
   const greenRatio = (treeCount + waterCount + parkCount) / (size * size);
   const pollutionRatio = totalPollution / (size * size * 100);
-  const environment = Math.min(100, Math.max(0, greenRatio * 200 - pollutionRatio * 100 + 50));
+  const environment = clamp(greenRatio * 200 - pollutionRatio * 100 + 50, 0, 100);
 
-  const jobSatisfaction = jobs >= population ? 100 : (jobs / (population || 1)) * 100;
-  const happiness = Math.min(100, (
+  const jobSatisfaction = clamp(jobs >= population ? 100 : (jobs / (population || 1)) * 100, 0, 100);
+  const happiness = clamp((
     safety * 0.15 +
     health * 0.2 +
     education * 0.15 +
     environment * 0.15 +
     jobSatisfaction * 0.2 +
     (100 - taxRate * 3) * 0.15
-  ));
+  ), 0, 100);
 
   return {
     population,
@@ -1850,7 +1869,9 @@ export function simulateTick(state: GameState): GameState {
 
       // Update pollution from buildings
       const buildingStats = BUILDING_STATS[tile.building.type];
-      tile.pollution = Math.max(0, tile.pollution * 0.95 + (buildingStats?.pollution || 0));
+      // Pollution is treated as a 0..100 "index" elsewhere (health, environment, UI).
+      // Cap it to avoid runaway values for high-polluting buildings.
+      tile.pollution = clamp(tile.pollution * 0.95 + (buildingStats?.pollution || 0), 0, 100);
 
       // Fire simulation
       if (state.disastersEnabled && tile.building.onFire) {

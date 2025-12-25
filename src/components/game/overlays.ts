@@ -4,19 +4,21 @@
  */
 
 import { Tile } from '@/types/game';
+import {
+  TileServicesAt,
+  clamp,
+  computeCrimeIndex,
+  computeLandValueIndex,
+  computeTrafficIndex,
+} from '@/lib/tileMetrics';
 import { OverlayMode } from './types';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-/** Service coverage data for a tile */
-export type ServiceCoverage = {
-  fire: number;
-  police: number;
-  health: number;
-  education: number;
-};
+/** Service coverage data for a tile (plus optional utility flags) */
+export type ServiceCoverage = TileServicesAt;
 
 /** Configuration for an overlay mode */
 export type OverlayConfig = {
@@ -84,6 +86,30 @@ export const OVERLAY_CONFIG: Record<OverlayMode, OverlayConfig> = {
     activeColor: 'bg-yellow-500',
     hoverColor: 'hover:bg-yellow-600',
   },
+  traffic: {
+    label: 'Traffic',
+    title: 'Traffic Flow',
+    activeColor: 'bg-orange-500',
+    hoverColor: 'hover:bg-orange-600',
+  },
+  pollution: {
+    label: 'Pollution',
+    title: 'Pollution Levels',
+    activeColor: 'bg-zinc-500',
+    hoverColor: 'hover:bg-zinc-600',
+  },
+  landValue: {
+    label: 'Land Value',
+    title: 'Land Value',
+    activeColor: 'bg-emerald-600',
+    hoverColor: 'hover:bg-emerald-700',
+  },
+  crime: {
+    label: 'Crime',
+    title: 'Crime Risk',
+    activeColor: 'bg-fuchsia-600',
+    hoverColor: 'hover:bg-fuchsia-700',
+  },
 };
 
 /** Map of building tools to their corresponding overlay mode */
@@ -97,6 +123,7 @@ export const TOOL_TO_OVERLAY_MAP: Record<string, OverlayMode> = {
   university: 'education',
   subway_station: 'subway',
   subway: 'subway',
+  road: 'traffic',
 };
 
 /** Get the button class name for an overlay button */
@@ -134,6 +161,42 @@ const COVERAGE_COLORS = {
   },
 } as const;
 
+// Simple 3-stop color ramps for "heatmap" overlays.
+const HEATMAP_GOOD_LOW: [number, number, number] = [34, 197, 94]; // green-ish
+const HEATMAP_MID: [number, number, number] = [234, 179, 8];
+const HEATMAP_BAD_HIGH: [number, number, number] = [239, 68, 68];
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function lerpColor(
+  a: [number, number, number],
+  b: [number, number, number],
+  t: number,
+): [number, number, number] {
+  return [
+    Math.round(lerp(a[0], b[0], t)),
+    Math.round(lerp(a[1], b[1], t)),
+    Math.round(lerp(a[2], b[2], t)),
+  ];
+}
+
+function triColor(
+  t: number,
+  low: [number, number, number],
+  mid: [number, number, number],
+  high: [number, number, number],
+): [number, number, number] {
+  const ct = clamp(t, 0, 1);
+  if (ct <= 0.5) return lerpColor(low, mid, ct / 0.5);
+  return lerpColor(mid, high, (ct - 0.5) / 0.5);
+}
+
+function rgba(color: [number, number, number], alpha: number): string {
+  return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+}
+
 /**
  * Calculate the fill style color for an overlay tile.
  * 
@@ -145,48 +208,81 @@ const COVERAGE_COLORS = {
 export function getOverlayFillStyle(
   mode: OverlayMode,
   tile: Tile,
-  coverage: ServiceCoverage
+  servicesAt: ServiceCoverage,
+  grid: Tile[][],
+  gridSize: number,
 ): string {
   switch (mode) {
-    case 'power':
-      return tile.building.powered
-        ? 'rgba(34, 197, 94, 0.4)'  // Green for powered
-        : 'rgba(239, 68, 68, 0.4)'; // Red for unpowered
+    case 'power': {
+      const powered = servicesAt.power ?? tile.building.powered;
+      return powered
+        ? 'rgba(34, 197, 94, 0.4)' // green
+        : 'rgba(239, 68, 68, 0.4)'; // red
+    }
 
-    case 'water':
-      return tile.building.watered
-        ? 'rgba(34, 197, 94, 0.4)'  // Green for watered
-        : 'rgba(239, 68, 68, 0.4)'; // Red for not watered
+    case 'water': {
+      const watered = servicesAt.water ?? tile.building.watered;
+      return watered
+        ? 'rgba(34, 197, 94, 0.4)' // green
+        : 'rgba(239, 68, 68, 0.4)'; // red
+    }
 
     case 'fire': {
-      const intensity = coverage.fire / 100;
+      const intensity = clamp((servicesAt.fire ?? 0) / 100, 0, 1);
       const colors = COVERAGE_COLORS.fire;
       return `rgba(${colors.baseR}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
     }
 
     case 'police': {
-      const intensity = coverage.police / 100;
+      const intensity = clamp((servicesAt.police ?? 0) / 100, 0, 1);
       const colors = COVERAGE_COLORS.police;
       return `rgba(${colors.baseR + Math.floor(intensity * colors.intensityR)}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
     }
 
     case 'health': {
-      const intensity = coverage.health / 100;
+      const intensity = clamp((servicesAt.health ?? 0) / 100, 0, 1);
       const colors = COVERAGE_COLORS.health;
       return `rgba(${colors.baseR + Math.floor(intensity * colors.intensityR)}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
     }
 
     case 'education': {
-      const intensity = coverage.education / 100;
+      const intensity = clamp((servicesAt.education ?? 0) / 100, 0, 1);
       const colors = COVERAGE_COLORS.education;
       return `rgba(${colors.baseR + Math.floor(intensity * colors.intensityR)}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
     }
 
+    case 'traffic': {
+      const traffic = computeTrafficIndex(grid, tile.x, tile.y, gridSize);
+      const t = clamp(traffic / 100, 0, 1);
+      const color = triColor(t, HEATMAP_GOOD_LOW, HEATMAP_MID, HEATMAP_BAD_HIGH);
+      return rgba(color, 0.12 + t * 0.55);
+    }
+
+    case 'pollution': {
+      const t = clamp((tile.pollution ?? 0) / 100, 0, 1);
+      const color = triColor(t, HEATMAP_GOOD_LOW, HEATMAP_MID, HEATMAP_BAD_HIGH);
+      return rgba(color, 0.12 + t * 0.55);
+    }
+
+    case 'crime': {
+      const crime = computeCrimeIndex(tile, servicesAt, grid, tile.x, tile.y, gridSize);
+      const t = clamp(crime / 100, 0, 1);
+      const color = triColor(t, HEATMAP_GOOD_LOW, HEATMAP_MID, HEATMAP_BAD_HIGH);
+      return rgba(color, 0.12 + t * 0.55);
+    }
+
+    case 'landValue': {
+      const landValue = computeLandValueIndex(tile, servicesAt, grid, tile.x, tile.y, gridSize);
+      const t = clamp(landValue / 100, 0, 1);
+      // For land value: low = bad (red), high = good (green)
+      const color = triColor(t, HEATMAP_BAD_HIGH, HEATMAP_MID, HEATMAP_GOOD_LOW);
+      return rgba(color, 0.12 + t * 0.55);
+    }
+
     case 'subway':
-      // Underground view overlay
       return tile.hasSubway
-        ? 'rgba(245, 158, 11, 0.7)'  // Bright amber for existing subway
-        : 'rgba(40, 30, 20, 0.4)';   // Dark brown tint for "underground" view
+        ? 'rgba(245, 158, 11, 0.7)'
+        : 'rgba(40, 30, 20, 0.4)';
 
     case 'none':
     default:
@@ -204,5 +300,17 @@ export function getOverlayForTool(tool: string): OverlayMode {
 
 /** List of all overlay modes (for iteration) */
 export const OVERLAY_MODES: OverlayMode[] = [
-  'none', 'power', 'water', 'fire', 'police', 'health', 'education', 'subway'
+  'none',
+  'power',
+  'water',
+  'fire',
+  'police',
+  'health',
+  'education',
+  'subway',
+  // City metrics
+  'traffic',
+  'pollution',
+  'landValue',
+  'crime',
 ];

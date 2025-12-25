@@ -29,7 +29,7 @@
 
 ## Phase 3: Polish & Mobile Optimization
 
-- [ ] Task: Improve cursor/ghost visual feedback for active tools
+- [x] Task: Improve cursor/ghost visual feedback for active tools [6dd8b58]
     - [ ] Write tests for ghost tile rendering logic
     - [ ] Enhance `CanvasIsometricGrid.tsx` or `drawing.ts` to provide clearer mode-specific feedback
 - [ ] Task: Mobile Shortcut/Help accessibility

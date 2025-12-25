@@ -60,7 +60,7 @@ import {
   OVERLAY_CIRCLE_FILL_COLORS,
   OVERLAY_HIGHLIGHT_COLORS,
 } from '@/components/game/overlays';
-import { SERVICE_CONFIG } from '@/lib/simulation';
+import { SERVICE_CONFIG, isServiceBuildingConnectedToRoad } from '@/lib/simulation';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
 import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
 import { TileInfoPanel } from '@/components/game/panels';
@@ -2924,6 +2924,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           const circleFillColor = OVERLAY_CIRCLE_FILL_COLORS[overlayMode];
           const highlightColor = OVERLAY_HIGHLIGHT_COLORS[overlayMode];
           
+          // Service buildings that require road connection (not utilities like power/water)
+          const SERVICE_BUILDINGS_REQUIRING_ROAD = new Set([
+            'police_station', 'fire_station', 'hospital', 'school', 'university'
+          ]);
+          
           // Find all service buildings of this type and draw their radii
           for (let y = 0; y < gridSize; y++) {
             for (let x = 0; x < gridSize; x++) {
@@ -2942,6 +2947,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               
               const range = config.range;
               
+              // Check if this service building requires road connection and if it's connected
+              const requiresRoad = SERVICE_BUILDINGS_REQUIRING_ROAD.has(tile.building.type);
+              const isConnected = !requiresRoad || isServiceBuildingConnectedToRoad(grid, gridSize, x, y);
+              
               // NOTE: For multi-tile service buildings (e.g. 2x2 hospital, 3x3 university),
               // coverage is computed from the building's anchor tile (top-left of footprint)
               // in the simulation. We center the radius on that same tile to keep the
@@ -2956,32 +2965,60 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               const radiusX = range * halfTileWidth;
               const radiusY = range * halfTileHeight;
               
-              buildingsCtx.strokeStyle = circleColor;
-              buildingsCtx.lineWidth = 2 / zoom; // Keep line width consistent at different zoom levels
-              buildingsCtx.beginPath();
-              buildingsCtx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
-              buildingsCtx.stroke();
-              
-              // Draw a subtle filled ellipse for better visibility
-              buildingsCtx.fillStyle = circleFillColor;
-              buildingsCtx.fill();
-              
-              // Draw highlight glow around the service building
-              buildingsCtx.strokeStyle = highlightColor;
-              buildingsCtx.lineWidth = 3 / zoom;
-              buildingsCtx.beginPath();
-              buildingsCtx.moveTo(bldgScreenX + halfTileWidth, bldgScreenY);
-              buildingsCtx.lineTo(bldgScreenX + tileWidth, bldgScreenY + halfTileHeight);
-              buildingsCtx.lineTo(bldgScreenX + halfTileWidth, bldgScreenY + tileHeight);
-              buildingsCtx.lineTo(bldgScreenX, bldgScreenY + halfTileHeight);
-              buildingsCtx.closePath();
-              buildingsCtx.stroke();
-              
-              // Draw a dot at the building center
-              buildingsCtx.fillStyle = highlightColor;
-              buildingsCtx.beginPath();
-              buildingsCtx.arc(centerX, centerY, 4 / zoom, 0, Math.PI * 2);
-              buildingsCtx.fill();
+              if (isConnected) {
+                // Connected building - draw normal coverage radius
+                buildingsCtx.strokeStyle = circleColor;
+                buildingsCtx.lineWidth = 2 / zoom; // Keep line width consistent at different zoom levels
+                buildingsCtx.beginPath();
+                buildingsCtx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+                buildingsCtx.stroke();
+                
+                // Draw a subtle filled ellipse for better visibility
+                buildingsCtx.fillStyle = circleFillColor;
+                buildingsCtx.fill();
+                
+                // Draw highlight glow around the service building
+                buildingsCtx.strokeStyle = highlightColor;
+                buildingsCtx.lineWidth = 3 / zoom;
+                buildingsCtx.beginPath();
+                buildingsCtx.moveTo(bldgScreenX + halfTileWidth, bldgScreenY);
+                buildingsCtx.lineTo(bldgScreenX + tileWidth, bldgScreenY + halfTileHeight);
+                buildingsCtx.lineTo(bldgScreenX + halfTileWidth, bldgScreenY + tileHeight);
+                buildingsCtx.lineTo(bldgScreenX, bldgScreenY + halfTileHeight);
+                buildingsCtx.closePath();
+                buildingsCtx.stroke();
+                
+                // Draw a dot at the building center
+                buildingsCtx.fillStyle = highlightColor;
+                buildingsCtx.beginPath();
+                buildingsCtx.arc(centerX, centerY, 4 / zoom, 0, Math.PI * 2);
+                buildingsCtx.fill();
+              } else {
+                // Disconnected building - draw warning indicator (no coverage radius)
+                // Red dashed outline to show it's inactive
+                buildingsCtx.strokeStyle = 'rgba(239, 68, 68, 0.9)'; // Red warning color
+                buildingsCtx.lineWidth = 3 / zoom;
+                buildingsCtx.setLineDash([6 / zoom, 4 / zoom]); // Dashed line
+                buildingsCtx.beginPath();
+                buildingsCtx.moveTo(bldgScreenX + halfTileWidth, bldgScreenY);
+                buildingsCtx.lineTo(bldgScreenX + tileWidth, bldgScreenY + halfTileHeight);
+                buildingsCtx.lineTo(bldgScreenX + halfTileWidth, bldgScreenY + tileHeight);
+                buildingsCtx.lineTo(bldgScreenX, bldgScreenY + halfTileHeight);
+                buildingsCtx.closePath();
+                buildingsCtx.stroke();
+                buildingsCtx.setLineDash([]); // Reset dash pattern
+                
+                // Draw a red X at the building center to indicate no road connection
+                const xSize = 6 / zoom;
+                buildingsCtx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+                buildingsCtx.lineWidth = 2 / zoom;
+                buildingsCtx.beginPath();
+                buildingsCtx.moveTo(centerX - xSize, centerY - xSize);
+                buildingsCtx.lineTo(centerX + xSize, centerY + xSize);
+                buildingsCtx.moveTo(centerX + xSize, centerY - xSize);
+                buildingsCtx.lineTo(centerX - xSize, centerY + xSize);
+                buildingsCtx.stroke();
+              }
             }
           }
         }
@@ -4022,6 +4059,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         <TileInfoPanel
           tile={grid[selectedTile.y][selectedTile.x]}
           services={state.services}
+          grid={grid}
+          gridSize={gridSize}
           onClose={() => setSelectedTile(null)}
         />
       )}

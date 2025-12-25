@@ -853,6 +853,42 @@ export const SERVICE_CONFIG = {
   water_tower: { range: 12, rangeSquared: 144 },
 } as const;
 
+// Service buildings that require road connection to provide coverage
+// Utilities (power_plant, water_tower) don't need road connection - they provide infrastructure
+const SERVICE_BUILDINGS_REQUIRING_ROAD = new Set([
+  'police_station', 'fire_station', 'hospital', 'school', 'university'
+]);
+
+// Check if a service building has road access (adjacent road tile)
+// Returns true if a road exists within 1 tile (orthogonal or diagonal)
+export function isServiceBuildingConnectedToRoad(
+  grid: Tile[][],
+  gridSize: number,
+  buildingX: number,
+  buildingY: number
+): boolean {
+  // Check all 8 adjacent tiles (orthogonal + diagonal)
+  const directions = [
+    [-1, 0], [1, 0], [0, -1], [0, 1],  // orthogonal
+    [-1, -1], [-1, 1], [1, -1], [1, 1]  // diagonal
+  ];
+  
+  for (const [dx, dy] of directions) {
+    const nx = buildingX + dx;
+    const ny = buildingY + dy;
+    
+    // Check bounds
+    if (nx < 0 || ny < 0 || nx >= gridSize || ny >= gridSize) continue;
+    
+    // Check if this tile is a road
+    if (grid[ny][nx].building.type === 'road') {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 // Building types that provide services
 const SERVICE_BUILDING_TYPES = new Set([
   'police_station', 'fire_station', 'hospital', 'school', 'university',
@@ -882,6 +918,14 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
       // Skip abandoned buildings
       if (tile.building.abandoned) {
         continue;
+      }
+      
+      // Skip service buildings (police, fire, hospital, school, university) that aren't connected to roads
+      // Utilities (power_plant, water_tower) don't need road connection
+      if (SERVICE_BUILDINGS_REQUIRING_ROAD.has(buildingType)) {
+        if (!isServiceBuildingConnectedToRoad(grid, size, x, y)) {
+          continue;
+        }
       }
       
       serviceBuildings.push({ x, y, type: buildingType });

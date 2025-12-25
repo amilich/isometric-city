@@ -14,7 +14,7 @@ export const ModeIndicator = React.memo(function ModeIndicator() {
   return (
     <div className="flex items-center px-3 py-1 bg-secondary/50 rounded-md border border-border/50">
       <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-2">Mode</span>
-      <span className="text-xs font-bold text-foreground">{info.name}</span>
+      <span className="text-xs font-bold text-foreground w-[120px] truncate">{info.name}</span>
     </div>
   );
 });

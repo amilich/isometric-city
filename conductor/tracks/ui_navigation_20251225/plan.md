@@ -10,7 +10,7 @@
     - [ ] Write tests for `ModeIndicator` to ensure it reflects `GameContext` mode state
     - [ ] Implement `ModeIndicator` component
     - [ ] Integrate `ModeIndicator` into `src/components/game/TopBar.tsx`
-- [ ] Task: Refine 'Escape' key behavior for mode resetting
+- [x] Task: Refine 'Escape' key behavior for mode resetting [068416d]
     - [ ] Write tests in `GameContext` or `useKeyboard` hook for Escape key logic
     - [ ] Implement robust Escape key handling to reset building/tool modes
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Mode Indication & Core Navigation' (Protocol in workflow.md)

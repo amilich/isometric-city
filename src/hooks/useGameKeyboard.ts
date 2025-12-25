@@ -49,6 +49,18 @@ export function useGameKeyboard({
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)
         // If running, pause (speed 0)
         setSpeed(state.speed === 0 ? 1 : 0);
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        setTool('road');
+      } else if (e.key === '1') {
+        e.preventDefault();
+        setTool('zone_residential');
+      } else if (e.key === '2') {
+        e.preventDefault();
+        setTool('zone_commercial');
+      } else if (e.key === '3') {
+        e.preventDefault();
+        setTool('zone_industrial');
       } else if (e.key === '?') {
         e.preventDefault();
         onToggleHelp?.();

@@ -121,6 +121,54 @@ describe('useGameKeyboard', () => {
     expect(mockSetTool).toHaveBeenCalledWith('bulldoze');
   });
 
+  it('selects road on R', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('r');
+    expect(mockSetTool).toHaveBeenCalledWith('road');
+  });
+
+  it('selects residential zone on 1', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('1');
+    expect(mockSetTool).toHaveBeenCalledWith('zone_residential');
+  });
+
+  it('selects commercial zone on 2', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('2');
+    expect(mockSetTool).toHaveBeenCalledWith('zone_commercial');
+  });
+
+  it('selects industrial zone on 3', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('3');
+    expect(mockSetTool).toHaveBeenCalledWith('zone_industrial');
+  });
+
   it('calls onToggleHelp on "?"', () => {
     const mockOnToggleHelp = vi.fn();
     runHook({

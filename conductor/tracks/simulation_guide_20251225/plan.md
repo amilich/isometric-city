@@ -9,9 +9,9 @@
 
 ## Phase 2: Zoning & Growth Mechanics
 
-- [ ] Task: Document Zone Types (Residential, Commercial, Industrial) and their basic functions
-- [ ] Task: Document Growth Logic (Requirements for placement vs. development)
-- [ ] Task: Document Leveling Up and Abandonment criteria based on `simulation.ts` logic
+- [x] Task: Document Zone Types (Residential, Commercial, Industrial) and their basic functions 62d68e1
+- [x] Task: Document Growth Logic (Requirements for placement vs. development) 62d68e1
+- [x] Task: Document Leveling Up and Abandonment criteria based on `simulation.ts` logic 62d68e1
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Zoning & Growth Mechanics' (Protocol in workflow.md)
 
 ## Phase 3: Systems & Economy

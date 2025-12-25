@@ -172,7 +172,7 @@ export function PedestrianInfoPanel({ pedestrian, onClose }: PedestrianInfoPanel
                   <span className="font-mono">({pedestrian.currentShopX}, {pedestrian.currentShopY})</span>
                 </div>
               )}
-              {pedestrian.itemsBought > 0 && (
+              {(pedestrian.itemsBought ?? 0) > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">已购物品</span>
                   <span>{pedestrian.itemsBought} 件</span>

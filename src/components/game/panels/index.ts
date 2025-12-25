@@ -4,3 +4,4 @@ export { SettingsPanel } from './SettingsPanel';
 export { AdvisorsPanel } from './AdvisorsPanel';
 export { SpriteTestPanel } from './SpriteTestPanel';
 export { TileInfoPanel } from './TileInfoPanel';
+export { HelpPanel } from './HelpPanel';

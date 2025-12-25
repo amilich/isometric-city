@@ -24,6 +24,7 @@ import {
   StatisticsPanel,
   SettingsPanel,
   AdvisorsPanel,
+  HelpPanel,
 } from '@/components/game/panels';
 import { MiniMap } from '@/components/game/MiniMap';
 import { TopBar, StatsPanel } from '@/components/game/TopBar';
@@ -44,12 +45,14 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     redo,
     canUndo,
     canRedo,
+    saveCity,
   } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null>(null);
   const isInitialMount = useRef(true);
+  const lastNonZeroSpeedRef = useRef<0 | 1 | 2 | 3>(1);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
   
@@ -140,8 +143,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         return;
       }
 
-      // Undo / Redo
       const mod = e.metaKey || e.ctrlKey;
+
+      // Undo / Redo
       if (mod && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
         if (e.shiftKey) {
@@ -157,6 +161,24 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         return;
       }
 
+      // Quick save snapshot (Cmd/Ctrl+S)
+      if (mod && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        saveCity();
+        addNotification('City saved', 'Snapshot added to your saved cities list.', '💾');
+        return;
+      }
+
+      // Avoid hijacking browser shortcuts (Cmd/Ctrl + ...)
+      if (mod) return;
+
+      // Help panel
+      if (e.key === '?' || e.key === 'F1') {
+        e.preventDefault();
+        setActivePanel(state.activePanel === 'help' ? 'none' : 'help');
+        return;
+      }
+
       if (e.key === 'Escape') {
         if (overlayMode !== 'none') {
           setOverlayMode('none');
@@ -167,33 +189,114 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         } else if (state.selectedTool !== 'select') {
           setTool('select');
         }
-      } else if (e.key === 'b' || e.key === 'B') {
+        return;
+      }
+
+      // Pause / resume (Space or P)
+      if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        if (state.speed === 0) {
+          setSpeed(lastNonZeroSpeedRef.current || 1);
+        } else {
+          lastNonZeroSpeedRef.current = state.speed;
+          setSpeed(0);
+        }
+        return;
+      }
+
+      // Tool hotkeys (no modifiers)
+      switch (e.key) {
+        case '1':
+          setTool('select');
+          return;
+        case '2':
+          setTool('road');
+          return;
+        case '3':
+          setTool('rail');
+          return;
+        case '4':
+          setTool('subway');
+          return;
+      }
+
+      if (e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         setTool('bulldoze');
-      } else if (e.key === 'p' || e.key === 'P') {
+        return;
+      }
+
+      if (e.key === 't' || e.key === 'T') {
         e.preventDefault();
-        // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)
-        // If running, pause (speed 0)
-        setSpeed(state.speed === 0 ? 1 : 0);
-      } else if (e.key === 'o' || e.key === 'O') {
+        setTool('tree');
+        return;
+      }
+
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        setTool('zone_residential');
+        return;
+      }
+
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        setTool('zone_commercial');
+        return;
+      }
+
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        setTool('zone_industrial');
+        return;
+      }
+
+      if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        setTool('zone_dezone');
+        return;
+      }
+
+      if (e.key === 'o' || e.key === 'O') {
         // Cycle overlay mode (Shift reverses)
         e.preventDefault();
         const idx = OVERLAY_MODES.indexOf(overlayMode);
         const delta = e.shiftKey ? -1 : 1;
         const next = OVERLAY_MODES[(idx + delta + OVERLAY_MODES.length) % OVERLAY_MODES.length];
         setOverlayMode(next);
-      } else if (e.key === '[') {
+        return;
+      }
+
+      if (e.key === '[') {
         e.preventDefault();
         setSpeed(Math.max(0, state.speed - 1));
-      } else if (e.key === ']') {
+        return;
+      }
+      if (e.key === ']') {
         e.preventDefault();
         setSpeed(Math.min(3, state.speed + 1));
+        return;
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.activePanel, state.selectedTool, state.speed, selectedTile, setActivePanel, setTool, setSpeed, overlayMode, undo, redo, canUndo, canRedo]);
+  }, [
+    state.activePanel,
+    state.selectedTool,
+    state.speed,
+    selectedTile,
+    overlayMode,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    setActivePanel,
+    setSelectedTile,
+    setTool,
+    setSpeed,
+    saveCity,
+    addNotification,
+  ]);
 
   // Handle cheat code triggers
 useEffect(() => {
@@ -300,6 +403,8 @@ useEffect(() => {
           {state.activePanel === 'statistics' && <StatisticsPanel />}
           {state.activePanel === 'advisors' && <AdvisorsPanel />}
           {state.activePanel === 'settings' && <SettingsPanel />}
+        {state.activePanel === 'help' && <HelpPanel />}
+          {state.activePanel === 'help' && <HelpPanel />}
           
           <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
         </div>
@@ -336,9 +441,10 @@ useEffect(() => {
         {state.activePanel === 'statistics' && <StatisticsPanel />}
         {state.activePanel === 'advisors' && <AdvisorsPanel />}
         {state.activePanel === 'settings' && <SettingsPanel />}
+        {state.activePanel === 'help' && <HelpPanel />}
         
         <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
-        <CommandMenu />
+        <CommandMenu onNavigateToTile={(x, y) => setNavigationTarget({ x, y })} />
       </div>
     </TooltipProvider>
   );

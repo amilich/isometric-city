@@ -21,9 +21,10 @@ export function openCommandMenu() {
 // Define all menu items with categories
 interface MenuItem {
   id: string;
-  type: 'tool' | 'panel' | 'action';
+  type: 'tool' | 'panel' | 'action' | 'navigate';
   tool?: Tool;
-  panel?: 'budget' | 'statistics' | 'advisors' | 'settings';
+  panel?: 'budget' | 'statistics' | 'advisors' | 'settings' | 'help';
+  navigate?: { x: number; y: number };
   action?: 'undo' | 'redo' | 'share' | 'save_city' | 'toggle_pause';
   disabled?: boolean;
   name: string;
@@ -35,6 +36,7 @@ interface MenuItem {
 
 const MENU_CATEGORIES = [
   { key: 'actions', label: 'Actions' },
+  { key: 'navigate', label: 'Navigate' },
   { key: 'tools', label: 'Tools' },
   { key: 'zones', label: 'Zones' },
   { key: 'services', label: 'Services' },
@@ -213,10 +215,11 @@ function buildMenuItems(): MenuItem[] {
   });
 
   // Panels
-  const panels: { panel: 'budget' | 'statistics' | 'advisors' | 'settings'; name: string; description: string; keywords: string[] }[] = [
+  const panels: { panel: 'budget' | 'statistics' | 'advisors' | 'settings' | 'help'; name: string; description: string; keywords: string[] }[] = [
     { panel: 'budget', name: 'Budget', description: 'Manage city finances and funding', keywords: ['budget', 'money', 'finance', 'tax', 'funding'] },
     { panel: 'statistics', name: 'Statistics', description: 'View city statistics and charts', keywords: ['statistics', 'stats', 'charts', 'data', 'info'] },
     { panel: 'advisors', name: 'Advisors', description: 'Get advice from city advisors', keywords: ['advisors', 'advice', 'help', 'tips'] },
+    { panel: 'help', name: 'Help', description: 'Keyboard shortcuts, controls, and tips', keywords: ['help', 'shortcuts', 'controls', 'hotkeys', 'keys', 'tips'] },
     { panel: 'settings', name: 'Settings', description: 'Game settings and preferences', keywords: ['settings', 'options', 'preferences', 'config'] },
   ];
 
@@ -237,7 +240,50 @@ function buildMenuItems(): MenuItem[] {
 
 const BASE_MENU_ITEMS = buildMenuItems();
 
-export function CommandMenu() {
+function parseTileCoord(input: string): { x: number; y: number } | null {
+  const raw = input.trim().toLowerCase();
+  if (!raw) return null;
+
+  // Common patterns:
+  //   "10 15"
+  //   "10,15"
+  //   "go 10 15"
+  //   "go 10,15"
+  //   "x=10 y=15"
+  const m1 = raw.match(/^(?:go\s+|goto\s+|nav\s+|navigate\s+|jump\s+)?(-?\d+)\s*(?:,|\s)\s*(-?\d+)$/);
+  if (m1) {
+    const x = Number.parseInt(m1[1], 10);
+    const y = Number.parseInt(m1[2], 10);
+    if (Number.isFinite(x) && Number.isFinite(y)) return { x, y };
+  }
+
+  const m2 = raw.match(/x\s*[:=]\s*(-?\d+)\s*y\s*[:=]\s*(-?\d+)/);
+  if (m2) {
+    const x = Number.parseInt(m2[1], 10);
+    const y = Number.parseInt(m2[2], 10);
+    if (Number.isFinite(x) && Number.isFinite(y)) return { x, y };
+  }
+
+  return null;
+}
+
+const NAV_PRESETS: { type: string; name: string; keywords: string[] }[] = [
+  { type: 'city_hall', name: 'City Hall', keywords: ['city hall', 'hall', 'mayor'] },
+  { type: 'power_plant', name: 'Power Plant', keywords: ['power', 'plant', 'electric'] },
+  { type: 'water_tower', name: 'Water Tower', keywords: ['water', 'tower', 'utility'] },
+  { type: 'hospital', name: 'Hospital', keywords: ['hospital', 'health'] },
+  { type: 'police_station', name: 'Police Station', keywords: ['police', 'crime'] },
+  { type: 'fire_station', name: 'Fire Station', keywords: ['fire station', 'fire dept'] },
+  { type: 'school', name: 'School', keywords: ['school', 'education'] },
+  { type: 'university', name: 'University', keywords: ['university', 'college'] },
+  { type: 'rail_station', name: 'Rail Station', keywords: ['rail station', 'train station', 'rail'] },
+  { type: 'subway_station', name: 'Subway Station', keywords: ['subway', 'metro'] },
+  { type: 'airport', name: 'Airport', keywords: ['airport', 'plane', 'flight'] },
+  { type: 'stadium', name: 'Stadium', keywords: ['stadium', 'sports'] },
+  { type: 'museum', name: 'Museum', keywords: ['museum', 'culture'] },
+];
+
+export function CommandMenu({ onNavigateToTile }: { onNavigateToTile?: (x: number, y: number) => void } = {}) {
   const { isMobileDevice } = useMobile();
   const {
     state,
@@ -299,7 +345,7 @@ export function CommandMenu() {
         type: 'action',
         action: 'toggle_pause',
         name: isPaused ? 'Resume simulation' : 'Pause simulation',
-        description: isPaused ? 'Set speed to 1×' : 'Set speed to 0×',
+        description: isPaused ? 'Restore previous speed' : 'Pause (set speed to 0×)',
         category: 'actions',
         keywords: ['pause', 'resume', 'speed', 'time'],
       },
@@ -313,6 +359,7 @@ export function CommandMenu() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const lastNonZeroSpeedRef = useRef<0 | 1 | 2 | 3>(1);
   
   // Handler to update search and reset selection
   const handleSearchChange = useCallback((value: string) => {
@@ -337,13 +384,111 @@ export function CommandMenu() {
       openCommandMenuCallback = null;
     };
   }, [handleOpenChange]);
+  const navigateItems = useMemo<MenuItem[]>(() => {
+    if (!search.trim()) return [];
+    const q = search.toLowerCase().trim();
+
+    const items: MenuItem[] = [];
+
+    // Coordinate navigation
+    const coord = parseTileCoord(q);
+    if (coord) {
+      const clampedX = Math.max(0, Math.min(state.gridSize - 1, coord.x));
+      const clampedY = Math.max(0, Math.min(state.gridSize - 1, coord.y));
+      const inBounds = clampedX === coord.x && clampedY === coord.y;
+
+      items.push({
+        id: `navigate-coord-${coord.x}-${coord.y}`,
+        type: 'navigate',
+        navigate: { x: clampedX, y: clampedY },
+        name: inBounds
+          ? `Go to tile (${coord.x}, ${coord.y})`
+          : `Go to nearest tile (${clampedX}, ${clampedY})`,
+        description: inBounds
+          ? 'Center the camera on that tile'
+          : 'Coordinates were out of bounds; clamped to the map',
+        category: 'navigate',
+        keywords: ['go', 'navigate', 'jump', 'camera', 'tile', 'x', 'y'],
+        disabled: !onNavigateToTile,
+      });
+    }
+
+    // Keyword navigation (only when query is at least 2 chars to avoid noisy matches)
+    if (q.length >= 2) {
+      const wantsFire = ['fire', 'burn', 'flame'].some(k => q.includes(k));
+      const matchingPresets = NAV_PRESETS.filter(preset =>
+        preset.name.toLowerCase().includes(q) || preset.keywords.some(k => q.includes(k))
+      );
+
+      if (wantsFire || matchingPresets.length > 0) {
+        const typeSet = new Set(matchingPresets.map(p => p.type));
+        const resultsByType: Record<string, { x: number; y: number }[]> = {};
+        typeSet.forEach(t => {
+          resultsByType[t] = [];
+        });
+
+        const fires: { x: number; y: number }[] = [];
+
+        for (let y = 0; y < state.gridSize; y++) {
+          for (let x = 0; x < state.gridSize; x++) {
+            const tile = state.grid[y][x];
+            const bt = tile.building.type;
+
+            if (typeSet.has(bt)) {
+              const arr = resultsByType[bt];
+              if (arr && arr.length < 3) {
+                arr.push({ x, y });
+              }
+            }
+
+            if (wantsFire && tile.building.onFire && fires.length < 5) {
+              fires.push({ x, y });
+            }
+          }
+        }
+
+        if (wantsFire && fires.length > 0) {
+          fires.forEach((pos, i) => {
+            items.push({
+              id: `navigate-fire-${i}-${pos.x}-${pos.y}`,
+              type: 'navigate',
+              navigate: pos,
+              name: `Go to fire (${pos.x}, ${pos.y})`,
+              description: 'Center view on an active fire',
+              category: 'navigate',
+              keywords: ['fire', 'incident', 'emergency', 'burn'],
+              disabled: !onNavigateToTile,
+            });
+          });
+        }
+
+        matchingPresets.slice(0, 6).forEach(preset => {
+          const positions = resultsByType[preset.type] ?? [];
+          positions.forEach((pos, i) => {
+            items.push({
+              id: `navigate-${preset.type}-${i}-${pos.x}-${pos.y}`,
+              type: 'navigate',
+              navigate: pos,
+              name: `Go to ${preset.name}${positions.length > 1 ? ` #${i + 1}` : ''}`,
+              description: `Center view on ${preset.name} (${pos.x}, ${pos.y})`,
+              category: 'navigate',
+              keywords: ['go', 'navigate', 'jump', preset.name.toLowerCase(), preset.type, ...preset.keywords],
+              disabled: !onNavigateToTile,
+            });
+          });
+        });
+      }
+    }
+
+    return items;
+  }, [search, state.grid, state.gridSize, onNavigateToTile]);
 
   // Filter items based on search
   const filteredItems = useMemo(() => {
     if (!search.trim()) return allItems;
 
     const searchLower = search.toLowerCase().trim();
-    return allItems.filter(item => {
+    const baseMatches = allItems.filter(item => {
       // Check name
       if (item.name.toLowerCase().includes(searchLower)) return true;
       // Check description
@@ -354,7 +499,10 @@ export function CommandMenu() {
       if (item.category.includes(searchLower)) return true;
       return false;
     });
-  }, [search]);
+
+    // Navigation items are computed from the current query, so we prepend them.
+    return [...navigateItems, ...baseMatches];
+  }, [search, allItems, navigateItems]);
 
   // Group filtered items by category
   const groupedItems = useMemo(() => {
@@ -407,6 +555,13 @@ export function CommandMenu() {
         setTool(item.tool);
       } else if (item.type === 'panel' && item.panel) {
         setActivePanel(state.activePanel === item.panel ? 'none' : item.panel);
+      } else if (item.type === 'navigate' && item.navigate) {
+        if (onNavigateToTile) {
+          onNavigateToTile(item.navigate.x, item.navigate.y);
+          addNotification('Navigating', `Centered view on (${item.navigate.x}, ${item.navigate.y})`, '🧭');
+        } else {
+          addNotification('Navigation unavailable', 'This action is not supported in the current view.', '🧭');
+        }
       } else if (item.type === 'action' && item.action) {
         switch (item.action) {
           case 'undo':
@@ -416,7 +571,12 @@ export function CommandMenu() {
             redo();
             break;
           case 'toggle_pause':
-            setSpeed(state.speed === 0 ? 1 : 0);
+            if (state.speed === 0) {
+              setSpeed(lastNonZeroSpeedRef.current || 1);
+            } else {
+              lastNonZeroSpeedRef.current = state.speed;
+              setSpeed(0);
+            }
             break;
           case 'save_city':
             saveCity();

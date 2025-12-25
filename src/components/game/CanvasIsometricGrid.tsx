@@ -3663,40 +3663,100 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
         // For roads, rail, and subways, use straight-line snapping
         else if (isDragging && (selectedTool === 'road' || selectedTool === 'rail' || selectedTool === 'subway') && dragStartTile) {
+          // Lock axis for road/rail/subway drawing (snap to straight lines)
+          let direction = roadDrawDirection;
           const dx = Math.abs(gridX - dragStartTile.x);
           const dy = Math.abs(gridY - dragStartTile.y);
-          
-          // Lock direction after moving at least 1 tile
-          let direction = roadDrawDirection;
+
+          // Determine direction based on first movement
           if (!direction && (dx > 0 || dy > 0)) {
-            // Lock to the axis with more movement, or horizontal if equal
             direction = dx >= dy ? 'h' : 'v';
             setRoadDrawDirection(direction);
           }
-          
-          // Calculate target position along the locked axis
-          let targetX = gridX;
-          let targetY = gridY;
-          if (direction === 'h') {
-            targetY = dragStartTile.y; // Lock to horizontal
-          } else if (direction === 'v') {
-            targetX = dragStartTile.x; // Lock to vertical
-          }
-          
-          setDragEndTile({ x: targetX, y: targetY });
-          
-          // Place all tiles from start to target in a straight line
-          const minX = Math.min(dragStartTile.x, targetX);
-          const maxX = Math.max(dragStartTile.x, targetX);
-          const minY = Math.min(dragStartTile.y, targetY);
-          const maxY = Math.max(dragStartTile.y, targetY);
-          
-          for (let x = minX; x <= maxX; x++) {
-            for (let y = minY; y <= maxY; y++) {
-              const key = `${x},${y}`;
-              if (!placedRoadTilesRef.current.has(key)) {
-                placeAtTile(x, y);
-                placedRoadTilesRef.current.add(key);
+
+          const startX = dragStartTile.x;
+          const startY = dragStartTile.y;
+
+          // Shift = corner mode (L-shaped path)
+          if (e.shiftKey && direction) {
+            setDragEndTile({ x: gridX, y: gridY });
+
+            if (direction === 'h') {
+              // First: horizontal from (startX, startY) -> (gridX, startY)
+              const minX = Math.min(startX, gridX);
+              const maxX = Math.max(startX, gridX);
+              for (let x = minX; x <= maxX; x++) {
+                const tileKey = `${x},${startY}`;
+                if (!placedRoadTilesRef.current.has(tileKey)) {
+                  placeAtTile(x, startY);
+                  placedRoadTilesRef.current.add(tileKey);
+                }
+              }
+
+              // Then: vertical from (gridX, startY) -> (gridX, gridY)
+              const minY = Math.min(startY, gridY);
+              const maxY = Math.max(startY, gridY);
+              for (let y = minY; y <= maxY; y++) {
+                const tileKey = `${gridX},${y}`;
+                if (!placedRoadTilesRef.current.has(tileKey)) {
+                  placeAtTile(gridX, y);
+                  placedRoadTilesRef.current.add(tileKey);
+                }
+              }
+            } else {
+              // First: vertical from (startX, startY) -> (startX, gridY)
+              const minY = Math.min(startY, gridY);
+              const maxY = Math.max(startY, gridY);
+              for (let y = minY; y <= maxY; y++) {
+                const tileKey = `${startX},${y}`;
+                if (!placedRoadTilesRef.current.has(tileKey)) {
+                  placeAtTile(startX, y);
+                  placedRoadTilesRef.current.add(tileKey);
+                }
+              }
+
+              // Then: horizontal from (startX, gridY) -> (gridX, gridY)
+              const minX = Math.min(startX, gridX);
+              const maxX = Math.max(startX, gridX);
+              for (let x = minX; x <= maxX; x++) {
+                const tileKey = `${x},${gridY}`;
+                if (!placedRoadTilesRef.current.has(tileKey)) {
+                  placeAtTile(x, gridY);
+                  placedRoadTilesRef.current.add(tileKey);
+                }
+              }
+            }
+          } else {
+            // Straight-line mode (axis locked)
+            let targetX = gridX;
+            let targetY = gridY;
+
+            // Update direction if not set
+            if (!direction) {
+              direction = dx >= dy ? 'h' : 'v';
+            }
+
+            if (direction === 'h') {
+              targetY = dragStartTile.y;
+            } else {
+              targetX = dragStartTile.x;
+            }
+
+            setDragEndTile({ x: targetX, y: targetY });
+
+            // Place all tiles from start to target in a straight line
+            const minX = Math.min(dragStartTile.x, targetX);
+            const maxX = Math.max(dragStartTile.x, targetX);
+            const minY = Math.min(dragStartTile.y, targetY);
+            const maxY = Math.max(dragStartTile.y, targetY);
+
+            for (let x = minX; x <= maxX; x++) {
+              for (let y = minY; y <= maxY; y++) {
+                const tileKey = `${x},${y}`;
+                if (!placedRoadTilesRef.current.has(tileKey)) {
+                  placeAtTile(x, y);
+                  placedRoadTilesRef.current.add(tileKey);
+                }
               }
             }
           }

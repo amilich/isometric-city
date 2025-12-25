@@ -8,6 +8,7 @@ import {
   ChartIcon,
   AdvisorIcon,
   SettingsIcon,
+  InfoIcon,
 } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -357,6 +358,15 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setActivePanel(state.activePanel === 'help' ? 'none' : 'help')}
+              title="Help (?)"
+              className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+            >
+              <InfoIcon size={16} />
             </Button>
             {onExit && (
               <Button

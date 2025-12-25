@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
+import { generateCityPreviewDataUrl } from '@/lib/cityPreview';
 
 // Format a date for display
 function formatDate(timestamp: number): string {
@@ -40,7 +41,7 @@ function formatMoney(money: number): string {
 }
 
 export function SettingsPanel() {
-  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
+  const { state, setActivePanel, addNotification, setDisastersEnabled, newGame, loadState, exportState, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -123,6 +124,26 @@ export function SettingsPanel() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const handleDownloadPreview = () => {
+    // Generate a high-res mini-map style preview (purely from state; no canvas access needed)
+    const dataUrl = generateCityPreviewDataUrl(state.grid, state.gridSize, { size: 1024 });
+    const safeName = (state.cityName || 'isocity')
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    const date = new Date().toISOString().slice(0, 10);
+
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${safeName || 'isocity'}-preview-${date}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    addNotification('Preview downloaded', 'Saved a PNG preview of your city.', '🖼️');
+  };
+
 
   const handleImportFile: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0];

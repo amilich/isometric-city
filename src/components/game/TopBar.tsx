@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import { ShortcutTooltip } from '@/components/ui/ShortcutTooltip';
+import { KEYBOARD_SHORTCUTS } from './shortcuts';
+import { ModeIndicator } from './ModeIndicator';
 import {
   PlayIcon,
   PauseIcon,
@@ -16,14 +19,9 @@ import {
   EnvironmentIcon,
   ShareIcon,
   CheckIcon,
+  InfoIcon,
 } from '@/components/ui/Icons';
-import { copyShareUrl } from '@/lib/shareState';
-import { ShortcutTooltip } from '@/components/ui/ShortcutTooltip';
-import { KEYBOARD_SHORTCUTS } from './shortcuts';
-import { ModeIndicator } from './ModeIndicator';
 
-// ============================================================================
-// TIME OF DAY ICON
 // ============================================================================
 
 interface TimeOfDayIconProps {
@@ -157,7 +155,7 @@ export const StatsPanel = React.memo(function StatsPanel() {
 // TOP BAR
 // ============================================================================
 
-export const TopBar = React.memo(function TopBar() {
+export const TopBar = React.memo(function TopBar({ onShowHelp }: { onShowHelp?: () => void }) {
   const { state, setSpeed, setTaxRate, isSaving, visualHour } = useGame();
   const { stats, year, month, day, speed, taxRate, cityName } = state;
   
@@ -220,6 +218,17 @@ export const TopBar = React.memo(function TopBar() {
         </div>
         
         <ModeIndicator />
+
+        <ShortcutTooltip content="Keyboard Shortcuts" shortcut={KEYBOARD_SHORTCUTS.HELP.label}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onShowHelp}
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            <InfoIcon size={14} />
+          </Button>
+        </ShortcutTooltip>
       </div>
       
       <div className="flex items-center gap-8">

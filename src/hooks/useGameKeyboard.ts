@@ -7,6 +7,7 @@ interface UseGameKeyboardProps {
   setOverlayMode: (mode: OverlayMode) => void;
   selectedTile: { x: number; y: number } | null;
   setSelectedTile: (tile: { x: number; y: number } | null) => void;
+  onToggleHelp?: () => void;
 }
 
 export function useGameKeyboard({
@@ -14,6 +15,7 @@ export function useGameKeyboard({
   setOverlayMode,
   selectedTile,
   setSelectedTile,
+  onToggleHelp,
 }: UseGameKeyboardProps) {
   const { state, setTool, setActivePanel, setSpeed } = useGame();
 
@@ -47,6 +49,9 @@ export function useGameKeyboard({
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)
         // If running, pause (speed 0)
         setSpeed(state.speed === 0 ? 1 : 0);
+      } else if (e.key === '?') {
+        e.preventDefault();
+        onToggleHelp?.();
       }
     };
 
@@ -63,5 +68,6 @@ export function useGameKeyboard({
     setSpeed,
     setOverlayMode,
     setSelectedTile,
+    onToggleHelp,
   ]);
 }

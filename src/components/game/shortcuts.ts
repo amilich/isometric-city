@@ -6,6 +6,7 @@ export const KEYBOARD_SHORTCUTS = {
   // Controls
   PAUSE: { key: 'p', label: 'P' },
   SEARCH: { key: 'k', meta: true, label: '⌘K' }, // CommandMenu
+  HELP: { key: '?', label: '?' },
   
   // Future/Suggested
   ROAD: { key: 'r', label: 'R' },

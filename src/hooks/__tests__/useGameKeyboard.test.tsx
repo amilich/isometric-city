@@ -120,4 +120,18 @@ describe('useGameKeyboard', () => {
     triggerKeyDown('b');
     expect(mockSetTool).toHaveBeenCalledWith('bulldoze');
   });
+
+  it('calls onToggleHelp on "?"', () => {
+    const mockOnToggleHelp = vi.fn();
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+      onToggleHelp: mockOnToggleHelp,
+    });
+
+    triggerKeyDown('?');
+    expect(mockOnToggleHelp).toHaveBeenCalled();
+  });
 });

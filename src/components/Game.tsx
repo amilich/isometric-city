@@ -25,6 +25,7 @@ import {
   SettingsPanel,
   AdvisorsPanel,
 } from '@/components/game/panels';
+import { ShortcutsHelpPanel } from '@/components/game/ShortcutsHelpPanel';
 import { MiniMap } from '@/components/game/MiniMap';
 import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
@@ -38,6 +39,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null>(null);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const isInitialMount = useRef(true);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
@@ -127,6 +129,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     setOverlayMode,
     selectedTile,
     setSelectedTile,
+    onToggleHelp: () => setShowShortcutsHelp(prev => !prev),
   });
 
   // Handle cheat code triggers
@@ -230,7 +233,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         <Sidebar onExit={onExit} />
         
         <div className="flex-1 flex flex-col">
-          <TopBar />
+          <TopBar onShowHelp={() => setShowShortcutsHelp(true)} />
           <StatsPanel />
           <div className="flex-1 relative overflow-visible">
             <CanvasIsometricGrid 
@@ -253,6 +256,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         {state.activePanel === 'settings' && <SettingsPanel />}
         
         <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
+        <ShortcutsHelpPanel open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp} />
         <CommandMenu />
       </div>
     </TooltipProvider>

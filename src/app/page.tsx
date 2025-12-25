@@ -396,7 +396,7 @@ export default function HomePage() {
           </h1>
           
           {/* Contract Address */}
-          <ContractAddressDisplay address="0x1234567890abcdef... (请替换为实际合约地址)" />
+          <ContractAddressDisplay address="0x3cc252684224e6084d0ff281f5670d2f482c4444" />
           
           <div className="flex flex-col gap-3">
             <Button 

@@ -236,7 +236,7 @@ export function SettingsPanel() {
                         <Input
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
-                          placeholder="New city name..."
+                          placeholder="新城市名称..."
                           className="h-8 text-sm"
                           autoFocus
                         />

@@ -210,7 +210,7 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                   className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 ${
                     isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted/60'
                   }`}
-                  title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
+                  title={`${info.description}${info.cost > 0 ? ` - 成本: $${info.cost}` : ''}`}
                 >
                   <span className="flex-1 text-left truncate">{info.name}</span>
                   {info.cost > 0 && (
@@ -346,7 +346,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
               variant="ghost"
               size="icon-sm"
               onClick={openCommandMenu}
-              title="Search (⌘K)"
+              title="搜索 (⌘K)"
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
               <svg 
@@ -363,7 +363,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setShowExitDialog(true)}
-                title="Exit to Main Menu"
+                title="返回主菜单"
                 className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
               >
                 <svg 
@@ -403,7 +403,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                     className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm ${
                       isSelected ? 'bg-primary text-primary-foreground' : ''
                     }`}
-                    title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
+                    title={`${info.description}${info.cost > 0 ? ` - 成本: $${info.cost}` : ''}`}
                   >
                     <span className="flex-1 text-left truncate">{info.name}</span>
                     {info.cost > 0 && (
@@ -443,10 +443,10 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
       <div className="border-t border-sidebar-border p-2">
         <div className="grid grid-cols-4 gap-1">
           {[
-            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: 'Budget' },
-            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: 'Statistics' },
-            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: 'Advisors' },
-            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: 'Settings' },
+            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: '预算' },
+            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: '统计' },
+            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: '顾问' },
+            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: '设置' },
           ].map(({ panel, icon, label }) => (
             <Button
               key={panel}

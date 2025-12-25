@@ -148,7 +148,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Pause"
+                title="暂停"
               >
                 <PauseIcon size={12} />
               </button>
@@ -157,7 +157,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Normal speed"
+                title="正常速度"
               >
                 <PlayIcon size={12} />
               </button>
@@ -166,7 +166,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="2x speed"
+                title="2倍速"
               >
                 <div className="flex items-center -space-x-[5px]">
                   <PlayIcon size={12} />
@@ -178,7 +178,7 @@ export function MobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 3 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="3x speed"
+                title="3倍速"
               >
                 <div className="flex items-center -space-x-[7px]">
                   <PlayIcon size={12} />
@@ -227,7 +227,7 @@ export function MobileTopBar({
               }
             }}
           >
-            <span className="text-[9px] text-muted-foreground">Tax</span>
+            <span className="text-[9px] text-muted-foreground">税</span>
             <span className="text-[10px] font-mono text-foreground">{taxRate}%</span>
           </button>
 

@@ -188,7 +188,7 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
   return (
     <Card className="absolute bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        Minimap
+        小地图
       </div>
       <canvas
         ref={canvasRef}

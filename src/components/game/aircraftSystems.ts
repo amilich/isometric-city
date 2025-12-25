@@ -172,11 +172,11 @@ export function useAircraftSystems(
         return { x: gateX + dx * s, y: gateY + dy * s };
       };
 
-      // Use an "inner threshold" as the taxi aim point (closer than the runway start),
-      // which prevents planes from taxiing beyond the airport edges.
-      const taxiAimX = runwayCenterX - ux * (AIRPORT_RUNWAY_LENGTH * 0.42);
-      const taxiAimY = runwayCenterY - uy * (AIRPORT_RUNWAY_LENGTH * 0.42);
-      const clampedTaxi = clampToGateRadius(taxiAimX, taxiAimY);
+      // Use a runway lineup point that is guaranteed to be *inside* the runway (past the start/threshold),
+      // so the taxi→takeoff transition never overshoots beyond the runway.
+      const lineupX = startX + ux * 22;
+      const lineupY = startY + uy * 22;
+      const clampedLineup = clampToGateRadius(lineupX, lineupY);
 
       // Add a short "turn point" near the gate so planes start turning early instead of
       // doing a long straight taxi before lining up.
@@ -199,8 +199,8 @@ export function useAircraftSystems(
         endY,
         runwayCenterX,
         runwayCenterY,
-        taxiAimX: clampedTaxi.x,
-        taxiAimY: clampedTaxi.y,
+        taxiLineupX: clampedLineup.x,
+        taxiLineupY: clampedLineup.y,
         taxiTurnX: clampedTurn.x,
         taxiTurnY: clampedTurn.y,
         clampToGateRadius,
@@ -427,10 +427,10 @@ export function useAircraftSystems(
           const stage = plane.taxiStage ?? 0;
           const targetX =
             plane.targetX ??
-            (stage === 0 ? runway.taxiTurnX : runway.taxiAimX);
+            (stage === 0 ? runway.taxiTurnX : runway.taxiLineupX);
           const targetY =
             plane.targetY ??
-            (stage === 0 ? runway.taxiTurnY : runway.taxiAimY);
+            (stage === 0 ? runway.taxiTurnY : runway.taxiLineupY);
 
           const desiredAngle = Math.atan2(targetY - plane.y, targetX - plane.x);
           const headingError = Math.abs(angleDiff(desiredAngle, plane.angle));
@@ -444,8 +444,16 @@ export function useAircraftSystems(
           plane.speed = taxiSpeed;
           plane.altitude = 0;
 
-          plane.x += Math.cos(plane.angle) * plane.speed * delta * speedMultiplier;
-          plane.y += Math.sin(plane.angle) * plane.speed * delta * speedMultiplier;
+          const step = plane.speed * delta * speedMultiplier;
+          const distBeforeMove = Math.hypot(targetX - plane.x, targetY - plane.y);
+          if (distBeforeMove <= step && distBeforeMove > 0) {
+            // Prevent overshoot: snap to taxi target this frame.
+            plane.x = targetX;
+            plane.y = targetY;
+          } else {
+            plane.x += Math.cos(plane.angle) * step;
+            plane.y += Math.sin(plane.angle) * step;
+          }
 
           // Hard clamp taxi motion to the airport footprint region.
           // This prevents even small overshoot steps from drifting outside the asset.
@@ -457,12 +465,15 @@ export function useAircraftSystems(
           if (dist < 18 && (plane.taxiStage ?? 0) === 0) {
             // Advance to hold-short/lineup point (short segment).
             plane.taxiStage = 1;
-            plane.targetX = runway.taxiAimX;
-            plane.targetY = runway.taxiAimY;
-          } else if (dist < 20 && (plane.taxiStage ?? 0) === 1) {
+            plane.targetX = runway.taxiLineupX;
+            plane.targetY = runway.taxiLineupY;
+          } else if (dist < 14 && (plane.taxiStage ?? 0) === 1) {
+            // Snap perfectly onto runway centerline before takeoff roll.
+            plane.x = runway.taxiLineupX;
+            plane.y = runway.taxiLineupY;
             plane.state = 'takeoff_roll';
             plane.runwayDir = runway.runwayDir;
-            plane.angle = turnToward(plane.angle, runway.runwayDir, AIRPLANE_TAXI_TURN_RATE * 1.2, delta);
+            plane.angle = runway.runwayDir;
             plane.speed = AIRPLANE_TAKEOFF_ROLL_SPEED_START;
             plane.stateProgress = 0;
             plane.taxiStage = undefined;

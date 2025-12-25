@@ -122,7 +122,10 @@ export interface CanvasIsometricGridProps {
 }
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
-export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
+export const CanvasIsometricGrid = React.forwardRef<
+  { getPedestrians: () => Pedestrian[] },
+  CanvasIsometricGridProps
+>(function CanvasIsometricGridImpl({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }, ref) {
   const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -166,6 +169,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const pedestriansRef = useRef<Pedestrian[]>([]);
   const pedestrianIdRef = useRef(0);
   const pedestrianSpawnTimerRef = useRef(0);
+  
+  // Expose pedestrians via ref for parent component
+  useImperativeHandle(ref, () => ({
+    getPedestrians: () => pedestriansRef.current,
+  }), []);
   
   // Touch gesture state for mobile
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -4175,4 +4183,4 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       
     </div>
   );
-}
+});

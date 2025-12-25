@@ -23,10 +23,12 @@ import {
   StatisticsPanel,
   SettingsPanel,
   AdvisorsPanel,
+  PedestrianInfoPanel,
 } from '@/components/game/panels';
 import { MiniMap } from '@/components/game/MiniMap';
 import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
+import { getPedestrianAtTile } from '@/components/game/pedestrianUtils';
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = ['containers', 'bulk materials', 'oil'];
@@ -35,9 +37,11 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const { state, setTool, setActivePanel, addMoney, addNotification, setSpeed } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
+  const [selectedPedestrian, setSelectedPedestrian] = useState<any>(null);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null>(null);
   const isInitialMount = useRef(true);
+  const canvasGridRef = useRef<{ getPedestrians: () => any[] }>(null);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
   
@@ -184,6 +188,23 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         break;
     }
   }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
+
+  // Check for pedestrian at selected tile
+  useEffect(() => {
+    if (!selectedTile || state.selectedTool !== 'select') {
+      setSelectedPedestrian(null);
+      return;
+    }
+
+    // Get pedestrians from the canvas grid component
+    if (canvasGridRef.current) {
+      const pedestrians = canvasGridRef.current.getPedestrians();
+      const pedestrian = getPedestrianAtTile(pedestrians, selectedTile.x, selectedTile.y);
+      setSelectedPedestrian(pedestrian);
+    } else {
+      setSelectedPedestrian(null);
+    }
+  }, [selectedTile, state.selectedTool]);
   
   // Track barge deliveries to show occasional notifications
   const bargeDeliveryCountRef = useRef(0);
@@ -220,6 +241,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {/* Main canvas area - fills remaining space, with padding for top/bottom bars */}
           <div className="flex-1 relative overflow-hidden" style={{ paddingTop: '72px', paddingBottom: '76px' }}>
             <CanvasIsometricGrid 
+              ref={canvasGridRef}
               overlayMode={overlayMode} 
               selectedTile={selectedTile} 
               setSelectedTile={setSelectedTile}
@@ -241,6 +263,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === 'advisors' && <AdvisorsPanel />}
           {state.activePanel === 'settings' && <SettingsPanel />}
           
+          {/* Pedestrian Info Panel - shown when pedestrian is selected */}
+          <PedestrianInfoPanel 
+            pedestrian={selectedPedestrian}
+            onClose={() => setSelectedPedestrian(null)}
+          />
+          
           <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
         </div>
       </TooltipProvider>
@@ -258,6 +286,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           <StatsPanel />
           <div className="flex-1 relative overflow-visible">
             <CanvasIsometricGrid 
+              ref={canvasGridRef}
               overlayMode={overlayMode} 
               selectedTile={selectedTile} 
               setSelectedTile={setSelectedTile}
@@ -275,6 +304,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         {state.activePanel === 'statistics' && <StatisticsPanel />}
         {state.activePanel === 'advisors' && <AdvisorsPanel />}
         {state.activePanel === 'settings' && <SettingsPanel />}
+        
+        {/* Pedestrian Info Panel - shown when pedestrian is selected */}
+        <PedestrianInfoPanel 
+          pedestrian={selectedPedestrian}
+          onClose={() => setSelectedPedestrian(null)}
+        />
         
         <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
         <CommandMenu />

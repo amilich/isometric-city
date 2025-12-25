@@ -73,9 +73,24 @@ export type BuildingType =
   | 'pond_park'
   | 'park_gate'
   | 'mountain_lodge'
-  | 'mountain_trailhead';
+  | 'mountain_trailhead'
+  // AI-generated custom buildings
+  | `custom_${string}`;
 
 export type ZoneType = 'none' | 'residential' | 'commercial' | 'industrial';
+
+// Categories for use when generating custom buildings
+export type BuildingCategory = 'recreation' | 'residential' | 'commercial' | 'industrial';
+
+export interface CustomBuilding {
+  id: string;
+  name: string;
+  description: string;
+  imageDataUrl: string;
+  size: 1 | 2;
+  category: BuildingCategory;
+  createdAt: number;
+}
 
 export type Tool =
   | 'select'
@@ -133,7 +148,8 @@ export type Tool =
   | 'pond_park'
   | 'park_gate'
   | 'mountain_lodge'
-  | 'mountain_trailhead';
+  | 'mountain_trailhead'
+  | `custom_${string}`;
 
 export interface ToolInfo {
   name: string;

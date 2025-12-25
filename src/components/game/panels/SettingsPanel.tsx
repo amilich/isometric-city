@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
+import { hasGeminiApiKey, saveGeminiApiKey, clearGeminiApiKey } from '@/lib/gemini';
 
 // Format a date for display
 function formatDate(timestamp: number): string {
@@ -55,6 +56,14 @@ export function SettingsPanel() {
   const [importError, setImportError] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
   const [savedCityInfo, setSavedCityInfo] = useState(getSavedCityInfo());
+  const [geminiKey, setGeminiKey] = useState('');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [hasGeminiKey, setHasGeminiKey] = useState(false);
+
+  // Load API key status on mount
+  useEffect(() => {
+    setHasGeminiKey(hasGeminiApiKey());
+  }, []);
   
   // Refresh saved city info when panel opens
   React.useEffect(() => {
@@ -180,7 +189,70 @@ export function SettingsPanel() {
               </div>
             </div>
           </div>
-          
+
+          <div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Gemini API Key</div>
+            <p className="text-muted-foreground text-xs mb-2">
+              Powers AI features (advisor chat, custom buildings).{' '}
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                Get API key
+              </a>
+            </p>
+
+            <div className="flex gap-2 mb-2">
+              <Input
+                type={showGeminiKey ? 'text' : 'password'}
+                value={geminiKey}
+                onChange={(e) => setGeminiKey(e.target.value)}
+                placeholder={hasGeminiKey ? 'API key saved' : 'AIza...'}
+                className="flex-1 text-xs"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowGeminiKey(!showGeminiKey)}
+                className="px-2"
+              >
+                {showGeminiKey ? 'Hide' : 'Show'}
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                className="flex-1"
+                onClick={() => {
+                  if (geminiKey.trim()) {
+                    saveGeminiApiKey(geminiKey.trim());
+                    setHasGeminiKey(true);
+                    setGeminiKey('');
+                  }
+                }}
+                disabled={!geminiKey.trim()}
+              >
+                Save Key
+              </Button>
+              {hasGeminiKey && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    clearGeminiApiKey();
+                    setHasGeminiKey(false);
+                    setGeminiKey('');
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {hasGeminiKey && (
+              <p className="text-green-400 text-xs mt-2">API key configured</p>
+            )}
+          </div>
+
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">City Information</div>
             <div className="space-y-2 text-sm">

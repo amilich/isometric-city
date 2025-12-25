@@ -20,6 +20,7 @@ import {
   INDUSTRIAL_BUILDINGS,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import { parseCustomBuildingType } from './customBuildings';
 import { isMobile } from 'react-device-detect';
 
 // Default grid size for new games
@@ -2015,6 +2016,12 @@ const BUILDING_SIZES: Partial<Record<BuildingType, { width: number; height: numb
 
 // Get the size of a building (how many tiles it spans)
 export function getBuildingSize(buildingType: BuildingType): { width: number; height: number } {
+  // Handle custom building types
+  if (buildingType.startsWith('custom_')) {
+    const parsed = parseCustomBuildingType(buildingType);
+    if (parsed && parsed.size === 2) return { width: 2, height: 2 };
+    return { width: 1, height: 1 };
+  }
   return BUILDING_SIZES[buildingType] || { width: 1, height: 1 };
 }
 

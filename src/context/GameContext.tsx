@@ -5,12 +5,14 @@ import React, { createContext, useCallback, useContext, useEffect, useState, use
 import {
   Budget,
   BuildingType,
+  CustomBuilding,
   GameState,
   SavedCityMeta,
   Tool,
   TOOL_INFO,
   ZoneType,
 } from '@/types/game';
+import { getCustomToolInfo, registerCustomBuildingStats, unregisterCustomBuildingStats, MAX_CUSTOM_BUILDINGS, createCustomBuildingType } from '@/lib/customBuildings';
 import {
   bulldozeTile,
   createInitialGameState,
@@ -35,6 +37,7 @@ const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index'; // Index of all sav
 const SAVED_CITY_PREFIX = 'isocity-city-'; // Prefix for individual saved city states
 const SPRITE_PACK_STORAGE_KEY = 'isocity-sprite-pack';
 const DAY_NIGHT_MODE_STORAGE_KEY = 'isocity-day-night-mode';
+const CUSTOM_BUILDINGS_STORAGE_KEY = 'isocity-custom-buildings';
 
 export type DayNightMode = 'auto' | 'day' | 'night';
 
@@ -85,6 +88,11 @@ type GameContextValue = {
   loadSavedCity: (cityId: string) => boolean;
   deleteSavedCity: (cityId: string) => void;
   renameSavedCity: (cityId: string, newName: string) => void;
+  // Custom AI-generated buildings
+  customBuildings: CustomBuilding[];
+  addCustomBuilding: (building: CustomBuilding) => boolean;
+  removeCustomBuilding: (id: string) => void;
+  getCustomBuilding: (id: string) => CustomBuilding | undefined;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -497,6 +505,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+
+  // Custom AI-generated buildings
+  const [customBuildings, setCustomBuildings] = useState<CustomBuilding[]>([]);
   
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
@@ -513,7 +524,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Load saved cities index
     const cities = loadSavedCitiesIndex();
     setSavedCities(cities);
-    
+
+    // Load custom buildings
+    try {
+      const savedCustomBuildings = localStorage.getItem(CUSTOM_BUILDINGS_STORAGE_KEY);
+      if (savedCustomBuildings) {
+        const buildings: CustomBuilding[] = JSON.parse(savedCustomBuildings);
+        setCustomBuildings(buildings);
+        // Register stats for all loaded custom buildings
+        buildings.forEach(registerCustomBuildingStats);
+      }
+    } catch (e) {
+      console.error('Failed to load custom buildings:', e);
+    }
+
     // Load game state
     const saved = loadGameState();
     if (saved) {
@@ -687,7 +711,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       if (zone && tile.zone === zone) return prev;
       if (building && tile.building.type === building) return prev;
-      
+
+      // Handle custom building tools
+      if (tool.startsWith('custom_')) {
+        const customId = tool.replace('custom_', '');
+        const customBuilding = customBuildings.find((b) => b.id === customId);
+        if (!customBuilding) return prev;
+
+        const customInfo = getCustomToolInfo(customBuilding);
+        if (prev.stats.money < customInfo.cost) return prev;
+
+        const customBuildingType = createCustomBuildingType(customBuilding.size, customId);
+        const nextState = placeBuilding(prev, x, y, customBuildingType, null);
+        if (nextState === prev) return prev;
+
+        return {
+          ...nextState,
+          stats: { ...nextState.stats, money: nextState.stats.money - customInfo.cost },
+        };
+      }
+
       // Handle subway tool separately (underground placement)
       if (tool === 'subway') {
         // Can't place subway under water
@@ -727,7 +770,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       return nextState;
     });
-  }, []);
+  }, [customBuildings]);
 
   const connectToCity = useCallback((cityId: string) => {
     setState((prev) => {
@@ -1118,6 +1161,60 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.id]);
 
+  // Custom building methods
+  const addCustomBuilding = useCallback((building: CustomBuilding): boolean => {
+    if (customBuildings.length >= MAX_CUSTOM_BUILDINGS) return false;
+    try {
+      const newBuildings = [...customBuildings, building];
+      localStorage.setItem(CUSTOM_BUILDINGS_STORAGE_KEY, JSON.stringify(newBuildings));
+      setCustomBuildings(newBuildings);
+      registerCustomBuildingStats(building);
+      return true;
+    } catch (error) {
+      // Handle quota exceeded error
+      console.error('Failed to save custom building:', error);
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        alert('Storage quota exceeded. Try removing some custom buildings first.');
+      }
+      return false;
+    }
+  }, [customBuildings]);
+
+  const removeCustomBuilding = useCallback((id: string) => {
+    // Find the building to get its type string
+    const building = customBuildings.find((b) => b.id === id);
+    if (building) {
+      const customType = createCustomBuildingType(building.size, id);
+
+      // Bulldoze all placed instances from the grid (free of charge)
+      setState((prevState) => {
+        let newState = prevState;
+        for (let y = 0; y < prevState.gridSize; y++) {
+          for (let x = 0; x < prevState.gridSize; x++) {
+            if (prevState.grid[y][x].building.type === customType) {
+              newState = bulldozeTile(newState, x, y);
+            }
+          }
+        }
+        return newState;
+      });
+
+      // Unregister stats from BUILDING_STATS
+      unregisterCustomBuildingStats(building);
+    }
+
+    // Remove from custom buildings list
+    setCustomBuildings((prev) => {
+      const newBuildings = prev.filter((b) => b.id !== id);
+      localStorage.setItem(CUSTOM_BUILDINGS_STORAGE_KEY, JSON.stringify(newBuildings));
+      return newBuildings;
+    });
+  }, [customBuildings]);
+
+  const getCustomBuilding = useCallback((id: string): CustomBuilding | undefined => {
+    return customBuildings.find((b) => b.id === id);
+  }, [customBuildings]);
+
   const value: GameContextValue = {
     state,
     setTool,
@@ -1157,6 +1254,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     loadSavedCity,
     deleteSavedCity,
     renameSavedCity,
+    // Custom AI-generated buildings
+    customBuildings,
+    addCustomBuilding,
+    removeCustomBuilding,
+    getCustomBuilding,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -8,8 +8,8 @@ import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { SavedCityMeta } from '@/types/game';
 
-const STORAGE_KEY = 'isocity-game-state';
-const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
+const STORAGE_KEY = 'BNBCITY-game-state';
+const SAVED_CITIES_INDEX_KEY = 'BNBCITY-saved-cities-index';
 
 // Background color to filter from sprite sheets (red)
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -222,14 +222,49 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
         {city.cityName}
       </h3>
       <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>Pop: {city.population.toLocaleString()}</span>
-        <span>${city.money.toLocaleString()}</span>
+        <span>人口: {city.population.toLocaleString()}</span>
+        <span>货币: ${city.money.toLocaleString()}</span>
       </div>
     </button>
   );
 }
 
-const SAVED_CITY_PREFIX = 'isocity-city-';
+// Contract Address Display Component
+function ContractAddressDisplay({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('复制失败: ', err);
+    }
+  };
+
+  return (
+    <div className="mb-4">
+      <h2 className="text-2xl font-semibold text-white/90 mb-2">合约地址 (CA)</h2>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={address}
+          readOnly
+          className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-none text-white font-mono text-sm"
+        />
+        <Button
+          onClick={copyToClipboard}
+          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+        >
+          {copied ? '已复制' : '复制'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const SAVED_CITY_PREFIX = 'BNBCITY-city-';
 
 export default function HomePage() {
   const [showGame, setShowGame] = useState(false);
@@ -273,7 +308,7 @@ export default function HomePage() {
   if (isChecking) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-white/60">Loading...</div>
+        <div className="text-white/60">加载中...</div>
       </main>
     );
   }
@@ -294,8 +329,11 @@ export default function HomePage() {
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
-          IsoCity
+          BNBCITY
         </h1>
+        
+        {/* Contract Address */}
+        <ContractAddressDisplay address="0x3cc252684224e6084d0ff281f5670d2f482c4444" />
         
         {/* Sprite Gallery - keep visible even when saves exist */}
         <div className="mb-6">
@@ -308,7 +346,7 @@ export default function HomePage() {
             onClick={() => setShowGame(true)}
             className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
           >
-            Start
+            开始
           </Button>
           
           <Button 
@@ -320,23 +358,16 @@ export default function HomePage() {
             variant="outline"
             className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
           >
-            Load Example
+            加载示例
           </Button>
-          <a
-            href="https://github.com/amilich/isometric-city"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
-          >
-            Open GitHub
-          </a>
+        
         </div>
         
         {/* Saved Cities */}
         {savedCities.length > 0 && (
           <div className="w-full max-w-xs mt-4">
             <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-              Saved Cities
+              保存的城市
             </h2>
             <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
               {savedCities.slice(0, 5).map((city) => (
@@ -361,14 +392,18 @@ export default function HomePage() {
         {/* Left - Title and Start Button */}
         <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
           <h1 className="text-8xl font-light tracking-wider text-white/90">
-            IsoCity
+            BNBCITY
           </h1>
+          
+          {/* Contract Address */}
+          <ContractAddressDisplay address="0x3cc252684224e6084d0ff281f5670d2f482c4444" />
+          
           <div className="flex flex-col gap-3">
             <Button 
               onClick={() => setShowGame(true)}
               className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
-              Start
+              开始
             </Button>
             <Button 
               onClick={async () => {
@@ -379,23 +414,16 @@ export default function HomePage() {
               variant="outline"
               className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
             >
-              Load Example
+              加载示例
             </Button>
-            <a
-              href="https://github.com/amilich/isometric-city"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-64 text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
-            >
-              Open GitHub
-            </a>
+           
           </div>
           
           {/* Saved Cities */}
           {savedCities.length > 0 && (
             <div className="w-64">
               <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                Saved Cities
+                保存的城市
               </h2>
               <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
                 {savedCities.slice(0, 5).map((city) => (

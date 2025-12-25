@@ -29,12 +29,12 @@ import {
   SpritePack,
 } from '@/lib/renderConfig';
 
-const STORAGE_KEY = 'isocity-game-state';
-const SAVED_CITY_STORAGE_KEY = 'isocity-saved-city'; // For restoring after viewing shared city
-const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index'; // Index of all saved cities
-const SAVED_CITY_PREFIX = 'isocity-city-'; // Prefix for individual saved city states
-const SPRITE_PACK_STORAGE_KEY = 'isocity-sprite-pack';
-const DAY_NIGHT_MODE_STORAGE_KEY = 'isocity-day-night-mode';
+const STORAGE_KEY = 'BNBCITY-game-state';
+const SAVED_CITY_STORAGE_KEY = 'BNBCITY-saved-city'; // For restoring after viewing shared city
+const SAVED_CITIES_INDEX_KEY = 'BNBCITY-saved-cities-index'; // Index of all saved cities
+const SAVED_CITY_PREFIX = 'BNBCITY-city-'; // Prefix for individual saved city states
+const SPRITE_PACK_STORAGE_KEY = 'BNBCITY-sprite-pack';
+const DAY_NIGHT_MODE_STORAGE_KEY = 'BNBCITY-day-night-mode';
 
 export type DayNightMode = 'auto' | 'day' | 'night';
 
@@ -481,7 +481,7 @@ function deleteCityState(cityId: string): void {
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   // Start with a default state, we'll load from localStorage after mount
-  const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
+  const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'BNBCITY'));
   
   const [hasExistingGame, setHasExistingGame] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -851,7 +851,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const newGame = useCallback((name?: string, size?: number) => {
     clearGameState(); // Clear saved state when starting fresh
-    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'IsoCity');
+    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'BNBCITY');
     // Increment gameVersion from current state to ensure vehicles/entities are cleared
     setState((prev) => ({
       ...fresh,

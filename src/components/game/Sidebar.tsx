@@ -210,7 +210,7 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                   className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 ${
                     isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted/60'
                   }`}
-                  title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
+                  title={`${info.description}${info.cost > 0 ? ` - 成本: $${info.cost}` : ''}`}
                 >
                   <span className="flex-1 text-left truncate">{info.name}</span>
                   {info.cost > 0 && (
@@ -242,9 +242,9 @@ function ExitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Exit to Main Menu</DialogTitle>
+          <DialogTitle>返回主菜单</DialogTitle>
           <DialogDescription>
-            Would you like to save your city before exiting?
+            退出前要保存你的城市吗？
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -253,13 +253,13 @@ function ExitDialog({
             onClick={onExitWithoutSaving}
             className="w-full sm:w-auto"
           >
-            Exit Without Saving
+            不保存退出
           </Button>
           <Button
             onClick={onSaveAndExit}
             className="w-full sm:w-auto"
           >
-            Save & Exit
+            保存并退出
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -286,51 +286,51 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   
   // Direct tool categories (shown inline)
   const directCategories = useMemo(() => ({
-    'TOOLS': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
-    'ZONES': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
+    '工具': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
+    '分区': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
   }), []);
   
   // Submenu categories (hover to expand) - includes all new assets from main
   const submenuCategories = useMemo(() => [
     { 
       key: 'services', 
-      label: 'Services', 
+      label: '服务', 
       tools: ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[]
     },
     { 
       key: 'parks', 
-      label: 'Parks', 
+      label: '公园', 
       tools: ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[]
     },
     { 
       key: 'sports', 
-      label: 'Sports', 
+      label: '体育', 
       tools: ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[]
     },
     { 
       key: 'recreation', 
-      label: 'Recreation', 
+      label: '娱乐', 
       tools: ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[]
     },
     { 
       key: 'waterfront', 
-      label: 'Waterfront', 
+      label: '滨水', 
       tools: ['marina_docks_small', 'pier_large'] as Tool[]
     },
     { 
       key: 'community', 
-      label: 'Community', 
+      label: '社区', 
       tools: ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[]
     },
     { 
       key: 'utilities', 
-      label: 'Utilities', 
+      label: '公用设施', 
       tools: ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
       forceOpenUpward: true
     },
     { 
       key: 'special', 
-      label: 'Special', 
+      label: '特殊', 
       tools: ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[],
       forceOpenUpward: true
     },
@@ -340,13 +340,13 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-40">
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
-          <span className="text-sidebar-foreground font-bold tracking-tight">ISOCITY</span>
+          <span className="text-sidebar-foreground font-bold tracking-tight">BNBCITY</span>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={openCommandMenu}
-              title="Search (⌘K)"
+              title="搜索 (⌘K)"
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
               <svg 
@@ -363,7 +363,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setShowExitDialog(true)}
-                title="Exit to Main Menu"
+                title="返回主菜单"
                 className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
               >
                 <svg 
@@ -403,7 +403,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                     className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm ${
                       isSelected ? 'bg-primary text-primary-foreground' : ''
                     }`}
-                    title={`${info.description}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
+                    title={`${info.description}${info.cost > 0 ? ` - 成本: $${info.cost}` : ''}`}
                   >
                     <span className="flex-1 text-left truncate">{info.name}</span>
                     {info.cost > 0 && (
@@ -421,7 +421,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         
         {/* Buildings header */}
         <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground">
-          BUILDINGS
+          建筑
         </div>
         
         {/* Submenu categories */}
@@ -443,10 +443,10 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
       <div className="border-t border-sidebar-border p-2">
         <div className="grid grid-cols-4 gap-1">
           {[
-            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: 'Budget' },
-            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: 'Statistics' },
-            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: 'Advisors' },
-            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: 'Settings' },
+            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: '预算' },
+            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: '统计' },
+            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: '顾问' },
+            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: '设置' },
           ].map(({ panel, icon, label }) => (
             <Button
               key={panel}

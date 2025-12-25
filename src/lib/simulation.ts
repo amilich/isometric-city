@@ -1,4 +1,4 @@
-// Simulation engine for IsoCity
+// Simulation engine for BNBCITY
 
 import {
   GameState,

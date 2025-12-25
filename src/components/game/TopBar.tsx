@@ -168,7 +168,7 @@ export const TopBar = React.memo(function TopBar() {
           <div className="flex items-center gap-2">
             <h1 className="text-foreground font-semibold text-sm">{cityName}</h1>
             {isSaving && (
-              <span className="text-muted-foreground text-xs italic animate-pulse">Saving...</span>
+              <span className="text-muted-foreground text-xs italic animate-pulse">保存中...</span>
             )}
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono tabular-nums">
@@ -192,7 +192,7 @@ export const TopBar = React.memo(function TopBar() {
               variant={speed === s ? 'default' : 'ghost'}
               size="icon-sm"
               className="h-7 w-7 p-0 m-0"
-              title={s === 0 ? 'Pause' : s === 1 ? 'Normal' : s === 2 ? 'Fast' : 'Very Fast'}
+              title={s === 0 ? '暂停' : s === 1 ? '正常速度' : s === 2 ? '2倍速' : '3倍速'}
             >
               {s === 0 ? <PauseIcon size={12} /> : 
                s === 1 ? <PlayIcon size={12} /> : 
@@ -213,17 +213,17 @@ export const TopBar = React.memo(function TopBar() {
       </div>
       
       <div className="flex items-center gap-8">
-        <StatBadge value={stats.population.toLocaleString()} label="Population" />
-        <StatBadge value={stats.jobs.toLocaleString()} label="Jobs" />
+        <StatBadge value={stats.population.toLocaleString()} label="人口" />
+        <StatBadge value={stats.jobs.toLocaleString()} label="工作" />
         <StatBadge 
           value={`$${stats.money.toLocaleString()}`} 
-          label="Funds"
+          label="资金"
           variant={stats.money < 0 ? 'destructive' : stats.money < 1000 ? 'warning' : 'success'}
         />
         <Separator orientation="vertical" className="h-8" />
         <StatBadge 
           value={`$${(stats.income - stats.expenses).toLocaleString()}`} 
-          label="Monthly"
+          label="月度"
           variant={stats.income - stats.expenses >= 0 ? 'success' : 'destructive'}
         />
       </div>
@@ -238,7 +238,7 @@ export const TopBar = React.memo(function TopBar() {
         <Separator orientation="vertical" className="h-8" />
         
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs">Tax</span>
+          <span className="text-muted-foreground text-xs">税收</span>
           <Slider
             value={[taxRate]}
             onValueChange={(value) => setTaxRate(value[0])}

@@ -276,6 +276,22 @@ export type Pedestrian = {
   beachTileX: number;        // Beach water tile X (for swimming position)
   beachTileY: number;        // Beach water tile Y (for swimming position)
   beachEdge: 'north' | 'east' | 'south' | 'west' | null; // Which edge of water tile is beach
+
+  // AI Pedestrian shopping system properties
+  isAI?: boolean;                      // Is this an AI-controlled pedestrian
+  aiType?: 'WORKER' | 'SHOPPER' | 'TOURIST' | 'COMMUTER' | 'LEISURER'; // AI personality type
+  isShopping?: boolean;                // Currently shopping
+  shoppingProgress?: number;           // 0-1 progress through shopping activity
+  shoppingDuration?: number;           // Total shopping duration in seconds
+  currentShopX?: number;               // Shopping location X
+  currentShopY?: number;               // Shopping location Y
+  shoppingActivity?: 'browsing' | 'paying' | 'leaving_shop' | 'carrying_bags'; // Shopping phase
+  shoppingBudget?: number;             // Money available for shopping
+  itemsBought?: number;                // Items purchased in current shopping trip
+  shopVisitsToday?: number;            // Number of shops visited today
+  lastShoppingTime?: number;           // Timestamp of last shopping activity
+  satisfactionLevel?: number;          // 0-1 satisfaction with shopping
+  totalMoneySpent?: number;            // Lifetime money spent on shopping
 };
 
 // Boat types for water navigation

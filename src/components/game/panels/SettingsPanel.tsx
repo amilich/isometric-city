@@ -126,17 +126,17 @@ export function SettingsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[400px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>设置</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Game Settings</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">游戏设置</div>
             
             <div className="flex items-center justify-between py-2 gap-4">
               <div className="flex-1 min-w-0">
-                <Label>Disasters</Label>
-                <p className="text-muted-foreground text-xs">Enable random fires and disasters</p>
+                <Label>灾难</Label>
+                <p className="text-muted-foreground text-xs">启用随机火灾和灾难</p>
               </div>
               <Switch
                 checked={disastersEnabled}
@@ -145,8 +145,8 @@ export function SettingsPanel() {
             </div>
             
             <div className="py-2">
-              <Label>Sprite Pack</Label>
-              <p className="text-muted-foreground text-xs mb-2">Choose building artwork style</p>
+              <Label>精灵包</Label>
+              <p className="text-muted-foreground text-xs mb-2">选择建筑美术风格</p>
               <div className="grid grid-cols-1 gap-2">
                 {availableSpritePacks.map((pack) => (
                   <button
@@ -182,19 +182,19 @@ export function SettingsPanel() {
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">City Information</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">城市信息</div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>City Name</span>
+                <span>城市名称</span>
                 <span className="text-foreground">{cityName}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Grid Size</span>
+                <span>网格大小</span>
                 <span className="text-foreground">{gridSize} x {gridSize}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Auto-Save</span>
-                <span className="text-green-400">Enabled</span>
+                <span>自动保存</span>
+                <span className="text-green-400">已启用</span>
               </div>
             </div>
           </div>
@@ -203,8 +203,8 @@ export function SettingsPanel() {
           
           {/* Saved Cities Section */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Saved Cities</div>
-            <p className="text-muted-foreground text-xs mb-3">Save multiple cities and switch between them</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">已保存城市</div>
+            <p className="text-muted-foreground text-xs mb-3">保存多个城市并在它们之间切换</p>
             
             {/* Save Current City Button */}
             <Button
@@ -216,7 +216,7 @@ export function SettingsPanel() {
                 setTimeout(() => setSaveCitySuccess(false), 2000);
               }}
             >
-              {saveCitySuccess ? '✓ City Saved!' : `Save "${cityName}"`}
+              {saveCitySuccess ? '✓ 城市已保存！' : `保存 "${cityName}"`}
             </Button>
             
             {/* Saved Cities List */}
@@ -236,7 +236,7 @@ export function SettingsPanel() {
                         <Input
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
-                          placeholder="New city name..."
+                          placeholder="新城市名称..."
                           className="h-8 text-sm"
                           autoFocus
                         />
@@ -250,7 +250,7 @@ export function SettingsPanel() {
                               setRenameValue('');
                             }}
                           >
-                            Cancel
+                            取消
                           </Button>
                           <Button
                             variant="default"
@@ -264,13 +264,13 @@ export function SettingsPanel() {
                               setRenameValue('');
                             }}
                           >
-                            Save
+                            保存
                           </Button>
                         </div>
                       </div>
                     ) : cityToDelete?.id === city.id ? (
                       <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground text-center">Delete this city?</p>
+                        <p className="text-xs text-muted-foreground text-center">删除这个城市？</p>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -278,7 +278,7 @@ export function SettingsPanel() {
                             className="flex-1 h-7 text-xs"
                             onClick={() => setCityToDelete(null)}
                           >
-                            Cancel
+                            取消
                           </Button>
                           <Button
                             variant="destructive"
@@ -289,7 +289,7 @@ export function SettingsPanel() {
                               setCityToDelete(null);
                             }}
                           >
-                            Delete
+                            删除
                           </Button>
                         </div>
                       </div>
@@ -299,17 +299,17 @@ export function SettingsPanel() {
                           <div className="font-medium text-sm truncate flex-1">
                             {city.cityName}
                             {city.id === currentCityId && (
-                              <span className="ml-2 text-[10px] text-primary">(current)</span>
+                              <span className="ml-2 text-[10px] text-primary">（当前）</span>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-                          <span>Pop: {formatPopulation(city.population)}</span>
+                          <span>人口: {formatPopulation(city.population)}</span>
                           <span>{formatMoney(city.money)}</span>
                           <span>{city.gridSize}×{city.gridSize}</span>
                         </div>
                         <div className="text-[10px] text-muted-foreground mb-2">
-                          Saved {formatDate(city.savedAt)}
+                          保存于 {formatDate(city.savedAt)}
                         </div>
                         <div className="flex gap-2">
                           {city.id !== currentCityId && (
@@ -322,7 +322,7 @@ export function SettingsPanel() {
                                 setActivePanel('none');
                               }}
                             >
-                              Load
+                              加载
                             </Button>
                           )}
                           <Button
@@ -334,7 +334,7 @@ export function SettingsPanel() {
                               setRenameValue(city.cityName);
                             }}
                           >
-                            Rename
+                            重命名
                           </Button>
                           <Button
                             variant="outline"
@@ -342,7 +342,7 @@ export function SettingsPanel() {
                             className="flex-1 h-7 text-xs hover:bg-destructive hover:text-destructive-foreground"
                             onClick={() => setCityToDelete(city)}
                           >
-                            Delete
+                            删除
                           </Button>
                         </div>
                       </>
@@ -352,7 +352,7 @@ export function SettingsPanel() {
               </div>
             ) : (
               <p className="text-muted-foreground text-xs text-center py-3 border border-dashed rounded-md">
-                No saved cities yet.
+                还没有已保存的城市。
               </p>
             )}
           </div>
@@ -369,10 +369,10 @@ export function SettingsPanel() {
                   setActivePanel('none');
                 }}
               >
-                Restore {savedCityInfo.cityName}
+                恢复 {savedCityInfo.cityName}
               </Button>
               <p className="text-muted-foreground text-xs text-center">
-                Your city was saved before viewing a shared city
+                你的城市已在查看共享城市前保存
               </p>
               <Separator />
             </div>
@@ -384,15 +384,15 @@ export function SettingsPanel() {
               className="w-full"
               onClick={() => setShowNewGameConfirm(true)}
             >
-              Start New Game
+              开始新游戏
             </Button>
           ) : (
             <div className="space-y-3">
-              <p className="text-muted-foreground text-sm text-center">Are you sure? This will reset all progress.</p>
+              <p className="text-muted-foreground text-sm text-center">你确定吗？这将重置所有进度。</p>
               <Input
                 value={newCityName}
                 onChange={(e) => setNewCityName(e.target.value)}
-                placeholder="New city name..."
+                placeholder="新城市名称..."
               />
               <div className="flex gap-2">
                 <Button
@@ -400,17 +400,17 @@ export function SettingsPanel() {
                   className="flex-1"
                   onClick={() => setShowNewGameConfirm(false)}
                 >
-                  Cancel
+                  取消
                 </Button>
                 <Button
                   variant="destructive"
                   className="flex-1"
                   onClick={() => {
-                    newGame(newCityName || 'New City', gridSize);
+                    newGame(newCityName || '新城市', gridSize);
                     setActivePanel('none');
                   }}
                 >
-                  Reset
+                  重置
                 </Button>
               </div>
             </div>
@@ -419,23 +419,23 @@ export function SettingsPanel() {
           <Separator />
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Export Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Copy your game state to share or backup</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">导出游戏</div>
+            <p className="text-muted-foreground text-xs mb-2">复制你的游戏状态以共享或备份</p>
             <Button
               variant="outline"
               className="w-full"
               onClick={handleCopyExport}
             >
-              {exportCopied ? '✓ Copied!' : 'Copy Game State'}
+              {exportCopied ? '✓ 已复制！' : '复制游戏状态'}
             </Button>
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Paste a game state to load it</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">导入游戏</div>
+            <p className="text-muted-foreground text-xs mb-2">粘贴游戏状态以加载</p>
             <textarea
               className="w-full h-20 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder="Paste game state here..."
+              placeholder="在此粘贴游戏状态..."
               value={importValue}
               onChange={(e) => {
                 setImportValue(e.target.value);
@@ -444,10 +444,10 @@ export function SettingsPanel() {
               }}
             />
             {importError && (
-              <p className="text-red-400 text-xs mt-1">Invalid game state. Please check and try again.</p>
+              <p className="text-red-400 text-xs mt-1">无效的游戏状态。请检查并重试。</p>
             )}
             {importSuccess && (
-              <p className="text-green-400 text-xs mt-1">Game loaded successfully!</p>
+              <p className="text-green-400 text-xs mt-1">游戏加载成功！</p>
             )}
             <Button
               variant="outline"
@@ -455,18 +455,18 @@ export function SettingsPanel() {
               onClick={handleImport}
               disabled={!importValue.trim()}
             >
-              Load Game State
+              加载游戏状态
             </Button>
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Developer Tools</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">开发者工具</div>
             <Button
               variant="outline"
               className="w-full"
               onClick={() => setShowSpriteTest(true)}
             >
-              Open Sprite Test View
+              打开精灵测试视图
             </Button>
             <Button
               variant="outline"
@@ -477,7 +477,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State
+              加载示例状态
             </Button>
             <Button
               variant="outline"
@@ -488,7 +488,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 2
+              加载示例状态 2
             </Button>
             <Button
               variant="outline"
@@ -499,7 +499,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 3
+              加载示例状态 3
             </Button>
             <Button
               variant="outline"
@@ -510,7 +510,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 4
+              加载示例状态 4
             </Button>
             <Button
               variant="outline"
@@ -521,7 +521,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 5
+              加载示例状态 5
             </Button>
             <Button
               variant="outline"
@@ -532,7 +532,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 6
+              加载示例状态 6
             </Button>
             <Button
               variant="outline"
@@ -543,7 +543,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 7
+              加载示例状态 7
             </Button>
             <Button
               variant="outline"
@@ -554,7 +554,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 8
+              加载示例状态 8
             </Button>
             <Button
               variant="outline"
@@ -565,11 +565,11 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 9
+              加载示例状态 9
             </Button>
             <div className="mt-4 pt-4 border-t border-border">
-              <Label>Day/Night Mode</Label>
-              <p className="text-muted-foreground text-xs mb-2">Override the time-of-day appearance without affecting time progression</p>
+              <Label>昼夜模式</Label>
+              <p className="text-muted-foreground text-xs mb-2">覆盖日间外观而不影响时间进度</p>
               <div className="flex rounded-md border border-border overflow-hidden">
                 {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
                   <button
@@ -581,9 +581,9 @@ export function SettingsPanel() {
                         : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {mode === 'auto' && 'Auto'}
-                    {mode === 'day' && 'Day'}
-                    {mode === 'night' && 'Night'}
+                    {mode === 'auto' && '自动'}
+                    {mode === 'day' && '白天'}
+                    {mode === 'night' && '夜晚'}
                   </button>
                 ))}
               </div>

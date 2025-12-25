@@ -23,8 +23,8 @@ export function VinnieDialog({ open, onOpenChange }: VinnieDialogProps) {
   const handleAccept = () => {
     addMoney(100000);
     addNotification(
-      'Questionable Finances',
-      'You received $100,000 from Cousin Vinnie. Your accountants are... concerned.',
+      '可疑财务',
+      '你从堂兄文尼那里收到了$100,000。你的会计师...很担心。',
       'disaster'
     );
     onOpenChange(false);
@@ -33,8 +33,8 @@ export function VinnieDialog({ open, onOpenChange }: VinnieDialogProps) {
   const handleDecline = () => {
     addMoney(10000);
     addNotification(
-      'Integrity Bonus',
-      'You declined Vinnie\'s offer. A mysterious benefactor rewards your honesty with $10,000.',
+      '诚信奖励',
+      '你拒绝了文尼的提议。一位神秘的慈善家用$10,000奖励你的诚实。',
       'trophy'
     );
     onOpenChange(false);
@@ -44,17 +44,17 @@ export function VinnieDialog({ open, onOpenChange }: VinnieDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-900 border-slate-700 text-slate-100">
         <DialogHeader>
-          <DialogTitle className="text-sky-400">A Shady Offer</DialogTitle>
+          <DialogTitle className="text-sky-400">可疑的提议</DialogTitle>
           <DialogDescription asChild>
             <div className="text-slate-300 pt-2">
               <p className="mb-2">
-                Hey there, Mayor... My associate Vinnie heard you could use some help with the city budget.
+                嘿，市长...我的同事文尼听说你需要帮助处理城市预算。
               </p>
               <p className="mb-2">
-                He&apos;s offering <span className="text-green-400 font-semibold">$100,000</span>... no strings attached.
+                他提供 <span className="text-green-400 font-semibold">$100,000</span>... 没有任何附加条件。
               </p>
               <p className="text-slate-400 italic">
-                Well, maybe a few strings.
+                好吧，可能有一些。
               </p>
             </div>
           </DialogDescription>
@@ -65,13 +65,13 @@ export function VinnieDialog({ open, onOpenChange }: VinnieDialogProps) {
             onClick={handleDecline}
             className="border-slate-600 text-slate-200 hover:bg-slate-800"
           >
-            Decline
+            拒绝
           </Button>
           <Button
             onClick={handleAccept}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Accept Offer
+            接受提议
           </Button>
         </DialogFooter>
       </DialogContent>

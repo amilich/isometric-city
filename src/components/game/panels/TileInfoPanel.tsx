@@ -36,7 +36,7 @@ export function TileInfoPanel({
       style={isMobile ? { top: 'calc(72px + env(safe-area-inset-top, 0px))' } : undefined}
     >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-sans">Tile ({x}, {y})</CardTitle>
+        <CardTitle className="text-sm font-sans">地块 ({x}, {y})</CardTitle>
         <Button variant="ghost" size="icon-sm" onClick={onClose}>
           <CloseIcon size={14} />
         </Button>
@@ -44,11 +44,11 @@ export function TileInfoPanel({
       
       <CardContent className="space-y-3 text-sm">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Building</span>
+          <span className="text-muted-foreground">建筑</span>
           <span className="capitalize">{tile.building.type.replace(/_/g, ' ')}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Zone</span>
+          <span className="text-muted-foreground">分区</span>
           <Badge variant={
             tile.zone === 'residential' ? 'default' :
             tile.zone === 'commercial' ? 'secondary' :
@@ -58,42 +58,42 @@ export function TileInfoPanel({
             tile.zone === 'commercial' ? 'bg-blue-500/20 text-blue-400' :
             tile.zone === 'industrial' ? 'bg-amber-500/20 text-amber-400' : ''
           }>
-            {tile.zone === 'none' ? 'Unzoned' : tile.zone}
+            {tile.zone === 'none' ? '未分区' : tile.zone}
           </Badge>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Level</span>
+          <span className="text-muted-foreground">等级</span>
           <span>{tile.building.level}/5</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Population</span>
+          <span className="text-muted-foreground">人口</span>
           <span>{tile.building.population}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Jobs</span>
+          <span className="text-muted-foreground">工作</span>
           <span>{tile.building.jobs}</span>
         </div>
         
         <Separator />
         
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Power</span>
+          <span className="text-muted-foreground">电力</span>
           <Badge variant={tile.building.powered ? 'default' : 'destructive'}>
-            {tile.building.powered ? 'Connected' : 'No Power'}
+            {tile.building.powered ? '已连接' : '无电源'}
           </Badge>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Water</span>
+          <span className="text-muted-foreground">水</span>
           <Badge variant={tile.building.watered ? 'default' : 'destructive'} className={tile.building.watered ? 'bg-cyan-500/20 text-cyan-400' : ''}>
-            {tile.building.watered ? 'Connected' : 'No Water'}
+            {tile.building.watered ? '已连接' : '无水'}
           </Badge>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Land Value</span>
+          <span className="text-muted-foreground">地价</span>
           <span>${tile.landValue}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Pollution</span>
+          <span className="text-muted-foreground">污染</span>
           <span className={tile.pollution > 50 ? 'text-red-400' : tile.pollution > 25 ? 'text-amber-400' : 'text-green-400'}>
             {Math.round(tile.pollution)}%
           </span>
@@ -103,30 +103,30 @@ export function TileInfoPanel({
           <>
             <Separator />
             <div className="flex justify-between text-red-400">
-              <span>ON FIRE!</span>
-              <span>{Math.round(tile.building.fireProgress)}% damage</span>
+              <span>着火了！</span>
+              <span>{Math.round(tile.building.fireProgress)}% 伤害</span>
             </div>
           </>
         )}
         
         <Separator />
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Service Coverage</div>
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">服务覆盖</div>
         
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Police</span>
+            <span className="text-muted-foreground">警察</span>
             <span>{Math.round(services.police[y][x])}%</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Fire</span>
+            <span className="text-muted-foreground">消防</span>
             <span>{Math.round(services.fire[y][x])}%</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Health</span>
+            <span className="text-muted-foreground">健康</span>
             <span>{Math.round(services.health[y][x])}%</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Education</span>
+            <span className="text-muted-foreground">教育</span>
             <span>{Math.round(services.education[y][x])}%</span>
           </div>
         </div>

@@ -53,13 +53,13 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
   }, [currentSpritePack]);
   
   const availableTabs = useMemo(() => [
-    { id: 'main', label: 'Main', available: !!spriteSheets.main },
-    { id: 'construction', label: 'Construction', available: !!spriteSheets.construction },
-    { id: 'abandoned', label: 'Abandoned', available: !!spriteSheets.abandoned },
-    { id: 'dense', label: 'High Density', available: !!spriteSheets.dense },
-    { id: 'modern', label: 'Modern', available: !!spriteSheets.modern },
-    { id: 'parks', label: 'Parks', available: !!spriteSheets.parks },
-    { id: 'parksConstruction', label: 'Parks Construction', available: !!spriteSheets.parksConstruction },
+    { id: 'main', label: '主要', available: !!spriteSheets.main },
+    { id: 'construction', label: '建设中', available: !!spriteSheets.construction },
+    { id: 'abandoned', label: '废弃', available: !!spriteSheets.abandoned },
+    { id: 'dense', label: '高密度', available: !!spriteSheets.dense },
+    { id: 'modern', label: '现代', available: !!spriteSheets.modern },
+    { id: 'parks', label: '公园', available: !!spriteSheets.parks },
+    { id: 'parksConstruction', label: '公园建设', available: !!spriteSheets.parksConstruction },
   ].filter(tab => tab.available), [spriteSheets]);
   
   // Derive the actual active tab - fall back to first available if selected is not available
@@ -294,9 +294,9 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[700px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Sprite Test View</DialogTitle>
+          <DialogTitle>精灵测试视图</DialogTitle>
           <DialogDescription>
-            View all sprite variants from &quot;{currentSpritePack.name}&quot;
+            查看来自"{currentSpritePack.name}"的所有精灵变体
           </DialogDescription>
         </DialogHeader>
         
@@ -319,8 +319,8 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
         </div>
         
         <div className="text-xs text-muted-foreground space-y-1">
-          <p>Sprite sheet: {currentSheetInfo} ({gridInfo} grid)</p>
-          <p>Edit offsets in <code className="bg-muted px-1 rounded">src/lib/renderConfig.ts</code> → each sprite pack&apos;s verticalOffsets</p>
+          <p>精灵表: {currentSheetInfo} ({gridInfo} 网格)</p>
+          <p>在 <code className="bg-muted px-1 rounded">src/lib/renderConfig.ts</code> → 每个精灵包的 verticalOffsets 中编辑偏移</p>
         </div>
       </DialogContent>
     </Dialog>

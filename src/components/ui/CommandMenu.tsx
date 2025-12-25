@@ -31,17 +31,17 @@ interface MenuItem {
 }
 
 const MENU_CATEGORIES = [
-  { key: 'tools', label: 'Tools' },
-  { key: 'zones', label: 'Zones' },
-  { key: 'services', label: 'Services' },
-  { key: 'parks', label: 'Parks' },
-  { key: 'sports', label: 'Sports' },
-  { key: 'recreation', label: 'Recreation' },
-  { key: 'waterfront', label: 'Waterfront' },
-  { key: 'community', label: 'Community' },
-  { key: 'utilities', label: 'Utilities' },
-  { key: 'special', label: 'Special' },
-  { key: 'panels', label: 'Panels' },
+  { key: 'tools', label: '工具' },
+  { key: 'zones', label: '分区' },
+  { key: 'services', label: '服务' },
+  { key: 'parks', label: '公园' },
+  { key: 'sports', label: '体育' },
+  { key: 'recreation', label: '娱乐' },
+  { key: 'waterfront', label: '滨水' },
+  { key: 'community', label: '社区' },
+  { key: 'utilities', label: '公用设施' },
+  { key: 'special', label: '特殊' },
+  { key: 'panels', label: '面板' },
 ] as const;
 
 // Build menu items from tools
@@ -210,10 +210,10 @@ function buildMenuItems(): MenuItem[] {
 
   // Panels
   const panels: { panel: 'budget' | 'statistics' | 'advisors' | 'settings'; name: string; description: string; keywords: string[] }[] = [
-    { panel: 'budget', name: 'Budget', description: 'Manage city finances and funding', keywords: ['budget', 'money', 'finance', 'tax', 'funding'] },
-    { panel: 'statistics', name: 'Statistics', description: 'View city statistics and charts', keywords: ['statistics', 'stats', 'charts', 'data', 'info'] },
-    { panel: 'advisors', name: 'Advisors', description: 'Get advice from city advisors', keywords: ['advisors', 'advice', 'help', 'tips'] },
-    { panel: 'settings', name: 'Settings', description: 'Game settings and preferences', keywords: ['settings', 'options', 'preferences', 'config'] },
+    { panel: 'budget', name: '预算', description: '管理城市财务和资金', keywords: ['budget', 'money', 'finance', 'tax', 'funding', '预算', '财务'] },
+    { panel: 'statistics', name: '统计', description: '查看城市统计和图表', keywords: ['statistics', 'stats', 'charts', 'data', 'info', '统计', '数据'] },
+    { panel: 'advisors', name: '顾问', description: '获取城市顾问的建议', keywords: ['advisors', 'advice', 'help', 'tips', '顾问', '建议'] },
+    { panel: 'settings', name: '设置', description: '游戏设置和偏好', keywords: ['settings', 'options', 'preferences', 'config', '设置'] },
   ];
 
   panels.forEach(({ panel, name, description, keywords }) => {
@@ -380,7 +380,7 @@ export function CommandMenu() {
         onKeyDown={handleKeyDown}
       >
         <VisuallyHidden.Root>
-          <DialogTitle>Command Menu</DialogTitle>
+          <DialogTitle>命令菜单</DialogTitle>
         </VisuallyHidden.Root>
         
         {/* Search input */}
@@ -397,7 +397,7 @@ export function CommandMenu() {
             ref={inputRef}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search tools, buildings, panels..."
+            placeholder="搜索工具、建筑、面板..."
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent h-12 text-sm"
           />
           <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-sidebar-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
@@ -410,7 +410,7 @@ export function CommandMenu() {
           <div ref={listRef} className="p-2">
             {flatItems.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                No results found.
+                未找到结果。
               </div>
             ) : (
               MENU_CATEGORIES.map(category => {
@@ -476,17 +476,17 @@ export function CommandMenu() {
             <span className="flex items-center gap-1">
               <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">↑</kbd>
               <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">↓</kbd>
-              <span>navigate</span>
+              <span>导航</span>
             </span>
             <span className="flex items-center gap-1">
               <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">↵</kbd>
-              <span>select</span>
+              <span>选择</span>
             </span>
           </div>
           <span className="flex items-center gap-1">
             <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">⌘</kbd>
             <kbd className="inline-flex h-4 items-center rounded border border-sidebar-border bg-muted px-1 font-mono text-[10px]">K</kbd>
-            <span>to toggle</span>
+            <span>切换</span>
           </span>
         </div>
       </DialogContent>

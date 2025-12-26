@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
 
@@ -145,6 +146,14 @@ export function SettingsPanel() {
                 checked={disastersEnabled}
                 onCheckedChange={setDisastersEnabled}
               />
+            </div>
+
+            <div className="flex items-center justify-between py-2 gap-4">
+              <div className="flex-1 min-w-0">
+                <Label>Dil / Language</Label>
+                <p className="text-muted-foreground text-xs">Arayüz dilini değiştir / Change interface language</p>
+              </div>
+              <LanguageSelector variant="game" />
             </div>
 
             <div className="py-2 mb-2">

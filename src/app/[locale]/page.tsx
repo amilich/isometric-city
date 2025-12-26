@@ -9,6 +9,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { SavedCityMeta } from '@/types/game';
 import { useTranslations } from 'next-intl';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
@@ -301,6 +302,10 @@ export default function HomePage() {
           {t('title')}
         </h1>
         
+        <div className="mb-6">
+          <LanguageSelector variant="game" />
+        </div>
+        
         {/* Sprite Gallery - keep visible even when saves exist */}
         <div className="mb-6">
           <SpriteGallery count={9} cols={3} cellSize={72} />
@@ -357,6 +362,9 @@ export default function HomePage() {
         
         {/* Left - Title and Start Button */}
         <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
+          <div className="absolute top-8 right-8 lg:static lg:mb-0">
+            <LanguageSelector variant="game" />
+          </div>
           <div className="relative w-full max-w-md h-32 mb-4">
             <Image
               src="/truncgil-mycity3.png"

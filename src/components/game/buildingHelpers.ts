@@ -131,11 +131,13 @@ export function useBuildingHelpers(grid: Tile[][], gridSize: number) {
         
         // Compute isBuilding (for grey base)
         // Rail tiles are excluded because they have their own gravel base rendering
+        // Bridge tiles are excluded because they render water underneath with their own structure
         const isDirectBuilding = !isPark &&
           buildingType !== 'grass' &&
           buildingType !== 'empty' &&
           buildingType !== 'water' &&
           buildingType !== 'road' &&
+          buildingType !== 'bridge' &&
           buildingType !== 'rail' &&
           buildingType !== 'tree';
         const isPartOfBuilding = buildingType === 'empty' && isPartOfMultiTileBuilding;

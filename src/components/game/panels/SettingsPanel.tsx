@@ -472,7 +472,8 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState } = await import('@/resources/example_state.json');
+                const response = await fetch('/example-states/example_state.json');
+                const exampleState = await response.json();
                 loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
@@ -483,8 +484,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState2 } = await import('@/resources/example_state_2.json');
-                loadState(JSON.stringify(exampleState2));
+                const response = await fetch('/example-states/example_state_2.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >
@@ -494,8 +496,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState3 } = await import('@/resources/example_state_3.json');
-                loadState(JSON.stringify(exampleState3));
+                const response = await fetch('/example-states/example_state_3.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >
@@ -505,8 +508,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState4 } = await import('@/resources/example_state_4.json');
-                loadState(JSON.stringify(exampleState4));
+                const response = await fetch('/example-states/example_state_4.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >
@@ -516,8 +520,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState5 } = await import('@/resources/example_state_5.json');
-                loadState(JSON.stringify(exampleState5));
+                const response = await fetch('/example-states/example_state_5.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >
@@ -527,8 +532,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState6 } = await import('@/resources/example_state_6.json');
-                loadState(JSON.stringify(exampleState6));
+                const response = await fetch('/example-states/example_state_6.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >
@@ -538,8 +544,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState7 } = await import('@/resources/example_state_7.json');
-                loadState(JSON.stringify(exampleState7));
+                const response = await fetch('/example-states/example_state_7.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >
@@ -549,8 +556,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState8 } = await import('@/resources/example_state_8.json');
-                loadState(JSON.stringify(exampleState8));
+                const response = await fetch('/example-states/example_state_8.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >
@@ -560,8 +568,9 @@ export function SettingsPanel() {
               variant="outline"
               className="w-full mt-2"
               onClick={async () => {
-                const { default: exampleState9 } = await import('@/resources/example_state_9.json');
-                loadState(JSON.stringify(exampleState9));
+                const response = await fetch('/example-states/example_state_9.json');
+                const exampleState = await response.json();
+                loadState(JSON.stringify(exampleState));
                 setActivePanel('none');
               }}
             >

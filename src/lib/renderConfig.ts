@@ -240,7 +240,7 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
     school: -0.35, // Shifted down 0.05 tiles from -0.4
     power_plant: -0.3, // Shift up
     park: -0.125, // Adjusted position
-    park_large: -0.85, // Shift up significantly (almost an entire tile)
+    park_large: -0.77, // Shift up significantly (almost an entire tile)
     tennis: -0.2, // Shifted up 0.1 tiles from -0.1
     city_hall: -0.6, // Shift up about 0.2 tiles
     amusement_park: -1.5, // Shift up about 1 tile
@@ -327,7 +327,7 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
   modernVerticalOffsets: {
     // Adjust these as needed for proper positioning
     apartment_high: -0.80,
-    mall: -1.0,
+    mall: -1.3, // Shifted down 0.7 tiles from -2.0
   },
   modernScales: {
     // Adjust these as needed for proper sizing

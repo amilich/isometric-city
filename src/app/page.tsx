@@ -313,7 +313,8 @@ export default function HomePage() {
           
           <Button 
             onClick={async () => {
-              const { default: exampleState } = await import('@/resources/example_state_9.json');
+              const response = await fetch('/example-states/example_state_9.json');
+              const exampleState = await response.json();
               localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
               setShowGame(true);
             }}
@@ -372,7 +373,8 @@ export default function HomePage() {
             </Button>
             <Button 
               onClick={async () => {
-                const { default: exampleState } = await import('@/resources/example_state_9.json');
+                const response = await fetch('/example-states/example_state_9.json');
+                const exampleState = await response.json();
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
                 setShowGame(true);
               }}

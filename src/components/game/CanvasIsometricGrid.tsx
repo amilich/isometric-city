@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
-import { TOOL_INFO, Tile, BuildingType, AdjacentCity, Tool } from '@/types/game';
+import { TOOL_INFO, Tile, Building, BuildingType, AdjacentCity, Tool } from '@/types/game';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
 import { getSpriteCoords, BUILDING_TO_SPRITE, SPRITE_VERTICAL_OFFSETS, SPRITE_HORIZONTAL_OFFSETS, getActiveSpritePack } from '@/lib/renderConfig';
@@ -91,6 +91,17 @@ import {
   ROAD_COLORS,
   drawRoadArrow,
 } from '@/components/game/trafficSystem';
+import { drawRoad, RoadDrawingOptions } from '@/components/game/roadDrawing';
+import {
+  BRIDGE_STYLES,
+  getBridgeStyle,
+  getBridgeDeckColor,
+  calculateBridgeEdges,
+  getBridgeWidthRatio,
+  getRailBridgeYOffset,
+  parseBridgeProperties,
+  drawPillar as drawBridgePillar,
+} from '@/components/game/bridgeDrawing';
 import { CrimeType, getCrimeName, getCrimeDescription, getFireDescriptionForTile, getFireNameForTile } from '@/components/game/incidentData';
 import {
   drawRailTrack,
@@ -101,6 +112,9 @@ import {
   drawRailroadCrossing,
   getCrossingStateForTile,
   GATE_ANIMATION_SPEED,
+  TRACK_GAUGE_RATIO,
+  TRACK_SEPARATION_RATIO,
+  RAIL_COLORS,
 } from '@/components/game/railSystem';
 import {
   spawnTrain,
@@ -127,7 +141,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, isSidebarCollapsed } = useGame();
+  const { state, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, isSidebarCollapsed } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -247,6 +261,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     buildingQueue: [] as BuildingDrawItem[],
     waterQueue: [] as BuildingDrawItem[],
     roadQueue: [] as BuildingDrawItem[],
+    bridgeQueue: [] as BuildingDrawItem[],
     railQueue: [] as BuildingDrawItem[],
     beachQueue: [] as BuildingDrawItem[],
     baseTileQueue: [] as BuildingDrawItem[],
@@ -955,6 +970,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     queues.buildingQueue.length = 0;
     queues.waterQueue.length = 0;
     queues.roadQueue.length = 0;
+    queues.bridgeQueue.length = 0;
     queues.railQueue.length = 0;
     queues.beachQueue.length = 0;
     queues.baseTileQueue.length = 0;
@@ -964,6 +980,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const buildingQueue = queues.buildingQueue;
     const waterQueue = queues.waterQueue;
     const roadQueue = queues.roadQueue;
+    const bridgeQueue = queues.bridgeQueue;
     const railQueue = queues.railQueue;
     const beachQueue = queues.beachQueue;
     const baseTileQueue = queues.baseTileQueue;
@@ -997,10 +1014,17 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       return grid[gridY][gridX].building.type === 'water';
     }
     
-    // Helper function to check if a tile has a road
+    // Helper function to check if a tile has a road or bridge
     function hasRoad(gridX: number, gridY: number): boolean {
       if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
-      return grid[gridY][gridX].building.type === 'road';
+      const type = grid[gridY][gridX].building.type;
+      return type === 'road' || type === 'bridge';
+    }
+    
+    // Helper function to check if a tile is a bridge (for beach exclusion)
+    function isBridge(gridX: number, gridY: number): boolean {
+      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+      return grid[gridY][gridX].building.type === 'bridge';
     }
     
     // Helper function to check if a tile has a marina dock or pier (no beaches next to these)
@@ -1048,605 +1072,797 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
       return info;
     }
+
+    // Create road drawing options for the extracted drawRoad function
+    const roadDrawingOptions: RoadDrawingOptions = {
+      hasRoad,
+      getMergeInfo: getCachedMergeInfo,
+      isMobile,
+      isPanning: isPanningRef.current,
+      isPinchZooming: isPinchZoomingRef.current,
+      trafficLightTimer: trafficLightTimerRef.current,
+    };
     
-    // Draw sophisticated road with merged avenues/highways, traffic lights, and proper lane directions
-    function drawRoad(ctx: CanvasRenderingContext2D, x: number, y: number, gridX: number, gridY: number, currentZoom: number) {
+    // Draw bridge tile - draws as a SINGLE continuous shape to avoid gaps
+    function drawBridgeTile(
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      building: Building,
+      gridX: number,
+      gridY: number,
+      currentZoom: number
+    ) {
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
+      
+      // Parse bridge properties using extracted helper
+      const {
+        bridgeType,
+        orientation,
+        variant,
+        position,
+        bridgeIndex,
+        bridgeSpan,
+        isRailBridge,
+      } = parseBridgeProperties(building);
+      
+      // Get style from extracted constants
+      const style = getBridgeStyle(bridgeType, variant);
+      
+      // Rail bridges are shifted down slightly on the Y axis
+      const yOffset = getRailBridgeYOffset(isRailBridge);
+      const adjustedY = y + yOffset;
+      
       const cx = x + w / 2;
-      const cy = y + h / 2;
+      const cy = adjustedY + h / 2;
       
-      // Check adjacency (in isometric coordinates)
-      const north = hasRoad(gridX - 1, gridY);  // top-left edge
-      const east = hasRoad(gridX, gridY - 1);   // top-right edge
-      const south = hasRoad(gridX + 1, gridY);  // bottom-right edge
-      const west = hasRoad(gridX, gridY + 1);   // bottom-left edge
-      const adj = { north, east, south, west };
+      // Bridge width - rail bridges are 20% skinnier than road bridges
+      const bridgeWidthRatio = getBridgeWidthRatio(isRailBridge);
+      const halfWidth = w * bridgeWidthRatio * 0.5;
       
-      // Analyze if this road is part of a merged avenue/highway (CACHED for performance)
-      const mergeInfo = getCachedMergeInfo(gridX, gridY);
+      // Calculate bridge edge geometry using extracted helper
+      const edges = calculateBridgeEdges(x, y, adjustedY, orientation);
+      const { northEdge, eastEdge, southEdge, westEdge, startEdge, endEdge, perpX, perpY, neDirX, neDirY, nwDirX, nwDirY } = edges;
       
-      // Calculate base road width based on road type
-      const laneWidthRatio = mergeInfo.type === 'highway' ? 0.16 :
-                            mergeInfo.type === 'avenue' ? 0.15 :
-                            0.14;
-      const roadW = w * laneWidthRatio;
+      // ============================================================
+      // DRAW SUPPORT PILLARS (one per tile, at front position to avoid z-order issues)
+      // ============================================================
+      const pillarW = 4;
+      const pillarH = 14; 
       
-      // Sidewalk configuration
-      const sidewalkWidth = w * 0.08;
-      const sidewalkColor = ROAD_COLORS.SIDEWALK;
-      const curbColor = ROAD_COLORS.CURB;
+      // Only draw pillar on every other tile to reduce count, and place at back position (0.35)
+      // Water tiles toward startEdge are rendered BEFORE this bridge tile, so pillar won't be covered
+      // Suspension bridges don't need base pillars - they have tower supports instead
+      const shouldDrawPillar = bridgeType !== 'suspension' && ((bridgeIndex % 2 === 0) || position === 'start' || position === 'end');
       
-      // Edge stop distance
-      const edgeStop = 0.98;
-      
-      // Calculate edge midpoints
-      const northEdgeX = x + w * 0.25;
-      const northEdgeY = y + h * 0.25;
-      const eastEdgeX = x + w * 0.75;
-      const eastEdgeY = y + h * 0.25;
-      const southEdgeX = x + w * 0.75;
-      const southEdgeY = y + h * 0.75;
-      const westEdgeX = x + w * 0.25;
-      const westEdgeY = y + h * 0.75;
-      
-      // Direction vectors
-      const northDx = (northEdgeX - cx) / Math.hypot(northEdgeX - cx, northEdgeY - cy);
-      const northDy = (northEdgeY - cy) / Math.hypot(northEdgeX - cx, northEdgeY - cy);
-      const eastDx = (eastEdgeX - cx) / Math.hypot(eastEdgeX - cx, eastEdgeY - cy);
-      const eastDy = (eastEdgeY - cy) / Math.hypot(eastEdgeX - cx, eastEdgeY - cy);
-      const southDx = (southEdgeX - cx) / Math.hypot(southEdgeX - cx, southEdgeY - cy);
-      const southDy = (southEdgeY - cy) / Math.hypot(southEdgeX - cx, southEdgeY - cy);
-      const westDx = (westEdgeX - cx) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
-      const westDy = (westEdgeY - cy) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
-      
-      const getPerp = (dx: number, dy: number) => ({ nx: -dy, ny: dx });
-      
-      // Diamond corners
-      const topCorner = { x: x + w / 2, y: y };
-      const rightCorner = { x: x + w, y: y + h / 2 };
-      const bottomCorner = { x: x + w / 2, y: y + h };
-      const leftCorner = { x: x, y: y + h / 2 };
-      
-      // ============================================
-      // DRAW SIDEWALKS (only on outer edges of merged roads)
-      // ============================================
-      // Use mobile-specific zoom threshold (lower = visible when more zoomed out)
-      const sidewalkMinZoom = isMobile ? SIDEWALK_MIN_ZOOM_MOBILE : SIDEWALK_MIN_ZOOM;
-      const showSidewalks = currentZoom >= sidewalkMinZoom;
-      
-      const isOuterEdge = (edgeDir: 'north' | 'east' | 'south' | 'west') => {
-        // For merged roads, only draw sidewalks on the outermost tiles
-        if (mergeInfo.type === 'single') return true;
+      if (shouldDrawPillar) {
+        // Place pillar toward the "start" edge (back in render order) - water there is already drawn
+        const pillarT = 0.35; // Position along the tile (0.35 = toward start/back)
+        const pillarPos = {
+          x: startEdge.x + (endEdge.x - startEdge.x) * pillarT,
+          y: startEdge.y + (endEdge.y - startEdge.y) * pillarT
+        };
         
-        if (mergeInfo.orientation === 'ns') {
-          // NS roads: sidewalks on east/west edges of outermost tiles
-          if (edgeDir === 'east') return mergeInfo.side === 'right';
-          if (edgeDir === 'west') return mergeInfo.side === 'left';
-          return true; // north/south always have sidewalks if no road
+        // Use extracted pillar drawing function
+        drawBridgePillar(ctx, pillarPos.x, pillarPos.y, pillarW, pillarH, style.support);
+      }
+      
+      // ============================================================
+      // DRAW ROAD CONNECTOR AT BRIDGE ENDS (covers road centerline and fills gap)
+      // ============================================================
+      // At the start/end of a bridge, we need to draw a road segment that:
+      // 1. Fills the gap between the road and the elevated bridge deck
+      // 2. Covers up the yellow centerline from the adjacent road
+      
+      const deckElevation = 3;
+      
+      // Travel direction for connector extension
+      const dx = endEdge.x - startEdge.x;
+      const dy = endEdge.y - startEdge.y;
+      const travelLen = Math.hypot(dx, dy);
+      const travelDirX = dx / travelLen;
+      const travelDirY = dy / travelLen;
+      
+      // Calculate how far to extend beyond the bridge tile (to cover the road's centerline)
+      const extensionAmount = 8; // Extend into the road tile to cover centerline
+      
+      // Store connector info for drawing borders after the deck
+      const connectorBordersToDraw: Array<{
+        extendedX: number;
+        extendedY: number;
+        connectorEdgeX: number;
+        connectorEdgeY: number;
+      }> = [];
+      
+      // Helper to draw a connector fill from bridge edge to road
+      const drawConnectorFill = (connectorEdge: { x: number; y: number }, extensionDir: number) => {
+        // Extended edge position (going toward the adjacent road)
+        const extendedX = connectorEdge.x + travelDirX * extensionAmount * extensionDir;
+        const extendedY = connectorEdge.y + travelDirY * extensionAmount * extensionDir;
+        
+        // Draw a connector parallelogram from the extended position to the bridge edge
+        // The extended end (in the road) is at ground level, the bridge end is elevated
+        const connectorRoadLeft = { x: extendedX + perpX * halfWidth, y: extendedY + perpY * halfWidth };
+        const connectorRoadRight = { x: extendedX - perpX * halfWidth, y: extendedY - perpY * halfWidth };
+        const connectorBridgeLeft = { x: connectorEdge.x + perpX * halfWidth, y: connectorEdge.y - deckElevation + perpY * halfWidth };
+        const connectorBridgeRight = { x: connectorEdge.x - perpX * halfWidth, y: connectorEdge.y - deckElevation - perpY * halfWidth };
+        
+        // Draw the connector (use appropriate color for road or rail)
+        ctx.fillStyle = getBridgeDeckColor(isRailBridge, style);
+        ctx.beginPath();
+        ctx.moveTo(connectorRoadLeft.x, connectorRoadLeft.y);
+        ctx.lineTo(connectorBridgeLeft.x, connectorBridgeLeft.y);
+        ctx.lineTo(connectorBridgeRight.x, connectorBridgeRight.y);
+        ctx.lineTo(connectorRoadRight.x, connectorRoadRight.y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Store info for drawing borders after deck
+        if (!isRailBridge) {
+          connectorBordersToDraw.push({
+            extendedX,
+            extendedY,
+            connectorEdgeX: connectorEdge.x,
+            connectorEdgeY: connectorEdge.y,
+          });
         }
-        if (mergeInfo.orientation === 'ew') {
-          // EW roads: sidewalks on north/south edges of outermost tiles
-          if (edgeDir === 'north') return mergeInfo.side === 'left';
-          if (edgeDir === 'south') return mergeInfo.side === 'right';
-          return true;
-        }
-        return true;
       };
       
-      const drawSidewalkEdge = (
-        startX: number, startY: number,
-        endX: number, endY: number,
-        inwardDx: number, inwardDy: number,
-        shortenStart: boolean = false,
-        shortenEnd: boolean = false
-      ) => {
-        const swWidth = sidewalkWidth;
-        const shortenDist = swWidth * 0.707;
+      // Helper to draw connector borders (called after deck is drawn)
+      const drawConnectorBorders = () => {
+        if (isRailBridge) return;
         
-        const edgeDx = endX - startX;
-        const edgeDy = endY - startY;
-        const edgeLen = Math.hypot(edgeDx, edgeDy);
-        const edgeDirX = edgeDx / edgeLen;
-        const edgeDirY = edgeDy / edgeLen;
+        const borderInset = halfWidth * 0.22;
+        const borderHalfWidth = halfWidth - borderInset;
         
-        let actualStartX = startX, actualStartY = startY;
-        let actualEndX = endX, actualEndY = endY;
+        ctx.strokeStyle = '#606060'; // Lighter grey border for visibility
+        ctx.lineWidth = 0.75;
         
-        if (shortenStart && edgeLen > shortenDist * 2) {
-          actualStartX = startX + edgeDirX * shortenDist;
-          actualStartY = startY + edgeDirY * shortenDist;
+        for (const border of connectorBordersToDraw) {
+          // Road-side border (at extended/ground level end)
+          ctx.beginPath();
+          ctx.moveTo(border.extendedX + perpX * borderHalfWidth, border.extendedY + perpY * borderHalfWidth);
+          ctx.lineTo(border.extendedX - perpX * borderHalfWidth, border.extendedY - perpY * borderHalfWidth);
+          ctx.stroke();
+          
+          // Bridge-side border (at elevated end)
+          ctx.beginPath();
+          ctx.moveTo(border.connectorEdgeX + perpX * borderHalfWidth, border.connectorEdgeY - deckElevation + perpY * borderHalfWidth);
+          ctx.lineTo(border.connectorEdgeX - perpX * borderHalfWidth, border.connectorEdgeY - deckElevation - perpY * borderHalfWidth);
+          ctx.stroke();
         }
-        if (shortenEnd && edgeLen > shortenDist * 2) {
-          actualEndX = endX - edgeDirX * shortenDist;
-          actualEndY = endY - edgeDirY * shortenDist;
-        }
-        
-        ctx.strokeStyle = curbColor;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(actualStartX, actualStartY);
-        ctx.lineTo(actualEndX, actualEndY);
-        ctx.stroke();
-        
-        ctx.fillStyle = sidewalkColor;
-        ctx.beginPath();
-        ctx.moveTo(actualStartX, actualStartY);
-        ctx.lineTo(actualEndX, actualEndY);
-        ctx.lineTo(actualEndX + inwardDx * swWidth, actualEndY + inwardDy * swWidth);
-        ctx.lineTo(actualStartX + inwardDx * swWidth, actualStartY + inwardDy * swWidth);
-        ctx.closePath();
-        ctx.fill();
       };
       
-      // Draw sidewalks on edges without roads (only on outer edges for merged roads)
-      if (showSidewalks && !north && isOuterEdge('north')) {
-        drawSidewalkEdge(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707, !west && isOuterEdge('west'), !east && isOuterEdge('east'));
-      }
-      if (showSidewalks && !east && isOuterEdge('east')) {
-        drawSidewalkEdge(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707, !north && isOuterEdge('north'), !south && isOuterEdge('south'));
-      }
-      if (showSidewalks && !south && isOuterEdge('south')) {
-        drawSidewalkEdge(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707, !east && isOuterEdge('east'), !west && isOuterEdge('west'));
-      }
-      if (showSidewalks && !west && isOuterEdge('west')) {
-        drawSidewalkEdge(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707, !south && isOuterEdge('south'), !north && isOuterEdge('north'));
+      // For 1x1 bridges (span of 1), draw connectors on BOTH ends
+      // SKIP connectors for rail bridges - they don't need road-style ramps
+      const isSingleTileBridge = bridgeSpan === 1;
+      
+      if (!isRailBridge) {
+        if (position === 'start' || isSingleTileBridge) {
+          // Draw connector fill at start edge (extending backward)
+          drawConnectorFill(startEdge, -1);
+        }
+        
+        if (position === 'end' || isSingleTileBridge) {
+          // Draw connector fill at end edge (extending forward)
+          drawConnectorFill(endEdge, 1);
+        }
       }
       
-      // Corner sidewalk pieces
-      const swWidth = sidewalkWidth;
-      const shortenDist = swWidth * 0.707;
-      ctx.fillStyle = sidewalkColor;
+      // ============================================================
+      // DRAW BRIDGE DECK AS SINGLE CONTINUOUS SHAPE
+      // ============================================================
       
-      const getShortenedInnerEndpoint = (cornerX: number, cornerY: number, otherCornerX: number, otherCornerY: number, inwardDx: number, inwardDy: number) => {
-        const edgeDx = cornerX - otherCornerX;
-        const edgeDy = cornerY - otherCornerY;
-        const edgeLen = Math.hypot(edgeDx, edgeDy);
-        const edgeDirX = edgeDx / edgeLen;
-        const edgeDirY = edgeDy / edgeLen;
-        const shortenedOuterX = cornerX - edgeDirX * shortenDist;
-        const shortenedOuterY = cornerY - edgeDirY * shortenDist;
-        return { x: shortenedOuterX + inwardDx * swWidth, y: shortenedOuterY + inwardDy * swWidth };
+      // For rail bridges, extend the deck slightly in the travel direction to close gaps between tiles
+      // This compensates for sub-pixel rendering issues with the narrower rail bridge deck
+      const railGapFix = isRailBridge ? 1.5 : 0;
+      const extendedStartEdge = {
+        x: startEdge.x - travelDirX * railGapFix,
+        y: startEdge.y - travelDirY * railGapFix
+      };
+      const extendedEndEdge = {
+        x: endEdge.x + travelDirX * railGapFix,
+        y: endEdge.y + travelDirY * railGapFix
       };
       
-      // Draw corner pieces only for outer edges (when zoomed in enough)
-      if (showSidewalks && !north && !east && isOuterEdge('north') && isOuterEdge('east')) {
-        const northInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, leftCorner.x, leftCorner.y, 0.707, 0.707);
-        const eastInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707);
-        ctx.beginPath();
-        ctx.moveTo(topCorner.x, topCorner.y);
-        ctx.lineTo(northInner.x, northInner.y);
-        ctx.lineTo(eastInner.x, eastInner.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-      if (showSidewalks && !east && !south && isOuterEdge('east') && isOuterEdge('south')) {
-        const eastInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, topCorner.x, topCorner.y, -0.707, 0.707);
-        const southInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707);
-        ctx.beginPath();
-        ctx.moveTo(rightCorner.x, rightCorner.y);
-        ctx.lineTo(eastInner.x, eastInner.y);
-        ctx.lineTo(southInner.x, southInner.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-      if (showSidewalks && !south && !west && isOuterEdge('south') && isOuterEdge('west')) {
-        const southInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, rightCorner.x, rightCorner.y, -0.707, -0.707);
-        const westInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707);
-        ctx.beginPath();
-        ctx.moveTo(bottomCorner.x, bottomCorner.y);
-        ctx.lineTo(southInner.x, southInner.y);
-        ctx.lineTo(westInner.x, westInner.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-      if (showSidewalks && !west && !north && isOuterEdge('west') && isOuterEdge('north')) {
-        const westInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, bottomCorner.x, bottomCorner.y, 0.707, -0.707);
-        const northInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707);
-        ctx.beginPath();
-        ctx.moveTo(leftCorner.x, leftCorner.y);
-        ctx.lineTo(westInner.x, westInner.y);
-        ctx.lineTo(northInner.x, northInner.y);
-        ctx.closePath();
-        ctx.fill();
+      // The deck is elevated uniformly above water
+      const startY = extendedStartEdge.y - deckElevation;
+      const endY = extendedEndEdge.y - deckElevation;
+      
+      // Use perpendicular direction (90° CCW of travel) for deck corners
+      // This matches how roads compute their perpendicular using getPerp() for proper alignment
+      // perpX and perpY were computed earlier using the bridge direction
+      
+      // Pre-compute deck corners for deck drawing (uses isometric-aligned perpendicular)
+      const startLeft = { x: extendedStartEdge.x + perpX * halfWidth, y: startY + perpY * halfWidth };
+      const startRight = { x: extendedStartEdge.x - perpX * halfWidth, y: startY - perpY * halfWidth };
+      const endLeft = { x: extendedEndEdge.x + perpX * halfWidth, y: endY + perpY * halfWidth };
+      const endRight = { x: extendedEndEdge.x - perpX * halfWidth, y: endY - perpY * halfWidth };
+      
+      // Draw suspension bridge towers BEFORE the deck so deck appears on top
+      if (bridgeType === 'suspension' && currentZoom >= 0.5) {
+        // Tower perpendicular (true 90°)
+        const tDx = endEdge.x - startEdge.x;
+        const tDy = endEdge.y - startEdge.y;
+        const tTravelLen = Math.hypot(tDx, tDy);
+        const towerPerpX = -tDy / tTravelLen;
+        const towerPerpY = tDx / tTravelLen;
+        
+        // Tower dimensions and positions
+        const suspTowerW = 3;
+        const suspTowerH = 27;
+        const suspTowerSpacing = w * 0.45;
+        const backTowerYOff = -5;
+        const frontTowerYOff = 8;
+        
+        const leftTowerX = cx + towerPerpX * suspTowerSpacing;
+        const leftTowerY = cy + towerPerpY * suspTowerSpacing;
+        const rightTowerX = cx - towerPerpX * suspTowerSpacing;
+        const rightTowerY = cy - towerPerpY * suspTowerSpacing;
+        
+        const backTower = leftTowerY < rightTowerY 
+          ? { x: leftTowerX, y: leftTowerY } 
+          : { x: rightTowerX, y: rightTowerY };
+        const frontTower = leftTowerY < rightTowerY 
+          ? { x: rightTowerX, y: rightTowerY } 
+          : { x: leftTowerX, y: leftTowerY };
+        
+        // Check if this is a middle tower tile
+        const middleIdx = Math.floor((bridgeSpan - 1) / 2);
+        const hasSpan = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
+        const isMiddleTower = position === 'middle' && (
+          (hasSpan && bridgeSpan > 6 && bridgeIndex === middleIdx) ||
+          (!hasSpan && ((x / w + adjustedY / h) % 5 === 2))
+        );
+        
+        // Only draw on start/end tiles or middle tower tiles
+        if (position === 'start' || position === 'end' || isMiddleTower) {
+          // Style - 3 variants
+          const supportColors = ['#909090', '#808080', '#858580'];
+          const baseColors = ['#606060', '#555555', '#555550'];
+          const safeVar = variant % 3;
+          const supportCol = supportColors[safeVar];
+          const baseCol = baseColors[safeVar];
+          
+          // Tower dimensions
+          const towerH = suspTowerH + 8;
+          const baseH = 6;
+          const baseW = suspTowerW + 2;
+          
+          // Draw back tower - shorter and no base
+          const backTowerH = 15; // Shorter to avoid intersecting roads
+          const backTowerShiftUp = 2.5; // Small shift up
+          ctx.fillStyle = supportCol;
+          ctx.fillRect(
+            backTower.x - suspTowerW/2, 
+            cy - backTowerH + backTowerYOff - backTowerShiftUp, 
+            suspTowerW, 
+            backTowerH
+          );
+          
+          // Draw front tower with concrete base
+          ctx.fillStyle = baseCol;
+          ctx.fillRect(
+            frontTower.x - baseW/2, 
+            cy - suspTowerH + frontTowerYOff + towerH - baseH, 
+            baseW, 
+            baseH
+          );
+          ctx.fillStyle = supportCol;
+          ctx.fillRect(
+            frontTower.x - suspTowerW/2, 
+            cy - suspTowerH + frontTowerYOff, 
+            suspTowerW, 
+            towerH - baseH
+          );
+        }
       }
       
-      // ============================================
-      // DRAW ROAD SURFACE
-      // ============================================
-      // Use different asphalt color for highways
-      ctx.fillStyle = mergeInfo.type === 'highway' ? '#3d3d3d' : 
-                      mergeInfo.type === 'avenue' ? '#454545' : ROAD_COLORS.ASPHALT;
-      
-      // Draw road segments
-      if (north) {
-        const stopX = cx + (northEdgeX - cx) * edgeStop;
-        const stopY = cy + (northEdgeY - cy) * edgeStop;
-        const perp = getPerp(northDx, northDy);
-        const halfWidth = roadW * 0.5;
-        ctx.beginPath();
-        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
-        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
-        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
-        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
-        ctx.closePath();
-        ctx.fill();
-      }
-      
-      if (east) {
-        const stopX = cx + (eastEdgeX - cx) * edgeStop;
-        const stopY = cy + (eastEdgeY - cy) * edgeStop;
-        const perp = getPerp(eastDx, eastDy);
-        const halfWidth = roadW * 0.5;
-        ctx.beginPath();
-        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
-        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
-        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
-        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
-        ctx.closePath();
-        ctx.fill();
-      }
-      
-      if (south) {
-        const stopX = cx + (southEdgeX - cx) * edgeStop;
-        const stopY = cy + (southEdgeY - cy) * edgeStop;
-        const perp = getPerp(southDx, southDy);
-        const halfWidth = roadW * 0.5;
-        ctx.beginPath();
-        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
-        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
-        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
-        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
-        ctx.closePath();
-        ctx.fill();
-      }
-      
-      if (west) {
-        const stopX = cx + (westEdgeX - cx) * edgeStop;
-        const stopY = cy + (westEdgeY - cy) * edgeStop;
-        const perp = getPerp(westDx, westDy);
-        const halfWidth = roadW * 0.5;
-        ctx.beginPath();
-        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
-        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
-        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
-        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
-        ctx.closePath();
-        ctx.fill();
-      }
-      
-      // Center intersection
-      const centerSize = roadW * 1.4;
+      // Draw the deck as a parallelogram with tile-edge-aligned sides
+      // Rail bridges use metallic steel color, road bridges use asphalt
+      ctx.fillStyle = getBridgeDeckColor(isRailBridge, style);
       ctx.beginPath();
-      ctx.moveTo(cx, cy - centerSize);
-      ctx.lineTo(cx + centerSize, cy);
-      ctx.lineTo(cx, cy + centerSize);
-      ctx.lineTo(cx - centerSize, cy);
+      ctx.moveTo(startLeft.x, startLeft.y);
+      ctx.lineTo(endLeft.x, endLeft.y);
+      ctx.lineTo(endRight.x, endRight.y);
+      ctx.lineTo(startRight.x, startRight.y);
       ctx.closePath();
       ctx.fill();
       
-      // Interior sidewalk corners - small isometric diamonds at corners where two roads meet
-      // Each corner drawn independently based on its two adjacent road directions
-      if (showSidewalks) {
-        ctx.fillStyle = sidewalkColor;
-        const cs = swWidth * 0.8;
-        const isFourWay = north && east && south && west;
+      // ============================================================
+      // BRIDGE BARRIERS (railings on both sides)
+      // ============================================================
+      if (currentZoom >= 0.4) {
+        const barrierW = 2;
+        ctx.fillStyle = style.barrier;
         
-        // Top corner - draw if north AND east both have roads
-        if (north && east) {
-          ctx.beginPath();
-          ctx.moveTo(topCorner.x, topCorner.y);
-          ctx.lineTo(topCorner.x - cs, topCorner.y + cs * 0.5);
-          ctx.lineTo(topCorner.x, topCorner.y + cs);
-          ctx.lineTo(topCorner.x + cs, topCorner.y + cs * 0.5);
-          ctx.closePath();
-          ctx.fill();
-        }
+        // Left barrier (using perpendicular direction for proper alignment)
+        const startLeftOuter = { x: extendedStartEdge.x + perpX * (halfWidth + barrierW), y: startY + perpY * (halfWidth + barrierW) };
+        const endLeftOuter = { x: extendedEndEdge.x + perpX * (halfWidth + barrierW), y: endY + perpY * (halfWidth + barrierW) };
+        ctx.beginPath();
+        ctx.moveTo(startLeft.x, startLeft.y);
+        ctx.lineTo(endLeft.x, endLeft.y);
+        ctx.lineTo(endLeftOuter.x, endLeftOuter.y);
+        ctx.lineTo(startLeftOuter.x, startLeftOuter.y);
+        ctx.closePath();
+        ctx.fill();
         
-        // Right corner - draw if east AND south both have roads
-        if (east && south) {
-          ctx.beginPath();
-          ctx.moveTo(rightCorner.x, rightCorner.y);
-          if (isFourWay) {
-            // At 4-way intersections, use rotated shape (tall/narrow)
-            ctx.lineTo(rightCorner.x - cs * 0.625, rightCorner.y - cs * 1.25);
-            ctx.lineTo(rightCorner.x - cs * 1.25, rightCorner.y);
-            ctx.lineTo(rightCorner.x - cs * 0.625, rightCorner.y + cs * 1.25);
-          } else {
-            // At T-intersections/corners, use flat shape
-            ctx.lineTo(rightCorner.x - cs, rightCorner.y - cs * 0.5);
-            ctx.lineTo(rightCorner.x - cs * 2, rightCorner.y);
-            ctx.lineTo(rightCorner.x - cs, rightCorner.y + cs * 0.5);
+        // Right barrier  
+        const startRightOuter = { x: extendedStartEdge.x - perpX * (halfWidth + barrierW), y: startY - perpY * (halfWidth + barrierW) };
+        const endRightOuter = { x: extendedEndEdge.x - perpX * (halfWidth + barrierW), y: endY - perpY * (halfWidth + barrierW) };
+        ctx.beginPath();
+        ctx.moveTo(startRight.x, startRight.y);
+        ctx.lineTo(endRight.x, endRight.y);
+        ctx.lineTo(endRightOuter.x, endRightOuter.y);
+        ctx.lineTo(startRightOuter.x, startRightOuter.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // ============================================================
+      // LANE MARKINGS (road) or RAIL TRACKS (rail)
+      // ============================================================
+      if (isRailBridge) {
+        // Draw rail tracks on rail bridge - DOUBLE TRACKS matching railSystem.ts
+        if (currentZoom >= 0.4) {
+          const railGauge = w * TRACK_GAUGE_RATIO;
+          const halfGauge = railGauge / 2;
+          const trackSep = w * TRACK_SEPARATION_RATIO;
+          const halfSep = trackSep / 2;
+          const railWidth = currentZoom >= 0.7 ? 0.85 : 0.7;
+          
+          // Draw ties (metal/treated wood sleepers on bridge) for both tracks
+          ctx.strokeStyle = RAIL_COLORS.BRIDGE_TIE;
+          ctx.lineWidth = 1;
+          ctx.lineCap = 'butt';
+          
+          const numTies = 7; // Match TIES_PER_TILE
+          const tieHalfLen = w * 0.065; // Half-length of each tie
+          
+          // Use original (non-extended) edges for ties to align with adjacent rail tiles
+          // The extended edges are only for the deck/rails to avoid sub-pixel gaps
+          const tieStartY = startEdge.y - deckElevation;
+          const tieEndY = endEdge.y - deckElevation;
+          
+          for (let trackOffset of [halfSep, -halfSep]) {
+            // Track center line - use original edges for tie alignment with adjacent tiles
+            const trackStartX = startEdge.x + perpX * trackOffset;
+            const trackStartY = tieStartY + perpY * trackOffset;
+            const trackEndX = endEdge.x + perpX * trackOffset;
+            const trackEndY = tieEndY + perpY * trackOffset;
+            
+            // Match railSystem.ts: use (i + 0.5) / numTies to center ties, avoiding edge overlap
+            for (let i = 0; i < numTies; i++) {
+              const t = (i + 0.5) / numTies;
+              const tieX = trackStartX + (trackEndX - trackStartX) * t;
+              const tieY = trackStartY + (trackEndY - trackStartY) * t;
+              
+              ctx.beginPath();
+              ctx.moveTo(tieX + perpX * tieHalfLen, tieY + perpY * tieHalfLen);
+              ctx.lineTo(tieX - perpX * tieHalfLen, tieY - perpY * tieHalfLen);
+              ctx.stroke();
+            }
           }
-          ctx.closePath();
-          ctx.fill();
-        }
-        
-        // Bottom corner - draw if south AND west both have roads
-        if (south && west) {
-          ctx.beginPath();
-          ctx.moveTo(bottomCorner.x, bottomCorner.y);
-          ctx.lineTo(bottomCorner.x + cs, bottomCorner.y - cs * 0.5);
-          ctx.lineTo(bottomCorner.x, bottomCorner.y - cs);
-          ctx.lineTo(bottomCorner.x - cs, bottomCorner.y - cs * 0.5);
-          ctx.closePath();
-          ctx.fill();
-        }
-        
-        // Left corner - draw if west AND north both have roads
-        if (west && north) {
-          ctx.beginPath();
-          ctx.moveTo(leftCorner.x, leftCorner.y);
-          if (isFourWay) {
-            // At 4-way intersections, use rotated shape (tall/narrow)
-            ctx.lineTo(leftCorner.x + cs * 0.625, leftCorner.y - cs * 1.25);
-            ctx.lineTo(leftCorner.x + cs * 1.25, leftCorner.y);
-            ctx.lineTo(leftCorner.x + cs * 0.625, leftCorner.y + cs * 1.25);
-          } else {
-            // At T-intersections/corners, use flat shape
-            ctx.lineTo(leftCorner.x + cs, leftCorner.y - cs * 0.5);
-            ctx.lineTo(leftCorner.x + cs * 2, leftCorner.y);
-            ctx.lineTo(leftCorner.x + cs, leftCorner.y + cs * 0.5);
+          
+          // Draw rails (4 rails total - 2 per track)
+          // Draw shadow first, then rails on top
+          for (let trackOffset of [halfSep, -halfSep]) {
+            // Use extended edges to match bridge deck alignment
+            const trackStartX = extendedStartEdge.x + perpX * trackOffset;
+            const trackStartY = startY + perpY * trackOffset;
+            const trackEndX = extendedEndEdge.x + perpX * trackOffset;
+            const trackEndY = endY + perpY * trackOffset;
+            
+            // Rail shadows
+            ctx.strokeStyle = RAIL_COLORS.RAIL_SHADOW;
+            ctx.lineWidth = railWidth + 0.3;
+            ctx.lineCap = 'round';
+            
+            // Left rail shadow
+            ctx.beginPath();
+            ctx.moveTo(trackStartX + perpX * halfGauge + 0.3, trackStartY + perpY * halfGauge + 0.3);
+            ctx.lineTo(trackEndX + perpX * halfGauge + 0.3, trackEndY + perpY * halfGauge + 0.3);
+            ctx.stroke();
+            
+            // Right rail shadow
+            ctx.beginPath();
+            ctx.moveTo(trackStartX - perpX * halfGauge + 0.3, trackStartY - perpY * halfGauge + 0.3);
+            ctx.lineTo(trackEndX - perpX * halfGauge + 0.3, trackEndY - perpY * halfGauge + 0.3);
+            ctx.stroke();
+            
+            // Rails
+            ctx.strokeStyle = RAIL_COLORS.RAIL;
+            ctx.lineWidth = railWidth;
+            
+            // Left rail
+            ctx.beginPath();
+            ctx.moveTo(trackStartX + perpX * halfGauge, trackStartY + perpY * halfGauge);
+            ctx.lineTo(trackEndX + perpX * halfGauge, trackEndY + perpY * halfGauge);
+            ctx.stroke();
+            
+            // Right rail
+            ctx.beginPath();
+            ctx.moveTo(trackStartX - perpX * halfGauge, trackStartY - perpY * halfGauge);
+            ctx.lineTo(trackEndX - perpX * halfGauge, trackEndY - perpY * halfGauge);
+            ctx.stroke();
           }
-          ctx.closePath();
-          ctx.fill();
+        }
+      } else {
+        // Draw lane markings for road bridge
+        if (currentZoom >= 0.6) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 0.5; // Half as wide as before (was 1)
+          ctx.setLineDash([1.5, 2]); // 2x more frequent (was [4, 6])
+          ctx.lineCap = 'round';
+          
+          // Calculate dash offset to align dashes across bridge tiles
+          // Use grid position to create consistent offset
+          const travelDx = endEdge.x - startEdge.x;
+          const travelDy = endEdge.y - startEdge.y;
+          const travelLen = Math.hypot(travelDx, travelDy);
+          
+          // Create offset based on tile position to align dashes across tiles
+          // Use a combination of grid coordinates to create unique but consistent offset
+          const offsetBase = (gridX * 17 + gridY * 23) % 100; // Pseudo-random but consistent per tile
+          const dashPatternLength = 1.5 + 2; // Total length of one dash cycle
+          const dashOffset = (offsetBase / 100) * dashPatternLength;
+          
+          ctx.setLineDash([1.5, 2]);
+          ctx.lineDashOffset = -dashOffset;
+          
+          ctx.beginPath();
+          ctx.moveTo(startEdge.x, startY);
+          ctx.lineTo(endEdge.x, endY);
+          ctx.stroke();
+          
+          ctx.setLineDash([]);
+          ctx.lineDashOffset = 0;
+          ctx.lineCap = 'butt';
         }
       }
       
-      // ============================================
-      // DRAW LANE MARKINGS AND MEDIANS
-      // ============================================
-      if (currentZoom >= LANE_MARKINGS_MIN_ZOOM) {
-        const connectionCount = [north, east, south, west].filter(Boolean).length;
-        const isIntersection = connectionCount >= 3;
+      // ============================================================
+      // BRIDGE TYPE-SPECIFIC DECORATIONS
+      // ============================================================
+      
+      // NOTE: Suspension bridge front tower and cables are now drawn in drawSuspensionBridgeOverlay
+      // which is called after buildings for proper z-ordering
+      
+      // Large bridge truss structure (skip for rail bridges and 1-tile bridges)
+      if (bridgeType === 'large' && currentZoom >= 0.5 && !isRailBridge && bridgeSpan > 1) {
+        ctx.strokeStyle = style.accent;
+        ctx.lineWidth = 1.5;
+        const trussHLeft = 3;
+        const trussHRight = 5;
         
-        // For merged roads, draw white lane divider lines instead of yellow center
-        if (mergeInfo.type !== 'single' && mergeInfo.side === 'center') {
-          // Center tiles of merged roads get white lane dividers
-          ctx.strokeStyle = ROAD_COLORS.LANE_MARKING;
-          ctx.lineWidth = 0.6;
-          ctx.setLineDash([2, 3]);
-          
-          if (mergeInfo.orientation === 'ns' && (north || south)) {
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            if (north) ctx.lineTo(northEdgeX, northEdgeY);
-            ctx.moveTo(cx, cy);
-            if (south) ctx.lineTo(southEdgeX, southEdgeY);
-            ctx.stroke();
-          } else if (mergeInfo.orientation === 'ew' && (east || west)) {
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            if (east) ctx.lineTo(eastEdgeX, eastEdgeY);
-            ctx.moveTo(cx, cy);
-            if (west) ctx.lineTo(westEdgeX, westEdgeY);
-            ctx.stroke();
-          }
-          ctx.setLineDash([]);
-        }
+        // Top beams on both sides (using tile-edge-aligned direction)
+        ctx.beginPath();
+        ctx.moveTo(startLeft.x, startLeft.y - trussHLeft);
+        ctx.lineTo(endLeft.x, endLeft.y - trussHLeft);
+        ctx.stroke();
         
-        // Draw median on the boundary between opposing traffic
-        if (mergeInfo.hasMedian && mergeInfo.mergeWidth >= 2) {
-          // Determine if this tile is at the median boundary
-          const medianPosition = Math.floor(mergeInfo.mergeWidth / 2) - 1;
-          
-          if (mergeInfo.positionInMerge === medianPosition) {
-            // Draw median divider (double yellow or planted median)
-            if (mergeInfo.orientation === 'ns') {
-              // Median runs NS - draw on the west edge of this tile
-              if (mergeInfo.medianType === 'plants' && currentZoom >= MEDIAN_PLANTS_MIN_ZOOM) {
-                // Draw planted median
-                ctx.fillStyle = '#6b7280'; // Concrete base
-                const medianW = 3;
-                ctx.fillRect(westEdgeX - medianW, westEdgeY - 2, medianW * 2, (southEdgeY - westEdgeY) + 4);
-                
-                // Draw small plants/shrubs
-                ctx.fillStyle = '#4a7c3f';
-                const plantSpacing = 10;
-                const numPlants = Math.floor(Math.abs(southEdgeY - westEdgeY) / plantSpacing);
-                for (let i = 1; i < numPlants; i++) {
-                  const py = westEdgeY + (southEdgeY - westEdgeY) * (i / numPlants);
-                  const px = westEdgeX + (southEdgeX - westEdgeX) * (i / numPlants);
-                  ctx.beginPath();
-                  ctx.arc(px, py - 1, 2, 0, Math.PI * 2);
-                  ctx.fill();
-                }
-              } else {
-                // Draw double yellow line
-                ctx.strokeStyle = ROAD_COLORS.CENTER_LINE;
-                ctx.lineWidth = 1.2;
-                ctx.setLineDash([]);
-                
-                const offsetX = -1.5;
-                ctx.beginPath();
-                ctx.moveTo(northEdgeX + offsetX, northEdgeY);
-                ctx.lineTo(southEdgeX + offsetX, southEdgeY);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(northEdgeX + offsetX + 3, northEdgeY);
-                ctx.lineTo(southEdgeX + offsetX + 3, southEdgeY);
-                ctx.stroke();
-              }
-            } else if (mergeInfo.orientation === 'ew') {
-              // Median runs EW - draw on the south edge of this tile
-              if (mergeInfo.medianType === 'plants' && currentZoom >= MEDIAN_PLANTS_MIN_ZOOM) {
-                ctx.fillStyle = '#6b7280';
-                const medianW = 3;
-                ctx.fillRect(eastEdgeX - 2, eastEdgeY - medianW, (westEdgeX - eastEdgeX) + 4, medianW * 2);
-                
-                ctx.fillStyle = '#4a7c3f';
-                const plantSpacing = 10;
-                const numPlants = Math.floor(Math.abs(westEdgeX - eastEdgeX) / plantSpacing);
-                for (let i = 1; i < numPlants; i++) {
-                  const px = eastEdgeX + (westEdgeX - eastEdgeX) * (i / numPlants);
-                  const py = eastEdgeY + (westEdgeY - eastEdgeY) * (i / numPlants);
-                  ctx.beginPath();
-                  ctx.arc(px, py - 1, 2, 0, Math.PI * 2);
-                  ctx.fill();
-                }
-              } else {
-                ctx.strokeStyle = ROAD_COLORS.CENTER_LINE;
-                ctx.lineWidth = 1.2;
-                ctx.setLineDash([]);
-                
-                const offsetY = -1.5;
-                ctx.beginPath();
-                ctx.moveTo(eastEdgeX, eastEdgeY + offsetY);
-                ctx.lineTo(westEdgeX, westEdgeY + offsetY);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(eastEdgeX, eastEdgeY + offsetY + 3);
-                ctx.lineTo(westEdgeX, westEdgeY + offsetY + 3);
-                ctx.stroke();
-              }
-            }
-          }
-        }
+        ctx.beginPath();
+        ctx.moveTo(startRight.x, startRight.y - trussHRight);
+        ctx.lineTo(endRight.x, endRight.y - trussHRight);
+        ctx.stroke();
         
-        // Draw yellow center dashes for non-intersection roads only
-        // Skip if this tile IS an intersection (3+ adjacent roads)
-        const thisIsIntersection = [north, east, south, west].filter(Boolean).length >= 3;
-        if (!thisIsIntersection) {
-          ctx.strokeStyle = ROAD_COLORS.CENTER_LINE;
-          ctx.lineWidth = 0.8;
-          ctx.setLineDash([1.5, 2]);
-          ctx.lineCap = 'round';
+        // Vertical supports
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          const leftX = startLeft.x + (endLeft.x - startLeft.x) * t;
+          const leftY = startLeft.y + (endLeft.y - startLeft.y) * t;
+          const rightX = startRight.x + (endRight.x - startRight.x) * t;
+          const rightY = startRight.y + (endRight.y - startRight.y) * t;
           
-          // Helper to check if adjacent tile is an intersection
-          const isAdjIntersection = (adjX: number, adjY: number): boolean => {
-            if (!hasRoad(adjX, adjY)) return false;
-            const aN = hasRoad(adjX - 1, adjY);
-            const aE = hasRoad(adjX, adjY - 1);
-            const aS = hasRoad(adjX + 1, adjY);
-            const aW = hasRoad(adjX, adjY + 1);
-            return [aN, aE, aS, aW].filter(Boolean).length >= 3;
-          };
+          ctx.beginPath();
+          ctx.moveTo(leftX, leftY);
+          ctx.lineTo(leftX, leftY - trussHLeft);
+          ctx.stroke();
           
-          // Line stops before sidewalk markers if approaching intersection, otherwise extends
-          const markingOverlap = 8;
-          const markingStartOffset = 0;
-          const stopBeforeCrosswalk = 0.58; // Stop at 58% toward edge - just before sidewalk corner markers
-          
-          if (north) {
-            const adjIsIntersection = isAdjIntersection(gridX - 1, gridY);
-            if (adjIsIntersection) {
-              // Stop before crosswalk
-              const stopX = cx + (northEdgeX - cx) * stopBeforeCrosswalk;
-              const stopY = cy + (northEdgeY - cy) * stopBeforeCrosswalk;
-              ctx.beginPath();
-              ctx.moveTo(cx + northDx * markingStartOffset, cy + northDy * markingStartOffset);
-              ctx.lineTo(stopX, stopY);
-              ctx.stroke();
-            } else {
-              ctx.beginPath();
-              ctx.moveTo(cx + northDx * markingStartOffset, cy + northDy * markingStartOffset);
-              ctx.lineTo(northEdgeX + northDx * markingOverlap, northEdgeY + northDy * markingOverlap);
-              ctx.stroke();
-            }
-          }
-          if (east) {
-            const adjIsIntersection = isAdjIntersection(gridX, gridY - 1);
-            if (adjIsIntersection) {
-              const stopX = cx + (eastEdgeX - cx) * stopBeforeCrosswalk;
-              const stopY = cy + (eastEdgeY - cy) * stopBeforeCrosswalk;
-              ctx.beginPath();
-              ctx.moveTo(cx + eastDx * markingStartOffset, cy + eastDy * markingStartOffset);
-              ctx.lineTo(stopX, stopY);
-              ctx.stroke();
-            } else {
-              ctx.beginPath();
-              ctx.moveTo(cx + eastDx * markingStartOffset, cy + eastDy * markingStartOffset);
-              ctx.lineTo(eastEdgeX + eastDx * markingOverlap, eastEdgeY + eastDy * markingOverlap);
-              ctx.stroke();
-            }
-          }
-          if (south) {
-            const adjIsIntersection = isAdjIntersection(gridX + 1, gridY);
-            if (adjIsIntersection) {
-              const stopX = cx + (southEdgeX - cx) * stopBeforeCrosswalk;
-              const stopY = cy + (southEdgeY - cy) * stopBeforeCrosswalk;
-              ctx.beginPath();
-              ctx.moveTo(cx + southDx * markingStartOffset, cy + southDy * markingStartOffset);
-              ctx.lineTo(stopX, stopY);
-              ctx.stroke();
-            } else {
-              ctx.beginPath();
-              ctx.moveTo(cx + southDx * markingStartOffset, cy + southDy * markingStartOffset);
-              ctx.lineTo(southEdgeX + southDx * markingOverlap, southEdgeY + southDy * markingOverlap);
-              ctx.stroke();
-            }
-          }
-          if (west) {
-            const adjIsIntersection = isAdjIntersection(gridX, gridY + 1);
-            if (adjIsIntersection) {
-              const stopX = cx + (westEdgeX - cx) * stopBeforeCrosswalk;
-              const stopY = cy + (westEdgeY - cy) * stopBeforeCrosswalk;
-              ctx.beginPath();
-              ctx.moveTo(cx + westDx * markingStartOffset, cy + westDy * markingStartOffset);
-              ctx.lineTo(stopX, stopY);
-              ctx.stroke();
-            } else {
-              ctx.beginPath();
-              ctx.moveTo(cx + westDx * markingStartOffset, cy + westDy * markingStartOffset);
-              ctx.lineTo(westEdgeX + westDx * markingOverlap, westEdgeY + westDy * markingOverlap);
-              ctx.stroke();
-            }
-          }
-          
-          ctx.setLineDash([]);
-          ctx.lineCap = 'butt';
-        }
-        
-        // Draw directional arrows for merged roads
-        if (mergeInfo.type !== 'single' && currentZoom >= DIRECTION_ARROWS_MIN_ZOOM && mergeInfo.side !== 'center') {
-          const flowDirs = getTrafficFlowDirection(mergeInfo);
-          if (flowDirs.length === 1) {
-            drawRoadArrow(ctx, cx, cy, flowDirs[0], currentZoom);
-          }
-        }
-        
-        // ============================================
-        // DRAW CROSSWALKS (on tiles adjacent to real intersections with traffic lights)
-        // ============================================
-        drawCrosswalks({
-          ctx,
-          x,
-          y,
-          gridX,
-          gridY,
-          zoom: currentZoom,
-          roadW,
-          adj: { north, east, south, west },
-          hasRoad,
-        });
-        
-        // ============================================
-        // DRAW TRAFFIC LIGHTS AT INTERSECTIONS
-        // ============================================
-        // PERF: Skip traffic lights during mobile panning/zooming for better performance
-        const skipTrafficLights = isMobile && (isPanningRef.current || isPinchZoomingRef.current);
-        if (isIntersection && currentZoom >= TRAFFIC_LIGHT_MIN_ZOOM && !skipTrafficLights) {
-          const trafficTime = trafficLightTimerRef.current;
-          const lightState = getTrafficLightState(trafficTime);
-          
-          // Draw traffic lights at corners where roads meet
-          // Position them at the corners of the intersection
-          if (north && west) {
-            drawTrafficLight(ctx, x, y, lightState, 'nw', currentZoom);
-          }
-          if (north && east) {
-            drawTrafficLight(ctx, x, y, lightState, 'ne', currentZoom);
-          }
-          if (south && west) {
-            drawTrafficLight(ctx, x, y, lightState, 'sw', currentZoom);
-          }
-          if (south && east) {
-            drawTrafficLight(ctx, x, y, lightState, 'se', currentZoom);
-          }
+          ctx.beginPath();
+          ctx.moveTo(rightX, rightY);
+          ctx.lineTo(rightX, rightY - trussHRight);
+          ctx.stroke();
         }
       }
+      
+      // ============================================================
+      // DRAW CONNECTOR BORDERS (after deck so they're on top)
+      // ============================================================
+      drawConnectorBorders();
+    }
+    
+    // Draw suspension bridge towers on main canvas (after base tiles, before buildings canvas)
+    // This ensures towers appear above base tiles but below the buildings canvas
+    function drawSuspensionBridgeTowers(
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      building: Building,
+      currentZoom: number
+    ) {
+      if (building.bridgeType !== 'suspension' || currentZoom < 0.5) return;
+      
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+      
+      const orientation = building.bridgeOrientation || 'ns';
+      const variant = building.bridgeVariant || 0;
+      const position = building.bridgePosition || 'middle';
+      const bridgeIndex = building.bridgeIndex ?? 0;
+      const bridgeSpan = building.bridgeSpan ?? 1;
+      const trackType = building.bridgeTrackType || 'road';
+      const isRailBridge = trackType === 'rail';
+      
+      // Rail bridges are shifted down - match the offset from drawBridgeTile
+      const yOffset = isRailBridge ? h * 0.1 : 0;
+      const adjustedY = y + yOffset;
+      
+      const cx = x + w / 2;
+      const cy = adjustedY + h / 2;
+      
+      // Edge points - use adjustedY for rail bridges
+      const northEdge = { x: x + w * 0.25, y: adjustedY + h * 0.25 };
+      const eastEdge = { x: x + w * 0.75, y: adjustedY + h * 0.25 };
+      const southEdge = { x: x + w * 0.75, y: adjustedY + h * 0.75 };
+      const westEdge = { x: x + w * 0.25, y: adjustedY + h * 0.75 };
+      
+      let startEdge: { x: number; y: number };
+      let endEdge: { x: number; y: number };
+      
+      if (orientation === 'ns') {
+        startEdge = northEdge;
+        endEdge = southEdge;
+      } else {
+        startEdge = eastEdge;
+        endEdge = westEdge;
+      }
+      
+      // Tower perpendicular (true 90°)
+      const dx = endEdge.x - startEdge.x;
+      const dy = endEdge.y - startEdge.y;
+      const travelLen = Math.hypot(dx, dy);
+      const towerPerpX = -dy / travelLen;
+      const towerPerpY = dx / travelLen;
+      
+      // Tower dimensions and positions
+      const suspTowerW = 3;
+      const suspTowerH = 27;
+      const suspTowerSpacing = w * 0.45;
+      const backTowerYOffset = -5;
+      const frontTowerYOffset = 8;
+      
+      const leftTowerX = cx + towerPerpX * suspTowerSpacing;
+      const leftTowerY = cy + towerPerpY * suspTowerSpacing;
+      const rightTowerX = cx - towerPerpX * suspTowerSpacing;
+      const rightTowerY = cy - towerPerpY * suspTowerSpacing;
+      
+      const backTower = leftTowerY < rightTowerY 
+        ? { x: leftTowerX, y: leftTowerY, isLeft: true } 
+        : { x: rightTowerX, y: rightTowerY, isLeft: false };
+      const frontTower = leftTowerY < rightTowerY 
+        ? { x: rightTowerX, y: rightTowerY, isLeft: false } 
+        : { x: leftTowerX, y: leftTowerY, isLeft: true };
+      
+      // Check if this is a middle tower tile
+      const middleIndex = Math.floor((bridgeSpan - 1) / 2);
+      const hasSpanInfo = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
+      const isMiddleTowerTile = position === 'middle' && (
+        (hasSpanInfo && bridgeSpan > 6 && bridgeIndex === middleIndex) ||
+        (!hasSpanInfo && ((x / w + adjustedY / h) % 5 === 2))
+      );
+      
+      // Only draw on start/end tiles or middle tower tiles
+      if (position !== 'start' && position !== 'end' && !isMiddleTowerTile) return;
+      
+      // Style - 3 variants
+      const supportColors = ['#909090', '#808080', '#858580'];
+      const baseColors = ['#606060', '#555555', '#555550'];
+      const safeVariant = variant % 3;
+      const supportColor = supportColors[safeVariant];
+      const baseColor = baseColors[safeVariant];
+      
+      // Tower dimensions
+      const towerHeight = suspTowerH + 8;
+      const baseHeight = 6;
+      const baseWidth = suspTowerW + 2;
+      
+      // Draw back tower - shorter and no base
+      const backTowerHeight = 22;
+      const backTowerShiftUp = 4;
+      ctx.fillStyle = supportColor;
+      ctx.fillRect(
+        backTower.x - suspTowerW/2, 
+        cy - backTowerHeight + backTowerYOffset - backTowerShiftUp, 
+        suspTowerW, 
+        backTowerHeight
+      );
+      
+      // Draw front tower with concrete base
+      ctx.fillStyle = baseColor;
+      ctx.fillRect(
+        frontTower.x - baseWidth/2, 
+        cy - suspTowerH + frontTowerYOffset + towerHeight - baseHeight, 
+        baseWidth, 
+        baseHeight
+      );
+      ctx.fillStyle = supportColor;
+      ctx.fillRect(
+        frontTower.x - suspTowerW/2, 
+        cy - suspTowerH + frontTowerYOffset, 
+        suspTowerW, 
+        towerHeight - baseHeight
+      );
+    }
+    
+    // Draw suspension bridge cables as an overlay (on top of buildings)
+    // This is called separately after buildings are drawn for proper z-ordering
+    function drawSuspensionBridgeOverlay(
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      building: Building,
+      currentZoom: number
+    ) {
+      if (building.bridgeType !== 'suspension' || currentZoom < 0.5) return;
+      
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+      
+      const orientation = building.bridgeOrientation || 'ns';
+      const variant = building.bridgeVariant || 0;
+      const position = building.bridgePosition || 'middle';
+      const bridgeIndex = building.bridgeIndex ?? 0;
+      const bridgeSpan = building.bridgeSpan ?? 1;
+      const trackType = building.bridgeTrackType || 'road';
+      const isRailBridge = trackType === 'rail';
+      
+      // Rail bridges are shifted down - match the offset from drawBridgeTile
+      const yOffset = isRailBridge ? h * 0.1 : 0;
+      const adjustedY = y + yOffset;
+      
+      const cx = x + w / 2;
+      const cy = adjustedY + h / 2;
+      
+      // Bridge width for deck positioning - match drawBridgeTile
+      const bridgeWidthRatio = isRailBridge ? 0.36 : 0.45;
+      const halfWidth = w * bridgeWidthRatio * 0.5;
+      
+      // Edge points - use adjustedY for rail bridges
+      const northEdge = { x: x + w * 0.25, y: adjustedY + h * 0.25 };
+      const eastEdge = { x: x + w * 0.75, y: adjustedY + h * 0.25 };
+      const southEdge = { x: x + w * 0.75, y: adjustedY + h * 0.75 };
+      const westEdge = { x: x + w * 0.25, y: adjustedY + h * 0.75 };
+      
+      // Isometric direction vectors
+      const neEdgeLen = Math.hypot(w / 2, h / 2);
+      const neDirX = (w / 2) / neEdgeLen;
+      const neDirY = (h / 2) / neEdgeLen;
+      const nwDirX = -(w / 2) / neEdgeLen;
+      const nwDirY = (h / 2) / neEdgeLen;
+      
+      let startEdge: { x: number; y: number };
+      let endEdge: { x: number; y: number };
+      let perpX: number;
+      let perpY: number;
+      
+      if (orientation === 'ns') {
+        startEdge = northEdge;
+        endEdge = southEdge;
+        perpX = nwDirX;
+        perpY = nwDirY;
+      } else {
+        startEdge = eastEdge;
+        endEdge = westEdge;
+        perpX = neDirX;
+        perpY = neDirY;
+      }
+      
+      const deckElevation = 3;
+      const startY = startEdge.y - deckElevation;
+      const endY = endEdge.y - deckElevation;
+      
+      // Tower perpendicular (true 90°)
+      const dx = endEdge.x - startEdge.x;
+      const dy = endEdge.y - startEdge.y;
+      const travelLen = Math.hypot(dx, dy);
+      const travelDirX = dx / travelLen;
+      const travelDirY = dy / travelLen;
+      const towerPerpX = -dy / travelLen;
+      const towerPerpY = dx / travelLen;
+      
+      // Deck corners for cable attachment
+      const startLeft = { x: startEdge.x + perpX * halfWidth, y: startY + perpY * halfWidth };
+      const startRight = { x: startEdge.x - perpX * halfWidth, y: startY - perpY * halfWidth };
+      const endLeft = { x: endEdge.x + perpX * halfWidth, y: endY + perpY * halfWidth };
+      const endRight = { x: endEdge.x - perpX * halfWidth, y: endY - perpY * halfWidth };
+      
+      // Cable attachment points
+      const barrierOffset = 3;
+      const cableExtension = 18;
+      const cableAttachLeft = {
+        startX: startLeft.x + perpX * barrierOffset - travelDirX * cableExtension,
+        startY: startLeft.y + perpY * barrierOffset - travelDirY * cableExtension,
+        endX: endLeft.x + perpX * barrierOffset + travelDirX * cableExtension,
+        endY: endLeft.y + perpY * barrierOffset + travelDirY * cableExtension
+      };
+      const cableAttachRight = {
+        startX: startRight.x - perpX * barrierOffset - travelDirX * cableExtension,
+        startY: startRight.y - perpY * barrierOffset - travelDirY * cableExtension,
+        endX: endRight.x - perpX * barrierOffset + travelDirX * cableExtension,
+        endY: endRight.y - perpY * barrierOffset + travelDirY * cableExtension
+      };
+      
+      // Tower dimensions and positions
+      const suspTowerH = 27;
+      const suspTowerSpacing = w * 0.45;
+      const backTowerYOffset = -5;
+      const frontTowerYOffset = 8;
+      
+      const leftTowerX = cx + towerPerpX * suspTowerSpacing;
+      const leftTowerY = cy + towerPerpY * suspTowerSpacing;
+      const rightTowerX = cx - towerPerpX * suspTowerSpacing;
+      const rightTowerY = cy - towerPerpY * suspTowerSpacing;
+      
+      const backTower = leftTowerY < rightTowerY 
+        ? { x: leftTowerX, y: leftTowerY, isLeft: true } 
+        : { x: rightTowerX, y: rightTowerY, isLeft: false };
+      const frontTower = leftTowerY < rightTowerY 
+        ? { x: rightTowerX, y: rightTowerY, isLeft: false } 
+        : { x: leftTowerX, y: leftTowerY, isLeft: true };
+      
+      // Check if this is a middle tower tile
+      const middleIndex = Math.floor((bridgeSpan - 1) / 2);
+      const hasSpanInfo = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
+      const isMiddleTowerTile = position === 'middle' && (
+        (hasSpanInfo && bridgeSpan > 6 && bridgeIndex === middleIndex) ||
+        (!hasSpanInfo && ((x / w + adjustedY / h) % 5 === 2))
+      );
+      
+      // Only draw on start/end tiles or middle tower tiles
+      if (position !== 'start' && position !== 'end' && !isMiddleTowerTile) return;
+      
+      // Style - 3 variants: red cables, grey cables, green/rust cables
+      const cableColors = ['#DC143C', '#708090', '#5a7a5a'];  // Red, steel grey, weathered green
+      const safeVariant = variant % 3;  // Ensure variant is in range
+      const cableColor = cableColors[safeVariant];
+      
+      // NOTE: Towers are drawn on the main canvas (via drawSuspensionBridgeTowers) 
+      // so they appear below the bridge deck but above base tiles
+      
+      // Draw cables only (on buildings canvas, above buildings)
+      ctx.strokeStyle = cableColor;
+      ctx.lineWidth = 1.25;
+      
+      const leftBarrierMidX = (cableAttachLeft.startX + cableAttachLeft.endX) / 2;
+      const rightBarrierMidX = (cableAttachRight.startX + cableAttachRight.endX) / 2;
+      
+      const backToLeft = Math.abs(backTower.x - leftBarrierMidX);
+      const backToRight = Math.abs(backTower.x - rightBarrierMidX);
+      const backAttach = backToLeft < backToRight ? cableAttachLeft : cableAttachRight;
+      const frontAttach = backToLeft < backToRight ? cableAttachRight : cableAttachLeft;
+      
+      const drawCableArc = (fromX: number, fromY: number, toX: number, toY: number) => {
+        const midX = (fromX + toX) / 2;
+        const midY = (fromY + toY) / 2;
+        const sag = 8;
+        const controlX = midX;
+        const controlY = midY + sag;
+        
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.quadraticCurveTo(controlX, controlY, toX, toY);
+        ctx.stroke();
+      };
+      
+      const backTowerTop = cy - suspTowerH + backTowerYOffset;
+      drawCableArc(backTower.x, backTowerTop, backAttach.startX, backAttach.startY);
+      drawCableArc(backTower.x, backTowerTop, backAttach.endX, backAttach.endY);
+      
+      const frontTowerTop = cy - suspTowerH + frontTowerYOffset;
+      drawCableArc(frontTower.x, frontTowerTop, frontAttach.startX, frontAttach.startY);
+      drawCableArc(frontTower.x, frontTowerTop, frontAttach.endX, frontAttach.endY);
     }
     
     // Draw isometric tile base
@@ -1672,7 +1888,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       if (tile.building.type === 'water') {
         topColor = '#2563eb';
         strokeColor = '#1e3a8a';
-      } else if (tile.building.type === 'road') {
+      } else if (tile.building.type === 'road' || tile.building.type === 'bridge') {
         topColor = '#4a4a4a';
         strokeColor = '#333';
       } else if (isPark) {
@@ -1708,7 +1924,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       
       // Skip drawing green base for tiles adjacent to water (will be drawn later over water)
       // This includes grass, empty, and tree tiles - all have green bases
-      const shouldSkipDrawing = skipGreenBase && (tile.building.type === 'grass' || tile.building.type === 'empty' || tile.building.type === 'tree');
+      // Also skip bridge tiles - they will have water drawn underneath them in the road queue
+      const shouldSkipDrawing = (skipGreenBase && (tile.building.type === 'grass' || tile.building.type === 'empty' || tile.building.type === 'tree')) || 
+                                tile.building.type === 'bridge';
       
       // Draw the isometric diamond (top face)
       if (!shouldSkipDrawing) {
@@ -1827,7 +2045,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       
       // Handle roads separately with adjacency
       if (buildingType === 'road') {
-        drawRoad(ctx, x, y, tile.x, tile.y, zoom);
+        drawRoad(ctx, x, y, tile.x, tile.y, zoom, roadDrawingOptions);
+        return;
+      }
+      
+      // Handle bridges with special rendering
+      if (buildingType === 'bridge') {
+        drawBridgeTile(ctx, x, y, tile.building, tile.x, tile.y, zoom);
         return;
       }
       
@@ -2230,7 +2454,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               // For mall modern variants (rows 2-3), shift source Y down to avoid capturing
               // content from the row above that bleeds into the cell boundary
               if (buildingType === 'mall') {
-                sourceY += tileHeight * 0.25; // Shift down ~25% to avoid row above (more than dense due to taller assets)
+                sourceY += tileHeight * 0.15; // Shift down ~15% to avoid row above
+                // For row 3 mall variants, crop bottom to avoid picking up industrial assets from row 4
+                if (useModernVariant.row === 3) {
+                  sourceH = tileHeight * 0.95; // Slight crop at bottom to exclude industrial asset
+                } else {
+                  sourceH = tileHeight * 0.85; // Crop 15% off bottom for other mall rows
+                }
               }
               // For apartment_high modern variants, add a bit more height to avoid cutoff at bottom
               if (buildingType === 'apartment_high') {
@@ -2665,6 +2895,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           const depth = x + y;
           roadQueue.push({ screenX, screenY, tile, depth });
         }
+        // Bridges go to a separate queue (drawn after roads to cover centerlines)
+        else if (tile.building.type === 'bridge') {
+          const depth = x + y;
+          bridgeQueue.push({ screenX, screenY, tile, depth });
+        }
         // Rail tiles - drawn after roads, above water
         else if (tile.building.type === 'rail') {
           const depth = x + y;
@@ -2744,12 +2979,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const { tile, screenX, screenY } = waterQueue[i];
       // Compute land adjacency for each edge (opposite of water adjacency)
       // Only consider tiles within bounds - don't draw beaches on map edges
-      // Also exclude beaches next to marina docks and piers
+      // Also exclude beaches next to marina docks, piers, and bridges (bridges are over water)
       const adjacentLand = {
-        north: (tile.x - 1 >= 0 && tile.x - 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x - 1, tile.y) && !hasMarinaPier(tile.x - 1, tile.y),
-        east: (tile.x >= 0 && tile.x < gridSize && tile.y - 1 >= 0 && tile.y - 1 < gridSize) && !isWater(tile.x, tile.y - 1) && !hasMarinaPier(tile.x, tile.y - 1),
-        south: (tile.x + 1 >= 0 && tile.x + 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x + 1, tile.y) && !hasMarinaPier(tile.x + 1, tile.y),
-        west: (tile.x >= 0 && tile.x < gridSize && tile.y + 1 >= 0 && tile.y + 1 < gridSize) && !isWater(tile.x, tile.y + 1) && !hasMarinaPier(tile.x, tile.y + 1),
+        north: (tile.x - 1 >= 0 && tile.x - 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x - 1, tile.y) && !hasMarinaPier(tile.x - 1, tile.y) && !isBridge(tile.x - 1, tile.y),
+        east: (tile.x >= 0 && tile.x < gridSize && tile.y - 1 >= 0 && tile.y - 1 < gridSize) && !isWater(tile.x, tile.y - 1) && !hasMarinaPier(tile.x, tile.y - 1) && !isBridge(tile.x, tile.y - 1),
+        south: (tile.x + 1 >= 0 && tile.x + 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x + 1, tile.y) && !hasMarinaPier(tile.x + 1, tile.y) && !isBridge(tile.x + 1, tile.y),
+        west: (tile.x >= 0 && tile.x < gridSize && tile.y + 1 >= 0 && tile.y + 1 < gridSize) && !isWater(tile.x, tile.y + 1) && !hasMarinaPier(tile.x, tile.y + 1) && !isBridge(tile.x, tile.y + 1),
       };
       drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
     }
@@ -2760,11 +2995,20 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const halfTileWidth = tileWidth / 2;
     const halfTileHeight = tileHeight / 2;
     
+    // Draw green base tiles for grass/empty tiles adjacent to water BEFORE bridges
+    // This ensures bridge railings are drawn on top of the green base tiles
+    insertionSortByDepth(greenBaseTileQueue);
+    for (let i = 0; i < greenBaseTileQueue.length; i++) {
+      const { tile, screenX, screenY } = greenBaseTileQueue[i];
+      drawGreenBaseTile(ctx, screenX, screenY, tile, zoom);
+    }
+    
     // Draw roads (above water, needs full redraw including base tile)
     insertionSortByDepth(roadQueue);
     // PERF: Use for loop instead of forEach
     for (let i = 0; i < roadQueue.length; i++) {
       const { tile, screenX, screenY } = roadQueue[i];
+      
       // Draw road base tile first (grey diamond)
       ctx.fillStyle = '#4a4a4a';
       ctx.beginPath();
@@ -2783,6 +3027,18 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       if (tile.hasRailOverlay) {
         drawRailTracksOnly(ctx, screenX, screenY, tile.x, tile.y, grid, gridSize, zoom);
       }
+    }
+    
+    // Draw bridges AFTER roads to ensure bridge decks cover road centerlines
+    insertionSortByDepth(bridgeQueue);
+    for (let i = 0; i < bridgeQueue.length; i++) {
+      const { tile, screenX, screenY } = bridgeQueue[i];
+      
+      // Draw water tile underneath the bridge
+      drawWaterTileAt(ctx, screenX, screenY, tile.x, tile.y);
+      
+      // Draw bridge structure
+      drawBuilding(ctx, screenX, screenY, tile);
     }
     
     // Draw rail tracks (above water, similar to roads)
@@ -2813,20 +3069,22 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       drawRailTrack(ctx, screenX, screenY, tile.x, tile.y, grid, gridSize, zoom);
     }
     
-    // Draw green base tiles for grass/empty tiles adjacent to water (after rail, before crossings)
-    insertionSortByDepth(greenBaseTileQueue);
-    // PERF: Use for loop instead of forEach
-    for (let i = 0; i < greenBaseTileQueue.length; i++) {
-      const { tile, screenX, screenY } = greenBaseTileQueue[i];
-      drawGreenBaseTile(ctx, screenX, screenY, tile, zoom);
-    }
-    
     // Draw gray building base tiles (after rail, before crossings)
     insertionSortByDepth(baseTileQueue);
     // PERF: Use for loop instead of forEach
     for (let i = 0; i < baseTileQueue.length; i++) {
       const { tile, screenX, screenY } = baseTileQueue[i];
       drawGreyBaseTile(ctx, screenX, screenY, tile, zoom);
+    }
+    
+    // Draw suspension bridge towers AGAIN on main canvas after base tiles
+    // Draw suspension bridge FRONT towers on main canvas after base tiles
+    // Only the front tower is drawn here (back tower was drawn before deck in drawBridgeTile)
+    for (let i = 0; i < bridgeQueue.length; i++) {
+      const { tile, screenX, screenY } = bridgeQueue[i];
+      if (tile.building.bridgeType === 'suspension') {
+        drawSuspensionBridgeTowers(ctx, screenX, screenY, tile.building, zoom);
+      }
     }
     
     // Draw railroad crossing signals and gates AFTER base tiles to ensure they appear on top
@@ -2908,6 +3166,23 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         for (let i = 0; i < buildingQueue.length; i++) {
           const { tile, screenX, screenY } = buildingQueue[i];
           drawBuilding(buildingsCtx, screenX, screenY, tile);
+        }
+        
+        // Draw suspension bridge towers ON TOP of buildings
+        // These need to appear above nearby buildings for proper visual layering
+        for (let i = 0; i < bridgeQueue.length; i++) {
+          const { tile, screenX, screenY } = bridgeQueue[i];
+          if (tile.building.bridgeType === 'suspension') {
+            drawSuspensionBridgeTowers(buildingsCtx, screenX, screenY, tile.building, zoom);
+          }
+        }
+        
+        // Draw suspension bridge cables ON TOP of towers
+        for (let i = 0; i < bridgeQueue.length; i++) {
+          const { tile, screenX, screenY } = bridgeQueue[i];
+          if (tile.building.bridgeType === 'suspension') {
+            drawSuspensionBridgeOverlay(buildingsCtx, screenX, screenY, tile.building, zoom);
+          }
         }
         
         // NOTE: Recreation pedestrians are now drawn in the animation loop on the air canvas
@@ -3203,8 +3478,123 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
     }
     
+    // Draw road/rail drag preview with bridge validity indication
+    if (isDragging && (selectedTool === 'road' || selectedTool === 'rail') && dragStartTile && dragEndTile) {
+      const minX = Math.min(dragStartTile.x, dragEndTile.x);
+      const maxX = Math.max(dragStartTile.x, dragEndTile.x);
+      const minY = Math.min(dragStartTile.y, dragEndTile.y);
+      const maxY = Math.max(dragStartTile.y, dragEndTile.y);
+      
+      // Collect all tiles in the path
+      const pathTiles: { x: number; y: number; isWater: boolean }[] = [];
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+            const tile = grid[y][x];
+            pathTiles.push({ x, y, isWater: tile.building.type === 'water' });
+          }
+        }
+      }
+      
+      // Analyze the path for bridge validity
+      // A valid bridge: water tiles that are bounded by land/road on both ends
+      // An invalid partial crossing: water tiles that don't form a complete bridge
+      const analyzePathForBridges = () => {
+        const result: Map<string, 'valid' | 'invalid' | 'land'> = new Map();
+        
+        // Determine if this is a horizontal or vertical path
+        const isHorizontal = maxX - minX > maxY - minY;
+        
+        // Sort tiles by their position along the path
+        const sortedTiles = [...pathTiles].sort((a, b) => 
+          isHorizontal ? a.x - b.x : a.y - b.y
+        );
+        
+        // Find water segments and check if they're valid bridges
+        let i = 0;
+        while (i < sortedTiles.length) {
+          const tile = sortedTiles[i];
+          
+          if (!tile.isWater) {
+            // Land tile - always valid
+            result.set(`${tile.x},${tile.y}`, 'land');
+            i++;
+            continue;
+          }
+          
+          // Found water - find the extent of this water segment
+          const waterStart = i;
+          while (i < sortedTiles.length && sortedTiles[i].isWater) {
+            i++;
+          }
+          const waterEnd = i - 1;
+          const waterLength = waterEnd - waterStart + 1;
+          
+          // Check if this water segment is bounded by land on both sides
+          const hasLandBefore = waterStart > 0 && !sortedTiles[waterStart - 1].isWater;
+          const hasLandAfter = waterEnd < sortedTiles.length - 1 && !sortedTiles[waterEnd + 1].isWater;
+          
+          // Also check if there's existing land/road adjacent to the start/end of path
+          let hasExistingLandBefore = false;
+          let hasExistingLandAfter = false;
+          
+          if (waterStart === 0) {
+            // Check the tile before the path start
+            const firstWater = sortedTiles[waterStart];
+            const checkX = isHorizontal ? firstWater.x - 1 : firstWater.x;
+            const checkY = isHorizontal ? firstWater.y : firstWater.y - 1;
+            if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
+              const prevTile = grid[checkY][checkX];
+              hasExistingLandBefore = prevTile.building.type !== 'water';
+            }
+          }
+          
+          if (waterEnd === sortedTiles.length - 1) {
+            // Check the tile after the path end
+            const lastWater = sortedTiles[waterEnd];
+            const checkX = isHorizontal ? lastWater.x + 1 : lastWater.x;
+            const checkY = isHorizontal ? lastWater.y : lastWater.y + 1;
+            if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
+              const nextTile = grid[checkY][checkX];
+              hasExistingLandAfter = nextTile.building.type !== 'water';
+            }
+          }
+          
+          const isValidBridge = (hasLandBefore || hasExistingLandBefore) && 
+                                (hasLandAfter || hasExistingLandAfter) &&
+                                waterLength <= 10; // Max bridge span
+          
+          // Mark all water tiles in this segment
+          for (let j = waterStart; j <= waterEnd; j++) {
+            const waterTile = sortedTiles[j];
+            result.set(`${waterTile.x},${waterTile.y}`, isValidBridge ? 'valid' : 'invalid');
+          }
+        }
+        
+        return result;
+      };
+      
+      const bridgeAnalysis = analyzePathForBridges();
+      
+      // Draw preview for each tile in the path
+      for (const tile of pathTiles) {
+        const { screenX, screenY } = gridToScreen(tile.x, tile.y, 0, 0);
+        const key = `${tile.x},${tile.y}`;
+        const status = bridgeAnalysis.get(key) || 'land';
+        
+        if (status === 'valid') {
+          // Valid bridge - show blue/cyan placeholder
+          drawHighlight(screenX, screenY, 'rgba(59, 130, 246, 0.5)', '#3b82f6');
+        } else if (status === 'invalid') {
+          // Invalid water crossing - show red
+          drawHighlight(screenX, screenY, 'rgba(239, 68, 68, 0.5)', '#ef4444');
+        }
+        // Land tiles don't need special preview - they're already being placed
+      }
+    }
+    
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid]);
+  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
@@ -3446,7 +3836,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         const tile = grid[y][x];
         const buildingType = tile.building.type;
         
-        if (buildingType === 'road') {
+        if (buildingType === 'road' || buildingType === 'bridge') {
           roadCounter++;
           // PERF: On mobile, only include every Nth road light
           if (roadCounter % roadSampleRate === 0) {
@@ -3816,6 +4206,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           setDragEndTile({ x: targetX, y: targetY });
           
           // Place all tiles from start to target in a straight line
+          // Skip water tiles - they'll be handled on mouse up for bridge creation
           const minX = Math.min(dragStartTile.x, targetX);
           const maxX = Math.max(dragStartTile.x, targetX);
           const minY = Math.min(dragStartTile.y, targetY);
@@ -3825,6 +4216,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             for (let y = minY; y <= maxY; y++) {
               const key = `${x},${y}`;
               if (!placedRoadTilesRef.current.has(key)) {
+                // Skip water tiles during drag - they'll show preview and be handled on mouse up
+                const tile = grid[y]?.[x];
+                if (tile && tile.building.type === 'water') {
+                  // Don't place on water during drag, just mark as "seen"
+                  placedRoadTilesRef.current.add(key);
+                  continue;
+                }
                 placeAtTile(x, y);
                 placedRoadTilesRef.current.add(key);
               }
@@ -3866,9 +4264,24 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
     }
     
-    // After placing roads or rail, check if any cities should be discovered
-    // This happens after any road/rail placement (drag or click) reaches an edge
-    if (isDragging && (selectedTool === 'road' || selectedTool === 'rail')) {
+    // After placing roads or rail, create bridges for valid water crossings and check for city discovery
+    if (isDragging && (selectedTool === 'road' || selectedTool === 'rail') && dragStartTile && dragEndTile) {
+      // Collect all tiles in the drag path
+      const minX = Math.min(dragStartTile.x, dragEndTile.x);
+      const maxX = Math.max(dragStartTile.x, dragEndTile.x);
+      const minY = Math.min(dragStartTile.y, dragEndTile.y);
+      const maxY = Math.max(dragStartTile.y, dragEndTile.y);
+      
+      const pathTiles: { x: number; y: number }[] = [];
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          pathTiles.push({ x, y });
+        }
+      }
+      
+      // Create bridges for valid water crossings in the drag path
+      finishTrackDrag(pathTiles, selectedTool as 'road' | 'rail');
+      
       // Use setTimeout to allow state to update first, then check for discoverable cities
       setTimeout(() => {
         checkAndDiscoverCities((discoveredCity) => {
@@ -3890,7 +4303,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!containerRef.current) {
       setHoveredTile(null);
     }
-  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
+  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, finishTrackDrag, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();

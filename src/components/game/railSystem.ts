@@ -90,6 +90,9 @@ export const RAIL_COLORS = {
   RAIL: '#6a6a6a',              // Steel rail - silvery
   RAIL_HIGHLIGHT: '#8a8a8a',    // Rail highlight
   RAIL_SHADOW: '#404040',       // Rail shadow
+  // Bridge-specific colors (metallic steel look)
+  BRIDGE_DECK: '#7a8088',       // Steel bridge deck - bluish gray metal
+  BRIDGE_TIE: '#4a4a4a',        // Metal/treated wood ties on bridge
 };
 
 /** Locomotive colors (various liveries) */
@@ -156,12 +159,15 @@ export function getTrackSide(direction: CarDirection): TrackSide {
 // ============================================================================
 
 /**
- * Check if a tile is a rail track (pure rail tile OR road with rail overlay)
+ * Check if a tile is a rail track (pure rail tile, road with rail overlay, OR rail bridge)
  */
 export function isRailTile(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
   const tile = grid[y][x];
-  return tile.building.type === 'rail' || (tile.building.type === 'road' && tile.hasRailOverlay === true);
+  // Rail tile, road with rail overlay, or rail bridge
+  return tile.building.type === 'rail' || 
+         (tile.building.type === 'road' && tile.hasRailOverlay === true) ||
+         (tile.building.type === 'bridge' && tile.building.bridgeTrackType === 'rail');
 }
 
 /**
@@ -188,14 +194,15 @@ export function isRailStationTile(grid: Tile[][], gridSize: number, x: number, y
 }
 
 /**
- * Check if a tile has rail (either pure rail tile OR road with rail overlay OR part of rail station)
+ * Check if a tile has rail (either pure rail tile, road with rail overlay, rail bridge, OR part of rail station)
  */
 function hasRailAtPosition(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
   const tile = grid[y][x];
   return tile.building.type === 'rail' || 
          isRailStationTile(grid, gridSize, x, y) || 
-         (tile.building.type === 'road' && tile.hasRailOverlay === true);
+         (tile.building.type === 'road' && tile.hasRailOverlay === true) ||
+         (tile.building.type === 'bridge' && tile.building.bridgeTrackType === 'rail');
 }
 
 /**
@@ -622,6 +629,7 @@ function drawTies(
   };
 
   // Draw ties for double track along a curve
+  // Outer curves are longer than inner curves, so adjust tie counts accordingly
   const drawDoubleCurveTies = (
     from: { x: number; y: number },
     to: { x: number; y: number },
@@ -635,16 +643,20 @@ function drawTies(
     curvePerp: { x: number; y: number },
     numTies: number
   ) => {
-    // Track 0
+    // Track 0 is the outer curve (offset by +halfSep away from curve center)
+    // It has a longer arc length, so use more ties
+    const outerTies = numTies + 3;
     const from0 = offsetPoint(from, fromPerp, halfSep);
     const to0 = offsetPoint(to, toPerp, halfSep);
     const ctrl0 = offsetPoint(control, curvePerp, halfSep);
-    drawSingleCurveTies(from0, to0, ctrl0, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, numTies);
-    // Track 1
+    drawSingleCurveTies(from0, to0, ctrl0, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, outerTies);
+    // Track 1 is the inner curve (offset by -halfSep toward curve center)
+    // It has a shorter arc length, so use fewer ties
+    const innerTies = Math.max(3, numTies - 2);
     const from1 = offsetPoint(from, fromPerp, -halfSep);
     const to1 = offsetPoint(to, toPerp, -halfSep);
     const ctrl1 = offsetPoint(control, curvePerp, -halfSep);
-    drawSingleCurveTies(from1, to1, ctrl1, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, numTies);
+    drawSingleCurveTies(from1, to1, ctrl1, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, innerTies);
   };
 
   const tiesHalf = Math.ceil(TIES_PER_TILE / 2);
@@ -1068,10 +1080,11 @@ export function getAdjacentRailForOverlay(
   const hasRailAt = (checkX: number, checkY: number): boolean => {
     if (checkX < 0 || checkY < 0 || checkX >= gridSize || checkY >= gridSize) return false;
     const tile = grid[checkY][checkX];
-    // Consider a tile as having rail if it's a rail tile, a rail station (any tile), or a road with rail overlay
+    // Consider a tile as having rail if it's a rail tile, a rail station (any tile), road with rail overlay, or rail bridge
     return tile.building.type === 'rail' || 
            isRailStationTile(grid, gridSize, checkX, checkY) || 
-           (tile.building.type === 'road' && tile.hasRailOverlay === true);
+           (tile.building.type === 'road' && tile.hasRailOverlay === true) ||
+           (tile.building.type === 'bridge' && tile.building.bridgeTrackType === 'rail');
   };
 
   return {
@@ -1744,7 +1757,7 @@ export function findRailStations(
 }
 
 /**
- * Count rail tiles in the grid (includes pure rail tiles AND road tiles with rail overlay)
+ * Count rail tiles in the grid (includes pure rail tiles, road tiles with rail overlay, AND rail bridges)
  */
 export function countRailTiles(
   grid: Tile[][],
@@ -1755,7 +1768,9 @@ export function countRailTiles(
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
       const tile = grid[y][x];
-      if (tile.building.type === 'rail' || (tile.building.type === 'road' && tile.hasRailOverlay === true)) {
+      if (tile.building.type === 'rail' || 
+          (tile.building.type === 'road' && tile.hasRailOverlay === true) ||
+          (tile.building.type === 'bridge' && tile.building.bridgeTrackType === 'rail')) {
         count++;
       }
     }

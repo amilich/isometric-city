@@ -840,16 +840,28 @@ export function findBays(
 
       // Only add if bay is large enough
       if (bayTiles.length >= minSize) {
-        // Calculate center of bay
-        const centerX = Math.round(bayTiles.reduce((sum, t) => sum + t.x, 0) / bayTiles.length);
-        const centerY = Math.round(bayTiles.reduce((sum, t) => sum + t.y, 0) / bayTiles.length);
+        // Calculate geometric center of bay
+        const geometricCenterX = bayTiles.reduce((sum, t) => sum + t.x, 0) / bayTiles.length;
+        const geometricCenterY = bayTiles.reduce((sum, t) => sum + t.y, 0) / bayTiles.length;
         
-        // Convert to screen coordinates
-        const { screenX, screenY } = gridToScreen(centerX, centerY, 0, 0);
+        // Find the actual water tile closest to the geometric center
+        // This ensures the center is always a valid water tile (not land in the middle of a bay)
+        let closestTile = bayTiles[0];
+        let closestDist = Infinity;
+        for (const tile of bayTiles) {
+          const dist = Math.hypot(tile.x - geometricCenterX, tile.y - geometricCenterY);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestTile = tile;
+          }
+        }
+        
+        // Convert to screen coordinates using the actual water tile
+        const { screenX, screenY } = gridToScreen(closestTile.x, closestTile.y, 0, 0);
         
         bays.push({
-          centerX,
-          centerY,
+          centerX: closestTile.x,
+          centerY: closestTile.y,
           screenX: screenX + TILE_WIDTH / 2,
           screenY: screenY + TILE_HEIGHT / 2,
           size: bayTiles.length,
@@ -906,7 +918,8 @@ export function countRoadTiles(
   let count = 0;
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
-      if (grid[y][x].building.type === 'road') {
+      const type = grid[y][x].building.type;
+      if (type === 'road' || type === 'bridge') {
         count++;
       }
     }

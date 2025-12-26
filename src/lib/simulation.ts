@@ -14,6 +14,8 @@ import {
   Notification,
   AdjacentCity,
   WaterBody,
+  BridgeType,
+  BridgeOrientation,
   BUILDING_STATS,
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
@@ -423,25 +425,29 @@ export function hasRoadAtEdge(grid: Tile[][], gridSize: number, direction: 'nort
     case 'north':
       // Check top edge (y = 0)
       for (let x = 0; x < gridSize; x++) {
-        if (grid[0][x].building.type === 'road') return true;
+        const type = grid[0][x].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
     case 'south':
       // Check bottom edge (y = gridSize - 1)
       for (let x = 0; x < gridSize; x++) {
-        if (grid[gridSize - 1][x].building.type === 'road') return true;
+        const type = grid[gridSize - 1][x].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
     case 'east':
       // Check right edge (x = gridSize - 1)
       for (let y = 0; y < gridSize; y++) {
-        if (grid[y][gridSize - 1].building.type === 'road') return true;
+        const type = grid[y][gridSize - 1].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
     case 'west':
       // Check left edge (x = 0)
       for (let y = 0; y < gridSize; y++) {
-        if (grid[y][0].building.type === 'road') return true;
+        const type = grid[y][0].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
   }
@@ -649,7 +655,8 @@ export function getRoadAdjacency(
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
     const checkY = y + height;
-    if (checkY < gridSize && grid[checkY]?.[checkX]?.building.type === 'road') {
+    const checkType = grid[checkY]?.[checkX]?.building.type;
+    if (checkY < gridSize && (checkType === 'road' || checkType === 'bridge')) {
       roadOnSouthOrEast = true;
       break;
     }
@@ -660,7 +667,8 @@ export function getRoadAdjacency(
     for (let dy = 0; dy < height; dy++) {
       const checkX = x + width;
       const checkY = y + dy;
-      if (checkX < gridSize && grid[checkY]?.[checkX]?.building.type === 'road') {
+      const checkType = grid[checkY]?.[checkX]?.building.type;
+      if (checkX < gridSize && (checkType === 'road' || checkType === 'bridge')) {
         roadOnSouthOrEast = true;
         break;
       }
@@ -671,7 +679,8 @@ export function getRoadAdjacency(
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
     const checkY = y - 1;
-    if (checkY >= 0 && grid[checkY]?.[checkX]?.building.type === 'road') {
+    const checkType = grid[checkY]?.[checkX]?.building.type;
+    if (checkY >= 0 && (checkType === 'road' || checkType === 'bridge')) {
       roadOnNorthOrWest = true;
       break;
     }
@@ -682,7 +691,8 @@ export function getRoadAdjacency(
     for (let dy = 0; dy < height; dy++) {
       const checkX = x - 1;
       const checkY = y + dy;
-      if (checkX >= 0 && grid[checkY]?.[checkX]?.building.type === 'road') {
+      const checkType = grid[checkY]?.[checkX]?.building.type;
+      if (checkX >= 0 && (checkType === 'road' || checkType === 'bridge')) {
         roadOnNorthOrWest = true;
         break;
       }
@@ -711,7 +721,7 @@ function createTile(x: number, y: number, buildingType: BuildingType = 'grass'):
 }
 
 // Building types that don't require construction (already complete when placed)
-const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'tree'];
+const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'bridge', 'tree'];
 
 function createBuilding(type: BuildingType): Building {
   // Buildings that don't require construction start at 100% complete
@@ -730,6 +740,309 @@ function createBuilding(type: BuildingType): Building {
     constructionProgress,
     abandoned: false,
   };
+}
+
+// ============================================================================
+// Bridge Detection and Creation
+// ============================================================================
+
+/** Maximum width of water a bridge can span */
+const MAX_BRIDGE_SPAN = 10;
+
+/** Bridge type thresholds based on span width */
+const BRIDGE_TYPE_THRESHOLDS = {
+  large: 5,    // 1-5 tiles = truss bridge
+  suspension: 10, // 6-10 tiles = suspension bridge
+} as const;
+
+/** Get the appropriate bridge type for a given span */
+function getBridgeTypeForSpan(span: number): BridgeType {
+  // 1-tile bridges are simple bridges without trusses
+  if (span === 1) return 'small';
+  if (span <= BRIDGE_TYPE_THRESHOLDS.large) return 'large';
+  return 'suspension';
+}
+
+/** Number of variants per bridge type */
+const BRIDGE_VARIANTS: Record<BridgeType, number> = {
+  small: 3,
+  medium: 3,
+  large: 2,
+  suspension: 2,
+};
+
+/** Generate a deterministic variant based on position */
+function getBridgeVariant(x: number, y: number, bridgeType: BridgeType): number {
+  const seed = (x * 31 + y * 17) % 100;
+  return seed % BRIDGE_VARIANTS[bridgeType];
+}
+
+/** Create a bridge building with all metadata */
+function createBridgeBuilding(
+  bridgeType: BridgeType,
+  orientation: BridgeOrientation,
+  variant: number,
+  position: 'start' | 'middle' | 'end',
+  index: number,
+  span: number,
+  trackType: 'road' | 'rail' = 'road'
+): Building {
+  return {
+    type: 'bridge',
+    level: 0,
+    population: 0,
+    jobs: 0,
+    powered: true,
+    watered: true,
+    onFire: false,
+    fireProgress: 0,
+    age: 0,
+    constructionProgress: 100,
+    abandoned: false,
+    bridgeType,
+    bridgeOrientation: orientation,
+    bridgeVariant: variant,
+    bridgePosition: position,
+    bridgeIndex: index,
+    bridgeSpan: span,
+    bridgeTrackType: trackType,
+  };
+}
+
+/** Check if a tile at position is water */
+function isWaterTile(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  return grid[y][x].building.type === 'water';
+}
+
+/** Check if a tile at position is a road or bridge */
+function isRoadOrBridgeTile(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  const type = grid[y][x].building.type;
+  return type === 'road' || type === 'bridge';
+}
+
+/** Bridge opportunity data */
+interface BridgeOpportunity {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  orientation: BridgeOrientation;
+  span: number;
+  bridgeType: BridgeType;
+  waterTiles: { x: number; y: number }[];
+  trackType: 'road' | 'rail'; // What the bridge carries
+}
+
+/** Scan for a bridge opportunity in a specific direction */
+function scanForBridgeInDirection(
+  grid: Tile[][],
+  gridSize: number,
+  startX: number,
+  startY: number,
+  dx: number,
+  dy: number,
+  orientation: BridgeOrientation,
+  trackType: 'road' | 'rail'
+): BridgeOpportunity | null {
+  const waterTiles: { x: number; y: number }[] = [];
+  let x = startX + dx;
+  let y = startY + dy;
+  
+  // Count consecutive water tiles
+  while (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+    const tile = grid[y][x];
+    
+    if (tile.building.type === 'water') {
+      waterTiles.push({ x, y });
+      
+      // Check if we've exceeded max bridge span
+      if (waterTiles.length > MAX_BRIDGE_SPAN) {
+        return null; // Too wide to bridge
+      }
+    } else if (tile.building.type === trackType) {
+      // Found the same track type on the other side - valid bridge opportunity!
+      // Note: We only connect to the same track type, NOT to bridges
+      // This prevents creating spurious bridges when placing tracks near existing bridges
+      if (waterTiles.length > 0) {
+        const span = waterTiles.length;
+        const bridgeType = getBridgeTypeForSpan(span);
+        
+        return {
+          startX,
+          startY,
+          endX: x,
+          endY: y,
+          orientation,
+          span,
+          bridgeType,
+          waterTiles,
+          trackType,
+        };
+      }
+      return null;
+    } else if (tile.building.type === 'bridge') {
+      // Found a bridge - don't create another bridge connecting to it
+      return null;
+    } else {
+      // Found land that's not the same track type - no bridge possible in this direction
+      break;
+    }
+    
+    x += dx;
+    y += dy;
+  }
+  
+  return null;
+}
+
+/** Detect if placing a road or rail creates a bridge opportunity from this tile */
+function detectBridgeOpportunity(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number,
+  trackType: 'road' | 'rail'
+): BridgeOpportunity | null {
+  const tile = grid[y]?.[x];
+  if (!tile) return null;
+  
+  // Only check from the specified track type tiles, not bridges
+  // Bridges should only be created when dragging across water to another tile of the same type
+  if (tile.building.type !== trackType) {
+    return null;
+  }
+  
+  // Check each direction for water followed by same track type
+  // North (x-1, y stays same in grid coords)
+  const northOpp = scanForBridgeInDirection(grid, gridSize, x, y, -1, 0, 'ns', trackType);
+  if (northOpp) return northOpp;
+  
+  // South (x+1, y stays same)
+  const southOpp = scanForBridgeInDirection(grid, gridSize, x, y, 1, 0, 'ns', trackType);
+  if (southOpp) return southOpp;
+  
+  // East (x stays, y-1)
+  const eastOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, -1, 'ew', trackType);
+  if (eastOpp) return eastOpp;
+  
+  // West (x stays, y+1)
+  const westOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, 1, 'ew', trackType);
+  if (westOpp) return westOpp;
+  
+  return null;
+}
+
+/** Build bridges by converting water tiles to bridge tiles */
+function buildBridges(
+  grid: Tile[][],
+  opportunity: BridgeOpportunity
+): void {
+  const variant = getBridgeVariant(
+    opportunity.waterTiles[0].x,
+    opportunity.waterTiles[0].y,
+    opportunity.bridgeType
+  );
+  
+  // Sort waterTiles consistently to ensure same result regardless of scan direction
+  // For NS orientation (bridges going NW-SE on screen): sort by x first (grid row), then by y
+  // For EW orientation (bridges going NE-SW on screen): sort by y first (grid column), then by x
+  // This ensures 'start' is always at the NW/NE end and 'end' at the SE/SW end
+  const sortedTiles = [...opportunity.waterTiles].sort((a, b) => {
+    if (opportunity.orientation === 'ns') {
+      // NS bridges: sort by x first (lower x = more NW on screen)
+      return a.x !== b.x ? a.x - b.x : a.y - b.y;
+    } else {
+      // EW bridges: sort by y first (lower y = more NE on screen)
+      return a.y !== b.y ? a.y - b.y : a.x - b.x;
+    }
+  });
+  
+  const span = sortedTiles.length;
+  sortedTiles.forEach((pos, index) => {
+    let position: 'start' | 'middle' | 'end';
+    if (index === 0) {
+      position = 'start';
+    } else if (index === sortedTiles.length - 1) {
+      position = 'end';
+    } else {
+      position = 'middle';
+    }
+    
+    grid[pos.y][pos.x].building = createBridgeBuilding(
+      opportunity.bridgeType,
+      opportunity.orientation,
+      variant,
+      position,
+      index,
+      span,
+      opportunity.trackType
+    );
+    // Keep the tile as having no zone
+    grid[pos.y][pos.x].zone = 'none';
+  });
+}
+
+/** Check and create bridges after road or rail placement */
+function checkAndCreateBridges(
+  grid: Tile[][],
+  gridSize: number,
+  placedX: number,
+  placedY: number,
+  trackType: 'road' | 'rail'
+): void {
+  // Check for bridge opportunities from the placed tile
+  const opportunity = detectBridgeOpportunity(grid, gridSize, placedX, placedY, trackType);
+  if (opportunity) {
+    buildBridges(grid, opportunity);
+  }
+}
+
+/**
+ * Create bridges along a road or rail drag path.
+ * This is called after a road/rail drag operation completes to create bridges
+ * for any valid water crossings in the path.
+ * 
+ * IMPORTANT: Bridges are only created if the drag path actually crosses water.
+ * This prevents auto-creating bridges when placing individual tiles on
+ * opposite sides of water.
+ * 
+ * @param state - Current game state
+ * @param pathTiles - Array of {x, y} coordinates that were part of the drag
+ * @param trackType - Whether this is a 'road' or 'rail' bridge
+ * @returns Updated game state with bridges created
+ */
+export function createBridgesOnPath(
+  state: GameState,
+  pathTiles: { x: number; y: number }[],
+  trackType: 'road' | 'rail' = 'road'
+): GameState {
+  if (pathTiles.length === 0) return state;
+  
+  // Check if the drag path includes any water tiles
+  // This ensures bridges are only created when actually dragging ACROSS water
+  const hasWaterInPath = pathTiles.some(tile => {
+    const t = state.grid[tile.y]?.[tile.x];
+    return t && t.building.type === 'water';
+  });
+  
+  // If no water tiles were crossed, don't create any bridges
+  if (!hasWaterInPath) {
+    return state;
+  }
+  
+  const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+  
+  // Check each tile of the specified track type in the path for bridge opportunities
+  for (const tile of pathTiles) {
+    // Only check from actual track type tiles (not water or other types)
+    if (newGrid[tile.y]?.[tile.x]?.building.type === trackType) {
+      checkAndCreateBridges(newGrid, state.gridSize, tile.x, tile.y, trackType);
+    }
+  }
+  
+  return { ...state, grid: newGrid };
 }
 
 function createInitialBudget(): Budget {
@@ -1069,7 +1382,7 @@ function hasRoadAccess(
 
       const neighbor = grid[ny][nx];
 
-      if (neighbor.building.type === 'road') {
+      if (neighbor.building.type === 'road' || neighbor.building.type === 'bridge') {
         return true;
       }
 
@@ -1130,7 +1443,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   const zone = tile.zone;
 
   // Only evolve zoned tiles with real buildings
-  if (zone === 'none' || building.type === 'grass' || building.type === 'water' || building.type === 'road') {
+  if (zone === 'none' || building.type === 'grass' || building.type === 'water' || building.type === 'road' || building.type === 'bridge') {
     return building;
   }
 
@@ -1787,8 +2100,8 @@ export function simulateTick(state: GameState): GameState {
       const needsPowerWaterUpdate = originalBuilding.powered !== newPowered ||
                                     originalBuilding.watered !== newWatered;
       
-      // PERF: Roads are static unless bulldozed - skip if no utility update needed
-      if (originalBuilding.type === 'road' && !needsPowerWaterUpdate) {
+      // PERF: Roads and bridges are static unless bulldozed - skip if no utility update needed
+      if ((originalBuilding.type === 'road' || originalBuilding.type === 'bridge') && !needsPowerWaterUpdate) {
         continue;
       }
       
@@ -2138,7 +2451,7 @@ function isMergeableZoneTile(
   
   if (tile.zone !== zone) return false;
   if (tile.building.onFire) return false;
-  if (tile.building.type === 'water' || tile.building.type === 'road') return false;
+  if (tile.building.type === 'water' || tile.building.type === 'road' || tile.building.type === 'bridge') return false;
   
   // Always allow merging grass and trees - truly unoccupied tiles
   if (MERGEABLE_TILE_TYPES.has(tile.building.type)) {
@@ -2199,7 +2512,8 @@ function scoreFootprint(grid: Tile[][], originX: number, originY: number, width:
         const nx = gx + ox;
         const ny = gy + oy;
         if (nx >= 0 && ny >= 0 && nx < gridSize && ny < gridSize) {
-          if (grid[ny][nx].building.type === 'road') {
+          const adjacentType = grid[ny][nx].building.type;
+          if (adjacentType === 'road' || adjacentType === 'bridge') {
             roadScore++;
           }
         }
@@ -2306,8 +2620,8 @@ export function placeBuilding(
     }
   }
 
-  // Roads and rail can be combined, but other buildings require clearing first
-  if (buildingType && buildingType !== 'road' && buildingType !== 'rail' && tile.building.type === 'road') {
+  // Roads, bridges, and rail can be combined, but other buildings require clearing first
+  if (buildingType && buildingType !== 'road' && buildingType !== 'rail' && (tile.building.type === 'road' || tile.building.type === 'bridge')) {
     return state;
   }
   if (buildingType && buildingType !== 'road' && buildingType !== 'rail' && tile.building.type === 'rail') {
@@ -2416,6 +2730,10 @@ export function placeBuilding(
         newGrid[y][x].building.flipped = true;
       }
     }
+    
+    // NOTE: Bridge creation is handled separately during drag operations across water
+    // We do NOT auto-create bridges here because placing individual road tiles on opposite
+    // sides of water should not automatically create a bridge - only explicit dragging should
   }
 
   return { ...state, grid: newGrid };
@@ -2435,7 +2753,7 @@ function findBuildingOrigin(
   // If this tile has an actual building (not empty), check if it's multi-tile
   if (tile.building.type !== 'empty' && tile.building.type !== 'grass' && 
       tile.building.type !== 'water' && tile.building.type !== 'road' && 
-      tile.building.type !== 'rail' && tile.building.type !== 'tree') {
+      tile.building.type !== 'bridge' && tile.building.type !== 'rail' && tile.building.type !== 'tree') {
     const size = getBuildingSize(tile.building.type);
     if (size.width > 1 || size.height > 1) {
       return { originX: x, originY: y, buildingType: tile.building.type };
@@ -2458,6 +2776,7 @@ function findBuildingOrigin(
               checkTile.building.type !== 'grass' &&
               checkTile.building.type !== 'water' &&
               checkTile.building.type !== 'road' &&
+              checkTile.building.type !== 'bridge' &&
               checkTile.building.type !== 'rail' &&
               checkTile.building.type !== 'tree') {
             const size = getBuildingSize(checkTile.building.type);
@@ -2475,6 +2794,94 @@ function findBuildingOrigin(
   return null;
 }
 
+/**
+ * Find all bridge tiles that are part of the same bridge as the tile at (x, y).
+ * Bridges are connected along their orientation axis (ns or ew).
+ */
+function findConnectedBridgeTiles(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number
+): { x: number; y: number }[] {
+  const tile = grid[y]?.[x];
+  if (!tile || tile.building.type !== 'bridge') return [];
+  
+  const orientation = tile.building.bridgeOrientation || 'ns';
+  const bridgeTiles: { x: number; y: number }[] = [{ x, y }];
+  
+  // Direction vectors based on orientation
+  // NS bridges run along the x-axis (grid rows)
+  // EW bridges run along the y-axis (grid columns)
+  const dx = orientation === 'ns' ? 1 : 0;
+  const dy = orientation === 'ns' ? 0 : 1;
+  
+  // Scan in positive direction
+  let cx = x + dx;
+  let cy = y + dy;
+  while (cx >= 0 && cx < gridSize && cy >= 0 && cy < gridSize) {
+    const t = grid[cy][cx];
+    if (t.building.type === 'bridge' && t.building.bridgeOrientation === orientation) {
+      bridgeTiles.push({ x: cx, y: cy });
+      cx += dx;
+      cy += dy;
+    } else {
+      break;
+    }
+  }
+  
+  // Scan in negative direction
+  cx = x - dx;
+  cy = y - dy;
+  while (cx >= 0 && cx < gridSize && cy >= 0 && cy < gridSize) {
+    const t = grid[cy][cx];
+    if (t.building.type === 'bridge' && t.building.bridgeOrientation === orientation) {
+      bridgeTiles.push({ x: cx, y: cy });
+      cx -= dx;
+      cy -= dy;
+    } else {
+      break;
+    }
+  }
+  
+  return bridgeTiles;
+}
+
+/**
+ * Check if a road tile at (x, y) is adjacent to a bridge start/end tile.
+ * If so, return all the bridge tiles that should be deleted.
+ */
+function findAdjacentBridgeTiles(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number
+): { x: number; y: number }[] {
+  const directions = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+  ];
+  
+  for (const { dx, dy } of directions) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize) {
+      const neighbor = grid[ny][nx];
+      if (neighbor.building.type === 'bridge') {
+        const position = neighbor.building.bridgePosition;
+        // Check if this bridge tile is a start or end connected to our road
+        if (position === 'start' || position === 'end') {
+          return findConnectedBridgeTiles(grid, gridSize, nx, ny);
+        }
+      }
+    }
+  }
+  
+  return [];
+}
+
 // Bulldoze a tile (or entire multi-tile building if applicable)
 export function bulldozeTile(state: GameState, x: number, y: number): GameState {
   const tile = state.grid[y]?.[x];
@@ -2482,6 +2889,35 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
   if (tile.building.type === 'water') return state;
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+  
+  // Special handling for bridges - delete the entire bridge and restore water
+  if (tile.building.type === 'bridge') {
+    const bridgeTiles = findConnectedBridgeTiles(newGrid, state.gridSize, x, y);
+    for (const bt of bridgeTiles) {
+      newGrid[bt.y][bt.x].building = createBuilding('water');
+      newGrid[bt.y][bt.x].zone = 'none';
+      newGrid[bt.y][bt.x].hasRailOverlay = false;
+    }
+    return { ...state, grid: newGrid };
+  }
+  
+  // Special handling for roads - check if adjacent to a bridge start/end
+  if (tile.building.type === 'road') {
+    const adjacentBridgeTiles = findAdjacentBridgeTiles(newGrid, state.gridSize, x, y);
+    if (adjacentBridgeTiles.length > 0) {
+      // Delete the road first
+      newGrid[y][x].building = createBuilding('grass');
+      newGrid[y][x].zone = 'none';
+      newGrid[y][x].hasRailOverlay = false;
+      // Then delete all connected bridge tiles
+      for (const bt of adjacentBridgeTiles) {
+        newGrid[bt.y][bt.x].building = createBuilding('water');
+        newGrid[bt.y][bt.x].zone = 'none';
+        newGrid[bt.y][bt.x].hasRailOverlay = false;
+      }
+      return { ...state, grid: newGrid };
+    }
+  }
   
   // Check if this tile is part of a multi-tile building
   const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
@@ -2548,8 +2984,11 @@ export function placeWaterTerraform(state: GameState, x: number, y: number): Gam
   const tile = state.grid[y]?.[x];
   if (!tile) return state;
   
-  // Already water
+  // Already water - do nothing
   if (tile.building.type === 'water') return state;
+  
+  // Don't allow terraforming bridges - would break them
+  if (tile.building.type === 'bridge') return state;
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
   
@@ -2626,7 +3065,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
   function createAdvancedBuilding(type: BuildingType): Building {
     return {
       type,
-      level: type === 'grass' || type === 'empty' || type === 'water' || type === 'road' ? 0 : Math.floor(Math.random() * 3) + 3,
+      level: type === 'grass' || type === 'empty' || type === 'water' || type === 'road' || type === 'bridge' ? 0 : Math.floor(Math.random() * 3) + 3,
       population: 0,
       jobs: 0,
       powered: true,
@@ -2663,7 +3102,8 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
     // Check for roads in the way
     for (let dy = 0; dy < buildingSize.height; dy++) {
       for (let dx = 0; dx < buildingSize.width; dx++) {
-        if (grid[y + dy][x + dx].building.type === 'road') return false;
+        const tileType = grid[y + dy][x + dx].building.type;
+        if (tileType === 'road' || tileType === 'bridge') return false;
       }
     }
     
@@ -2794,7 +3234,8 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       for (let dy = -2; dy <= 2 && !nearRoad; dy++) {
         for (let dx = -2; dx <= 2 && !nearRoad; dx++) {
           const checkTile = grid[y + dy]?.[x + dx];
-          if (checkTile?.building.type === 'road') nearRoad = true;
+          const tileType = checkTile?.building.type;
+          if (tileType === 'road' || tileType === 'bridge') nearRoad = true;
         }
       }
       if (!nearRoad) continue;

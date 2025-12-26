@@ -20,7 +20,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   { 
     key: 'parks', 
     label: 'Parks', 
-    tools: ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'],
+    tools: ['tree', 'park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'],
     shortcut: 'p',
     icon: 'tree'
   },

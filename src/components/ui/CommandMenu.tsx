@@ -37,7 +37,6 @@ const MENU_CATEGORIES = [
   { key: 'services', label: 'Services' },
   { key: 'parks', label: 'Parks' },
   { key: 'sports', label: 'Sports' },
-  { key: 'recreation', label: 'Recreation' },
   { key: 'waterfront', label: 'Waterfront' },
   { key: 'community', label: 'Community' },
   { key: 'utilities', label: 'Utilities' },
@@ -121,8 +120,8 @@ function buildMenuItems(): MenuItem[] {
     });
   });
 
-  // Parks
-  const parksCategory: Tool[] = ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'];
+  // Parks (includes former recreation items)
+  const parksCategory: Tool[] = ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden', 'mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'];
   parksCategory.forEach(tool => {
     const info = TOOL_INFO[tool];
     items.push({
@@ -133,7 +132,7 @@ function buildMenuItems(): MenuItem[] {
       description: info.description,
       cost: info.cost,
       category: 'parks',
-      keywords: [info.name.toLowerCase(), tool, 'park', 'green', 'nature'],
+      keywords: [info.name.toLowerCase(), tool, 'park', 'green', 'nature', 'recreation', 'entertainment'],
     });
   });
 
@@ -150,22 +149,6 @@ function buildMenuItems(): MenuItem[] {
       cost: info.cost,
       category: 'sports',
       keywords: [info.name.toLowerCase(), tool, 'sports', 'recreation', 'field'],
-    });
-  });
-
-  // Recreation
-  const recreationCategory: Tool[] = ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'];
-  recreationCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'recreation',
-      keywords: [info.name.toLowerCase(), tool, 'recreation', 'entertainment', 'fun'],
     });
   });
 

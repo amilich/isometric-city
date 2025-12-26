@@ -338,6 +338,7 @@ export function useVehicleSystems(
         const isBuilding = tile.building.type !== 'grass' && 
             tile.building.type !== 'water' && 
             tile.building.type !== 'road' && 
+            tile.building.type !== 'bridge' && 
             tile.building.type !== 'tree' &&
             tile.building.type !== 'empty';
         const hasActivity = tile.building.population > 0 || tile.building.jobs > 0;
@@ -714,8 +715,8 @@ export function useVehicleSystems(
     
     const speedMultiplier = currentSpeed === 0 ? 0 : currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2.5 : 4;
     
-    const baseMaxCars = 100;
-    const maxCars = Math.min(baseMaxCars, Math.max(15, Math.floor(currentGridSize * 1.25)));
+    const baseMaxCars = 85;  // Reduced ~15%
+    const maxCars = Math.min(baseMaxCars, Math.max(13, Math.floor(currentGridSize * 1.06)));
     carSpawnTimerRef.current -= delta;
     if (carsRef.current.length < maxCars && carSpawnTimerRef.current <= 0) {
       // Spawn cars at a moderate rate
@@ -952,7 +953,8 @@ export function useVehicleSystems(
       roadTileCount = 0;
       for (let y = 0; y < currentGridSize; y++) {
         for (let x = 0; x < currentGridSize; x++) {
-          if (currentGrid[y][x].building.type === 'road') {
+          const type = currentGrid[y][x].building.type;
+          if (type === 'road' || type === 'bridge') {
             roadTileCount++;
           }
         }

@@ -96,11 +96,17 @@ export const ROAD_COLORS = {
 // ============================================================================
 
 /**
- * Check if a tile is a road
+ * Check if a tile is a road or road bridge (not rail bridge)
  */
 function isRoad(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
-  return grid[y][x].building.type === 'road';
+  const tile = grid[y][x];
+  const type = tile.building.type;
+  // Road bridges are valid, rail bridges are not
+  if (type === 'bridge') {
+    return tile.building.bridgeTrackType !== 'rail';
+  }
+  return type === 'road';
 }
 
 /**

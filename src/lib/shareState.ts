@@ -8,7 +8,7 @@ const ZONE_REVERSE: Record<number, ZoneType> = { 0: 'none', 1: 'residential', 2:
 
 // Building types mapped to numbers for compression
 const BUILDING_TYPES: BuildingType[] = [
-  'empty', 'grass', 'water', 'road', 'rail', 'tree',
+  'empty', 'grass', 'water', 'road', 'bridge', 'rail', 'tree',
   'house_small', 'house_medium', 'mansion', 'apartment_low', 'apartment_high',
   'shop_small', 'shop_medium', 'office_low', 'office_high', 'mall',
   'factory_small', 'factory_medium', 'factory_large', 'warehouse',

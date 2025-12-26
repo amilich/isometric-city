@@ -22,6 +22,7 @@ import {
   simulateTick,
   checkForDiscoverableCities,
   generateRandomAdvancedCity,
+  createBridgesOnPath,
 } from '@/lib/simulation';
 import {
   SPRITE_PACKS,
@@ -57,6 +58,7 @@ type GameContextValue = {
   setActivePanel: (panel: GameState['activePanel']) => void;
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
   placeAtTile: (x: number, y: number) => void;
+  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail') => void; // Create bridges after road/rail drag
   connectToCity: (cityId: string) => void;
   discoverCity: (cityId: string) => void;
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
@@ -763,8 +765,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       // Handle water terraform tool separately
       if (tool === 'zone_water') {
-        // Already water
+        // Already water - do nothing
         if (tile.building.type === 'water') return prev;
+        // Don't allow terraforming bridges - would break them
+        if (tile.building.type === 'bridge') return prev;
         
         const nextState = placeWaterTerraform(prev, x, y);
         if (nextState === prev) return prev;
@@ -812,6 +816,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       return nextState;
     });
+  }, []);
+
+  // Called after a road/rail drag operation to create bridges for water crossings
+  const finishTrackDrag = useCallback((pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail') => {
+    setState((prev) => createBridgesOnPath(prev, pathTiles, trackType));
   }, []);
 
   const connectToCity = useCallback((cityId: string) => {
@@ -1260,6 +1269,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setActivePanel,
     setBudgetFunding,
     placeAtTile,
+    finishTrackDrag,
     connectToCity,
     discoverCity,
     checkAndDiscoverCities,

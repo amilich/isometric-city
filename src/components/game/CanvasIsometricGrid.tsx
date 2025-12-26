@@ -275,7 +275,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const keysPressedRef = useRef<Set<string>>(new Set());
 
   // Only zoning tools show the grid/rectangle selection visualization
-  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water'].includes(selectedTool);
+  // Note: zone_water uses supportsDragPlace behavior (place on click/drag) instead of rectangle selection
+  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'].includes(selectedTool);
   
   // Roads, bulldoze, and other tools support drag-to-place but don't show the grid
   const supportsDragPlace = selectedTool !== 'select';

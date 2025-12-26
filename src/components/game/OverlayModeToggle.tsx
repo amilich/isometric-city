@@ -15,6 +15,8 @@ import {
   RoadIcon,
   MoneyIcon,
   ChartIcon,
+  DollarSignIcon,
+  TargetIcon,
 } from '@/components/ui/Icons';
 import { OverlayMode } from './types';
 import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
@@ -43,8 +45,8 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   education: <EducationIcon size={14} />,
   subway: <SubwayIcon size={14} />,
   traffic: <RoadIcon size={14} />,
-  land_value: <MoneyIcon size={14} />,
-  target_level: <ChartIcon size={14} />,
+  land_value: <DollarSignIcon size={14} />,
+  target_level: <TargetIcon size={14} />,
 };
 
 // ============================================================================

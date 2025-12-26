@@ -425,3 +425,21 @@ export const ToolIcons: Partial<Record<Tool, React.FC<IconProps>>> = {
   amusement_park: AmusementParkIcon,
 };
 
+export function DollarSignIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <path {...baseStroke} d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  );
+}
+
+export function TargetIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <circle {...baseStroke} cx="12" cy="12" r="10" />
+      <circle {...baseStroke} cx="12" cy="12" r="6" />
+      <circle {...baseStroke} cx="12" cy="12" r="2" />
+    </svg>
+  );
+}
+

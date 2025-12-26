@@ -20,7 +20,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   { 
     key: 'parks', 
     label: 'Parks', 
-    tools: ['tree', 'park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'],
+    tools: ['tree', 'park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden', 'mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'],
     shortcut: 'p',
     icon: 'tree'
   },
@@ -30,13 +30,6 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     tools: ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'],
     shortcut: 'a', // 'S' is taken, 'A' for Athletics/Sports
     icon: 'sports'
-  },
-  { 
-    key: 'recreation', 
-    label: 'Recreation', 
-    tools: ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'],
-    shortcut: 'e', // 'R' is Road. 'E' for Entertainment/Recreation?
-    icon: 'recreation'
   },
   { 
     key: 'waterfront', 

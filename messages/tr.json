@@ -134,7 +134,37 @@
       "DayNightModeDesc": "Zaman akışını etkilemeden günün saatini değiştir",
       "ModeAuto": "Otomatik",
       "ModeDay": "Gündüz",
-      "ModeNight": "Gece"
+      "ModeNight": "Gece",
+      "AdvisorsContent": {
+        "GeneralEvaluation": "Genel Şehir Değerlendirmesi",
+        "GeneralEvaluationDesc": "Mutluluk, sağlık, eğitim, güvenlik ve çevreye dayalı",
+        "NoIssuesTitle": "Bildirilecek acil bir sorun yok!",
+        "NoIssuesDesc": "Şehriniz sorunsuz işliyor.",
+        "Advisors": {
+          "Power": "Enerji Danışmanı",
+          "Water": "Su Danışmanı",
+          "Finance": "Finans Danışmanı",
+          "Safety": "Güvenlik Danışmanı",
+          "Health": "Sağlık Danışmanı",
+          "Education": "Eğitim Danışmanı",
+          "Environment": "Çevre Danışmanı",
+          "Employment": "İstihdam Danışmanı",
+          "UrbanPlanning": "Şehir Planlama Danışmanı"
+        },
+        "Messages": {
+          "LackPower": "{count} bina elektriksiz. Daha fazla enerji santrali kurun!",
+          "LackWater": "{count} bina susuz. Su kuleleri inşa edin!",
+          "Deficit": "Şehir ayda ₺{amount} zarar ediyor. Vergileri artırmayı veya hizmetleri kısmayı düşünün.",
+          "CrimeRising": "Suç oranı artıyor. Vatandaşları korumak için polis merkezleri inşa edin.",
+          "HealthLacking": "Sağlık hizmetleri yetersiz. Hastaneler inşa edin.",
+          "EducationLow": "Eğitim seviyeleri düşük. Okullar ve üniversiteler inşa edin.",
+          "PollutionHigh": "Kirlilik yüksek. Hava kalitesini artırmak için ağaç dikin ve parklar yapın.",
+          "UnemploymentHigh": "İşsizlik yüksek. Daha fazla ticari ve endüstriyel alan ayırın.",
+          "AbandonedBuildings": "Şehrinizde {count} terk edilmiş bina var ({details}).",
+          "Oversupply": "Fazla arz binaların boş kalmasına neden oldu.",
+          "IncreaseDemand": "Şehrinizi büyüterek talebi artırın veya doğal gelişimi bekleyin."
+        }
+      }
     },
     "CommandMenu": {
       "Title": "Komut Menüsü",

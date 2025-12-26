@@ -134,7 +134,37 @@
       "DayNightModeDesc": "Change time of day without affecting time flow",
       "ModeAuto": "Auto",
       "ModeDay": "Day",
-      "ModeNight": "Night"
+      "ModeNight": "Night",
+      "AdvisorsContent": {
+        "GeneralEvaluation": "General City Evaluation",
+        "GeneralEvaluationDesc": "Based on happiness, health, education, safety, and environment",
+        "NoIssuesTitle": "No urgent issues to report!",
+        "NoIssuesDesc": "Your city is running smoothly.",
+        "Advisors": {
+          "Power": "Power Advisor",
+          "Water": "Water Advisor",
+          "Finance": "Finance Advisor",
+          "Safety": "Safety Advisor",
+          "Health": "Health Advisor",
+          "Education": "Education Advisor",
+          "Environment": "Environment Advisor",
+          "Employment": "Employment Advisor",
+          "UrbanPlanning": "Urban Planning Advisor"
+        },
+        "Messages": {
+          "LackPower": "{count} buildings lack power. Build more power plants!",
+          "LackWater": "{count} buildings lack water. Build water towers!",
+          "Deficit": "City is running a deficit of ₺{amount}/month. Consider raising taxes or cutting services.",
+          "CrimeRising": "Crime is on the rise. Build more police stations to protect citizens.",
+          "HealthLacking": "Health services are lacking. Build hospitals to improve citizen health.",
+          "EducationLow": "Education levels are low. Build schools and universities.",
+          "PollutionHigh": "Pollution is high. Plant trees and build parks to improve air quality.",
+          "UnemploymentHigh": "Unemployment is high. Zone more commercial and industrial areas.",
+          "AbandonedBuildings": "{count} abandoned building(s) in your city ({details}).",
+          "Oversupply": "Oversupply has caused buildings to become vacant.",
+          "IncreaseDemand": "Increase demand by growing your city or wait for natural redevelopment."
+        }
+      }
     },
     "CommandMenu": {
       "Title": "Command Menu",

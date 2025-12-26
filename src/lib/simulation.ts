@@ -1595,9 +1595,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Power advisor
   if (unpoweredBuildings > 0) {
     messages.push({
-      name: 'Power Advisor',
+      name: 'Advisors.Power',
       icon: 'power',
-      messages: [`${unpoweredBuildings} buildings lack power. Build more power plants!`],
+      messages: [JSON.stringify({ key: 'Messages.LackPower', params: { count: unpoweredBuildings } })],
       priority: unpoweredBuildings > 10 ? 'high' : 'medium',
     });
   }
@@ -1605,9 +1605,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Water advisor
   if (unwateredBuildings > 0) {
     messages.push({
-      name: 'Water Advisor',
+      name: 'Advisors.Water',
       icon: 'water',
-      messages: [`${unwateredBuildings} buildings lack water. Build water towers!`],
+      messages: [JSON.stringify({ key: 'Messages.LackWater', params: { count: unwateredBuildings } })],
       priority: unwateredBuildings > 10 ? 'high' : 'medium',
     });
   }
@@ -1616,9 +1616,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   const netIncome = stats.income - stats.expenses;
   if (netIncome < 0) {
     messages.push({
-      name: 'Finance Advisor',
+      name: 'Advisors.Finance',
       icon: 'cash',
-      messages: [`City is running a deficit of ₺${Math.abs(netIncome)}/month. Consider raising taxes or cutting services.`],
+      messages: [JSON.stringify({ key: 'Messages.Deficit', params: { amount: Math.abs(netIncome) } })],
       priority: netIncome < -500 ? 'critical' : 'high',
     });
   }
@@ -1626,9 +1626,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Safety advisor
   if (stats.safety < 40) {
     messages.push({
-      name: 'Safety Advisor',
+      name: 'Advisors.Safety',
       icon: 'shield',
-      messages: ['Crime is on the rise. Build more police stations to protect citizens.'],
+      messages: [JSON.stringify({ key: 'Messages.CrimeRising' })],
       priority: stats.safety < 20 ? 'critical' : 'high',
     });
   }
@@ -1636,9 +1636,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Health advisor
   if (stats.health < 50) {
     messages.push({
-      name: 'Health Advisor',
+      name: 'Advisors.Health',
       icon: 'hospital',
-      messages: ['Health services are lacking. Build hospitals to improve citizen health.'],
+      messages: [JSON.stringify({ key: 'Messages.HealthLacking' })],
       priority: stats.health < 30 ? 'high' : 'medium',
     });
   }
@@ -1646,9 +1646,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Education advisor
   if (stats.education < 50) {
     messages.push({
-      name: 'Education Advisor',
+      name: 'Advisors.Education',
       icon: 'education',
-      messages: ['Education levels are low. Build schools and universities.'],
+      messages: [JSON.stringify({ key: 'Messages.EducationLow' })],
       priority: stats.education < 30 ? 'high' : 'medium',
     });
   }
@@ -1656,9 +1656,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Environment advisor
   if (stats.environment < 40) {
     messages.push({
-      name: 'Environment Advisor',
+      name: 'Advisors.Environment',
       icon: 'environment',
-      messages: ['Pollution is high. Plant trees and build parks to improve air quality.'],
+      messages: [JSON.stringify({ key: 'Messages.PollutionHigh' })],
       priority: stats.environment < 20 ? 'high' : 'medium',
     });
   }
@@ -1667,9 +1667,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   const jobRatio = stats.jobs / (stats.population || 1);
   if (stats.population > 100 && jobRatio < 0.8) {
     messages.push({
-      name: 'Employment Advisor',
+      name: 'Advisors.Employment',
       icon: 'jobs',
-      messages: [`Unemployment is high. Zone more commercial and industrial areas.`],
+      messages: [JSON.stringify({ key: 'Messages.UnemploymentHigh' })],
       priority: jobRatio < 0.5 ? 'high' : 'medium',
     });
   }
@@ -1682,12 +1682,12 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     if (abandonedIndustrial > 0) details.push(`${abandonedIndustrial} industrial`);
     
     messages.push({
-      name: 'Urban Planning Advisor',
+      name: 'Advisors.UrbanPlanning',
       icon: 'planning',
       messages: [
-        `${abandonedBuildings} abandoned building${abandonedBuildings > 1 ? 's' : ''} in your city (${details.join(', ')}).`,
-        'Oversupply has caused buildings to become vacant.',
-        'Increase demand by growing your city or wait for natural redevelopment.'
+        JSON.stringify({ key: 'Messages.AbandonedBuildings', params: { count: abandonedBuildings, details: details.join(', ') } }),
+        JSON.stringify({ key: 'Messages.Oversupply' }),
+        JSON.stringify({ key: 'Messages.IncreaseDemand' })
       ],
       priority: abandonedBuildings > 10 ? 'high' : abandonedBuildings > 5 ? 'medium' : 'low',
     });

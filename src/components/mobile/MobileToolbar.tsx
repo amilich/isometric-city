@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -211,6 +212,10 @@ interface MobileToolbarProps {
 }
 
 export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMode }: MobileToolbarProps) {
+  const tPanels = useTranslations('Game.Panels');
+  const tMobile = useTranslations('Game.Mobile');
+  const tCategories = useTranslations('Game.Tools.Categories');
+
   const { state, setTool } = useGame();
   const { selectedTool, stats } = state;
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -353,7 +358,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
             {/* City Management section at top */}
             <div className="p-3 border-b border-border flex-shrink-0">
               <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                Şehir Yönetimi
+                {tMobile('CityManagement')}
               </div>
               <div className="grid grid-cols-4 gap-2">
                 <Button
@@ -362,7 +367,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('budget'); setShowMenu(false); }}
                 >
-                  Bütçe
+                  {tPanels('Budget')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -370,7 +375,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('statistics'); setShowMenu(false); }}
                 >
-                  İstatistik
+                  {tPanels('Statistics')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -378,7 +383,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('advisors'); setShowMenu(false); }}
                 >
-                  Danışmanlar
+                  {tPanels('Advisors')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -386,7 +391,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
                 >
-                  Ayarlar
+                  {tPanels('Settings')}
                 </Button>
               </div>
             </div>
@@ -395,7 +400,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
             {setOverlayMode && (
               <div className="p-3 border-b border-border flex-shrink-0">
                 <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                  Kaplamaları Görüntüle
+                  {tMobile('ViewOverlays')}
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   <Button
@@ -404,7 +409,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className="h-10 w-full text-xs"
                     onClick={() => setOverlayMode('none')}
                   >
-                    Yok
+                    {tMobile('None')}
                   </Button>
                   <Button
                     variant={overlayMode === 'power' ? 'default' : 'ghost'}
@@ -412,7 +417,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'power' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
                     onClick={() => setOverlayMode('power')}
                   >
-                    Güç
+                    {tMobile('Power')}
                   </Button>
                   <Button
                     variant={overlayMode === 'water' ? 'default' : 'ghost'}
@@ -420,7 +425,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'water' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
                     onClick={() => setOverlayMode('water')}
                   >
-                    Su
+                    {tMobile('Water')}
                   </Button>
                   <Button
                     variant={overlayMode === 'fire' ? 'default' : 'ghost'}
@@ -428,7 +433,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'fire' ? 'bg-red-500 hover:bg-red-600' : ''}`}
                     onClick={() => setOverlayMode('fire')}
                   >
-                    Yangın
+                    {tMobile('Fire')}
                   </Button>
                   <Button
                     variant={overlayMode === 'police' ? 'default' : 'ghost'}
@@ -436,7 +441,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'police' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                     onClick={() => setOverlayMode('police')}
                   >
-                    Polis
+                    {tMobile('Police')}
                   </Button>
                   <Button
                     variant={overlayMode === 'health' ? 'default' : 'ghost'}
@@ -444,7 +449,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'health' ? 'bg-green-500 hover:bg-green-600' : ''}`}
                     onClick={() => setOverlayMode('health')}
                   >
-                    Sağlık
+                    {tMobile('Health')}
                   </Button>
                   <Button
                     variant={overlayMode === 'education' ? 'default' : 'ghost'}
@@ -452,7 +457,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'education' ? 'bg-purple-500 hover:bg-purple-600' : ''}`}
                     onClick={() => setOverlayMode('education')}
                   >
-                    Eğitim
+                    {tMobile('Education')}
                   </Button>
                   <Button
                     variant={overlayMode === 'subway' ? 'default' : 'ghost'}
@@ -460,7 +465,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                     className={`h-10 w-full text-xs ${overlayMode === 'subway' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
                     onClick={() => setOverlayMode('subway')}
                   >
-                    Metro
+                    {tMobile('Subway')}
                   </Button>
                 </div>
               </div>
@@ -476,7 +481,7 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                       className="w-full justify-start gap-3 h-12"
                       onClick={() => handleCategoryClick(category)}
                     >
-                      <span className="flex-1 text-left font-medium">{category}</span>
+                      <span className="flex-1 text-left font-medium">{tCategories(category as any) || category}</span>
                       <svg
                         className={`w-4 h-4 transition-transform ${expandedCategory === category ? 'rotate-180' : ''}`}
                         viewBox="0 0 24 24"

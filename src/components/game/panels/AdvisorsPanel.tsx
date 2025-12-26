@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
@@ -32,6 +33,7 @@ const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 export function AdvisorsPanel() {
+  const t = useTranslations('Game.Panels');
   const { state, setActivePanel } = useGame();
   const { advisorMessages, stats } = state;
   
@@ -43,7 +45,7 @@ export function AdvisorsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[500px] max-h-[600px]">
         <DialogHeader>
-          <DialogTitle>Şehir Danışmanları</DialogTitle>
+          <DialogTitle>{t('CityAdvisors')}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">

@@ -3,35 +3,33 @@
 This ZIP contains only the files that were added/changed.
 
 ## Added
-- `src/components/game/panels/HelpPanel.tsx` — in‑game Help & Shortcuts panel.
+- **Water Terraform tool (`zone_water`)**
+  - Paint water tiles onto the map (clears existing building/zoning on the tile/footprint).
+- **Undo / Redo (core gameplay actions)**
+  - Undo/redo now works for building placement, zoning, bulldozing, subway/water placement, and tax/budget tweaks.
 
 ## Upgraded / improved
-- **Keyboard shortcuts**
-  - `Ctrl/⌘+S` quick save snapshot
-  - `Space` toggles pause/resume (and resumes to previous speed)
-  - Tool hotkeys: `1/2/3/4`, `B`, `T`, `R`, `C`, `I`, `D`
-  - `?` or `F1` opens Help panel
-- **Road/Rail/Subway drag “corner mode”**
-  - Hold **Shift** while dragging to place an **L‑shaped** path.
-- **Command menu**
-  - New **Navigate** results:
-    - `10,15` / `go 10 15` jumps to tile
-    - search `city hall`, `airport`, `hospital`, `fire`, etc.
-- **Settings**
-  - Download **PNG city preview** (high‑res mini‑map export)
+- **City previews**
+  - Saving a city snapshot now stores a lightweight mini‑map preview thumbnail.
+  - Settings: **Download City Preview (PNG)** (high‑res mini‑map export).
+  - Home page & Settings saved‑city list show preview thumbnails when available.
 - **Tile Info**
-  - Copy selected tile coordinates to clipboard
-- **Sidebar**
-  - Added an Info button to open Help
+  - Copy selected tile coordinates to clipboard (with feedback).
+- **Mobile UI / Sidebar / Command Menu**
+  - `Tree` and `Water` tools are now visible in the tool menus (not just via hotkeys).
+- **Bug fixes**
+  - Removed duplicate Help panel render on mobile layout.
+  - Fixed missing `placeWaterTerraform` export (previously referenced but not implemented).
 
 ## Files in this patch
-- README.md
+- PATCH_NOTES.md
 - src/types/game.ts
+- src/lib/simulation.ts
+- src/context/GameContext.tsx
 - src/components/Game.tsx
 - src/components/ui/CommandMenu.tsx
-- src/components/game/CanvasIsometricGrid.tsx
 - src/components/game/Sidebar.tsx
-- src/components/game/panels/index.ts
-- src/components/game/panels/HelpPanel.tsx
+- src/components/mobile/MobileToolbar.tsx
 - src/components/game/panels/SettingsPanel.tsx
 - src/components/game/panels/TileInfoPanel.tsx
+- src/app/page.tsx

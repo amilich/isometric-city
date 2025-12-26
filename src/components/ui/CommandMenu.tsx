@@ -55,7 +55,7 @@ function buildMenuItems(): MenuItem[] {
   const items: MenuItem[] = [];
 
   // Tools category
-  const toolsCategory: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway'];
+  const toolsCategory: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_water'];
   toolsCategory.forEach(tool => {
     const info = TOOL_INFO[tool];
     items.push({

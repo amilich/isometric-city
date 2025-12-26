@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
@@ -220,12 +221,33 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
       onClick={onLoad}
       className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200 group"
     >
-      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
-        {city.cityName}
-      </h3>
-      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>Pop: {city.population.toLocaleString()}</span>
-        <span>${city.money.toLocaleString()}</span>
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 bg-white/5 border border-white/10 overflow-hidden flex-shrink-0">
+          {city.preview ? (
+            <Image
+              src={city.preview}
+              alt={`${city.cityName} preview`}
+              width={48}
+              height={48}
+              unoptimized
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[10px] text-white/40">
+              —
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
+            {city.cityName}
+          </h3>
+          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+            <span>Pop: {city.population.toLocaleString()}</span>
+            <span>${city.money.toLocaleString()}</span>
+          </div>
+        </div>
       </div>
     </button>
   );

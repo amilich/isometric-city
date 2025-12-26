@@ -42,6 +42,33 @@ export function TileInfoPanel({
 }: TileInfoPanelProps) {
   const { x, y } = tile;
 
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopyCoords = async () => {
+    const textToCopy = `${x},${y}`;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        // Fallback for non-secure contexts
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch (err) {
+      console.error('Failed to copy coordinates:', err);
+    }
+  };
+
+
   // Derived local metrics (used for overlays + growth logic). These are *not* directly stored
   // in the tile to avoid extra simulation churn.
   const servicesAt: TileServicesAt = {
@@ -85,9 +112,19 @@ export function TileInfoPanel({
     >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-sans">Tile ({x}, {y})</CardTitle>
-        <Button variant="ghost" size="icon-sm" onClick={onClose}>
-          <CloseIcon size={14} />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCopyCoords}
+            title={copied ? 'Copied!' : 'Copy coordinates'}
+          >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+          </Button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} title="Close">
+            <CloseIcon size={14} />
+          </Button>
+        </div>
       </CardHeader>
       
       <CardContent className="space-y-3 text-sm">

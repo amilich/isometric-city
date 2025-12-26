@@ -404,7 +404,6 @@ useEffect(() => {
           {state.activePanel === 'advisors' && <AdvisorsPanel />}
           {state.activePanel === 'settings' && <SettingsPanel />}
         {state.activePanel === 'help' && <HelpPanel />}
-          {state.activePanel === 'help' && <HelpPanel />}
           
           <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
         </div>

@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
+import { generateCityPreviewDataUrl } from '@/lib/cityPreview';
 
 // Format a date for display
 function formatDate(timestamp: number): string {
@@ -47,6 +48,7 @@ export function SettingsPanel() {
   const [newCityName, setNewCityName] = useState(cityName);
   const [showNewGameConfirm, setShowNewGameConfirm] = useState(false);
   const [saveCitySuccess, setSaveCitySuccess] = useState(false);
+  const [previewExporting, setPreviewExporting] = useState(false);
   const [cityToDelete, setCityToDelete] = useState<SavedCityMeta | null>(null);
   const [cityToRename, setCityToRename] = useState<SavedCityMeta | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -151,6 +153,36 @@ export function SettingsPanel() {
     } catch (e) {
       console.error('Failed to download export file:', e);
     }
+  };
+
+
+  const handleDownloadCityPreview = () => {
+    if (previewExporting) return;
+
+    setPreviewExporting(true);
+    // Let the UI update before generating a large data URL
+    requestAnimationFrame(() => {
+      try {
+        const dataUrl = generateCityPreviewDataUrl(state.grid, state.gridSize, { size: 1024 });
+        if (!dataUrl) return;
+
+        const safeCityName = (cityName || 'IsoCity')
+          .replace(/[^a-z0-9-_ ]/gi, '')
+          .trim()
+          .replace(/\s+/g, '_');
+
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `${safeCityName || 'IsoCity'}-preview-${new Date().toISOString().slice(0, 10)}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (e) {
+        console.error('Failed to download city preview:', e);
+      } finally {
+        setPreviewExporting(false);
+      }
+    });
   };
 
   const handleImportFromFile = async (file: File) => {
@@ -263,8 +295,20 @@ export function SettingsPanel() {
                 <span className="text-green-400">Enabled</span>
               </div>
             </div>
+
+            <Button
+              variant="outline"
+              className="w-full mt-3"
+              onClick={handleDownloadCityPreview}
+              disabled={previewExporting}
+            >
+              {previewExporting ? 'Generating Preview…' : 'Download City Preview (PNG)'}
+            </Button>
+            <p className="text-muted-foreground text-xs mt-2">
+              Exports a mini-map style image of your current city.
+            </p>
           </div>
-          
+
           <Separator />
           
           {/* Saved Cities Section */}
@@ -361,22 +405,44 @@ export function SettingsPanel() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="font-medium text-sm truncate flex-1">
-                            {city.cityName}
-                            {city.id === currentCityId && (
-                              <span className="ml-2 text-[10px] text-primary">(current)</span>
+                        <div className="flex items-start gap-3 mb-2">
+                          <div className="w-14 h-14 rounded-md overflow-hidden border border-border/60 bg-muted/40 flex-shrink-0">
+                            {city.preview ? (
+                              <Image
+                                src={city.preview}
+                                alt={`${city.cityName} preview`}
+                                width={56}
+                                height={56}
+                                unoptimized
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                                No preview
+                              </div>
                             )}
                           </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between mb-1">
+                              <div className="font-medium text-sm truncate flex-1">
+                                {city.cityName}
+                                {city.id === currentCityId && (
+                                  <span className="ml-2 text-[10px] text-primary">(current)</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-1">
+                              <span>Pop: {formatPopulation(city.population)}</span>
+                              <span>{formatMoney(city.money)}</span>
+                              <span>{city.gridSize}×{city.gridSize}</span>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              Saved {formatDate(city.savedAt)}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-                          <span>Pop: {formatPopulation(city.population)}</span>
-                          <span>{formatMoney(city.money)}</span>
-                          <span>{city.gridSize}×{city.gridSize}</span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground mb-2">
-                          Saved {formatDate(city.savedAt)}
-                        </div>
+
                         <div className="flex gap-2">
                           {city.id !== currentCityId && (
                             <Button

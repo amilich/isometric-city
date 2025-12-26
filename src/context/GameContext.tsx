@@ -31,6 +31,7 @@ import {
 } from '@/lib/renderConfig';
 import { decompressGameState, getStateFromUrl } from '@/lib/shareState';
 import { safeDeserializeFromStorage, serializeForStorage } from '@/lib/storageCompression';
+import { generateCityPreviewDataUrl } from '@/lib/cityPreview';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITY_STORAGE_KEY = 'isocity-saved-city'; // For restoring after viewing shared city
@@ -38,6 +39,9 @@ const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index'; // Index of all sav
 const SAVED_CITY_PREFIX = 'isocity-city-'; // Prefix for individual saved city states
 const SPRITE_PACK_STORAGE_KEY = 'isocity-sprite-pack';
 const DAY_NIGHT_MODE_STORAGE_KEY = 'isocity-day-night-mode';
+
+// Undo/redo history limit (snapshots are stored in-memory only)
+const MAX_UNDO_STEPS = 50;
 
 export type DayNightMode = 'auto' | 'day' | 'night';
 
@@ -88,6 +92,11 @@ type GameContextValue = {
   loadSavedCity: (cityId: string) => boolean;
   deleteSavedCity: (cityId: string) => void;
   renameSavedCity: (cityId: string, newName: string) => void;
+  // Undo / Redo
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -511,6 +520,71 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Start with a default state, we'll load from localStorage after mount
   const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
   
+  // Undo / Redo history (in-memory only)
+  const undoStackRef = useRef<GameState[]>([]);
+  const redoStackRef = useRef<GameState[]>([]);
+
+  const clearHistory = useCallback(() => {
+    undoStackRef.current.length = 0;
+    redoStackRef.current.length = 0;
+  }, []);
+
+  const pushHistory = useCallback((snapshot: GameState) => {
+    const stack = undoStackRef.current;
+    // Prevent duplicate entries (e.g., React StrictMode dev double-invokes)
+    if (stack.length > 0 && stack[stack.length - 1] === snapshot) return;
+    stack.push(snapshot);
+    if (stack.length > MAX_UNDO_STEPS) {
+      stack.shift();
+    }
+    // Any new action clears the redo stack
+    redoStackRef.current.length = 0;
+  }, []);
+
+  const undo = useCallback(() => {
+    setState((current) => {
+      const prev = undoStackRef.current.pop();
+      if (!prev) return current;
+
+      // Push current state to redo
+      redoStackRef.current.push(current);
+      if (redoStackRef.current.length > MAX_UNDO_STEPS) {
+        redoStackRef.current.shift();
+      }
+
+      // Preserve UI controls while restoring world state
+      return {
+        ...prev,
+        selectedTool: current.selectedTool,
+        activePanel: current.activePanel,
+        speed: current.speed,
+        // Force transient systems (vehicles, etc.) to reset to the restored world
+        gameVersion: (current.gameVersion ?? 0) + 1,
+      };
+    });
+  }, []);
+
+  const redo = useCallback(() => {
+    setState((current) => {
+      const next = redoStackRef.current.pop();
+      if (!next) return current;
+
+      // Push current state back to undo
+      undoStackRef.current.push(current);
+      if (undoStackRef.current.length > MAX_UNDO_STEPS) {
+        undoStackRef.current.shift();
+      }
+
+      return {
+        ...next,
+        selectedTool: current.selectedTool,
+        activePanel: current.activePanel,
+        speed: current.speed,
+        gameVersion: (current.gameVersion ?? 0) + 1,
+      };
+    });
+  }, []);
+
   const [hasExistingGame, setHasExistingGame] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -594,10 +668,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       };
 
       skipNextSaveRef.current = true; // avoid saving immediately on load
+      clearHistory();
       setState(merged);
       setHasExistingGame(true);
     } else if (saved) {
       skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
+      clearHistory();
       setState(saved);
       setHasExistingGame(true);
     } else {
@@ -723,8 +799,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTaxRate = useCallback((rate: number) => {
-    setState((prev) => ({ ...prev, taxRate: clamp(rate, 0, 100) }));
-  }, []);
+    const clamped = clamp(rate, 0, 100);
+    setState((prev) => {
+      if (prev.taxRate === clamped) return prev;
+      pushHistory(prev);
+      return { ...prev, taxRate: clamped };
+    });
+  }, [pushHistory]);
 
   const setActivePanel = useCallback(
     (panel: GameState['activePanel']) => {
@@ -736,15 +817,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const setBudgetFunding = useCallback(
     (key: keyof Budget, funding: number) => {
       const clamped = clamp(funding, 0, 100);
-      setState((prev) => ({
-        ...prev,
-        budget: {
-          ...prev.budget,
-          [key]: { ...prev.budget[key], funding: clamped },
-        },
-      }));
+      setState((prev) => {
+        if (prev.budget[key].funding === clamped) return prev;
+        pushHistory(prev);
+        return {
+          ...prev,
+          budget: {
+            ...prev.budget,
+            [key]: { ...prev.budget[key], funding: clamped },
+          },
+        };
+      });
     },
-    [],
+    [pushHistory],
   );
 
   const placeAtTile = useCallback((x: number, y: number) => {
@@ -780,6 +865,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         const nextState = placeSubway(prev, x, y);
         if (nextState === prev) return prev;
         
+        pushHistory(prev);
         return {
           ...nextState,
           stats: { ...nextState.stats, money: nextState.stats.money - cost },
@@ -794,6 +880,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         const nextState = placeWaterTerraform(prev, x, y);
         if (nextState === prev) return prev;
         
+        pushHistory(prev);
         return {
           ...nextState,
           stats: { ...nextState.stats, money: nextState.stats.money - cost },
@@ -814,6 +901,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       if (nextState === prev) return prev;
 
+      pushHistory(prev);
+
       if (cost > 0) {
         nextState = {
           ...nextState,
@@ -823,7 +912,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       return nextState;
     });
-  }, []);
+  }, [pushHistory]);
 
   const connectToCity = useCallback((cityId: string) => {
     setState((prev) => {
@@ -947,6 +1036,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const newGame = useCallback((name?: string, size?: number) => {
     clearGameState(); // Clear saved state when starting fresh
+    clearHistory();
     const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'IsoCity');
     // Increment gameVersion from current state to ensure vehicles/entities are cleared
     setState((prev) => ({
@@ -1023,6 +1113,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           }
         }
         // Increment gameVersion to clear vehicles/entities when loading a new state
+        clearHistory();
         setState((prev) => ({
           ...(parsed as GameState),
           gameVersion: (prev.gameVersion ?? 0) + 1,
@@ -1041,6 +1132,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const generateRandomCity = useCallback(() => {
     clearGameState(); // Clear saved state when generating a new city
+    clearHistory();
     const randomCity = generateRandomAdvancedCity(DEFAULT_GRID_SIZE);
     // Increment gameVersion to ensure vehicles/entities are cleared
     setState((prev) => ({
@@ -1092,6 +1184,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const savedState = loadSavedCityState();
     if (savedState) {
       skipNextSaveRef.current = true;
+      clearHistory();
       setState(savedState);
       clearSavedCityStorage();
       return true;
@@ -1111,6 +1204,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Save current city to the multi-save system
   const saveCity = useCallback(() => {
+    const preview = generateCityPreviewDataUrl(state.grid, state.gridSize, { size: 160 });
     const cityMeta: SavedCityMeta = {
       id: state.id,
       cityName: state.cityName,
@@ -1119,6 +1213,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       year: state.year,
       month: state.month,
       gridSize: state.gridSize,
+      preview: preview || undefined,
       savedAt: Date.now(),
     };
     
@@ -1211,6 +1306,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
     
     skipNextSaveRef.current = true;
+    clearHistory();
     setState((prev) => ({
       ...cityState,
       gameVersion: (prev.gameVersion ?? 0) + 1,
@@ -1298,6 +1394,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     loadSavedCity,
     deleteSavedCity,
     renameSavedCity,
+    // Undo / Redo
+    undo,
+    redo,
+    canUndo: undoStackRef.current.length > 0,
+    canRedo: redoStackRef.current.length > 0,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

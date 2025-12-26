@@ -2519,6 +2519,56 @@ export function removeSubway(state: GameState, x: number, y: number): GameState 
   return { ...state, grid: newGrid };
 }
 
+
+
+// Terraform a tile into water (clears any building/zoning on that tile)
+// - Converts the clicked tile (or the entire footprint if it's part of a multi-tile building) to water
+// - Clears subway/rail overlays and resets tile metrics for consistent overlays
+export function placeWaterTerraform(state: GameState, x: number, y: number): GameState {
+  const tile = state.grid[y]?.[x];
+  if (!tile) return state;
+
+  // Already water
+  if (tile.building.type === 'water') return state;
+
+  // Clone grid + tile + building objects
+  const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+
+  const resetToWater = (tx: number, ty: number) => {
+    const t = newGrid[ty]?.[tx];
+    if (!t) return;
+    t.building = createBuilding('water');
+    t.zone = 'none';
+    t.hasRailOverlay = false;
+    t.hasSubway = false;
+
+    // Water tiles are static in the sim loop, so we reset metrics here to avoid stale overlays.
+    t.pollution = 0;
+    t.crime = 0;
+    t.traffic = 0;
+    t.landValue = 60;
+  };
+
+  // If the tile is part of a multi-tile building, terraform the entire footprint
+  const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
+  if (origin) {
+    const size = getBuildingSize(origin.buildingType);
+    for (let dy = 0; dy < size.height; dy++) {
+      for (let dx = 0; dx < size.width; dx++) {
+        const tx = origin.originX + dx;
+        const ty = origin.originY + dy;
+        if (tx >= 0 && ty >= 0 && tx < state.gridSize && ty < state.gridSize) {
+          resetToWater(tx, ty);
+        }
+      }
+    }
+  } else {
+    resetToWater(x, y);
+  }
+
+  return { ...state, grid: newGrid };
+}
+
 // Generate a random advanced city state with developed zones, infrastructure, and buildings
 export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cityName: string = 'Metropolis'): GameState {
   // Start with a base state (terrain generation)

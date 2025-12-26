@@ -140,6 +140,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const [offset, setOffset] = useState({ x: isMobile ? 200 : 620, y: isMobile ? 100 : 160 });
   const [isDragging, setIsDragging] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
   const isPanningRef = useRef(false); // Ref for animation loop to check panning state
   const isPinchZoomingRef = useRef(false); // Ref for animation loop to check pinch zoom state
   const zoomRef = useRef(isMobile ? 0.6 : 1); // Ref for animation loop to check zoom level
@@ -546,6 +547,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
       const key = e.key.toLowerCase();
+      
+      if (key === ' ') {
+        setIsSpacePressed(true);
+        e.preventDefault();
+      }
+
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
         pressed.add(key);
         e.preventDefault();
@@ -554,6 +561,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
+      
+      if (key === ' ') {
+        setIsSpacePressed(false);
+        if (isPanning) {
+          setIsPanning(false);
+        }
+      }
+
       pressed.delete(key);
     };
 
@@ -3535,7 +3550,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   }, [grid, gridSize, visualHour, offset, zoom, canvasSize.width, canvasSize.height, isMobile, isPanning]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    if (e.button === 1 || (e.button === 0 && e.altKey) || (e.button === 0 && isSpacePressed)) {
       setIsPanning(true);
       setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
       panCandidateRef.current = null;
@@ -3599,7 +3614,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
+  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid, isSpacePressed]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
@@ -4003,7 +4018,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       ref={containerRef}
       className="relative w-full h-full overflow-hidden touch-none"
       style={{ 
-        cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
+        cursor: isPanning ? 'grabbing' : isSpacePressed ? 'grab' : isDragging ? 'crosshair' : 'default',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

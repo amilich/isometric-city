@@ -245,7 +245,7 @@ describe('useGameKeyboard', () => {
     });
 
     triggerKeyDown('o');
-    expect(mockSetOverlayMode).toHaveBeenCalledWith('traffic');
+    expect(mockSetOverlayMode).toHaveBeenCalledWith('power');
   });
 
   it('cycles sports tools on A', () => {

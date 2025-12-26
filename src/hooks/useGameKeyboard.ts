@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
 import { OverlayMode } from '@/components/game/types';
 import { TOOL_CATEGORIES } from '@/components/game/categories';
+import { OVERLAY_MODES } from '@/components/game/overlays';
 
 interface UseGameKeyboardProps {
   overlayMode: OverlayMode;
@@ -47,12 +48,10 @@ export function useGameKeyboard({
         setTool('bulldoze');
       } else if (e.key === 'o' || e.key === 'O') {
         e.preventDefault();
-        // Cycle overlays: None -> Traffic -> LandValue -> TargetLevel -> None
-        if (overlayMode === 'none') setOverlayMode('traffic');
-        else if (overlayMode === 'traffic') setOverlayMode('land_value');
-        else if (overlayMode === 'land_value') setOverlayMode('target_level');
-        else if (overlayMode === 'target_level') setOverlayMode('none');
-        else setOverlayMode('none'); // Reset if in another mode (e.g. power)
+        // Cycle through ALL available overlays
+        const currentIndex = OVERLAY_MODES.indexOf(overlayMode);
+        const nextIndex = (currentIndex + 1) % OVERLAY_MODES.length;
+        setOverlayMode(OVERLAY_MODES[nextIndex]);
       } else if (e.key === ' ') {
         e.preventDefault();
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)

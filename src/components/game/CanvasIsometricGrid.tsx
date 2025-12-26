@@ -271,7 +271,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const keysPressedRef = useRef<Set<string>>(new Set());
 
   // Only zoning tools show the grid/rectangle selection visualization
-  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'].includes(selectedTool);
+  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water'].includes(selectedTool);
   
   // Roads, bulldoze, and other tools support drag-to-place but don't show the grid
   const supportsDragPlace = selectedTool !== 'select';
@@ -3083,7 +3083,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     // Draw hovered tile highlight (with multi-tile preview for buildings)
     if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
       // Check if selectedTool is a building type (not a non-building tool)
-      const nonBuildingTools: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'];
+      const nonBuildingTools: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water'];
       const isBuildingTool = selectedTool && !nonBuildingTools.includes(selectedTool);
       
       if (isBuildingTool) {

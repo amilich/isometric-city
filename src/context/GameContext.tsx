@@ -17,6 +17,7 @@ import {
   DEFAULT_GRID_SIZE,
   placeBuilding,
   placeSubway,
+  terraformToWater,
   simulateTick,
   checkForDiscoverableCities,
   generateRandomAdvancedCity,
@@ -150,6 +151,7 @@ const toolZoneMap: Partial<Record<Tool, ZoneType>> = {
   zone_commercial: 'commercial',
   zone_industrial: 'industrial',
   zone_dezone: 'none',
+  zone_water: 'none', // Special handling in placeAtTile
 };
 
 // Load game state from localStorage
@@ -696,6 +698,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         if (tile.hasSubway) return prev;
         
         const nextState = placeSubway(prev, x, y);
+        if (nextState === prev) return prev;
+        
+        return {
+          ...nextState,
+          stats: { ...nextState.stats, money: nextState.stats.money - cost },
+        };
+      }
+
+      // Handle water terraform tool separately
+      if (tool === 'zone_water') {
+        // Already water
+        if (tile.building.type === 'water') return prev;
+        
+        const nextState = terraformToWater(prev, x, y);
         if (nextState === prev) return prev;
         
         return {

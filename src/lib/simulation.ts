@@ -2499,6 +2499,46 @@ export function removeSubway(state: GameState, x: number, y: number): GameState 
   return { ...state, grid: newGrid };
 }
 
+// Terraform a tile to water (converts land to water)
+export function terraformToWater(state: GameState, x: number, y: number): GameState {
+  const tile = state.grid[y]?.[x];
+  if (!tile) return state;
+  
+  // Already water
+  if (tile.building.type === 'water') return state;
+
+  const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+  
+  // Check if this tile is part of a multi-tile building
+  const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
+  
+  if (origin) {
+    // For multi-tile buildings, only terraform the clicked tile to water
+    // (we could alternatively clear the whole building first, but single-tile is simpler)
+    const size = getBuildingSize(origin.buildingType);
+    for (let dy = 0; dy < size.height; dy++) {
+      for (let dx = 0; dx < size.width; dx++) {
+        const clearX = origin.originX + dx;
+        const clearY = origin.originY + dy;
+        if (clearX < state.gridSize && clearY < state.gridSize) {
+          newGrid[clearY][clearX].building = createBuilding('grass');
+          newGrid[clearY][clearX].zone = 'none';
+          newGrid[clearY][clearX].hasSubway = false;
+          newGrid[clearY][clearX].hasRailOverlay = false;
+        }
+      }
+    }
+  }
+  
+  // Convert the tile to water
+  newGrid[y][x].building = createBuilding('water');
+  newGrid[y][x].zone = 'none';
+  newGrid[y][x].hasSubway = false;
+  newGrid[y][x].hasRailOverlay = false;
+
+  return { ...state, grid: newGrid };
+}
+
 // Generate a random advanced city state with developed zones, infrastructure, and buildings
 export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cityName: string = 'Metropolis'): GameState {
   // Start with a base state (terrain generation)

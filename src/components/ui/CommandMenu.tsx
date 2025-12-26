@@ -65,7 +65,7 @@ function buildMenuItems(): MenuItem[] {
   });
 
   // Zones category
-  const zonesCategory: Tool[] = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'];
+  const zonesCategory: Tool[] = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water'];
   zonesCategory.forEach(tool => {
     const info = TOOL_INFO[tool];
     items.push({

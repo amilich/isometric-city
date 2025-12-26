@@ -88,6 +88,7 @@ export type Tool =
   | 'zone_commercial'
   | 'zone_industrial'
   | 'zone_dezone'
+  | 'zone_water'
   | 'police_station'
   | 'fire_station'
   | 'hospital'
@@ -153,6 +154,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   zone_commercial: { name: 'Commercial', cost: 50, description: 'Zone for shops and offices' },
   zone_industrial: { name: 'Industrial', cost: 50, description: 'Zone for factories' },
   zone_dezone: { name: 'De-zone', cost: 0, description: 'Remove zoning' },
+  zone_water: { name: 'Water', cost: 100000, description: 'Terraform to water' },
   police_station: { name: 'Police', cost: 500, description: 'Increase safety', size: 1 },
   fire_station: { name: 'Fire Station', cost: 500, description: 'Fight fires', size: 1 },
   hospital: { name: 'Hospital', cost: 1000, description: 'Improve health (2x2)', size: 2 },

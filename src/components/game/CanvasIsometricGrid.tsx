@@ -42,6 +42,10 @@ import {
   ZOOM_MAX,
   WATER_ASSET_PATH,
   AIRPLANE_SPRITE_SRC,
+  TRAIN_MIN_ZOOM,
+  HELICOPTER_MIN_ZOOM,
+  SMOG_MIN_ZOOM,
+  FIREWORK_MIN_ZOOM,
 } from '@/components/game/constants';
 import {
   gridToScreen,
@@ -271,7 +275,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const keysPressedRef = useRef<Set<string>>(new Set());
 
   // Only zoning tools show the grid/rectangle selection visualization
-  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water'].includes(selectedTool);
+  // Note: zone_water uses supportsDragPlace behavior (place on click/drag) instead of rectangle selection
+  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'].includes(selectedTool);
   
   // Roads, bulldoze, and other tools support drag-to-place but don't show the grid
   const supportsDragPlace = selectedTool !== 'select';
@@ -761,6 +766,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize, canvasSize: size } = worldStateRef.current;
 
     if (!currentGrid || currentGridSize <= 0 || trainsRef.current.length === 0) {
+      return;
+    }
+    
+    // Skip drawing trains when very zoomed out (for large map performance)
+    if (currentZoom < TRAIN_MIN_ZOOM) {
       return;
     }
 
@@ -3827,8 +3837,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    // Calculate new zoom
-    const zoomDelta = e.deltaY > 0 ? -0.05 : 0.05;
+    // Calculate new zoom with proportional scaling for smoother feel
+    // Use smaller base delta (0.03) and scale by current zoom for consistent feel at all levels
+    const baseZoomDelta = 0.03;
+    const scaledDelta = baseZoomDelta * Math.max(0.5, zoom); // Scale with zoom, min 0.5x
+    const zoomDelta = e.deltaY > 0 ? -scaledDelta : scaledDelta;
     const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + zoomDelta));
     
     if (newZoom === zoom) return;

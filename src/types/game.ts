@@ -281,10 +281,15 @@ export interface Notification {
   timestamp: number;
 }
 
+export type AdvisorMessageItem = {
+  key: string;
+  params?: Record<string, string | number>;
+};
+
 export interface AdvisorMessage {
   name: string;
   icon: string;
-  messages: string[];
+  messages: AdvisorMessageItem[];
   priority: 'low' | 'medium' | 'high' | 'critical';
 }
 

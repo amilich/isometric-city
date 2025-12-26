@@ -332,5 +332,80 @@
     "health_coverage": "Health Coverage",
     "education_coverage": "Education Coverage",
     "subway_coverage": "Subway Coverage"
+  },
+  "city_advisors": {
+    "title": "City Advisors",
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium"
+    },
+    "overall": {
+      "title": "Overall City Rating",
+      "description": "Based on happiness, health, education, safety & environment"
+    },
+    "no_issues": {
+      "title": "No urgent issues to report!",
+      "description": "Your city is running smoothly."
+    },
+    "power_advisor": {
+      "title": "Power Advisor",
+      "messages": {
+        "lack_of_power": "{unpoweredBuildings} buildings lack power. Build more power plants!"
+      }
+    },
+    "water_advisor": {
+      "title": "Water Advisor",
+      "messages": {
+        "lack_of_water": "{unwateredBuildings} buildings lack water. Build water towers!"
+      }
+    },
+    "finance_advisor": {
+      "title": "Finance Advisor",
+      "messages": {
+        "net_income": "City is running a deficit of ${Math.abs(netIncome)}/month. Consider raising taxes or cutting services."
+      }
+    },
+    "safety_advisor": {
+      "title": "Safety Advisor",
+      "messages": {
+        "crime": "Crime is on the rise. Build more police stations to protect citizens."
+      }
+    },
+    "health_advisor": {
+      "title": "Health Advisor",
+      "messages": {
+        "improve_health": "Health services are lacking. Build hospitals to improve citizen health."
+      }
+    },
+    "education_advisor": {
+      "title": "Education Advisor",
+      "messages": {
+        "improve_education": "Education levels are low. Build schools and universities."
+      }
+    },
+    "environment_advisor": {
+      "title": "Environment Advisor",
+      "messages": {
+        "improve_air_quality": "Pollution is high. Plant trees and build parks to improve air quality."
+      }
+    },
+    "employment_advisor": {
+      "title": "Employment Advisor",
+      "messages": {
+        "unemployment": "Unemployment is high. Zone more commercial and industrial areas."
+      }
+    },
+    "urban_planning_advisor": {
+      "title": "Employment Advisor",
+      "messages": {
+        "abandoned_buildings": "{count, plural, one {# abandoned building} other {# abandoned buildings}} in your city ({details})",
+        "oversupply": "Oversupply has caused buildings to become vacant.",
+        "increase_demand": "Increase demand by growing your city or wait for natural redevelopment."
+      },
+      "abandoned_residential": "{abandonedResidential} residential",
+      "abandoned_commercial": "{abandonedCommercial} commercial",
+      "abandoned_industrial": "{abandonedIndustrial} industrial"
+    }
   }
 }

@@ -1596,9 +1596,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Power advisor
   if (unpoweredBuildings > 0) {
     messages.push({
-      name: 'Power Advisor',
+      name: 'city_advisors.power_advisor.title',
       icon: 'power',
-      messages: [`${unpoweredBuildings} buildings lack power. Build more power plants!`],
+      messages: [{key: 'city_advisors.power_advisor.messages.lack_of_power', params: { unpoweredBuildings }}],
       priority: unpoweredBuildings > 10 ? 'high' : 'medium',
     });
   }
@@ -1608,7 +1608,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Water Advisor',
       icon: 'water',
-      messages: [`${unwateredBuildings} buildings lack water. Build water towers!`],
+      messages: [{key: 'city_advisors.water_advisor.messages.lack_of_water', params: { unwateredBuildings }}],
       priority: unwateredBuildings > 10 ? 'high' : 'medium',
     });
   }
@@ -1619,7 +1619,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Finance Advisor',
       icon: 'cash',
-      messages: [`City is running a deficit of $${Math.abs(netIncome)}/month. Consider raising taxes or cutting services.`],
+      messages: [{key: 'city_advisors.finance_advisor.messages.net_income', params: { netIncome }}],
       priority: netIncome < -500 ? 'critical' : 'high',
     });
   }
@@ -1629,7 +1629,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Safety Advisor',
       icon: 'shield',
-      messages: ['Crime is on the rise. Build more police stations to protect citizens.'],
+      messages: [{key: 'city_advisors.safety_advisor.messages.crime'}],
       priority: stats.safety < 20 ? 'critical' : 'high',
     });
   }
@@ -1639,7 +1639,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Health Advisor',
       icon: 'hospital',
-      messages: ['Health services are lacking. Build hospitals to improve citizen health.'],
+      messages: [{key: 'city_advisors.health_advisor.messages.improve_health'}],
       priority: stats.health < 30 ? 'high' : 'medium',
     });
   }
@@ -1649,7 +1649,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Education Advisor',
       icon: 'education',
-      messages: ['Education levels are low. Build schools and universities.'],
+      messages: [{key: 'city_advisors.education_advisor.messages.improve_education'}],
       priority: stats.education < 30 ? 'high' : 'medium',
     });
   }
@@ -1659,7 +1659,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Environment Advisor',
       icon: 'environment',
-      messages: ['Pollution is high. Plant trees and build parks to improve air quality.'],
+      messages: [{key: 'city_advisors.environment_advisor.messages.improve_air_quality'}],
       priority: stats.environment < 20 ? 'high' : 'medium',
     });
   }
@@ -1670,7 +1670,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: 'Employment Advisor',
       icon: 'jobs',
-      messages: [`Unemployment is high. Zone more commercial and industrial areas.`],
+      messages: [{key: 'city_advisors.employment_advisor.messages.unemployment'}],
       priority: jobRatio < 0.5 ? 'high' : 'medium',
     });
   }
@@ -1686,9 +1686,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
       name: 'Urban Planning Advisor',
       icon: 'planning',
       messages: [
-        `${abandonedBuildings} abandoned building${abandonedBuildings > 1 ? 's' : ''} in your city (${details.join(', ')}).`,
-        'Oversupply has caused buildings to become vacant.',
-        'Increase demand by growing your city or wait for natural redevelopment.'
+        {key: 'city_advisors.urban_planning_advisor.messages.abandoned_buildings', params: {count: abandonedBuildings, details: details.join(', ')}},
+        {key: 'city_advisors.urban_planning_advisor.messages.oversupply'},
+        {key: 'city_advisors.urban_planning_advisor.messages.increase_demand'},
       ],
       priority: abandonedBuildings > 10 ? 'high' : abandonedBuildings > 5 ? 'medium' : 'low',
     });

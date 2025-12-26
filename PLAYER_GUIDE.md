@@ -20,43 +20,43 @@ Service buildings provide essential coverage to your city. They function based o
 | :--- | :--- | :--- | :--- | :--- |
 | **Police Station** | $500 | 1x1 | 13 | Reduces crime, Safety +15% locally. |
 | **Fire Station** | $500 | 1x1 | 18 | Extinguishes fires, Safety +10% locally. |
-| **School** | $400 | 2x2 | 11 | Basic Education. Land Value +15. |
-| **University** | $2,000 | 3x3 | 19 | Advanced Education. Land Value +35. |
-| **Hospital** | $1,000 | 2x2 | 12 | Public Health. Land Value +25. |
+| **School** | $400 | 2x2 | 11 | Basic Education. |
+| **University** | $2,000 | 3x3 | 19 | Advanced Education. |
+| **Hospital** | $1,000 | 2x2 | 12 | Public Health. |
 
 ### Infrastructure & Utilities
 | Building | Cost | Size | Range | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **Power Plant** | $3,000 | 2x2 | 15 | Generates power. High Pollution (+30). Lowers Land Value (-20). |
-| **Water Tower** | $1,000 | 1x1 | 12 | Provides water. Neutral Land Value (+5). |
+| **Power Plant** | $3,000 | 2x2 | 15 | Generates power. High Pollution (+30). |
+| **Water Tower** | $1,000 | 1x1 | 12 | Provides water. |
 | **Road** | $25 | 1x1 | - | Necessary for development. Slight Pollution (+2). |
-| **Rail** | $40 | 1x1 | - | Boosts Industry. High Pollution (+1), Lowers Land Value (-2). |
-| **Rail Station** | $1,000 | 2x2 | - | Access to Rail. Land Value +20. |
-| **Subway Station** | $750 | 1x1 | - | Access to Subway. Land Value +25. |
+| **Rail** | $40 | 1x1 | - | Boosts Industry. High Pollution (+1). |
+| **Rail Station** | $1,000 | 2x2 | - | Access to Rail. |
+| **Subway Station** | $750 | 1x1 | - | Access to Subway. |
 
 ### Parks & Recreation
-Parks provide happiness, reduce pollution, and significantly boost local Land Value.
+Parks provide happiness and reduce pollution, improving the city's Environment score.
 
-| Building | Cost | Size | Land Value Effect | Pollution Reduction |
-| :--- | :--- | :--- | :--- | :--- |
-| **Small Park** | $150 | 1x1 | +20 | -10 |
-| **Large Park** | $600 | 3x3 | +50 | -25 |
-| **Tennis Court** | $200 | 1x1 | +15 | -5 |
-| **Basketball Court** | $250 | 1x1 | +12 | -3 |
-| **Playground** | $200 | 1x1 | +15 | -5 |
-| **Swimming Pool** | $450 | 1x1 | +18 | -5 |
-| **Stadium** | $5,000 | 3x3 | +40 | - |
+| Building | Cost | Size | Pollution Reduction |
+| :--- | :--- | :--- | :--- |
+| **Small Park** | $150 | 1x1 | -10 |
+| **Large Park** | $600 | 3x3 | -25 |
+| **Tennis Court** | $200 | 1x1 | -5 |
+| **Basketball Court** | $250 | 1x1 | -3 |
+| **Playground** | $200 | 1x1 | -5 |
+| **Swimming Pool** | $450 | 1x1 | -5 |
+| **Stadium** | $5,000 | 3x3 | - |
 
 ### Special Buildings
 These unique structures provide massive city-wide bonuses and demand boosts.
 
 | Building | Cost | Size | Jobs | Impact |
 | :--- | :--- | :--- | :--- | :--- |
-| **City Hall** | $6,000 | 2x2 | 60 | **Global Demand Boost** (Res+8, Com+10, Ind+5). Land Value +50. |
-| **Museum** | $4,000 | 3x3 | 40 | **Commercial Boost** (+15). Land Value +45. |
+| **City Hall** | $6,000 | 2x2 | 60 | **Global Demand Boost** (Res+8, Com+10, Ind+5). |
+| **Museum** | $4,000 | 3x3 | 40 | **Commercial Boost** (+15). |
 | **Airport** | $10,000 | 4x4 | 200 | **Major Commercial/Industrial Boost** (+15/+10). High Pollution (+20). |
-| **Space Program** | $15,000 | 3x3 | 150 | **High-Tech Industry Boost** (+20). Massive Land Value (+80). |
-| **Amusement Park** | $12,000 | 4x4 | 100 | **Commercial Demand Boost** (+18). Land Value +60. |
+| **Space Program** | $15,000 | 3x3 | 150 | **High-Tech Industry Boost** (+20). |
+| **Amusement Park** | $12,000 | 4x4 | 100 | **Commercial Demand Boost** (+18). |
 
 ---
 

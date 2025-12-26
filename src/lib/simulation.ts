@@ -15,7 +15,7 @@ import {
   AdjacentCity,
   WaterBody,
   BridgeType,
-  BridgeOrientation,
+  BridgeInfo,
   BUILDING_STATS,
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
@@ -102,25 +102,25 @@ function perlinNoise(x: number, y: number, seed: number, octaves: number = 4): n
 function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] {
   // Use noise to find potential lake centers - look for low points
   const lakeNoise = (x: number, y: number) => perlinNoise(x, y, seed + 1000, 3);
-  
+
   // Find lake seed points (local minimums in noise)
   const lakeCenters: { x: number; y: number; noise: number }[] = [];
   const minDistFromEdge = Math.max(8, Math.floor(size * 0.15)); // Keep lakes away from ocean edges
   const minDistBetweenLakes = Math.max(size * 0.2, 10); // Adaptive but ensure minimum separation
-  
+
   // Collect all potential lake centers with adaptive threshold
   // Start with a lenient threshold and tighten if we find too many
   let threshold = 0.5;
   let attempts = 0;
   const maxAttempts = 3;
-  
+
   while (lakeCenters.length < 2 && attempts < maxAttempts) {
     lakeCenters.length = 0; // Reset for this attempt
-    
+
     for (let y = minDistFromEdge; y < size - minDistFromEdge; y++) {
       for (let x = minDistFromEdge; x < size - minDistFromEdge; x++) {
         const noiseVal = lakeNoise(x, y);
-        
+
         // Check if this is a good lake center (low noise value)
         if (noiseVal < threshold) {
           // Check distance from other lake centers
@@ -132,22 +132,22 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
               break;
             }
           }
-          
+
           if (!tooClose) {
             lakeCenters.push({ x, y, noise: noiseVal });
           }
         }
       }
     }
-    
+
     // If we found enough centers, break
     if (lakeCenters.length >= 2) break;
-    
+
     // Otherwise, relax the threshold for next attempt
     threshold += 0.1;
     attempts++;
   }
-  
+
   // If still no centers found, force create at least 2 lakes at strategic positions
   if (lakeCenters.length === 0) {
     // Place lakes at strategic positions, ensuring they're far enough from edges
@@ -168,35 +168,35 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
     let newY = existing.y > size / 2 ? quarterSize : threeQuarterSize;
     lakeCenters.push({ x: newX, y: newY, noise: 0 });
   }
-  
+
   // Sort by noise value (lowest first) and pick 2-3 best candidates
   lakeCenters.sort((a, b) => a.noise - b.noise);
   const numLakes = 2 + Math.floor(Math.random() * 2); // 2 or 3 lakes
   const selectedCenters = lakeCenters.slice(0, Math.min(numLakes, lakeCenters.length));
-  
+
   const waterBodies: WaterBody[] = [];
   const usedLakeNames = new Set<string>();
-  
+
   // Grow lakes from each center using radial expansion for rounder shapes
   for (const center of selectedCenters) {
     // Target size: 40-80 tiles for bigger lakes
     const targetSize = 40 + Math.floor(Math.random() * 41);
     const lakeTiles: { x: number; y: number }[] = [{ x: center.x, y: center.y }];
     const candidates: { x: number; y: number; dist: number; noise: number }[] = [];
-    
+
     // Add initial neighbors as candidates
     const directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
     for (const [dx, dy] of directions) {
       const nx = center.x + dx;
       const ny = center.y + dy;
-      if (nx >= minDistFromEdge && nx < size - minDistFromEdge && 
-          ny >= minDistFromEdge && ny < size - minDistFromEdge) {
+      if (nx >= minDistFromEdge && nx < size - minDistFromEdge &&
+        ny >= minDistFromEdge && ny < size - minDistFromEdge) {
         const dist = Math.sqrt(dx * dx + dy * dy);
         const noise = lakeNoise(nx, ny);
         candidates.push({ x: nx, y: ny, dist, noise });
       }
     }
-    
+
     // Grow lake by adding adjacent tiles, prioritizing:
     // 1. Closer to center (for rounder shape)
     // 2. Lower noise values (for organic shape)
@@ -208,51 +208,51 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
         }
         return a.dist - b.dist; // Prefer closer tiles for rounder shape
       });
-      
+
       // Pick from top candidates (closest/lowest noise)
       const pickIndex = Math.floor(Math.random() * Math.min(5, candidates.length));
       const picked = candidates.splice(pickIndex, 1)[0];
-      
+
       // Check if already in lake
       if (lakeTiles.some(t => t.x === picked.x && t.y === picked.y)) continue;
-      
+
       // Check if tile is valid (not already water from another lake)
       if (grid[picked.y][picked.x].building.type === 'water') continue;
-      
+
       lakeTiles.push({ x: picked.x, y: picked.y });
-      
+
       // Add new neighbors as candidates
       for (const [dx, dy] of directions) {
         const nx = picked.x + dx;
         const ny = picked.y + dy;
-        if (nx >= minDistFromEdge && nx < size - minDistFromEdge && 
-            ny >= minDistFromEdge && ny < size - minDistFromEdge &&
-            !lakeTiles.some(t => t.x === nx && t.y === ny) &&
-            !candidates.some(c => c.x === nx && c.y === ny)) {
+        if (nx >= minDistFromEdge && nx < size - minDistFromEdge &&
+          ny >= minDistFromEdge && ny < size - minDistFromEdge &&
+          !lakeTiles.some(t => t.x === nx && t.y === ny) &&
+          !candidates.some(c => c.x === nx && c.y === ny)) {
           const dist = Math.sqrt((nx - center.x) ** 2 + (ny - center.y) ** 2);
           const noise = lakeNoise(nx, ny);
           candidates.push({ x: nx, y: ny, dist, noise });
         }
       }
     }
-    
+
     // Apply lake tiles to grid
     for (const tile of lakeTiles) {
       grid[tile.y][tile.x].building = createBuilding('water');
       grid[tile.y][tile.x].landValue = 60; // Water increases nearby land value
     }
-    
+
     // Calculate center for labeling
     const avgX = lakeTiles.reduce((sum, t) => sum + t.x, 0) / lakeTiles.length;
     const avgY = lakeTiles.reduce((sum, t) => sum + t.y, 0) / lakeTiles.length;
-    
+
     // Assign a random name to this lake
     let lakeName = generateWaterName('lake');
     while (usedLakeNames.has(lakeName)) {
       lakeName = generateWaterName('lake');
     }
     usedLakeNames.add(lakeName);
-    
+
     // Add to water bodies list
     waterBodies.push({
       id: `lake-${waterBodies.length}`,
@@ -263,7 +263,7 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
       centerY: Math.round(avgY),
     });
   }
-  
+
   return waterBodies;
 }
 
@@ -271,18 +271,18 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
 function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[] {
   const waterBodies: WaterBody[] = [];
   const oceanChance = 0.4; // 40% chance per edge
-  
+
   // Use noise for coastline variation
   const coastNoise = (x: number, y: number) => perlinNoise(x, y, seed + 2000, 3);
-  
+
   // Check each edge independently
   const edges: Array<{ side: 'north' | 'east' | 'south' | 'west'; tiles: { x: number; y: number }[] }> = [];
-  
+
   // Ocean parameters
   const baseDepth = Math.max(4, Math.floor(size * 0.12));
   const depthVariation = Math.max(4, Math.floor(size * 0.08));
   const maxDepth = Math.floor(size * 0.18);
-  
+
   // Helper to generate organic ocean section along an edge
   const generateOceanEdge = (
     isHorizontal: boolean,
@@ -290,11 +290,11 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
     inwardDirection: 1 | -1 // 1 = increasing coord, -1 = decreasing coord
   ): { x: number; y: number }[] => {
     const tiles: { x: number; y: number }[] = [];
-    
+
     // Randomize the span of the ocean (40-80% of edge, not full length)
     const spanStart = Math.floor(size * (0.05 + Math.random() * 0.25));
     const spanEnd = Math.floor(size * (0.7 + Math.random() * 0.25));
-    
+
     for (let i = spanStart; i < spanEnd; i++) {
       // Use noise to determine depth at this position, with fade at edges
       const edgeFade = Math.min(
@@ -302,7 +302,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
         (spanEnd - i) / 5,
         1
       );
-      
+
       // Layer two noise frequencies for more interesting coastline
       // Higher frequency noise for fine detail, lower for broad shape
       const coarseNoise = coastNoise(
@@ -314,16 +314,16 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
         isHorizontal ? edgePosition * 0.25 + 500 : i * 0.25
       );
       const noiseVal = coarseNoise * 0.6 + fineNoise * 0.4;
-      
+
       // Depth varies based on noise and fades at the ends
       const rawDepth = baseDepth + (noiseVal - 0.5) * depthVariation * 2.5;
       const localDepth = Math.max(1, Math.min(Math.floor(rawDepth * edgeFade), maxDepth));
-      
+
       // Place water tiles from edge inward
       for (let d = 0; d < localDepth; d++) {
         const x = isHorizontal ? i : (inwardDirection === 1 ? d : size - 1 - d);
         const y = isHorizontal ? (inwardDirection === 1 ? d : size - 1 - d) : i;
-        
+
         if (x >= 0 && x < size && y >= 0 && y < size && grid[y][x].building.type !== 'water') {
           grid[y][x].building = createBuilding('water');
           grid[y][x].landValue = 60;
@@ -331,10 +331,10 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
         }
       }
     }
-    
+
     return tiles;
   };
-  
+
   // North edge (top, y=0, extends downward)
   if (Math.random() < oceanChance) {
     const tiles = generateOceanEdge(true, 0, 1);
@@ -342,7 +342,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
       edges.push({ side: 'north', tiles });
     }
   }
-  
+
   // South edge (bottom, y=size-1, extends upward)
   if (Math.random() < oceanChance) {
     const tiles = generateOceanEdge(true, size - 1, -1);
@@ -350,7 +350,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
       edges.push({ side: 'south', tiles });
     }
   }
-  
+
   // East edge (right, x=size-1, extends leftward)
   if (Math.random() < oceanChance) {
     const tiles = generateOceanEdge(false, size - 1, -1);
@@ -358,7 +358,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
       edges.push({ side: 'east', tiles });
     }
   }
-  
+
   // West edge (left, x=0, extends rightward)
   if (Math.random() < oceanChance) {
     const tiles = generateOceanEdge(false, 0, 1);
@@ -366,20 +366,20 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
       edges.push({ side: 'west', tiles });
     }
   }
-  
+
   // Create water body entries for oceans
   const usedOceanNames = new Set<string>();
   for (const edge of edges) {
     if (edge.tiles.length > 0) {
       const avgX = edge.tiles.reduce((sum, t) => sum + t.x, 0) / edge.tiles.length;
       const avgY = edge.tiles.reduce((sum, t) => sum + t.y, 0) / edge.tiles.length;
-      
+
       let oceanName = generateWaterName('ocean');
       while (usedOceanNames.has(oceanName)) {
         oceanName = generateWaterName('ocean');
       }
       usedOceanNames.add(oceanName);
-      
+
       waterBodies.push({
         id: `ocean-${edge.side}-${waterBodies.length}`,
         name: oceanName,
@@ -390,7 +390,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
       });
     }
   }
-  
+
   return waterBodies;
 }
 
@@ -399,14 +399,14 @@ function generateAdjacentCities(): AdjacentCity[] {
   const cities: AdjacentCity[] = [];
   const directions: Array<'north' | 'south' | 'east' | 'west'> = ['north', 'south', 'east', 'west'];
   const usedNames = new Set<string>();
-  
+
   for (const direction of directions) {
     let name: string;
     do {
       name = generateCityName();
     } while (usedNames.has(name));
     usedNames.add(name);
-    
+
     cities.push({
       id: `city-${direction}`,
       name,
@@ -415,7 +415,7 @@ function generateAdjacentCities(): AdjacentCity[] {
       discovered: false, // Cities are discovered when a road reaches their edge
     });
   }
-  
+
   return cities;
 }
 
@@ -461,7 +461,7 @@ export function checkForDiscoverableCities(
   adjacentCities: AdjacentCity[]
 ): AdjacentCity[] {
   const citiesToShow: AdjacentCity[] = [];
-  
+
   for (const city of adjacentCities) {
     if (!city.connected && hasRoadAtEdge(grid, gridSize, city.direction)) {
       // Include both undiscovered cities (they'll be discovered) and discovered-but-unconnected cities
@@ -473,7 +473,7 @@ export function checkForDiscoverableCities(
       // the UI can show them in a different way (e.g., a persistent indicator)
     }
   }
-  
+
   return citiesToShow;
 }
 
@@ -485,13 +485,13 @@ export function getConnectableCities(
   adjacentCities: AdjacentCity[]
 ): AdjacentCity[] {
   const connectable: AdjacentCity[] = [];
-  
+
   for (const city of adjacentCities) {
     if (city.discovered && !city.connected && hasRoadAtEdge(grid, gridSize, city.direction)) {
       connectable.push(city);
     }
   }
-  
+
   return connectable;
 }
 
@@ -508,24 +508,24 @@ function generateTerrain(size: number): { grid: Tile[][]; waterBodies: WaterBody
     }
     grid.push(row);
   }
-  
+
   // Second pass: add lakes (small contiguous water regions)
   const lakeBodies = generateLakes(grid, size, seed);
-  
+
   // Third pass: add oceans on edges (sometimes)
   const oceanBodies = generateOceans(grid, size, seed);
-  
+
   // Combine all water bodies
   const waterBodies = [...lakeBodies, ...oceanBodies];
-  
+
   // Fourth pass: add scattered trees (avoiding water)
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (grid[y][x].building.type === 'water') continue; // Don't place trees on water
-      
+
       const treeNoise = perlinNoise(x * 2, y * 2, seed + 500, 2);
       const isTree = treeNoise > 0.72 && Math.random() > 0.65;
-      
+
       // Also add some trees near water for visual appeal
       const nearWater = isNearWater(grid, x, y, size);
       const isTreeNearWater = nearWater && Math.random() > 0.7;
@@ -577,11 +577,11 @@ export function getWaterAdjacency(
   // In isometric view (looking from SE toward NW):
   // - The default sprite faces toward the "front" (south-east in world coords)
   // - To face the opposite direction, we flip horizontally
-  
+
   // Check all four edges and track which sides have water
   let waterOnSouthOrEast = false; // "Front" sides - no flip needed
   let waterOnNorthOrWest = false; // "Back" sides - flip needed
-  
+
   // Check south edge (y + height) - front-right in isometric view
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
@@ -591,7 +591,7 @@ export function getWaterAdjacency(
       break;
     }
   }
-  
+
   // Check east edge (x + width) - front-left in isometric view
   if (!waterOnSouthOrEast) {
     for (let dy = 0; dy < height; dy++) {
@@ -603,7 +603,7 @@ export function getWaterAdjacency(
       }
     }
   }
-  
+
   // Check north edge (y - 1) - back-left in isometric view
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
@@ -613,7 +613,7 @@ export function getWaterAdjacency(
       break;
     }
   }
-  
+
   // Check west edge (x - 1) - back-right in isometric view
   if (!waterOnNorthOrWest) {
     for (let dy = 0; dy < height; dy++) {
@@ -625,11 +625,11 @@ export function getWaterAdjacency(
       }
     }
   }
-  
+
   const hasWater = waterOnSouthOrEast || waterOnNorthOrWest;
   // Only flip if water is on the back sides and NOT on the front sides
   const shouldFlip = hasWater && waterOnNorthOrWest && !waterOnSouthOrEast;
-  
+
   return { hasWater, shouldFlip };
 }
 
@@ -646,11 +646,11 @@ export function getRoadAdjacency(
   // In isometric view (looking from SE toward NW):
   // - The default sprite faces toward the "front" (south-east in world coords)
   // - To face the opposite direction, we flip horizontally
-  
+
   // Check all four edges and track which sides have roads
   let roadOnSouthOrEast = false; // "Front" sides - no flip needed
   let roadOnNorthOrWest = false; // "Back" sides - flip needed
-  
+
   // Check south edge (y + height) - front-right in isometric view
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
@@ -661,7 +661,7 @@ export function getRoadAdjacency(
       break;
     }
   }
-  
+
   // Check east edge (x + width) - front-left in isometric view
   if (!roadOnSouthOrEast) {
     for (let dy = 0; dy < height; dy++) {
@@ -674,7 +674,7 @@ export function getRoadAdjacency(
       }
     }
   }
-  
+
   // Check north edge (y - 1) - back-left in isometric view
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
@@ -685,7 +685,7 @@ export function getRoadAdjacency(
       break;
     }
   }
-  
+
   // Check west edge (x - 1) - back-right in isometric view
   if (!roadOnNorthOrWest) {
     for (let dy = 0; dy < height; dy++) {
@@ -698,11 +698,11 @@ export function getRoadAdjacency(
       }
     }
   }
-  
+
   const hasRoad = roadOnSouthOrEast || roadOnNorthOrWest;
   // Only flip if road is on the back sides and NOT on the front sides
   const shouldFlip = hasRoad && roadOnNorthOrWest && !roadOnSouthOrEast;
-  
+
   return { hasRoad, shouldFlip };
 }
 
@@ -723,10 +723,346 @@ function createTile(x: number, y: number, buildingType: BuildingType = 'grass'):
 // Building types that don't require construction (already complete when placed)
 const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'bridge', 'tree'];
 
+// ============================================================================
+// Bridge System Constants and Functions
+// ============================================================================
+
+/** Maximum water span that can have a bridge */
+const MAX_BRIDGE_SPAN = 10;
+
+/** Bridge type configurations based on span width */
+const BRIDGE_TYPE_CONFIG: Record<BridgeType, { minSpan: number; maxSpan: number; height: number }> = {
+  wooden_bridge: { minSpan: 1, maxSpan: 2, height: 3 },
+  stone_bridge: { minSpan: 2, maxSpan: 3, height: 4 },
+  steel_bridge: { minSpan: 3, maxSpan: 5, height: 5 },
+  beam_bridge: { minSpan: 4, maxSpan: 6, height: 5 },
+  arch_bridge: { minSpan: 5, maxSpan: 7, height: 7 },
+  suspension_bridge: { minSpan: 6, maxSpan: 8, height: 10 },
+  cable_stayed: { minSpan: 7, maxSpan: 10, height: 12 },
+  golden_gate: { minSpan: 8, maxSpan: 10, height: 14 },
+};
+
+/** Get appropriate bridge type for a given span */
+function getBridgeTypeForSpan(span: number): BridgeType {
+  if (span <= 2) return 'wooden_bridge';
+  if (span <= 3) return Math.random() > 0.5 ? 'stone_bridge' : 'wooden_bridge';
+  if (span <= 4) return Math.random() > 0.5 ? 'steel_bridge' : 'stone_bridge';
+  if (span <= 5) return Math.random() > 0.5 ? 'beam_bridge' : 'steel_bridge';
+  if (span <= 6) return Math.random() > 0.5 ? 'arch_bridge' : 'beam_bridge';
+  if (span <= 7) return Math.random() > 0.5 ? 'suspension_bridge' : 'arch_bridge';
+  if (span <= 8) return Math.random() > 0.5 ? 'cable_stayed' : 'suspension_bridge';
+  if (span <= 9) return Math.random() > 0.5 ? 'golden_gate' : 'cable_stayed';
+  return 'golden_gate';
+}
+
+/** Generate a unique bridge ID */
+function generateBridgeId(): string {
+  return `bridge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/** Check if a tile is water */
+function isWaterTile(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  return grid[y][x].building.type === 'water';
+}
+
+/** Check if a tile has a road or is land that could anchor a bridge */
+function isRoadOrLand(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  const type = grid[y][x].building.type;
+  return type === 'road' || (type !== 'water');
+}
+
+/** Check if a tile is specifically a road */
+function isRoadTile(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  return grid[y][x].building.type === 'road';
+}
+
+/**
+ * Scan in a direction from a land tile to find if a bridge can be created
+ * Returns the water tiles that would become bridge, or null if no valid bridge
+ */
+function scanForBridgeOpportunity(
+  grid: Tile[][],
+  gridSize: number,
+  startX: number,
+  startY: number,
+  dx: number,
+  dy: number
+): { waterTiles: { x: number; y: number }[]; orientation: 'ns' | 'ew' } | null {
+  const waterTiles: { x: number; y: number }[] = [];
+  let x = startX + dx;
+  let y = startY + dy;
+
+  // Scan through water tiles
+  while (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+    if (isWaterTile(grid, gridSize, x, y)) {
+      waterTiles.push({ x, y });
+      if (waterTiles.length > MAX_BRIDGE_SPAN) {
+        return null; // Too wide for a bridge
+      }
+    } else if (isRoadTile(grid, gridSize, x, y) ||
+      (grid[y][x].building.type !== 'water' && grid[y][x].building.type !== 'empty')) {
+      // Found land or road on the other side
+      if (waterTiles.length >= 1) {
+        const orientation: 'ns' | 'ew' = dx !== 0 ? 'ns' : 'ew';
+        return { waterTiles, orientation };
+      }
+      return null; // No water to bridge
+    } else {
+      return null; // Found something else (empty = part of building)
+    }
+    x += dx;
+    y += dy;
+  }
+
+  return null; // Reached edge without finding land
+}
+
+/**
+ * Check if placing a road at (x, y) should create a bridge
+ * This is called when placing a road adjacent to water
+ */
+function checkAndCreateBridge(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number
+): { bridgeTiles: { x: number; y: number; bridgeInfo: BridgeInfo }[] } | null {
+  // Check all four directions for bridge opportunities
+  const directions = [
+    { dx: 1, dy: 0 },   // South
+    { dx: -1, dy: 0 },  // North
+    { dx: 0, dy: 1 },   // West
+    { dx: 0, dy: -1 },  // East
+  ];
+
+  for (const { dx, dy } of directions) {
+    const result = scanForBridgeOpportunity(grid, gridSize, x, y, dx, dy);
+    if (result) {
+      const { waterTiles, orientation } = result;
+      const span = waterTiles.length;
+      const bridgeType = getBridgeTypeForSpan(span);
+      const bridgeId = generateBridgeId();
+      const config = BRIDGE_TYPE_CONFIG[bridgeType];
+      const variant = Math.floor(Math.random() * 3) as 0 | 1 | 2;
+
+      const bridgeTiles = waterTiles.map((tile, index) => ({
+        x: tile.x,
+        y: tile.y,
+        bridgeInfo: {
+          bridgeId,
+          bridgeType,
+          variant,
+          span,
+          position: index,
+          orientation,
+          height: config.height,
+        } as BridgeInfo,
+      }));
+
+      return { bridgeTiles };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if a road can be placed on water as part of a bridge
+ * Returns true if:
+ * 1. There's an adjacent road (bridge extension)
+ * 2. OR there's adjacent land on one side and road/land reachable on the other within MAX_BRIDGE_SPAN
+ */
+function canPlaceRoadOnWater(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number
+): boolean {
+  // Check if there's an adjacent road or bridge tile
+  const hasAdjacentRoad =
+    isRoadTile(grid, gridSize, x - 1, y) ||
+    isRoadTile(grid, gridSize, x + 1, y) ||
+    isRoadTile(grid, gridSize, x, y - 1) ||
+    isRoadTile(grid, gridSize, x, y + 1);
+
+  if (hasAdjacentRoad) {
+    // Check if extending from an existing bridge is valid
+    // Count consecutive water tiles in each direction
+    const directions = [
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: 0, dy: -1 },
+    ];
+
+    for (const { dx, dy } of directions) {
+      // Skip if there's a road in this direction (we're extending from there)
+      if (isRoadTile(grid, gridSize, x + dx, y + dy)) continue;
+
+      // Count water tiles in the opposite direction
+      let waterCount = 0;
+      let cx = x;
+      let cy = y;
+      while (isWaterTile(grid, gridSize, cx, cy) || (cx === x && cy === y)) {
+        if (cx !== x || cy !== y) waterCount++;
+        cx -= dx;
+        cy -= dy;
+        if (isRoadTile(grid, gridSize, cx, cy)) {
+          // Found road on the other side
+          if (waterCount <= MAX_BRIDGE_SPAN) {
+            return true;
+          }
+        }
+        if (!isWaterTile(grid, gridSize, cx, cy) && !(cx === x && cy === y)) break;
+      }
+    }
+  }
+
+  return hasAdjacentRoad; // Allow if adjacent to road (will be validated when bridge is complete)
+}
+
+/**
+ * Create bridge info for a road tile being placed on water
+ */
+function createBridgeInfoForWaterRoad(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number
+): BridgeInfo | null {
+  // Find the direction of the bridge by looking for adjacent roads
+  const directions = [
+    { dx: 1, dy: 0, orientation: 'ns' as const },
+    { dx: -1, dy: 0, orientation: 'ns' as const },
+    { dx: 0, dy: 1, orientation: 'ew' as const },
+    { dx: 0, dy: -1, orientation: 'ew' as const },
+  ];
+
+  for (const { dx, dy, orientation } of directions) {
+    if (isRoadTile(grid, gridSize, x + dx, y + dy)) {
+      const adjacentTile = grid[y + dy][x + dx];
+
+      // If adjacent road has bridge info, extend it
+      if (adjacentTile.building.bridgeInfo) {
+        const existingBridge = adjacentTile.building.bridgeInfo;
+        // Check if we're extending in the same direction
+        if (existingBridge.orientation === orientation) {
+          return {
+            bridgeId: existingBridge.bridgeId,
+            bridgeType: existingBridge.bridgeType,
+            variant: existingBridge.variant,
+            span: existingBridge.span + 1, // Will be recalculated when bridge is complete
+            position: existingBridge.position + 1,
+            orientation: existingBridge.orientation,
+            height: existingBridge.height,
+          };
+        }
+      }
+
+      // Starting a new bridge from land
+      // Estimate span by scanning ahead
+      let span = 1;
+      let cx = x - dx;
+      let cy = y - dy;
+      while (isWaterTile(grid, gridSize, cx, cy) && span < MAX_BRIDGE_SPAN) {
+        span++;
+        cx -= dx;
+        cy -= dy;
+      }
+
+      const bridgeType = getBridgeTypeForSpan(span);
+      const config = BRIDGE_TYPE_CONFIG[bridgeType];
+
+      return {
+        bridgeId: generateBridgeId(),
+        bridgeType,
+        variant: Math.floor(Math.random() * 3) as 0 | 1 | 2,
+        span,
+        position: 0,
+        orientation,
+        height: config.height,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Update bridge span info for all connected bridge tiles
+ * Called when a new bridge tile is placed to recalculate positions
+ */
+function updateBridgeSpanInfo(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number,
+  bridgeInfo: BridgeInfo
+): void {
+  const { orientation, bridgeId } = bridgeInfo;
+
+  // Determine scan direction based on orientation
+  const directions = orientation === 'ns'
+    ? [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }]
+    : [{ dx: 0, dy: 1 }, { dx: 0, dy: -1 }];
+
+  // Find all tiles in this bridge
+  const bridgeTiles: { x: number; y: number }[] = [{ x, y }];
+
+  for (const { dx, dy } of directions) {
+    let cx = x + dx;
+    let cy = y + dy;
+    while (cx >= 0 && cx < gridSize && cy >= 0 && cy < gridSize) {
+      const tile = grid[cy][cx];
+      if (tile.building.type === 'road' && tile.building.bridgeInfo?.bridgeId === bridgeId) {
+        bridgeTiles.push({ x: cx, y: cy });
+        cx += dx;
+        cy += dy;
+      } else if (tile.building.type === 'road' && tile.building.bridgeInfo) {
+        // Different bridge, stop
+        break;
+      } else if (tile.building.type === 'road') {
+        // Road without bridge info (land road), stop
+        break;
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Update all bridge tiles with correct span and position
+  const span = bridgeTiles.length;
+  const newBridgeType = getBridgeTypeForSpan(span);
+  const newConfig = BRIDGE_TYPE_CONFIG[newBridgeType];
+
+  // Sort tiles by position for consistent numbering
+  if (orientation === 'ns') {
+    bridgeTiles.sort((a, b) => a.x - b.x);
+  } else {
+    bridgeTiles.sort((a, b) => a.y - b.y);
+  }
+
+  for (let i = 0; i < bridgeTiles.length; i++) {
+    const tile = grid[bridgeTiles[i].y][bridgeTiles[i].x];
+    if (tile.building.bridgeInfo) {
+      tile.building.bridgeInfo = {
+        ...tile.building.bridgeInfo,
+        span,
+        position: i,
+        bridgeType: newBridgeType,
+        height: newConfig.height,
+      };
+    }
+  }
+}
+
 function createBuilding(type: BuildingType): Building {
   // Buildings that don't require construction start at 100% complete
   const constructionProgress = NO_CONSTRUCTION_TYPES.includes(type) ? 100 : 0;
-  
+
   return {
     type,
     level: type === 'grass' || type === 'empty' || type === 'water' ? 0 : 1,
@@ -849,14 +1185,14 @@ function scanForBridgeInDirection(
   const waterTiles: { x: number; y: number }[] = [];
   let x = startX + dx;
   let y = startY + dy;
-  
+
   // Count consecutive water tiles
   while (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
     const tile = grid[y][x];
-    
+
     if (tile.building.type === 'water') {
       waterTiles.push({ x, y });
-      
+
       // Check if we've exceeded max bridge span
       if (waterTiles.length > MAX_BRIDGE_SPAN) {
         return null; // Too wide to bridge
@@ -868,7 +1204,7 @@ function scanForBridgeInDirection(
       if (waterTiles.length > 0) {
         const span = waterTiles.length;
         const bridgeType = getBridgeTypeForSpan(span);
-        
+
         return {
           startX,
           startY,
@@ -889,11 +1225,11 @@ function scanForBridgeInDirection(
       // Found land that's not the same track type - no bridge possible in this direction
       break;
     }
-    
+
     x += dx;
     y += dy;
   }
-  
+
   return null;
 }
 
@@ -907,30 +1243,30 @@ function detectBridgeOpportunity(
 ): BridgeOpportunity | null {
   const tile = grid[y]?.[x];
   if (!tile) return null;
-  
+
   // Only check from the specified track type tiles, not bridges
   // Bridges should only be created when dragging across water to another tile of the same type
   if (tile.building.type !== trackType) {
     return null;
   }
-  
+
   // Check each direction for water followed by same track type
   // North (x-1, y stays same in grid coords)
   const northOpp = scanForBridgeInDirection(grid, gridSize, x, y, -1, 0, 'ns', trackType);
   if (northOpp) return northOpp;
-  
+
   // South (x+1, y stays same)
   const southOpp = scanForBridgeInDirection(grid, gridSize, x, y, 1, 0, 'ns', trackType);
   if (southOpp) return southOpp;
-  
+
   // East (x stays, y-1)
   const eastOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, -1, 'ew', trackType);
   if (eastOpp) return eastOpp;
-  
+
   // West (x stays, y+1)
   const westOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, 1, 'ew', trackType);
   if (westOpp) return westOpp;
-  
+
   return null;
 }
 
@@ -944,7 +1280,7 @@ function buildBridges(
     opportunity.waterTiles[0].y,
     opportunity.bridgeType
   );
-  
+
   // Sort waterTiles consistently to ensure same result regardless of scan direction
   // For NS orientation (bridges going NW-SE on screen): sort by x first (grid row), then by y
   // For EW orientation (bridges going NE-SW on screen): sort by y first (grid column), then by x
@@ -958,7 +1294,7 @@ function buildBridges(
       return a.y !== b.y ? a.y - b.y : a.x - b.x;
     }
   });
-  
+
   const span = sortedTiles.length;
   sortedTiles.forEach((pos, index) => {
     let position: 'start' | 'middle' | 'end';
@@ -969,7 +1305,7 @@ function buildBridges(
     } else {
       position = 'middle';
     }
-    
+
     grid[pos.y][pos.x].building = createBridgeBuilding(
       opportunity.bridgeType,
       opportunity.orientation,
@@ -1019,21 +1355,21 @@ export function createBridgesOnPath(
   trackType: 'road' | 'rail' = 'road'
 ): GameState {
   if (pathTiles.length === 0) return state;
-  
+
   // Check if the drag path includes any water tiles
   // This ensures bridges are only created when actually dragging ACROSS water
   const hasWaterInPath = pathTiles.some(tile => {
     const t = state.grid[tile.y]?.[tile.x];
     return t && t.building.type === 'water';
   });
-  
+
   // If no water tiles were crossed, don't create any bridges
   if (!hasWaterInPath) {
     return state;
   }
-  
+
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
-  
+
   // Check each tile of the specified track type in the path for bridge opportunities
   for (const tile of pathTiles) {
     // Only check from actual track type tiles (not water or other types)
@@ -1041,7 +1377,7 @@ export function createBridgesOnPath(
       checkAndCreateBridges(newGrid, state.gridSize, tile.x, tile.y, trackType);
     }
   }
-  
+
   return { ...state, grid: newGrid };
 }
 
@@ -1089,7 +1425,7 @@ function createServiceCoverage(size: number): ServiceCoverage {
     }
     return grid;
   };
-  
+
   const createBoolGrid = () => {
     const grid: boolean[][] = new Array(size);
     for (let y = 0; y < size; y++) {
@@ -1125,7 +1461,7 @@ function generateUUID(): string {
 export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityName: string = 'New City'): GameState {
   const { grid, waterBodies } = generateTerrain(size);
   const adjacentCities = generateAdjacentCities();
-  
+
   // Create a default city covering the entire map
   const defaultCity: import('@/types/game').City = {
     id: generateUUID(),
@@ -1197,47 +1533,47 @@ const SERVICE_BUILDING_TYPES = new Set([
 // Calculate service coverage from service buildings - optimized version
 function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage {
   const services = createServiceCoverage(size);
-  
+
   // First pass: collect all service building positions (much faster than checking every tile)
   const serviceBuildings: Array<{ x: number; y: number; type: BuildingType }> = [];
-  
+
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const tile = grid[y][x];
       const buildingType = tile.building.type;
-      
+
       // Quick check if this is a service building
       if (!SERVICE_BUILDING_TYPES.has(buildingType)) continue;
-      
+
       // Skip buildings under construction
       if (tile.building.constructionProgress !== undefined && tile.building.constructionProgress < 100) {
         continue;
       }
-      
+
       // Skip abandoned buildings
       if (tile.building.abandoned) {
         continue;
       }
-      
+
       serviceBuildings.push({ x, y, type: buildingType });
     }
   }
-  
+
   // Second pass: apply coverage for each service building
   for (const building of serviceBuildings) {
     const { x, y, type } = building;
     const config = SERVICE_CONFIG[type as keyof typeof SERVICE_CONFIG];
     if (!config) continue;
-    
+
     const range = config.range;
     const rangeSquared = config.rangeSquared;
-    
+
     // Calculate bounds to avoid checking tiles outside the grid
     const minY = Math.max(0, y - range);
     const maxY = Math.min(size - 1, y + range);
     const minX = Math.max(0, x - range);
     const maxX = Math.min(size - 1, x + range);
-    
+
     // Handle power and water (boolean coverage)
     if (type === 'power_plant') {
       for (let ny = minY; ny <= maxY; ny++) {
@@ -1264,13 +1600,13 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
       // Handle percentage-based coverage (police, fire, health, education)
       const serviceType = (config as { type: 'police' | 'fire' | 'health' | 'education' }).type;
       const currentCoverage = services[serviceType] as number[][];
-      
+
       for (let ny = minY; ny <= maxY; ny++) {
         for (let nx = minX; nx <= maxX; nx++) {
           const dx = nx - x;
           const dy = ny - y;
           const distSquared = dx * dx + dy * dy;
-          
+
           if (distSquared <= rangeSquared) {
             // Only compute sqrt when we need the actual distance for coverage falloff
             const distance = Math.sqrt(distSquared);
@@ -1300,7 +1636,7 @@ function canSpawnMultiTileBuilding(
   if (x + width > gridSize || y + height > gridSize) {
     return false;
   }
-  
+
   for (let dy = 0; dy < height; dy++) {
     for (let dx = 0; dx < width; dx++) {
       const tile = grid[y + dy]?.[x + dx];
@@ -1314,7 +1650,7 @@ function canSpawnMultiTileBuilding(
       }
     }
   }
-  
+
   return true;
 }
 
@@ -1363,7 +1699,7 @@ function hasRoadAccess(
     const cy = roadAccessQueue[queueHead + 1];
     const dist = roadAccessQueue[queueHead + 2];
     queueHead += 3;
-    
+
     if (dist >= maxDistance) {
       continue;
     }
@@ -1372,7 +1708,7 @@ function hasRoadAccess(
     const neighbors = [
       [cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]
     ];
-    
+
     for (const [nx, ny] of neighbors) {
       if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
 
@@ -1425,7 +1761,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   const hasPower = building.powered;
   const hasWater = building.watered;
   const landValue = tile.landValue;
-  
+
   // Starter buildings (farms, house_small, shop_small) don't require power/water
   const isStarter = isStarterBuilding(x, y, building.type);
 
@@ -1439,11 +1775,11 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
     // Construction speed scales with building size (larger buildings take longer)
     const constructionSpeed = getConstructionSpeed(building.type);
     building.constructionProgress = Math.min(100, building.constructionProgress + constructionSpeed);
-    
+
     // While under construction, buildings don't generate population or jobs
     building.population = 0;
     building.jobs = 0;
-    
+
     // Don't age or evolve until construction is complete
     return building;
   }
@@ -1451,14 +1787,14 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   // Get zone demand for abandonment/recovery logic
   const zoneDemandValue = demand ? (
     zone === 'residential' ? demand.residential :
-    zone === 'commercial' ? demand.commercial :
-    zone === 'industrial' ? demand.industrial : 0
+      zone === 'commercial' ? demand.commercial :
+        zone === 'industrial' ? demand.industrial : 0
   ) : 0;
 
   // === ABANDONMENT MECHANIC ===
   // Buildings can become abandoned when demand is very negative (oversupply)
   // Abandoned buildings produce nothing but can recover when demand returns
-  
+
   if (building.abandoned) {
     // Abandoned building - check for recovery
     // When demand is positive, abandoned buildings have a chance to be cleared
@@ -1493,7 +1829,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
         return clearedBuilding;
       }
     }
-    
+
     // Abandoned buildings produce nothing
     building.population = 0;
     building.jobs = 0;
@@ -1501,7 +1837,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
     building.age = (building.age || 0) + 0.1;
     return building;
   }
-  
+
   // Check if building should become abandoned (oversupply situation)
   // Only happens when demand is significantly negative and building has been around a while
   // Abandonment is gradual - even at worst conditions, only ~2-3% of buildings abandon per tick
@@ -1529,7 +1865,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   // Determine target building based on zone and conditions
   const buildingList = zone === 'residential' ? RESIDENTIAL_BUILDINGS :
     zone === 'commercial' ? COMMERCIAL_BUILDINGS :
-    zone === 'industrial' ? INDUSTRIAL_BUILDINGS : [];
+      zone === 'industrial' ? INDUSTRIAL_BUILDINGS : [];
 
   // Calculate level based on land value, services, and demand
   const serviceCoverage = (
@@ -1542,10 +1878,10 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   // Get zone demand to factor into level calculation
   const zoneDemandForLevel = demand ? (
     zone === 'residential' ? demand.residential :
-    zone === 'commercial' ? demand.commercial :
-    zone === 'industrial' ? demand.industrial : 0
+      zone === 'commercial' ? demand.commercial :
+        zone === 'industrial' ? demand.industrial : 0
   ) : 0;
-  
+
   // High demand increases target level, encouraging densification
   // At demand 60, adds ~0.5 level; at demand 100, adds ~1 level
   const demandLevelBoost = Math.max(0, (zoneDemandForLevel - 30) / 70) * 0.7;
@@ -1563,28 +1899,28 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   // Base probability is low to make consolidation gradual
   let consolidationChance = 0.08;
   let allowBuildingConsolidation = false;
-  
+
   // Check if this is a small/medium density building that could consolidate
-  const isSmallResidential = zone === 'residential' && 
+  const isSmallResidential = zone === 'residential' &&
     (building.type === 'house_small' || building.type === 'house_medium');
-  const isSmallCommercial = zone === 'commercial' && 
+  const isSmallCommercial = zone === 'commercial' &&
     (building.type === 'shop_small' || building.type === 'shop_medium');
-  const isSmallIndustrial = zone === 'industrial' && 
+  const isSmallIndustrial = zone === 'industrial' &&
     building.type === 'factory_small';
-  
+
   // Get relevant demand for this zone
   const zoneDemand = demand ? (
     zone === 'residential' ? demand.residential :
-    zone === 'commercial' ? demand.commercial :
-    zone === 'industrial' ? demand.industrial : 0
+      zone === 'commercial' ? demand.commercial :
+        zone === 'industrial' ? demand.industrial : 0
   ) : 0;
-  
+
   if (zoneDemand > 30) {
     if (isSmallResidential || isSmallCommercial || isSmallIndustrial) {
       // Gradual boost based on demand: at demand 60 adds ~10%, at demand 100 adds ~23%
       const demandBoost = Math.min(0.25, (zoneDemand - 30) / 300);
       consolidationChance += demandBoost;
-      
+
       // At very high demand (> 70), allow consolidating existing small buildings
       // but keep the probability increase modest
       if (zoneDemand > 70) {
@@ -1657,7 +1993,7 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   let subwayStations = 0;
   let railTiles = 0;
   let railStations = 0;
-  
+
   // Special buildings that affect demand
   let hasAirport = false;
   let hasCityHall = false;
@@ -1677,7 +2013,7 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
       if (tile.hasSubway && tile.zone === 'commercial') {
         jobsFromTile = Math.floor(jobsFromTile * 1.15);
       }
-      
+
       population += building.population;
       jobs += jobsFromTile;
       totalPollution += tile.pollution;
@@ -1702,7 +2038,7 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
       if (building.type === 'subway_station') subwayStations++;
       if (building.type === 'rail' || tile.hasRailOverlay) railTiles++;
       if (building.type === 'rail_station') railStations++;
-      
+
       // Track special buildings (only count if construction is complete)
       if (building.constructionProgress === undefined || building.constructionProgress >= 100) {
         if (building.type === 'airport') hasAirport = true;
@@ -1721,57 +2057,57 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   // - Additive: Small bonus/penalty around the base rate for fine-tuning
   // Base tax rate is 9%, so we calculate relative to that
   // Uses effectiveTaxRate (lagged) so changes don't impact demand immediately
-  
+
   // Tax multiplier: 1.0 at 0% tax, ~1.0 at 9% tax, 0.0 at 100% tax
   // This ensures high taxes dramatically reduce demand regardless of other factors
   const taxMultiplier = Math.max(0, 1 - (effectiveTaxRate - 9) / 91);
-  
+
   // Small additive modifier for fine-tuning around base rate
   // At 9% tax: 0. At 0% tax: +18. At 20% tax: -22
   const taxAdditiveModifier = (9 - effectiveTaxRate) * 2;
-  
+
   const subwayBonus = Math.min(20, subwayTiles * 0.5 + subwayStations * 3);
-  
+
   // Rail network bonuses - affects commercial (passenger rail, accessibility) and industrial (freight transport)
   // Rail stations have bigger impact than raw track count since they represent actual service
   // Industrial gets a stronger bonus as freight rail is critical for factories/warehouses
   const railCommercialBonus = Math.min(12, railTiles * 0.15 + railStations * 4);
   const railIndustrialBonus = Math.min(18, railTiles * 0.25 + railStations * 6);
-  
+
   // Special building bonuses
   // Airport: Major boost to commercial (business travel) and industrial (cargo/logistics)
   const airportCommercialBonus = hasAirport ? 15 : 0;
   const airportIndustrialBonus = hasAirport ? 10 : 0;
-  
+
   // City Hall: Modest boost to all demand (legitimacy, attracts businesses and residents)
   const cityHallResidentialBonus = hasCityHall ? 8 : 0;
   const cityHallCommercialBonus = hasCityHall ? 10 : 0;
   const cityHallIndustrialBonus = hasCityHall ? 5 : 0;
-  
+
   // Space Program: Big boost to industrial (high-tech sector), modest boost to residential (prestige)
   const spaceProgramResidentialBonus = hasSpaceProgram ? 10 : 0;
   const spaceProgramIndustrialBonus = hasSpaceProgram ? 20 : 0;
-  
+
   // Stadium: Boost to commercial (entertainment, visitors, sports bars)
   const stadiumCommercialBonus = Math.min(20, stadiumCount * 12);
-  
+
   // Museum: Boost to commercial (tourism) and residential (culture/quality of life)
   const museumCommercialBonus = Math.min(15, museumCount * 8);
   const museumResidentialBonus = Math.min(10, museumCount * 5);
-  
+
   // Amusement Park: Big boost to commercial (tourism, entertainment)
   const amusementParkCommercialBonus = hasAmusementPark ? 18 : 0;
-  
+
   // Calculate base demands from economic factors
   const baseResidentialDemand = (jobs - population * 0.7) / 18;
   const baseCommercialDemand = (population * 0.3 - jobs * 0.3) / 4 + subwayBonus;
   const baseIndustrialDemand = (population * 0.35 - jobs * 0.3) / 2.0;
-  
+
   // Add special building bonuses to base demands
   const residentialWithBonuses = baseResidentialDemand + cityHallResidentialBonus + spaceProgramResidentialBonus + museumResidentialBonus;
   const commercialWithBonuses = baseCommercialDemand + airportCommercialBonus + cityHallCommercialBonus + stadiumCommercialBonus + museumCommercialBonus + amusementParkCommercialBonus + railCommercialBonus;
   const industrialWithBonuses = baseIndustrialDemand + airportIndustrialBonus + cityHallIndustrialBonus + spaceProgramIndustrialBonus + railIndustrialBonus;
-  
+
   // Apply tax effect: multiply by tax factor, then add small modifier
   // The multiplier ensures high taxes crush demand; the additive fine-tunes at normal rates
   const residentialDemand = Math.min(100, Math.max(-100, residentialWithBonuses * taxMultiplier + taxAdditiveModifier));
@@ -1780,7 +2116,7 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
 
   // Calculate income and expenses
   const income = Math.floor(population * taxRate * 0.1 + jobs * taxRate * 0.05);
-  
+
   let expenses = 0;
   expenses += Math.floor(budget.police.cost * budget.police.funding / 100);
   expenses += Math.floor(budget.fire.cost * budget.fire.funding / 100);
@@ -1800,7 +2136,7 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   const safety = Math.min(100, avgPoliceCoverage * 0.7 + avgFireCoverage * 0.3);
   const health = Math.min(100, avgHealthCoverage * 0.8 + (100 - totalPollution / (size * size)) * 0.2);
   const education = Math.min(100, avgEducationCoverage);
-  
+
   const greenRatio = (treeCount + waterCount + parkCount) / (size * size);
   const pollutionRatio = totalPollution / (size * size * 100);
   const environment = Math.min(100, Math.max(0, greenRatio * 200 - pollutionRatio * 100 + 50));
@@ -1849,7 +2185,7 @@ function calculateAverageCoverage(coverage: number[][]): number {
 // PERF: Update budget costs based on buildings - single pass through grid
 function updateBudgetCosts(grid: Tile[][], budget: Budget): Budget {
   const newBudget = { ...budget };
-  
+
   let policeCount = 0;
   let fireCount = 0;
   let hospitalCount = 0;
@@ -1867,7 +2203,7 @@ function updateBudgetCosts(grid: Tile[][], budget: Budget): Budget {
     for (const tile of row) {
       // Count subway tiles
       if (tile.hasSubway) subwayTileCount++;
-      
+
       // Count building types using switch for jump table optimization
       switch (tile.building.type) {
         case 'police_station': policeCount++; break;
@@ -1909,7 +2245,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   let abandonedResidential = 0;
   let abandonedCommercial = 0;
   let abandonedIndustrial = 0;
-  
+
   for (const row of grid) {
     for (const tile of row) {
       // Only count zoned buildings (not grass)
@@ -1917,7 +2253,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
         if (!tile.building.powered) unpoweredBuildings++;
         if (!tile.building.watered) unwateredBuildings++;
       }
-      
+
       // Count abandoned buildings
       if (tile.building.abandoned) {
         abandonedBuildings++;
@@ -2016,7 +2352,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     if (abandonedResidential > 0) details.push(`${abandonedResidential} residential`);
     if (abandonedCommercial > 0) details.push(`${abandonedCommercial} commercial`);
     if (abandonedIndustrial > 0) details.push(`${abandonedIndustrial} industrial`);
-    
+
     messages.push({
       name: 'Urban Planning Advisor',
       icon: 'planning',
@@ -2037,19 +2373,19 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
 export function simulateTick(state: GameState): GameState {
   // Optimized: shallow clone rows, deep clone tiles only when modified
   const size = state.gridSize;
-  
+
   // Pre-calculate service coverage once (read-only operation on original grid)
   const services = calculateServiceCoverage(state.grid, size);
-  
+
   // Track which rows have been modified to avoid unnecessary row cloning
   const modifiedRows = new Set<number>();
   const newGrid: Tile[][] = new Array(size);
-  
+
   // Initialize with references to original rows (will clone on write)
   for (let y = 0; y < size; y++) {
     newGrid[y] = state.grid[y];
   }
-  
+
   // Helper to get a modifiable tile (clones row and tile on first write)
   const getModifiableTile = (x: number, y: number): Tile => {
     if (!modifiedRows.has(y)) {
@@ -2065,48 +2401,48 @@ export function simulateTick(state: GameState): GameState {
     for (let x = 0; x < size; x++) {
       const originalTile = state.grid[y][x];
       const originalBuilding = originalTile.building;
-      
+
       // Fast path: skip tiles that definitely won't change
       // Water tiles are completely static
       if (originalBuilding.type === 'water') {
         continue;
       }
-      
+
       // Check what updates this tile needs
       const newPowered = services.power[y][x];
       const newWatered = services.water[y][x];
       const needsPowerWaterUpdate = originalBuilding.powered !== newPowered ||
-                                    originalBuilding.watered !== newWatered;
-      
+        originalBuilding.watered !== newWatered;
+
       // PERF: Roads and bridges are static unless bulldozed - skip if no utility update needed
       if ((originalBuilding.type === 'road' || originalBuilding.type === 'bridge') && !needsPowerWaterUpdate) {
         continue;
       }
-      
+
       // Unzoned grass/trees with no pollution change - skip
-      if (originalTile.zone === 'none' && 
-          (originalBuilding.type === 'grass' || originalBuilding.type === 'tree') &&
-          !needsPowerWaterUpdate &&
-          originalTile.pollution < 0.01 &&
-          (BUILDING_STATS[originalBuilding.type]?.pollution || 0) === 0) {
+      if (originalTile.zone === 'none' &&
+        (originalBuilding.type === 'grass' || originalBuilding.type === 'tree') &&
+        !needsPowerWaterUpdate &&
+        originalTile.pollution < 0.01 &&
+        (BUILDING_STATS[originalBuilding.type]?.pollution || 0) === 0) {
         continue;
       }
-      
+
       // PERF: Completed service/park buildings with no state changes can skip heavy processing
       // They only need utility updates and pollution decay
-      const isCompletedServiceBuilding = originalTile.zone === 'none' && 
-          originalBuilding.constructionProgress === 100 &&
-          !originalBuilding.onFire &&
-          originalBuilding.type !== 'grass' && 
-          originalBuilding.type !== 'tree' &&
-          originalBuilding.type !== 'empty';
+      const isCompletedServiceBuilding = originalTile.zone === 'none' &&
+        originalBuilding.constructionProgress === 100 &&
+        !originalBuilding.onFire &&
+        originalBuilding.type !== 'grass' &&
+        originalBuilding.type !== 'tree' &&
+        originalBuilding.type !== 'empty';
       if (isCompletedServiceBuilding && !needsPowerWaterUpdate && originalTile.pollution < 0.01) {
         continue;
       }
-      
+
       // Get modifiable tile for this position
       const tile = getModifiableTile(x, y);
-      
+
       // Update utilities
       tile.building.powered = newPowered;
       tile.building.watered = newWatered;
@@ -2114,12 +2450,12 @@ export function simulateTick(state: GameState): GameState {
       // Progress construction for non-zoned buildings (service buildings, parks, etc.)
       // Zoned buildings handle construction in evolveBuilding
       if (tile.zone === 'none' &&
-          tile.building.constructionProgress !== undefined &&
-          tile.building.constructionProgress < 100 &&
-          !NO_CONSTRUCTION_TYPES.includes(tile.building.type)) {
+        tile.building.constructionProgress !== undefined &&
+        tile.building.constructionProgress < 100 &&
+        !NO_CONSTRUCTION_TYPES.includes(tile.building.type)) {
         const isUtilityBuilding = tile.building.type === 'power_plant' || tile.building.type === 'water_tower';
         const canConstruct = isUtilityBuilding || (tile.building.powered && tile.building.watered);
-        
+
         if (canConstruct) {
           const constructionSpeed = getConstructionSpeed(tile.building.type);
           tile.building.constructionProgress = Math.min(100, tile.building.constructionProgress + constructionSpeed);
@@ -2145,10 +2481,10 @@ export function simulateTick(state: GameState): GameState {
         // Get zone demand to factor into spawn probability
         const zoneDemandForSpawn = state.stats.demand ? (
           tile.zone === 'residential' ? state.stats.demand.residential :
-          tile.zone === 'commercial' ? state.stats.demand.commercial :
-          tile.zone === 'industrial' ? state.stats.demand.industrial : 0
+            tile.zone === 'commercial' ? state.stats.demand.commercial :
+              tile.zone === 'industrial' ? state.stats.demand.industrial : 0
         ) : 0;
-        
+
         // Spawn probability scales with demand:
         // - At demand >= 50: 5% base chance (normal)
         // - At demand 0: 2.5% chance (reduced)
@@ -2164,7 +2500,7 @@ export function simulateTick(state: GameState): GameState {
         const candidate = buildingList[0];
         const wouldBeStarter = isStarterBuilding(x, y, candidate);
         const hasUtilities = hasPower && hasWater;
-        
+
         if (roadAccess && (hasUtilities || wouldBeStarter) && Math.random() < spawnChance) {
           const candidateSize = getBuildingSize(candidate);
           if (canSpawnMultiTileBuilding(newGrid, x, y, candidateSize.width, candidateSize.height, tile.zone, size)) {
@@ -2192,12 +2528,12 @@ export function simulateTick(state: GameState): GameState {
       if (state.disastersEnabled && tile.building.onFire) {
         const fireCoverage = services.fire[y][x];
         const fightingChance = fireCoverage / 300;
-        
+
         if (Math.random() < fightingChance) {
           tile.building.onFire = false;
           tile.building.fireProgress = 0;
         } else {
-          tile.building.fireProgress += 2/3; // Reduced from 1 to make fires last ~50% longer
+          tile.building.fireProgress += 2 / 3; // Reduced from 1 to make fires last ~50% longer
           if (tile.building.fireProgress >= 100) {
             tile.building = createBuilding('grass');
             tile.zone = 'none';
@@ -2206,11 +2542,11 @@ export function simulateTick(state: GameState): GameState {
       }
 
       // Random fire start
-      if (state.disastersEnabled && !tile.building.onFire && 
-          tile.building.type !== 'grass' && tile.building.type !== 'water' && 
-          tile.building.type !== 'road' && tile.building.type !== 'tree' &&
-          tile.building.type !== 'empty' &&
-          Math.random() < 0.00003) {
+      if (state.disastersEnabled && !tile.building.onFire &&
+        tile.building.type !== 'grass' && tile.building.type !== 'water' &&
+        tile.building.type !== 'road' && tile.building.type !== 'tree' &&
+        tile.building.type !== 'empty' &&
+        Math.random() < 0.00003) {
         tile.building.onFire = true;
         tile.building.fireProgress = 0;
       }
@@ -2235,7 +2571,7 @@ export function simulateTick(state: GameState): GameState {
   let newMonth = state.month;
   let newDay = state.day;
   let newTick = state.tick + 1;
-  
+
   // Calculate visual hour for day/night cycle (much slower than game time)
   // One full day/night cycle = 15 game days (450 ticks)
   // This makes the cycle atmospheric rather than jarring
@@ -2416,32 +2752,32 @@ const CONSOLIDATABLE_BUILDINGS: Record<ZoneType, Set<BuildingType>> = {
 };
 
 function isMergeableZoneTile(
-  tile: Tile, 
-  zone: ZoneType, 
+  tile: Tile,
+  zone: ZoneType,
   excludeTile?: { x: number; y: number },
   allowBuildingConsolidation?: boolean
 ): boolean {
   // The tile being upgraded is always considered mergeable (it's the source of the evolution)
   if (excludeTile && tile.x === excludeTile.x && tile.y === excludeTile.y) {
-    return tile.zone === zone && !tile.building.onFire && 
-           tile.building.type !== 'water' && tile.building.type !== 'road';
+    return tile.zone === zone && !tile.building.onFire &&
+      tile.building.type !== 'water' && tile.building.type !== 'road';
   }
-  
+
   if (tile.zone !== zone) return false;
   if (tile.building.onFire) return false;
   if (tile.building.type === 'water' || tile.building.type === 'road' || tile.building.type === 'bridge') return false;
-  
+
   // Always allow merging grass and trees - truly unoccupied tiles
   if (MERGEABLE_TILE_TYPES.has(tile.building.type)) {
     return true;
   }
-  
+
   // When demand is high, allow consolidating small buildings into larger ones
   // This enables developed areas to densify without requiring empty land
   if (allowBuildingConsolidation && CONSOLIDATABLE_BUILDINGS[zone]?.has(tile.building.type)) {
     return true;
   }
-  
+
   // 'empty' tiles are placeholders for multi-tile buildings and must NOT be merged
   return false;
 }
@@ -2578,7 +2914,28 @@ export function placeBuilding(
   const tile = state.grid[y]?.[x];
   if (!tile) return state;
 
-  // Can't build on water
+  // Special handling for roads on water (bridges)
+  if (tile.building.type === 'water' && buildingType === 'road') {
+    if (canPlaceRoadOnWater(state.grid, state.gridSize, x, y)) {
+      // Create bridge road on water
+      const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+      const bridgeInfo = createBridgeInfoForWaterRoad(state.grid, state.gridSize, x, y);
+
+      newGrid[y][x].building = createBuilding('road');
+      newGrid[y][x].building.bridgeInfo = bridgeInfo || undefined;
+      newGrid[y][x].zone = 'none';
+
+      // Update bridge info for all connected bridge tiles to have correct span
+      if (bridgeInfo) {
+        updateBridgeSpanInfo(newGrid, state.gridSize, x, y, bridgeInfo);
+      }
+
+      return { ...state, grid: newGrid };
+    }
+    return state; // Can't place road on water without valid bridge
+  }
+
+  // Can't build on water (except roads handled above)
   if (tile.building.type === 'water') return state;
 
   // Can't place roads on existing buildings (only allow on grass, tree, existing roads, or rail - rail+road creates combined tile)
@@ -2614,7 +2971,7 @@ export function placeBuilding(
     if (zone === 'none') {
       // Check if this tile is part of a multi-tile building (handles both origin and 'empty' tiles)
       const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
-      
+
       if (origin) {
         // Dezone the entire multi-tile building
         const size = getBuildingSize(origin.buildingType);
@@ -2649,7 +3006,7 @@ export function placeBuilding(
     }
   } else if (buildingType) {
     const size = getBuildingSize(buildingType);
-    
+
     // Check water adjacency requirement for waterfront buildings (marina, pier)
     let shouldFlip = false;
     if (requiresWaterAdjacency(buildingType)) {
@@ -2659,7 +3016,7 @@ export function placeBuilding(
       }
       shouldFlip = waterCheck.shouldFlip;
     }
-    
+
     if (size.width > 1 || size.height > 1) {
       // Multi-tile building - check if we can place it
       if (!canPlaceMultiTileBuilding(newGrid, x, y, size.width, size.height, state.gridSize)) {
@@ -2679,7 +3036,7 @@ export function placeBuilding(
       if (!allowedTypes.includes(tile.building.type)) {
         return state; // Can't place on existing building or part of multi-tile building
       }
-      
+
       // Handle combined rail+road tiles
       if (buildingType === 'rail' && tile.building.type === 'road') {
         // Placing rail on road: keep as road with rail overlay
@@ -2708,7 +3065,7 @@ export function placeBuilding(
         newGrid[y][x].building.flipped = true;
       }
     }
-    
+
     // NOTE: Bridge creation is handled separately during drag operations across water
     // We do NOT auto-create bridges here because placing individual road tiles on opposite
     // sides of water should not automatically create a bridge - only explicit dragging should
@@ -2727,18 +3084,18 @@ function findBuildingOrigin(
 ): { originX: number; originY: number; buildingType: BuildingType } | null {
   const tile = grid[y]?.[x];
   if (!tile) return null;
-  
+
   // If this tile has an actual building (not empty), check if it's multi-tile
-  if (tile.building.type !== 'empty' && tile.building.type !== 'grass' && 
-      tile.building.type !== 'water' && tile.building.type !== 'road' && 
-      tile.building.type !== 'bridge' && tile.building.type !== 'rail' && tile.building.type !== 'tree') {
+  if (tile.building.type !== 'empty' && tile.building.type !== 'grass' &&
+    tile.building.type !== 'water' && tile.building.type !== 'road' &&
+    tile.building.type !== 'bridge' && tile.building.type !== 'rail' && tile.building.type !== 'tree') {
     const size = getBuildingSize(tile.building.type);
     if (size.width > 1 || size.height > 1) {
       return { originX: x, originY: y, buildingType: tile.building.type };
     }
     return null; // Single-tile building
   }
-  
+
   // If this is an 'empty' tile, it might be part of a multi-tile building
   // Search nearby tiles to find the origin
   if (tile.building.type === 'empty') {
@@ -2750,17 +3107,17 @@ function findBuildingOrigin(
         const checkY = y - dy;
         if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
           const checkTile = grid[checkY][checkX];
-          if (checkTile.building.type !== 'empty' && 
-              checkTile.building.type !== 'grass' &&
-              checkTile.building.type !== 'water' &&
-              checkTile.building.type !== 'road' &&
-              checkTile.building.type !== 'bridge' &&
-              checkTile.building.type !== 'rail' &&
-              checkTile.building.type !== 'tree') {
+          if (checkTile.building.type !== 'empty' &&
+            checkTile.building.type !== 'grass' &&
+            checkTile.building.type !== 'water' &&
+            checkTile.building.type !== 'road' &&
+            checkTile.building.type !== 'bridge' &&
+            checkTile.building.type !== 'rail' &&
+            checkTile.building.type !== 'tree') {
             const size = getBuildingSize(checkTile.building.type);
             // Check if this building's footprint includes our original tile
             if (x >= checkX && x < checkX + size.width &&
-                y >= checkY && y < checkY + size.height) {
+              y >= checkY && y < checkY + size.height) {
               return { originX: checkX, originY: checkY, buildingType: checkTile.building.type };
             }
           }
@@ -2768,7 +3125,7 @@ function findBuildingOrigin(
       }
     }
   }
-  
+
   return null;
 }
 
@@ -2784,16 +3141,16 @@ function findConnectedBridgeTiles(
 ): { x: number; y: number }[] {
   const tile = grid[y]?.[x];
   if (!tile || tile.building.type !== 'bridge') return [];
-  
+
   const orientation = tile.building.bridgeOrientation || 'ns';
   const bridgeTiles: { x: number; y: number }[] = [{ x, y }];
-  
+
   // Direction vectors based on orientation
   // NS bridges run along the x-axis (grid rows)
   // EW bridges run along the y-axis (grid columns)
   const dx = orientation === 'ns' ? 1 : 0;
   const dy = orientation === 'ns' ? 0 : 1;
-  
+
   // Scan in positive direction
   let cx = x + dx;
   let cy = y + dy;
@@ -2807,7 +3164,7 @@ function findConnectedBridgeTiles(
       break;
     }
   }
-  
+
   // Scan in negative direction
   cx = x - dx;
   cy = y - dy;
@@ -2821,7 +3178,7 @@ function findConnectedBridgeTiles(
       break;
     }
   }
-  
+
   return bridgeTiles;
 }
 
@@ -2841,7 +3198,7 @@ function findAdjacentBridgeTiles(
     { dx: 0, dy: -1 },
     { dx: 0, dy: 1 },
   ];
-  
+
   for (const { dx, dy } of directions) {
     const nx = x + dx;
     const ny = y + dy;
@@ -2856,7 +3213,7 @@ function findAdjacentBridgeTiles(
       }
     }
   }
-  
+
   return [];
 }
 
@@ -2867,7 +3224,7 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
   if (tile.building.type === 'water') return state;
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
-  
+
   // Special handling for bridges - delete the entire bridge and restore water
   if (tile.building.type === 'bridge') {
     const bridgeTiles = findConnectedBridgeTiles(newGrid, state.gridSize, x, y);
@@ -2878,7 +3235,7 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
     }
     return { ...state, grid: newGrid };
   }
-  
+
   // Special handling for roads - check if adjacent to a bridge start/end
   if (tile.building.type === 'road') {
     const adjacentBridgeTiles = findAdjacentBridgeTiles(newGrid, state.gridSize, x, y);
@@ -2896,10 +3253,10 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
       return { ...state, grid: newGrid };
     }
   }
-  
+
   // Check if this tile is part of a multi-tile building
   const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
-  
+
   if (origin) {
     // Bulldoze the entire multi-tile building
     const size = getBuildingSize(origin.buildingType);
@@ -2930,10 +3287,10 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
 export function placeSubway(state: GameState, x: number, y: number): GameState {
   const tile = state.grid[y]?.[x];
   if (!tile) return state;
-  
+
   // Can't place subway under water
   if (tile.building.type === 'water') return state;
-  
+
   // Already has subway
   if (tile.hasSubway) return state;
 
@@ -2947,7 +3304,7 @@ export function placeSubway(state: GameState, x: number, y: number): GameState {
 export function removeSubway(state: GameState, x: number, y: number): GameState {
   const tile = state.grid[y]?.[x];
   if (!tile) return state;
-  
+
   // No subway to remove
   if (!tile.hasSubway) return state;
 
@@ -2961,18 +3318,18 @@ export function removeSubway(state: GameState, x: number, y: number): GameState 
 export function placeWaterTerraform(state: GameState, x: number, y: number): GameState {
   const tile = state.grid[y]?.[x];
   if (!tile) return state;
-  
+
   // Already water - do nothing
   if (tile.building.type === 'water') return state;
-  
+
   // Don't allow terraforming bridges - would break them
   if (tile.building.type === 'bridge') return state;
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
-  
+
   // Check if this tile is part of a multi-tile building
   const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
-  
+
   if (origin) {
     // Clear the entire multi-tile building first, then place water on this tile
     const size = getBuildingSize(origin.buildingType);
@@ -2987,7 +3344,7 @@ export function placeWaterTerraform(state: GameState, x: number, y: number): Gam
       }
     }
   }
-  
+
   // Now place water on the target tile
   newGrid[y][x].building = createBuilding('water');
   newGrid[y][x].zone = 'none';
@@ -3000,12 +3357,12 @@ export function placeWaterTerraform(state: GameState, x: number, y: number): Gam
 export function placeLandTerraform(state: GameState, x: number, y: number): GameState {
   const tile = state.grid[y]?.[x];
   if (!tile) return state;
-  
+
   // Only works on water tiles
   if (tile.building.type !== 'water') return state;
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
-  
+
   // Convert water to grass
   newGrid[y][x].building = createBuilding('grass');
   newGrid[y][x].zone = 'none';
@@ -3018,7 +3375,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
   // Start with a base state (terrain generation)
   const baseState = createInitialGameState(size, cityName);
   const grid = baseState.grid;
-  
+
   // Helper to check if a region is clear (no water)
   const isRegionClear = (x: number, y: number, w: number, h: number): boolean => {
     for (let dy = 0; dy < h; dy++) {
@@ -3029,7 +3386,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
     }
     return true;
   };
-  
+
   // Helper to place a road
   const placeRoad = (x: number, y: number): void => {
     const tile = grid[y]?.[x];
@@ -3038,7 +3395,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       tile.zone = 'none';
     }
   };
-  
+
   // Helper to create a completed building
   function createAdvancedBuilding(type: BuildingType): Building {
     return {
@@ -3055,7 +3412,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       abandoned: false,
     };
   }
-  
+
   // Helper to place a zone with developed building
   const placeZonedBuilding = (x: number, y: number, zone: ZoneType, buildingType: BuildingType): void => {
     const tile = grid[y]?.[x];
@@ -3070,13 +3427,13 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       }
     }
   };
-  
+
   // Helper to place a multi-tile building
   const placeMultiTileBuilding = (x: number, y: number, type: BuildingType, zone: ZoneType = 'none'): boolean => {
     const buildingSize = getBuildingSize(type);
     if (!isRegionClear(x, y, buildingSize.width, buildingSize.height)) return false;
     if (x + buildingSize.width > size || y + buildingSize.height > size) return false;
-    
+
     // Check for roads in the way
     for (let dy = 0; dy < buildingSize.height; dy++) {
       for (let dx = 0; dx < buildingSize.width; dx++) {
@@ -3084,7 +3441,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
         if (tileType === 'road' || tileType === 'bridge') return false;
       }
     }
-    
+
     // Place the building
     for (let dy = 0; dy < buildingSize.height; dy++) {
       for (let dx = 0; dx < buildingSize.width; dx++) {
@@ -3105,15 +3462,15 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
     }
     return true;
   };
-  
+
   // Define city center (roughly middle of map, avoiding edges)
   const centerX = Math.floor(size / 2);
   const centerY = Math.floor(size / 2);
   const cityRadius = Math.floor(size * 0.35);
-  
+
   // Create main road grid - major arteries
   const roadSpacing = 6 + Math.floor(Math.random() * 3); // 6-8 tile spacing
-  
+
   // Main horizontal roads
   for (let roadY = centerY - cityRadius; roadY <= centerY + cityRadius; roadY += roadSpacing) {
     if (roadY < 2 || roadY >= size - 2) continue;
@@ -3121,7 +3478,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       placeRoad(x, roadY);
     }
   }
-  
+
   // Main vertical roads
   for (let roadX = centerX - cityRadius; roadX <= centerX + cityRadius; roadX += roadSpacing) {
     if (roadX < 2 || roadX >= size - 2) continue;
@@ -3129,7 +3486,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       placeRoad(roadX, y);
     }
   }
-  
+
   // Add some diagonal/curved roads for interest (ring road)
   const ringRadius = cityRadius - 5;
   for (let angle = 0; angle < Math.PI * 2; angle += 0.08) {
@@ -3139,7 +3496,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       placeRoad(rx, ry);
     }
   }
-  
+
   // Place service buildings first (they need good placement)
   const serviceBuildings: Array<{ type: BuildingType; count: number }> = [
     { type: 'power_plant', count: 4 + Math.floor(Math.random() * 3) },
@@ -3150,7 +3507,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
     { type: 'school', count: 5 + Math.floor(Math.random() * 3) },
     { type: 'university', count: 2 + Math.floor(Math.random() * 2) },
   ];
-  
+
   for (const service of serviceBuildings) {
     let placed = 0;
     let attempts = 0;
@@ -3163,13 +3520,13 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       attempts++;
     }
   }
-  
+
   // Place special/landmark buildings
   const specialBuildings: BuildingType[] = [
     'city_hall', 'stadium', 'museum', 'airport', 'space_program', 'amusement_park',
     'baseball_stadium', 'amphitheater', 'community_center'
   ];
-  
+
   for (const building of specialBuildings) {
     let attempts = 0;
     while (attempts < 200) {
@@ -3179,13 +3536,13 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       attempts++;
     }
   }
-  
+
   // Place parks and recreation throughout
   const parkBuildings: BuildingType[] = [
-    'park', 'park_large', 'tennis', 'basketball_courts', 'playground_small', 
+    'park', 'park_large', 'tennis', 'basketball_courts', 'playground_small',
     'playground_large', 'swimming_pool', 'skate_park', 'community_garden', 'pond_park'
   ];
-  
+
   for (let i = 0; i < 25 + Math.floor(Math.random() * 15); i++) {
     const parkType = parkBuildings[Math.floor(Math.random() * parkBuildings.length)];
     let attempts = 0;
@@ -3196,17 +3553,17 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       attempts++;
     }
   }
-  
+
   // Zone and develop remaining grass tiles within city radius
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const tile = grid[y][x];
       if (tile.building.type !== 'grass' && tile.building.type !== 'tree') continue;
-      
+
       // Check distance from center
       const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
       if (dist > cityRadius) continue;
-      
+
       // Skip tiles not near roads
       let nearRoad = false;
       for (let dy = -2; dy <= 2 && !nearRoad; dy++) {
@@ -3217,14 +3574,14 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
         }
       }
       if (!nearRoad) continue;
-      
+
       // Determine zone based on distance from center and some randomness
       const normalizedDist = dist / cityRadius;
       let zone: ZoneType;
       let buildingType: BuildingType;
-      
+
       const rand = Math.random();
-      
+
       if (normalizedDist < 0.3) {
         // Downtown - mostly commercial with some high-density residential
         if (rand < 0.6) {
@@ -3265,7 +3622,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
           buildingType = 'shop_small';
         }
       }
-      
+
       // Handle multi-tile buildings
       const bSize = getBuildingSize(buildingType);
       if (bSize.width > 1 || bSize.height > 1) {
@@ -3275,7 +3632,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       }
     }
   }
-  
+
   // Add some trees in remaining grass areas
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -3285,7 +3642,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       }
     }
   }
-  
+
   // Add subway network in the city center
   for (let y = centerY - Math.floor(cityRadius * 0.6); y <= centerY + Math.floor(cityRadius * 0.6); y++) {
     for (let x = centerX - Math.floor(cityRadius * 0.6); x <= centerX + Math.floor(cityRadius * 0.6); x++) {
@@ -3299,7 +3656,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       }
     }
   }
-  
+
   // Place subway stations at key intersections
   const subwayStationSpacing = roadSpacing * 2;
   for (let y = centerY - cityRadius; y <= centerY + cityRadius; y += subwayStationSpacing) {
@@ -3311,10 +3668,10 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       }
     }
   }
-  
+
   // Calculate services and stats
   const services = calculateServiceCoverage(grid, size);
-  
+
   // Set power and water for all buildings
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -3322,11 +3679,11 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       grid[y][x].building.watered = services.water[y][x];
     }
   }
-  
+
   // Calculate initial stats
   let totalPopulation = 0;
   let totalJobs = 0;
-  
+
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const building = grid[y][x].building;
@@ -3334,7 +3691,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       totalJobs += building.jobs;
     }
   }
-  
+
   // Create the final state
   return {
     ...baseState,
@@ -3388,24 +3745,24 @@ export function getDevelopmentBlockers(
 ): DevelopmentBlocker[] {
   const blockers: DevelopmentBlocker[] = [];
   const tile = state.grid[y]?.[x];
-  
+
   if (!tile) {
     blockers.push({ reason: 'Invalid tile', details: `Tile at (${x}, ${y}) does not exist` });
     return blockers;
   }
-  
+
   // Only analyze zoned tiles
   if (tile.zone === 'none') {
     blockers.push({ reason: 'Not zoned', details: 'Tile has no zone assigned' });
     return blockers;
   }
-  
+
   // If it already has a building, no blockers
   if (tile.building.type !== 'grass' && tile.building.type !== 'tree') {
     // It's already developed or is a placeholder for a multi-tile building
     return blockers;
   }
-  
+
   // Check road access
   const roadAccess = hasRoadAccess(state.grid, x, y, state.gridSize);
   if (!roadAccess) {
@@ -3414,16 +3771,16 @@ export function getDevelopmentBlockers(
       details: 'Tile must be within 8 tiles of a road (through same-zone tiles)'
     });
   }
-  
+
   // Check if multi-tile building can spawn here
   const buildingList = tile.zone === 'residential' ? RESIDENTIAL_BUILDINGS :
     tile.zone === 'commercial' ? COMMERCIAL_BUILDINGS : INDUSTRIAL_BUILDINGS;
   const candidate = buildingList[0];
-  
+
   // Starter buildings (house_small, shop_small, factory_small) don't require power/water
   // They represent small-scale, self-sufficient operations
   const wouldBeStarter = isStarterBuilding(x, y, candidate);
-  
+
   // Check power (not required for starter buildings)
   const hasPower = state.services.power[y][x];
   if (!hasPower && !wouldBeStarter) {
@@ -3432,7 +3789,7 @@ export function getDevelopmentBlockers(
       details: 'Build a power plant nearby to provide electricity'
     });
   }
-  
+
   // Check water (not required for starter buildings)
   const hasWater = state.services.water[y][x];
   if (!hasWater && !wouldBeStarter) {
@@ -3442,17 +3799,17 @@ export function getDevelopmentBlockers(
     });
   }
   const candidateSize = getBuildingSize(candidate);
-  
+
   if (candidateSize.width > 1 || candidateSize.height > 1) {
     // Check if the footprint is available
     if (!canSpawnMultiTileBuilding(state.grid, x, y, candidateSize.width, candidateSize.height, tile.zone, state.gridSize)) {
       // Find out specifically why
       const footprintBlockers: string[] = [];
-      
+
       if (x + candidateSize.width > state.gridSize || y + candidateSize.height > state.gridSize) {
         footprintBlockers.push('Too close to map edge');
       }
-      
+
       for (let dy = 0; dy < candidateSize.height && footprintBlockers.length < 3; dy++) {
         for (let dx = 0; dx < candidateSize.width && footprintBlockers.length < 3; dx++) {
           const checkTile = state.grid[y + dy]?.[x + dx];
@@ -3465,24 +3822,24 @@ export function getDevelopmentBlockers(
           }
         }
       }
-      
+
       blockers.push({
         reason: 'Footprint blocked',
         details: `${candidate} needs ${candidateSize.width}x${candidateSize.height} tiles. Issues: ${footprintBlockers.join('; ')}`
       });
     }
   }
-  
+
   // If no blockers found, it's just waiting for RNG
   const hasUtilities = hasPower && hasWater;
   if (blockers.length === 0 && roadAccess && (hasUtilities || wouldBeStarter)) {
     blockers.push({
       reason: 'Waiting for development',
-      details: wouldBeStarter && !hasUtilities 
-        ? 'Starter building can develop here without utilities! (5% chance per tick)' 
+      details: wouldBeStarter && !hasUtilities
+        ? 'Starter building can develop here without utilities! (5% chance per tick)'
         : 'All conditions met! Building will spawn soon (5% chance per tick)'
     });
   }
-  
+
   return blockers;
 }

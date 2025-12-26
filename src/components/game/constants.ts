@@ -271,3 +271,11 @@ export const MAX_TRAINS = 35;                      // Maximum trains in city
 export const HELICOPTER_MIN_ZOOM = 0.3;           // Minimum zoom to show helicopters
 export const SMOG_MIN_ZOOM = 0.35;                // Minimum zoom to show factory smog
 export const FIREWORK_MIN_ZOOM = 0.3;             // Minimum zoom to show fireworks
+
+// Bridge system constants
+export const BRIDGE_MAX_SPAN = 10;                // Maximum water tiles a bridge can span
+export const BRIDGE_MIN_SPAN = 1;                 // Minimum span for bridge creation
+export const BRIDGE_COST_MULTIPLIER = 5;          // Bridge roads cost 5x normal road cost
+export const BRIDGE_MIN_ZOOM = 0.25;              // Minimum zoom to show bridge details
+export const BRIDGE_STRUCTURE_MIN_ZOOM = 0.4;     // Minimum zoom to show cables/arches
+export const BRIDGE_RAILING_MIN_ZOOM = 0.5;       // Minimum zoom to show railings

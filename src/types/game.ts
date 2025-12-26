@@ -206,14 +206,30 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   mountain_trailhead: { name: 'Trailhead', cost: 400, description: 'Hiking trail entrance (3x3)', size: 3 },
 };
 
-// Bridge type based on span width
-export type BridgeType = 'small' | 'medium' | 'large' | 'suspension';
+// Bridge types based on span width
+export type BridgeType =
+  | 'wooden_bridge'      // 1-2 tiles - simple wooden bridge
+  | 'stone_bridge'       // 2-3 tiles - stone arch bridge
+  | 'steel_bridge'       // 3-5 tiles - steel truss bridge
+  | 'beam_bridge'        // 4-6 tiles - concrete beam bridge
+  | 'arch_bridge'        // 5-7 tiles - large arch bridge
+  | 'suspension_bridge'  // 6-8 tiles - cable-stayed bridge
+  | 'cable_stayed'       // 7-10 tiles - modern cable-stayed bridge
+  | 'golden_gate';       // 8-10 tiles - iconic suspension bridge
 
-// Bridge orientation
-export type BridgeOrientation = 'ns' | 'ew';
+// Bridge variant styles for each type
+export type BridgeVariant = 0 | 1 | 2;
 
-// What the bridge carries (road or rail)
-export type BridgeTrackType = 'road' | 'rail';
+// Bridge metadata stored on road tiles that are part of a bridge
+export interface BridgeInfo {
+  bridgeId: string;           // Unique ID for this bridge
+  bridgeType: BridgeType;     // Type of bridge based on span
+  variant: BridgeVariant;     // Visual variant (0-2)
+  span: number;               // Total span width in tiles
+  position: number;           // Position within bridge (0 = start, span-1 = end)
+  orientation: 'ns' | 'ew';   // Direction bridge spans
+  height: number;             // Bridge deck height above water (for rendering)
+}
 
 export interface Building {
   type: BuildingType;
@@ -229,21 +245,14 @@ export interface Building {
   abandoned: boolean; // Building is abandoned due to low demand, produces nothing
   flipped?: boolean; // Horizontally mirror the sprite (used for waterfront buildings to face water)
   cityId?: string; // ID of the city this building belongs to (for multi-city support)
-  // Bridge-specific properties
-  bridgeType?: BridgeType; // Type of bridge (small, medium, large, suspension)
-  bridgeOrientation?: BridgeOrientation; // Direction the bridge spans (ns or ew)
-  bridgeVariant?: number; // Visual variant for this bridge type (0-2)
-  bridgePosition?: 'start' | 'middle' | 'end'; // Position within the bridge span
-  bridgeIndex?: number; // Index of this tile within the bridge (0-based)
-  bridgeSpan?: number; // Total number of tiles in this bridge
-  bridgeTrackType?: BridgeTrackType; // What the bridge carries: 'road' or 'rail'
+  bridgeInfo?: BridgeInfo; // Bridge metadata for road tiles that are part of a bridge
 }
 
 // City definition for multi-city maps
 export interface City {
   id: string;
   name: string;
-  // Bounds of the city (inclusive tile coordinates)
+  // Bounds of the city (inclusiveå tile coordinates)
   bounds: {
     minX: number;
     minY: number;

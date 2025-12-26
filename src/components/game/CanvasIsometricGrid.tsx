@@ -117,6 +117,11 @@ import {
   RAIL_COLORS,
 } from '@/components/game/railSystem';
 import {
+  drawBridgeTile,
+  isBridgeTile,
+  getBridgeDeckOffset,
+} from '@/components/game/bridgeSystem';
+import {
   spawnTrain,
   updateTrain,
   drawTrains,
@@ -179,18 +184,18 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const activeCrimesRef = useRef<Set<string>>(new Set()); // Track crimes that already have a car dispatched
   const activeCrimeIncidentsRef = useRef<Map<string, { x: number; y: number; type: CrimeType; timeRemaining: number }>>(new Map()); // Persistent crime incidents
   const crimeSpawnTimerRef = useRef(0); // Timer for spawning new crime incidents
-  
+
   // Pedestrian system refs
   const pedestriansRef = useRef<Pedestrian[]>([]);
   const pedestrianIdRef = useRef(0);
   const pedestrianSpawnTimerRef = useRef(0);
-  
+
   // Touch gesture state for mobile
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const initialPinchDistanceRef = useRef<number | null>(null);
   const initialZoomRef = useRef<number>(zoom);
   const lastTouchCenterRef = useRef<{ x: number; y: number } | null>(null);
-  
+
   // Airplane system refs
   const airplanesRef = useRef<Airplane[]>([]);
   const airplaneIdRef = useRef(0);
@@ -227,7 +232,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Railroad crossing state
   const crossingFlashTimerRef = useRef(0);
   const crossingGateAnglesRef = useRef<Map<number, number>>(new Map()); // key = y * gridSize + x, value = angle (0=open, 90=closed)
-  const crossingPositionsRef = useRef<{x: number, y: number}[]>([]); // Cached crossing positions for O(1) iteration
+  const crossingPositionsRef = useRef<{ x: number, y: number }[]>([]); // Cached crossing positions for O(1) iteration
 
   // Firework system refs
   const fireworksRef = useRef<Firework[]>([]);
@@ -248,7 +253,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const cachedRoadTileCountRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
   const cachedPopulationRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
   const gridVersionRef = useRef(0);
-  
+
   // Performance: Cache road merge analysis (expensive calculation done per-road-tile)
   const roadAnalysisCacheRef = useRef<Map<string, ReturnType<typeof analyzeMergedRoad>>>(new Map());
   const roadAnalysisCacheVersionRef = useRef(-1);
@@ -292,7 +297,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Only zoning tools show the grid/rectangle selection visualization
   // Note: zone_water uses supportsDragPlace behavior (place on click/drag) instead of rectangle selection
   const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'].includes(selectedTool);
-  
+
   // Roads, bulldoze, and other tools support drag-to-place but don't show the grid
   const supportsDragPlace = selectedTool !== 'select';
 
@@ -450,7 +455,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     updateSmog,
     drawSmog,
   } = useEffectsSystems(effectsSystemRefs, effectsSystemState);
-  
+
   useEffect(() => {
     worldStateRef.current.grid = grid;
     worldStateRef.current.gridSize = gridSize;
@@ -489,12 +494,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     activeCrimesRef.current.clear();
     activeCrimeIncidentsRef.current.clear();
     crimeSpawnTimerRef.current = 0;
-    
+
     // Clear pedestrians
     pedestriansRef.current = [];
     pedestrianIdRef.current = 0;
     pedestrianSpawnTimerRef.current = 0;
-    
+
     // Clear aircraft
     airplanesRef.current = [];
     airplaneIdRef.current = 0;
@@ -510,27 +515,27 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     boatsRef.current = [];
     boatIdRef.current = 0;
     boatSpawnTimerRef.current = 0;
-    
+
     // Clear barges
     bargesRef.current = [];
     bargeIdRef.current = 0;
     bargeSpawnTimerRef.current = 0;
-    
+
     // Clear trains
     trainsRef.current = [];
     trainIdRef.current = 0;
     trainSpawnTimerRef.current = 0;
-    
+
     // Clear fireworks
     fireworksRef.current = [];
     fireworkIdRef.current = 0;
     fireworkSpawnTimerRef.current = 0;
     fireworkShowActiveRef.current = false;
-    
+
     // Clear factory smog
     factorySmogRef.current = [];
     smogLastGridVersionRef.current = -1;
-    
+
     // Reset traffic light timer
     trafficLightTimerRef.current = 0;
   }, [gameVersion]);
@@ -539,7 +544,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   useEffect(() => {
     isPanningRef.current = isPanning;
   }, [isPanning]);
-  
+
   // Sync zoom state to ref for animation loop access
   useEffect(() => {
     zoomRef.current = zoom;
@@ -600,7 +605,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         const maxOffsetX = cs.width - padding - mapLeft * currentZoom;
         const minOffsetY = padding - mapBottom * currentZoom;
         const maxOffsetY = cs.height - padding - mapTop * currentZoom;
-        
+
         setOffset(prev => ({
           x: Math.max(minOffsetX, Math.min(maxOffsetX, prev.x + dx)),
           y: Math.max(minOffsetY, Math.min(maxOffsetY, prev.y + dy)),
@@ -649,16 +654,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
     const canvas = ctx.canvas;
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Early exit if no airplanes
     if (!currentGrid || currentGridSize <= 0 || airplanesRef.current.length === 0) {
       return;
     }
-    
+
     ctx.save();
     ctx.scale(dpr * currentZoom, dpr * currentZoom);
     ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
-    
+
     const viewWidth = canvas.width / (dpr * currentZoom);
     const viewHeight = canvas.height / (dpr * currentZoom);
     const viewBounds = {
@@ -667,10 +672,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       viewRight: viewWidth - currentOffset.x / currentZoom + 200,
       viewBottom: viewHeight - currentOffset.y / currentZoom + 200,
     };
-    
+
     // Use extracted utility function for drawing
     drawAirplanesUtil(ctx, airplanesRef.current, viewBounds, visualHour, navLightFlashTimerRef.current, isMobile);
-    
+
     ctx.restore();
   }, [visualHour, isMobile]);
 
@@ -679,16 +684,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
     const canvas = ctx.canvas;
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Early exit if no helicopters
     if (!currentGrid || currentGridSize <= 0 || helicoptersRef.current.length === 0) {
       return;
     }
-    
+
     ctx.save();
     ctx.scale(dpr * currentZoom, dpr * currentZoom);
     ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
-    
+
     const viewWidth = canvas.width / (dpr * currentZoom);
     const viewHeight = canvas.height / (dpr * currentZoom);
     const viewBounds = {
@@ -697,10 +702,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       viewRight: viewWidth - currentOffset.x / currentZoom + 100,
       viewBottom: viewHeight - currentOffset.y / currentZoom + 100,
     };
-    
+
     // Use extracted utility function for drawing
     drawHelicoptersUtil(ctx, helicoptersRef.current, viewBounds, visualHour, navLightFlashTimerRef.current, isMobile, currentZoom);
-    
+
     ctx.restore();
   }, [visualHour, isMobile]);
 
@@ -746,7 +751,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     // Count rail tiles
     const railTileCount = countRailTiles(currentGrid, currentGridSize);
-    
+
     // No trains if not enough rail
     if (railTileCount < MIN_RAIL_TILES_FOR_TRAINS) {
       trainsRef.current = [];
@@ -755,7 +760,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     // Calculate max trains based on rail network size
     const maxTrains = Math.min(MAX_TRAINS, Math.ceil(railTileCount / TRAINS_PER_RAIL_TILES));
-    
+
     // Speed multiplier based on game speed
     const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2 : 3;
 
@@ -771,7 +776,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     // Update existing trains (pass all trains for collision detection)
     const allTrains = trainsRef.current;
-    trainsRef.current = trainsRef.current.filter(train => 
+    trainsRef.current = trainsRef.current.filter(train =>
       updateTrain(train, delta, speedMultiplier, currentGrid, currentGridSize, allTrains, isMobile)
     );
   }, [isMobile]);
@@ -783,7 +788,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!currentGrid || currentGridSize <= 0 || trainsRef.current.length === 0) {
       return;
     }
-    
+
     // Skip drawing trains when very zoomed out (for large map performance)
     if (currentZoom < TRAIN_MIN_ZOOM) {
       return;
@@ -805,19 +810,19 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     });
     return unsubscribe;
   }, []);
-  
+
   // Load sprite sheets on mount and when sprite pack changes
   // This now runs in background - rendering starts immediately with placeholders
   useEffect(() => {
     // Load images progressively - each will trigger a re-render when ready
     // Priority: main sprite sheet first, then water, then secondary sheets
-    
+
     // High priority - main sprite sheet
     loadSpriteImage(currentSpritePack.src, true).catch(console.error);
-    
+
     // High priority - water texture
     loadImage(WATER_ASSET_PATH).catch(console.error);
-    
+
     // Medium priority - load secondary sheets after a small delay
     // This allows the main content to render first
     const loadSecondarySheets = () => {
@@ -851,21 +856,21 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       // Load airplane sprite sheet (always loaded, not dependent on sprite pack)
       loadSpriteImage(AIRPLANE_SPRITE_SRC, false).catch(console.error);
     };
-    
+
     // Load secondary sheets after 50ms to prioritize first paint
     const timer = setTimeout(loadSecondarySheets, 50);
     return () => clearTimeout(timer);
   }, [currentSpritePack]);
-  
+
   // Building helper functions moved to buildingHelpers.ts
-  
+
   // Update canvas size on resize with high-DPI support
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current && canvasRef.current) {
         const dpr = window.devicePixelRatio || 1;
         const rect = containerRef.current.getBoundingClientRect();
-        
+
         // Set display size
         canvasRef.current.style.width = `${rect.width}px`;
         canvasRef.current.style.height = `${rect.height}px`;
@@ -889,7 +894,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           lightingCanvasRef.current.style.width = `${rect.width}px`;
           lightingCanvasRef.current.style.height = `${rect.height}px`;
         }
-        
+
         // Set actual size in memory (scaled for DPI)
         setCanvasSize({
           width: Math.round(rect.width * dpr),
@@ -901,29 +906,29 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
-  
+
   // Main render function - PERF: Uses requestAnimationFrame throttling to batch multiple state updates
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !imagesLoaded) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // PERF: Cancel any pending render to avoid duplicate work
     if (renderPendingRef.current !== null) {
       cancelAnimationFrame(renderPendingRef.current);
     }
-    
+
     // PERF: Defer render to next animation frame - batches multiple state updates into one render
     renderPendingRef.current = requestAnimationFrame(() => {
       renderPendingRef.current = null;
-      
+
       const dpr = window.devicePixelRatio || 1;
-    
+
       // Disable image smoothing for crisp pixel art
       ctx.imageSmoothingEnabled = false;
-    
+
       // Clear canvas with gradient background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, '#0f1419');
@@ -931,2390 +936,2403 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       gradient.addColorStop(1, '#1a2a1f');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
       ctx.save();
       // Scale for device pixel ratio first, then apply zoom
       ctx.scale(dpr * zoom, dpr * zoom);
       ctx.translate(offset.x / zoom, offset.y / zoom);
-    
-    // Calculate visible tile range for culling (account for DPR in canvas size)
-    const viewWidth = canvas.width / (dpr * zoom);
-    const viewHeight = canvas.height / (dpr * zoom);
-    const viewLeft = -offset.x / zoom - TILE_WIDTH;
-    const viewTop = -offset.y / zoom - TILE_HEIGHT * 2;
-    const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH;
-    const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 2;
-    
-    // PERF: Pre-compute visible diagonal range to skip entire rows of tiles
-    // In isometric rendering, screenY = (x + y) * (TILE_HEIGHT / 2), so sum = x + y = screenY * 2 / TILE_HEIGHT
-    // Add padding for tall buildings that may extend above their tile position
-    const visibleMinSum = Math.max(0, Math.floor((viewTop - TILE_HEIGHT * 6) * 2 / TILE_HEIGHT));
-    const visibleMaxSum = Math.min(gridSize * 2 - 2, Math.ceil((viewBottom + TILE_HEIGHT) * 2 / TILE_HEIGHT));
-    
-    // PERF: Use cached render queue arrays to avoid GC pressure
-    // Clear arrays by setting length = 0 (much faster than recreating)
-    const queues = renderQueuesRef.current;
-    queues.buildingQueue.length = 0;
-    queues.waterQueue.length = 0;
-    queues.roadQueue.length = 0;
-    queues.bridgeQueue.length = 0;
-    queues.railQueue.length = 0;
-    queues.beachQueue.length = 0;
-    queues.baseTileQueue.length = 0;
-    queues.greenBaseTileQueue.length = 0;
-    queues.overlayQueue.length = 0;
 
-    const buildingQueue = queues.buildingQueue;
-    const waterQueue = queues.waterQueue;
-    const roadQueue = queues.roadQueue;
-    const bridgeQueue = queues.bridgeQueue;
-    const railQueue = queues.railQueue;
-    const beachQueue = queues.beachQueue;
-    const baseTileQueue = queues.baseTileQueue;
-    const greenBaseTileQueue = queues.greenBaseTileQueue;
-    const overlayQueue = queues.overlayQueue;
-    
-    // PERF: Insertion sort for nearly-sorted arrays (O(n) vs O(n log n) for .sort())
-    // Since tiles are iterated in diagonal order, queues are already nearly sorted
-    function insertionSortByDepth<T extends { depth: number }>(arr: T[]): void {
-      for (let i = 1; i < arr.length; i++) {
-        const current = arr[i];
-        let j = i - 1;
-        // Only move elements that are strictly greater (maintains stability)
-        while (j >= 0 && arr[j].depth > current.depth) {
-          arr[j + 1] = arr[j];
-          j--;
-        }
-        arr[j + 1] = current;
-      }
-    }
-    
-    // Helper function to check if a tile is adjacent to water (uses pre-computed metadata for O(1) lookup)
-    function isAdjacentToWater(gridX: number, gridY: number): boolean {
-      const metadata = getTileMetadata(gridX, gridY);
-      return metadata?.isAdjacentToWater ?? false;
-    }
-    
-    // Helper function to check if a tile is water
-    function isWater(gridX: number, gridY: number): boolean {
-      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
-      return grid[gridY][gridX].building.type === 'water';
-    }
-    
-    // Helper function to check if a tile has a road or bridge
-    function hasRoad(gridX: number, gridY: number): boolean {
-      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
-      const type = grid[gridY][gridX].building.type;
-      return type === 'road' || type === 'bridge';
-    }
-    
-    // Helper function to check if a tile is a bridge (for beach exclusion)
-    function isBridge(gridX: number, gridY: number): boolean {
-      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
-      return grid[gridY][gridX].building.type === 'bridge';
-    }
-    
-    // Helper function to check if a tile has a marina dock or pier (no beaches next to these)
-    // Also checks 'empty' tiles that are part of multi-tile marina buildings
-    function hasMarinaPier(gridX: number, gridY: number): boolean {
-      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
-      const buildingType = grid[gridY][gridX].building.type;
-      if (buildingType === 'marina_docks_small' || buildingType === 'pier_large') return true;
-      
-      // Check if this is an 'empty' tile that belongs to a marina (2x2 building)
-      // Marina is 2x2, so check up to 1 tile away for the origin
-      if (buildingType === 'empty') {
-        for (let dy = 0; dy <= 1; dy++) {
-          for (let dx = 0; dx <= 1; dx++) {
-            const checkX = gridX - dx;
-            const checkY = gridY - dy;
-            if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
-              const checkType = grid[checkY][checkX].building.type;
-              if (checkType === 'marina_docks_small') {
-                // Verify this tile is within the 2x2 footprint
-                if (gridX >= checkX && gridX < checkX + 2 && gridY >= checkY && gridY < checkY + 2) {
-                  return true;
-                }
-              }
-            }
-          }
-        }
-      }
-      return false;
-    }
-    
-    // Helper to get cached road merge analysis (invalidates when grid changes)
-    function getCachedMergeInfo(gx: number, gy: number): ReturnType<typeof analyzeMergedRoad> {
-      const currentVersion = gridVersionRef.current;
-      if (roadAnalysisCacheVersionRef.current !== currentVersion) {
-        roadAnalysisCacheRef.current.clear();
-        roadAnalysisCacheVersionRef.current = currentVersion;
-      }
-      
-      const key = `${gx},${gy}`;
-      let info = roadAnalysisCacheRef.current.get(key);
-      if (!info) {
-        info = analyzeMergedRoad(grid, gridSize, gx, gy);
-        roadAnalysisCacheRef.current.set(key, info);
-      }
-      return info;
-    }
-
-    // Create road drawing options for the extracted drawRoad function
-    const roadDrawingOptions: RoadDrawingOptions = {
-      hasRoad,
-      getMergeInfo: getCachedMergeInfo,
-      isMobile,
-      isPanning: isPanningRef.current,
-      isPinchZooming: isPinchZoomingRef.current,
-      trafficLightTimer: trafficLightTimerRef.current,
-    };
-    
-    // Draw bridge tile - draws as a SINGLE continuous shape to avoid gaps
-    function drawBridgeTile(
-      ctx: CanvasRenderingContext2D,
-      x: number,
-      y: number,
-      building: Building,
-      gridX: number,
-      gridY: number,
-      currentZoom: number
-    ) {
-      const w = TILE_WIDTH;
-      const h = TILE_HEIGHT;
-      
-      // Parse bridge properties using extracted helper
-      const {
-        bridgeType,
-        orientation,
-        variant,
-        position,
-        bridgeIndex,
-        bridgeSpan,
-        isRailBridge,
-      } = parseBridgeProperties(building);
-      
-      // Get style from extracted constants
-      const style = getBridgeStyle(bridgeType, variant);
-      
-      // Rail bridges are shifted down slightly on the Y axis
-      const yOffset = getRailBridgeYOffset(isRailBridge);
-      const adjustedY = y + yOffset;
-      
-      const cx = x + w / 2;
-      const cy = adjustedY + h / 2;
-      
-      // Bridge width - rail bridges are 20% skinnier than road bridges
-      const bridgeWidthRatio = getBridgeWidthRatio(isRailBridge);
-      const halfWidth = w * bridgeWidthRatio * 0.5;
-      
-      // Calculate bridge edge geometry using extracted helper
-      const edges = calculateBridgeEdges(x, y, adjustedY, orientation);
-      const { northEdge, eastEdge, southEdge, westEdge, startEdge, endEdge, perpX, perpY, neDirX, neDirY, nwDirX, nwDirY } = edges;
-      
-      // ============================================================
-      // DRAW SUPPORT PILLARS (one per tile, at front position to avoid z-order issues)
-      // ============================================================
-      const pillarW = 4;
-      const pillarH = 14; 
-      
-      // Only draw pillar on every other tile to reduce count, and place at back position (0.35)
-      // Water tiles toward startEdge are rendered BEFORE this bridge tile, so pillar won't be covered
-      // Suspension bridges don't need base pillars - they have tower supports instead
-      const shouldDrawPillar = bridgeType !== 'suspension' && ((bridgeIndex % 2 === 0) || position === 'start' || position === 'end');
-      
-      if (shouldDrawPillar) {
-        // Place pillar toward the "start" edge (back in render order) - water there is already drawn
-        const pillarT = 0.35; // Position along the tile (0.35 = toward start/back)
-        const pillarPos = {
-          x: startEdge.x + (endEdge.x - startEdge.x) * pillarT,
-          y: startEdge.y + (endEdge.y - startEdge.y) * pillarT
-        };
-        
-        // Use extracted pillar drawing function
-        drawBridgePillar(ctx, pillarPos.x, pillarPos.y, pillarW, pillarH, style.support);
-      }
-      
-      // ============================================================
-      // DRAW ROAD CONNECTOR AT BRIDGE ENDS (covers road centerline and fills gap)
-      // ============================================================
-      // At the start/end of a bridge, we need to draw a road segment that:
-      // 1. Fills the gap between the road and the elevated bridge deck
-      // 2. Covers up the yellow centerline from the adjacent road
-      
-      const deckElevation = 3;
-      
-      // Travel direction for connector extension
-      const dx = endEdge.x - startEdge.x;
-      const dy = endEdge.y - startEdge.y;
-      const travelLen = Math.hypot(dx, dy);
-      const travelDirX = dx / travelLen;
-      const travelDirY = dy / travelLen;
-      
-      // Calculate how far to extend beyond the bridge tile (to cover the road's centerline)
-      const extensionAmount = 8; // Extend into the road tile to cover centerline
-      
-      // Store connector info for drawing borders after the deck
-      const connectorBordersToDraw: Array<{
-        extendedX: number;
-        extendedY: number;
-        connectorEdgeX: number;
-        connectorEdgeY: number;
-      }> = [];
-      
-      // Helper to draw a connector fill from bridge edge to road
-      const drawConnectorFill = (connectorEdge: { x: number; y: number }, extensionDir: number) => {
-        // Extended edge position (going toward the adjacent road)
-        const extendedX = connectorEdge.x + travelDirX * extensionAmount * extensionDir;
-        const extendedY = connectorEdge.y + travelDirY * extensionAmount * extensionDir;
-        
-        // Draw a connector parallelogram from the extended position to the bridge edge
-        // The extended end (in the road) is at ground level, the bridge end is elevated
-        const connectorRoadLeft = { x: extendedX + perpX * halfWidth, y: extendedY + perpY * halfWidth };
-        const connectorRoadRight = { x: extendedX - perpX * halfWidth, y: extendedY - perpY * halfWidth };
-        const connectorBridgeLeft = { x: connectorEdge.x + perpX * halfWidth, y: connectorEdge.y - deckElevation + perpY * halfWidth };
-        const connectorBridgeRight = { x: connectorEdge.x - perpX * halfWidth, y: connectorEdge.y - deckElevation - perpY * halfWidth };
-        
-        // Draw the connector (use appropriate color for road or rail)
-        ctx.fillStyle = getBridgeDeckColor(isRailBridge, style);
-        ctx.beginPath();
-        ctx.moveTo(connectorRoadLeft.x, connectorRoadLeft.y);
-        ctx.lineTo(connectorBridgeLeft.x, connectorBridgeLeft.y);
-        ctx.lineTo(connectorBridgeRight.x, connectorBridgeRight.y);
-        ctx.lineTo(connectorRoadRight.x, connectorRoadRight.y);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Store info for drawing borders after deck
-        if (!isRailBridge) {
-          connectorBordersToDraw.push({
-            extendedX,
-            extendedY,
-            connectorEdgeX: connectorEdge.x,
-            connectorEdgeY: connectorEdge.y,
-          });
-        }
-      };
-      
-      // Helper to draw connector borders (called after deck is drawn)
-      const drawConnectorBorders = () => {
-        if (isRailBridge) return;
-        
-        const borderInset = halfWidth * 0.22;
-        const borderHalfWidth = halfWidth - borderInset;
-        
-        ctx.strokeStyle = '#606060'; // Lighter grey border for visibility
-        ctx.lineWidth = 0.75;
-        
-        for (const border of connectorBordersToDraw) {
-          // Road-side border (at extended/ground level end)
-          ctx.beginPath();
-          ctx.moveTo(border.extendedX + perpX * borderHalfWidth, border.extendedY + perpY * borderHalfWidth);
-          ctx.lineTo(border.extendedX - perpX * borderHalfWidth, border.extendedY - perpY * borderHalfWidth);
-          ctx.stroke();
-          
-          // Bridge-side border (at elevated end)
-          ctx.beginPath();
-          ctx.moveTo(border.connectorEdgeX + perpX * borderHalfWidth, border.connectorEdgeY - deckElevation + perpY * borderHalfWidth);
-          ctx.lineTo(border.connectorEdgeX - perpX * borderHalfWidth, border.connectorEdgeY - deckElevation - perpY * borderHalfWidth);
-          ctx.stroke();
-        }
-      };
-      
-      // For 1x1 bridges (span of 1), draw connectors on BOTH ends
-      // SKIP connectors for rail bridges - they don't need road-style ramps
-      const isSingleTileBridge = bridgeSpan === 1;
-      
-      if (!isRailBridge) {
-        if (position === 'start' || isSingleTileBridge) {
-          // Draw connector fill at start edge (extending backward)
-          drawConnectorFill(startEdge, -1);
-        }
-        
-        if (position === 'end' || isSingleTileBridge) {
-          // Draw connector fill at end edge (extending forward)
-          drawConnectorFill(endEdge, 1);
-        }
-      }
-      
-      // ============================================================
-      // DRAW BRIDGE DECK AS SINGLE CONTINUOUS SHAPE
-      // ============================================================
-      
-      // For rail bridges, extend the deck slightly in the travel direction to close gaps between tiles
-      // This compensates for sub-pixel rendering issues with the narrower rail bridge deck
-      const railGapFix = isRailBridge ? 1.5 : 0;
-      const extendedStartEdge = {
-        x: startEdge.x - travelDirX * railGapFix,
-        y: startEdge.y - travelDirY * railGapFix
-      };
-      const extendedEndEdge = {
-        x: endEdge.x + travelDirX * railGapFix,
-        y: endEdge.y + travelDirY * railGapFix
-      };
-      
-      // The deck is elevated uniformly above water
-      const startY = extendedStartEdge.y - deckElevation;
-      const endY = extendedEndEdge.y - deckElevation;
-      
-      // Use perpendicular direction (90° CCW of travel) for deck corners
-      // This matches how roads compute their perpendicular using getPerp() for proper alignment
-      // perpX and perpY were computed earlier using the bridge direction
-      
-      // Pre-compute deck corners for deck drawing (uses isometric-aligned perpendicular)
-      const startLeft = { x: extendedStartEdge.x + perpX * halfWidth, y: startY + perpY * halfWidth };
-      const startRight = { x: extendedStartEdge.x - perpX * halfWidth, y: startY - perpY * halfWidth };
-      const endLeft = { x: extendedEndEdge.x + perpX * halfWidth, y: endY + perpY * halfWidth };
-      const endRight = { x: extendedEndEdge.x - perpX * halfWidth, y: endY - perpY * halfWidth };
-      
-      // Draw suspension bridge towers BEFORE the deck so deck appears on top
-      if (bridgeType === 'suspension' && currentZoom >= 0.5) {
-        // Tower perpendicular (true 90°)
-        const tDx = endEdge.x - startEdge.x;
-        const tDy = endEdge.y - startEdge.y;
-        const tTravelLen = Math.hypot(tDx, tDy);
-        const towerPerpX = -tDy / tTravelLen;
-        const towerPerpY = tDx / tTravelLen;
-        
-        // Tower dimensions and positions
-        const suspTowerW = 3;
-        const suspTowerH = 27;
-        const suspTowerSpacing = w * 0.45;
-        const backTowerYOff = -5;
-        const frontTowerYOff = 8;
-        
-        const leftTowerX = cx + towerPerpX * suspTowerSpacing;
-        const leftTowerY = cy + towerPerpY * suspTowerSpacing;
-        const rightTowerX = cx - towerPerpX * suspTowerSpacing;
-        const rightTowerY = cy - towerPerpY * suspTowerSpacing;
-        
-        const backTower = leftTowerY < rightTowerY 
-          ? { x: leftTowerX, y: leftTowerY } 
-          : { x: rightTowerX, y: rightTowerY };
-        const frontTower = leftTowerY < rightTowerY 
-          ? { x: rightTowerX, y: rightTowerY } 
-          : { x: leftTowerX, y: leftTowerY };
-        
-        // Check if this is a middle tower tile
-        const middleIdx = Math.floor((bridgeSpan - 1) / 2);
-        const hasSpan = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
-        const isMiddleTower = position === 'middle' && (
-          (hasSpan && bridgeSpan > 6 && bridgeIndex === middleIdx) ||
-          (!hasSpan && ((x / w + adjustedY / h) % 5 === 2))
-        );
-        
-        // Only draw on start/end tiles or middle tower tiles
-        if (position === 'start' || position === 'end' || isMiddleTower) {
-          // Style - 3 variants
-          const supportColors = ['#909090', '#808080', '#858580'];
-          const baseColors = ['#606060', '#555555', '#555550'];
-          const safeVar = variant % 3;
-          const supportCol = supportColors[safeVar];
-          const baseCol = baseColors[safeVar];
-          
-          // Tower dimensions
-          const towerH = suspTowerH + 8;
-          const baseH = 6;
-          const baseW = suspTowerW + 2;
-          
-          // Draw back tower - shorter and no base
-          const backTowerH = 15; // Shorter to avoid intersecting roads
-          const backTowerShiftUp = 2.5; // Small shift up
-          ctx.fillStyle = supportCol;
-          ctx.fillRect(
-            backTower.x - suspTowerW/2, 
-            cy - backTowerH + backTowerYOff - backTowerShiftUp, 
-            suspTowerW, 
-            backTowerH
-          );
-          
-          // Draw front tower with concrete base
-          ctx.fillStyle = baseCol;
-          ctx.fillRect(
-            frontTower.x - baseW/2, 
-            cy - suspTowerH + frontTowerYOff + towerH - baseH, 
-            baseW, 
-            baseH
-          );
-          ctx.fillStyle = supportCol;
-          ctx.fillRect(
-            frontTower.x - suspTowerW/2, 
-            cy - suspTowerH + frontTowerYOff, 
-            suspTowerW, 
-            towerH - baseH
-          );
-        }
-      }
-      
-      // Draw the deck as a parallelogram with tile-edge-aligned sides
-      // Rail bridges use metallic steel color, road bridges use asphalt
-      ctx.fillStyle = getBridgeDeckColor(isRailBridge, style);
-      ctx.beginPath();
-      ctx.moveTo(startLeft.x, startLeft.y);
-      ctx.lineTo(endLeft.x, endLeft.y);
-      ctx.lineTo(endRight.x, endRight.y);
-      ctx.lineTo(startRight.x, startRight.y);
-      ctx.closePath();
-      ctx.fill();
-      
-      // ============================================================
-      // BRIDGE BARRIERS (railings on both sides)
-      // ============================================================
-      if (currentZoom >= 0.4) {
-        const barrierW = 2;
-        ctx.fillStyle = style.barrier;
-        
-        // Left barrier (using perpendicular direction for proper alignment)
-        const startLeftOuter = { x: extendedStartEdge.x + perpX * (halfWidth + barrierW), y: startY + perpY * (halfWidth + barrierW) };
-        const endLeftOuter = { x: extendedEndEdge.x + perpX * (halfWidth + barrierW), y: endY + perpY * (halfWidth + barrierW) };
-        ctx.beginPath();
-        ctx.moveTo(startLeft.x, startLeft.y);
-        ctx.lineTo(endLeft.x, endLeft.y);
-        ctx.lineTo(endLeftOuter.x, endLeftOuter.y);
-        ctx.lineTo(startLeftOuter.x, startLeftOuter.y);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Right barrier  
-        const startRightOuter = { x: extendedStartEdge.x - perpX * (halfWidth + barrierW), y: startY - perpY * (halfWidth + barrierW) };
-        const endRightOuter = { x: extendedEndEdge.x - perpX * (halfWidth + barrierW), y: endY - perpY * (halfWidth + barrierW) };
-        ctx.beginPath();
-        ctx.moveTo(startRight.x, startRight.y);
-        ctx.lineTo(endRight.x, endRight.y);
-        ctx.lineTo(endRightOuter.x, endRightOuter.y);
-        ctx.lineTo(startRightOuter.x, startRightOuter.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-      
-      // ============================================================
-      // LANE MARKINGS (road) or RAIL TRACKS (rail)
-      // ============================================================
-      if (isRailBridge) {
-        // Draw rail tracks on rail bridge - DOUBLE TRACKS matching railSystem.ts
-        if (currentZoom >= 0.4) {
-          const railGauge = w * TRACK_GAUGE_RATIO;
-          const halfGauge = railGauge / 2;
-          const trackSep = w * TRACK_SEPARATION_RATIO;
-          const halfSep = trackSep / 2;
-          const railWidth = currentZoom >= 0.7 ? 0.85 : 0.7;
-          
-          // Draw ties (metal/treated wood sleepers on bridge) for both tracks
-          ctx.strokeStyle = RAIL_COLORS.BRIDGE_TIE;
-          ctx.lineWidth = 1;
-          ctx.lineCap = 'butt';
-          
-          const numTies = 7; // Match TIES_PER_TILE
-          const tieHalfLen = w * 0.065; // Half-length of each tie
-          
-          // Use original (non-extended) edges for ties to align with adjacent rail tiles
-          // The extended edges are only for the deck/rails to avoid sub-pixel gaps
-          const tieStartY = startEdge.y - deckElevation;
-          const tieEndY = endEdge.y - deckElevation;
-          
-          for (let trackOffset of [halfSep, -halfSep]) {
-            // Track center line - use original edges for tie alignment with adjacent tiles
-            const trackStartX = startEdge.x + perpX * trackOffset;
-            const trackStartY = tieStartY + perpY * trackOffset;
-            const trackEndX = endEdge.x + perpX * trackOffset;
-            const trackEndY = tieEndY + perpY * trackOffset;
-            
-            // Match railSystem.ts: use (i + 0.5) / numTies to center ties, avoiding edge overlap
-            for (let i = 0; i < numTies; i++) {
-              const t = (i + 0.5) / numTies;
-              const tieX = trackStartX + (trackEndX - trackStartX) * t;
-              const tieY = trackStartY + (trackEndY - trackStartY) * t;
-              
-              ctx.beginPath();
-              ctx.moveTo(tieX + perpX * tieHalfLen, tieY + perpY * tieHalfLen);
-              ctx.lineTo(tieX - perpX * tieHalfLen, tieY - perpY * tieHalfLen);
-              ctx.stroke();
-            }
-          }
-          
-          // Draw rails (4 rails total - 2 per track)
-          // Draw shadow first, then rails on top
-          for (let trackOffset of [halfSep, -halfSep]) {
-            // Use extended edges to match bridge deck alignment
-            const trackStartX = extendedStartEdge.x + perpX * trackOffset;
-            const trackStartY = startY + perpY * trackOffset;
-            const trackEndX = extendedEndEdge.x + perpX * trackOffset;
-            const trackEndY = endY + perpY * trackOffset;
-            
-            // Rail shadows
-            ctx.strokeStyle = RAIL_COLORS.RAIL_SHADOW;
-            ctx.lineWidth = railWidth + 0.3;
-            ctx.lineCap = 'round';
-            
-            // Left rail shadow
-            ctx.beginPath();
-            ctx.moveTo(trackStartX + perpX * halfGauge + 0.3, trackStartY + perpY * halfGauge + 0.3);
-            ctx.lineTo(trackEndX + perpX * halfGauge + 0.3, trackEndY + perpY * halfGauge + 0.3);
-            ctx.stroke();
-            
-            // Right rail shadow
-            ctx.beginPath();
-            ctx.moveTo(trackStartX - perpX * halfGauge + 0.3, trackStartY - perpY * halfGauge + 0.3);
-            ctx.lineTo(trackEndX - perpX * halfGauge + 0.3, trackEndY - perpY * halfGauge + 0.3);
-            ctx.stroke();
-            
-            // Rails
-            ctx.strokeStyle = RAIL_COLORS.RAIL;
-            ctx.lineWidth = railWidth;
-            
-            // Left rail
-            ctx.beginPath();
-            ctx.moveTo(trackStartX + perpX * halfGauge, trackStartY + perpY * halfGauge);
-            ctx.lineTo(trackEndX + perpX * halfGauge, trackEndY + perpY * halfGauge);
-            ctx.stroke();
-            
-            // Right rail
-            ctx.beginPath();
-            ctx.moveTo(trackStartX - perpX * halfGauge, trackStartY - perpY * halfGauge);
-            ctx.lineTo(trackEndX - perpX * halfGauge, trackEndY - perpY * halfGauge);
-            ctx.stroke();
-          }
-        }
-      } else {
-        // Draw lane markings for road bridge
-        if (currentZoom >= 0.6) {
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 0.5; // Half as wide as before (was 1)
-          ctx.setLineDash([1.5, 2]); // 2x more frequent (was [4, 6])
-          ctx.lineCap = 'round';
-          
-          // Calculate dash offset to align dashes across bridge tiles
-          // Use grid position to create consistent offset
-          const travelDx = endEdge.x - startEdge.x;
-          const travelDy = endEdge.y - startEdge.y;
-          const travelLen = Math.hypot(travelDx, travelDy);
-          
-          // Create offset based on tile position to align dashes across tiles
-          // Use a combination of grid coordinates to create unique but consistent offset
-          const offsetBase = (gridX * 17 + gridY * 23) % 100; // Pseudo-random but consistent per tile
-          const dashPatternLength = 1.5 + 2; // Total length of one dash cycle
-          const dashOffset = (offsetBase / 100) * dashPatternLength;
-          
-          ctx.setLineDash([1.5, 2]);
-          ctx.lineDashOffset = -dashOffset;
-          
-          ctx.beginPath();
-          ctx.moveTo(startEdge.x, startY);
-          ctx.lineTo(endEdge.x, endY);
-          ctx.stroke();
-          
-          ctx.setLineDash([]);
-          ctx.lineDashOffset = 0;
-          ctx.lineCap = 'butt';
-        }
-      }
-      
-      // ============================================================
-      // BRIDGE TYPE-SPECIFIC DECORATIONS
-      // ============================================================
-      
-      // NOTE: Suspension bridge front tower and cables are now drawn in drawSuspensionBridgeOverlay
-      // which is called after buildings for proper z-ordering
-      
-      // Large bridge truss structure (skip for rail bridges and 1-tile bridges)
-      if (bridgeType === 'large' && currentZoom >= 0.5 && !isRailBridge && bridgeSpan > 1) {
-        ctx.strokeStyle = style.accent;
-        ctx.lineWidth = 1.5;
-        const trussHLeft = 3;
-        const trussHRight = 5;
-        
-        // Top beams on both sides (using tile-edge-aligned direction)
-        ctx.beginPath();
-        ctx.moveTo(startLeft.x, startLeft.y - trussHLeft);
-        ctx.lineTo(endLeft.x, endLeft.y - trussHLeft);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.moveTo(startRight.x, startRight.y - trussHRight);
-        ctx.lineTo(endRight.x, endRight.y - trussHRight);
-        ctx.stroke();
-        
-        // Vertical supports
-        for (let i = 0; i <= 4; i++) {
-          const t = i / 4;
-          const leftX = startLeft.x + (endLeft.x - startLeft.x) * t;
-          const leftY = startLeft.y + (endLeft.y - startLeft.y) * t;
-          const rightX = startRight.x + (endRight.x - startRight.x) * t;
-          const rightY = startRight.y + (endRight.y - startRight.y) * t;
-          
-          ctx.beginPath();
-          ctx.moveTo(leftX, leftY);
-          ctx.lineTo(leftX, leftY - trussHLeft);
-          ctx.stroke();
-          
-          ctx.beginPath();
-          ctx.moveTo(rightX, rightY);
-          ctx.lineTo(rightX, rightY - trussHRight);
-          ctx.stroke();
-        }
-      }
-      
-      // ============================================================
-      // DRAW CONNECTOR BORDERS (after deck so they're on top)
-      // ============================================================
-      drawConnectorBorders();
-    }
-    
-    // Draw suspension bridge towers on main canvas (after base tiles, before buildings canvas)
-    // This ensures towers appear above base tiles but below the buildings canvas
-    function drawSuspensionBridgeTowers(
-      ctx: CanvasRenderingContext2D,
-      x: number,
-      y: number,
-      building: Building,
-      currentZoom: number
-    ) {
-      if (building.bridgeType !== 'suspension' || currentZoom < 0.5) return;
-      
-      const w = TILE_WIDTH;
-      const h = TILE_HEIGHT;
-      
-      const orientation = building.bridgeOrientation || 'ns';
-      const variant = building.bridgeVariant || 0;
-      const position = building.bridgePosition || 'middle';
-      const bridgeIndex = building.bridgeIndex ?? 0;
-      const bridgeSpan = building.bridgeSpan ?? 1;
-      const trackType = building.bridgeTrackType || 'road';
-      const isRailBridge = trackType === 'rail';
-      
-      // Rail bridges are shifted down - match the offset from drawBridgeTile
-      const yOffset = isRailBridge ? h * 0.1 : 0;
-      const adjustedY = y + yOffset;
-      
-      const cx = x + w / 2;
-      const cy = adjustedY + h / 2;
-      
-      // Edge points - use adjustedY for rail bridges
-      const northEdge = { x: x + w * 0.25, y: adjustedY + h * 0.25 };
-      const eastEdge = { x: x + w * 0.75, y: adjustedY + h * 0.25 };
-      const southEdge = { x: x + w * 0.75, y: adjustedY + h * 0.75 };
-      const westEdge = { x: x + w * 0.25, y: adjustedY + h * 0.75 };
-      
-      let startEdge: { x: number; y: number };
-      let endEdge: { x: number; y: number };
-      
-      if (orientation === 'ns') {
-        startEdge = northEdge;
-        endEdge = southEdge;
-      } else {
-        startEdge = eastEdge;
-        endEdge = westEdge;
-      }
-      
-      // Tower perpendicular (true 90°)
-      const dx = endEdge.x - startEdge.x;
-      const dy = endEdge.y - startEdge.y;
-      const travelLen = Math.hypot(dx, dy);
-      const towerPerpX = -dy / travelLen;
-      const towerPerpY = dx / travelLen;
-      
-      // Tower dimensions and positions
-      const suspTowerW = 3;
-      const suspTowerH = 27;
-      const suspTowerSpacing = w * 0.45;
-      const backTowerYOffset = -5;
-      const frontTowerYOffset = 8;
-      
-      const leftTowerX = cx + towerPerpX * suspTowerSpacing;
-      const leftTowerY = cy + towerPerpY * suspTowerSpacing;
-      const rightTowerX = cx - towerPerpX * suspTowerSpacing;
-      const rightTowerY = cy - towerPerpY * suspTowerSpacing;
-      
-      const backTower = leftTowerY < rightTowerY 
-        ? { x: leftTowerX, y: leftTowerY, isLeft: true } 
-        : { x: rightTowerX, y: rightTowerY, isLeft: false };
-      const frontTower = leftTowerY < rightTowerY 
-        ? { x: rightTowerX, y: rightTowerY, isLeft: false } 
-        : { x: leftTowerX, y: leftTowerY, isLeft: true };
-      
-      // Check if this is a middle tower tile
-      const middleIndex = Math.floor((bridgeSpan - 1) / 2);
-      const hasSpanInfo = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
-      const isMiddleTowerTile = position === 'middle' && (
-        (hasSpanInfo && bridgeSpan > 6 && bridgeIndex === middleIndex) ||
-        (!hasSpanInfo && ((x / w + adjustedY / h) % 5 === 2))
-      );
-      
-      // Only draw on start/end tiles or middle tower tiles
-      if (position !== 'start' && position !== 'end' && !isMiddleTowerTile) return;
-      
-      // Style - 3 variants
-      const supportColors = ['#909090', '#808080', '#858580'];
-      const baseColors = ['#606060', '#555555', '#555550'];
-      const safeVariant = variant % 3;
-      const supportColor = supportColors[safeVariant];
-      const baseColor = baseColors[safeVariant];
-      
-      // Tower dimensions
-      const towerHeight = suspTowerH + 8;
-      const baseHeight = 6;
-      const baseWidth = suspTowerW + 2;
-      
-      // Draw back tower - shorter and no base
-      const backTowerHeight = 22;
-      const backTowerShiftUp = 4;
-      ctx.fillStyle = supportColor;
-      ctx.fillRect(
-        backTower.x - suspTowerW/2, 
-        cy - backTowerHeight + backTowerYOffset - backTowerShiftUp, 
-        suspTowerW, 
-        backTowerHeight
-      );
-      
-      // Draw front tower with concrete base
-      ctx.fillStyle = baseColor;
-      ctx.fillRect(
-        frontTower.x - baseWidth/2, 
-        cy - suspTowerH + frontTowerYOffset + towerHeight - baseHeight, 
-        baseWidth, 
-        baseHeight
-      );
-      ctx.fillStyle = supportColor;
-      ctx.fillRect(
-        frontTower.x - suspTowerW/2, 
-        cy - suspTowerH + frontTowerYOffset, 
-        suspTowerW, 
-        towerHeight - baseHeight
-      );
-    }
-    
-    // Draw suspension bridge cables as an overlay (on top of buildings)
-    // This is called separately after buildings are drawn for proper z-ordering
-    function drawSuspensionBridgeOverlay(
-      ctx: CanvasRenderingContext2D,
-      x: number,
-      y: number,
-      building: Building,
-      currentZoom: number
-    ) {
-      if (building.bridgeType !== 'suspension' || currentZoom < 0.5) return;
-      
-      const w = TILE_WIDTH;
-      const h = TILE_HEIGHT;
-      
-      const orientation = building.bridgeOrientation || 'ns';
-      const variant = building.bridgeVariant || 0;
-      const position = building.bridgePosition || 'middle';
-      const bridgeIndex = building.bridgeIndex ?? 0;
-      const bridgeSpan = building.bridgeSpan ?? 1;
-      const trackType = building.bridgeTrackType || 'road';
-      const isRailBridge = trackType === 'rail';
-      
-      // Rail bridges are shifted down - match the offset from drawBridgeTile
-      const yOffset = isRailBridge ? h * 0.1 : 0;
-      const adjustedY = y + yOffset;
-      
-      const cx = x + w / 2;
-      const cy = adjustedY + h / 2;
-      
-      // Bridge width for deck positioning - match drawBridgeTile
-      const bridgeWidthRatio = isRailBridge ? 0.36 : 0.45;
-      const halfWidth = w * bridgeWidthRatio * 0.5;
-      
-      // Edge points - use adjustedY for rail bridges
-      const northEdge = { x: x + w * 0.25, y: adjustedY + h * 0.25 };
-      const eastEdge = { x: x + w * 0.75, y: adjustedY + h * 0.25 };
-      const southEdge = { x: x + w * 0.75, y: adjustedY + h * 0.75 };
-      const westEdge = { x: x + w * 0.25, y: adjustedY + h * 0.75 };
-      
-      // Isometric direction vectors
-      const neEdgeLen = Math.hypot(w / 2, h / 2);
-      const neDirX = (w / 2) / neEdgeLen;
-      const neDirY = (h / 2) / neEdgeLen;
-      const nwDirX = -(w / 2) / neEdgeLen;
-      const nwDirY = (h / 2) / neEdgeLen;
-      
-      let startEdge: { x: number; y: number };
-      let endEdge: { x: number; y: number };
-      let perpX: number;
-      let perpY: number;
-      
-      if (orientation === 'ns') {
-        startEdge = northEdge;
-        endEdge = southEdge;
-        perpX = nwDirX;
-        perpY = nwDirY;
-      } else {
-        startEdge = eastEdge;
-        endEdge = westEdge;
-        perpX = neDirX;
-        perpY = neDirY;
-      }
-      
-      const deckElevation = 3;
-      const startY = startEdge.y - deckElevation;
-      const endY = endEdge.y - deckElevation;
-      
-      // Tower perpendicular (true 90°)
-      const dx = endEdge.x - startEdge.x;
-      const dy = endEdge.y - startEdge.y;
-      const travelLen = Math.hypot(dx, dy);
-      const travelDirX = dx / travelLen;
-      const travelDirY = dy / travelLen;
-      const towerPerpX = -dy / travelLen;
-      const towerPerpY = dx / travelLen;
-      
-      // Deck corners for cable attachment
-      const startLeft = { x: startEdge.x + perpX * halfWidth, y: startY + perpY * halfWidth };
-      const startRight = { x: startEdge.x - perpX * halfWidth, y: startY - perpY * halfWidth };
-      const endLeft = { x: endEdge.x + perpX * halfWidth, y: endY + perpY * halfWidth };
-      const endRight = { x: endEdge.x - perpX * halfWidth, y: endY - perpY * halfWidth };
-      
-      // Cable attachment points
-      const barrierOffset = 3;
-      const cableExtension = 18;
-      const cableAttachLeft = {
-        startX: startLeft.x + perpX * barrierOffset - travelDirX * cableExtension,
-        startY: startLeft.y + perpY * barrierOffset - travelDirY * cableExtension,
-        endX: endLeft.x + perpX * barrierOffset + travelDirX * cableExtension,
-        endY: endLeft.y + perpY * barrierOffset + travelDirY * cableExtension
-      };
-      const cableAttachRight = {
-        startX: startRight.x - perpX * barrierOffset - travelDirX * cableExtension,
-        startY: startRight.y - perpY * barrierOffset - travelDirY * cableExtension,
-        endX: endRight.x - perpX * barrierOffset + travelDirX * cableExtension,
-        endY: endRight.y - perpY * barrierOffset + travelDirY * cableExtension
-      };
-      
-      // Tower dimensions and positions
-      const suspTowerH = 27;
-      const suspTowerSpacing = w * 0.45;
-      const backTowerYOffset = -5;
-      const frontTowerYOffset = 8;
-      
-      const leftTowerX = cx + towerPerpX * suspTowerSpacing;
-      const leftTowerY = cy + towerPerpY * suspTowerSpacing;
-      const rightTowerX = cx - towerPerpX * suspTowerSpacing;
-      const rightTowerY = cy - towerPerpY * suspTowerSpacing;
-      
-      const backTower = leftTowerY < rightTowerY 
-        ? { x: leftTowerX, y: leftTowerY, isLeft: true } 
-        : { x: rightTowerX, y: rightTowerY, isLeft: false };
-      const frontTower = leftTowerY < rightTowerY 
-        ? { x: rightTowerX, y: rightTowerY, isLeft: false } 
-        : { x: leftTowerX, y: leftTowerY, isLeft: true };
-      
-      // Check if this is a middle tower tile
-      const middleIndex = Math.floor((bridgeSpan - 1) / 2);
-      const hasSpanInfo = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
-      const isMiddleTowerTile = position === 'middle' && (
-        (hasSpanInfo && bridgeSpan > 6 && bridgeIndex === middleIndex) ||
-        (!hasSpanInfo && ((x / w + adjustedY / h) % 5 === 2))
-      );
-      
-      // Only draw on start/end tiles or middle tower tiles
-      if (position !== 'start' && position !== 'end' && !isMiddleTowerTile) return;
-      
-      // Style - 3 variants: red cables, grey cables, green/rust cables
-      const cableColors = ['#DC143C', '#708090', '#5a7a5a'];  // Red, steel grey, weathered green
-      const safeVariant = variant % 3;  // Ensure variant is in range
-      const cableColor = cableColors[safeVariant];
-      
-      // NOTE: Towers are drawn on the main canvas (via drawSuspensionBridgeTowers) 
-      // so they appear below the bridge deck but above base tiles
-      
-      // Draw cables only (on buildings canvas, above buildings)
-      ctx.strokeStyle = cableColor;
-      ctx.lineWidth = 1.25;
-      
-      const leftBarrierMidX = (cableAttachLeft.startX + cableAttachLeft.endX) / 2;
-      const rightBarrierMidX = (cableAttachRight.startX + cableAttachRight.endX) / 2;
-      
-      const backToLeft = Math.abs(backTower.x - leftBarrierMidX);
-      const backToRight = Math.abs(backTower.x - rightBarrierMidX);
-      const backAttach = backToLeft < backToRight ? cableAttachLeft : cableAttachRight;
-      const frontAttach = backToLeft < backToRight ? cableAttachRight : cableAttachLeft;
-      
-      const drawCableArc = (fromX: number, fromY: number, toX: number, toY: number) => {
-        const midX = (fromX + toX) / 2;
-        const midY = (fromY + toY) / 2;
-        const sag = 8;
-        const controlX = midX;
-        const controlY = midY + sag;
-        
-        ctx.beginPath();
-        ctx.moveTo(fromX, fromY);
-        ctx.quadraticCurveTo(controlX, controlY, toX, toY);
-        ctx.stroke();
-      };
-      
-      const backTowerTop = cy - suspTowerH + backTowerYOffset;
-      drawCableArc(backTower.x, backTowerTop, backAttach.startX, backAttach.startY);
-      drawCableArc(backTower.x, backTowerTop, backAttach.endX, backAttach.endY);
-      
-      const frontTowerTop = cy - suspTowerH + frontTowerYOffset;
-      drawCableArc(frontTower.x, frontTowerTop, frontAttach.startX, frontAttach.startY);
-      drawCableArc(frontTower.x, frontTowerTop, frontAttach.endX, frontAttach.endY);
-    }
-    
-    // Draw isometric tile base
-    function drawIsometricTile(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile, highlight: boolean, currentZoom: number, skipGreyBase: boolean = false, skipGreenBase: boolean = false) {
-      const w = TILE_WIDTH;
-      const h = TILE_HEIGHT;
-      
-      // Determine tile colors (top face and shading)
-      let topColor = '#4a7c3f'; // grass
-      let strokeColor = '#2d4a26';
-
-      // PERF: Use pre-computed tile metadata for grey base check (O(1) lookup)
-      const tileRenderMetadata = getTileMetadata(tile.x, tile.y);
-      const isPark = tileRenderMetadata?.isPartOfParkBuilding || 
-                     ['park', 'park_large', 'tennis', 'basketball_courts', 'playground_small',
-                      'playground_large', 'baseball_field_small', 'soccer_field_small', 'football_field',
-                      'skate_park', 'mini_golf_course', 'bleachers_field', 'go_kart_track', 'amphitheater', 
-                      'greenhouse_garden', 'animal_pens_farm', 'cabin_house', 'campground', 'marina_docks_small', 
-                      'pier_large', 'roller_coaster_small', 'community_garden', 'pond_park', 'park_gate', 
-                      'mountain_lodge', 'mountain_trailhead'].includes(tile.building.type);
-      const hasGreyBase = tileRenderMetadata?.needsGreyBase ?? false;
-      
-      if (tile.building.type === 'water') {
-        topColor = '#2563eb';
-        strokeColor = '#1e3a8a';
-      } else if (tile.building.type === 'road' || tile.building.type === 'bridge') {
-        topColor = '#4a4a4a';
-        strokeColor = '#333';
-      } else if (isPark) {
-        topColor = '#4a7c3f';
-        strokeColor = '#2d4a26';
-      } else if (hasGreyBase && !skipGreyBase) {
-        // Grey/concrete base tiles for ALL buildings (except parks)
-        // Skip if skipGreyBase is true (will be drawn later after water)
-        topColor = '#6b7280';
-        strokeColor = '#374151';
-      } else if (tile.zone === 'residential') {
-        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
-          topColor = '#3d7c3f';
-        } else {
-          topColor = '#2d5a2d';
-        }
-        strokeColor = '#22c55e';
-      } else if (tile.zone === 'commercial') {
-        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
-          topColor = '#3a5c7c';
-        } else {
-          topColor = '#2a4a6a';
-        }
-        strokeColor = '#3b82f6';
-      } else if (tile.zone === 'industrial') {
-        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
-          topColor = '#7c5c3a';
-        } else {
-          topColor = '#6a4a2a';
-        }
-        strokeColor = '#f59e0b';
-      }
-      
-      // Skip drawing green base for tiles adjacent to water (will be drawn later over water)
-      // This includes grass, empty, and tree tiles - all have green bases
-      // Also skip bridge tiles - they will have water drawn underneath them in the road queue
-      const shouldSkipDrawing = (skipGreenBase && (tile.building.type === 'grass' || tile.building.type === 'empty' || tile.building.type === 'tree')) || 
-                                tile.building.type === 'bridge';
-      
-      // Draw the isometric diamond (top face)
-      if (!shouldSkipDrawing) {
-        ctx.fillStyle = topColor;
-        ctx.beginPath();
-        ctx.moveTo(x + w / 2, y);
-        ctx.lineTo(x + w, y + h / 2);
-        ctx.lineTo(x + w / 2, y + h);
-        ctx.lineTo(x, y + h / 2);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Draw grid lines only when zoomed in (hide when zoom < 0.6)
-        if (currentZoom >= 0.6) {
-          ctx.strokeStyle = strokeColor;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-        
-        // Draw zone border with dashed line (hide when zoomed out, only on grass/empty tiles - not on roads or buildings)
-        if (tile.zone !== 'none' && 
-            currentZoom >= 0.95 &&
-            (tile.building.type === 'grass' || tile.building.type === 'empty')) {
-          ctx.strokeStyle = tile.zone === 'residential' ? '#22c55e' : 
-                            tile.zone === 'commercial' ? '#3b82f6' : '#f59e0b';
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4, 2]);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-      }
-      
-      // Highlight on hover/select (always draw, even if base was skipped)
-      if (highlight) {
-        // Draw a semi-transparent fill for better visibility
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.beginPath();
-        ctx.moveTo(x + w / 2, y);
-        ctx.lineTo(x + w, y + h / 2);
-        ctx.lineTo(x + w / 2, y + h);
-        ctx.lineTo(x, y + h / 2);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Draw white border
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-    }
-    
-    // Helper function to draw water tile at a given screen position
-    // Used for marina/pier buildings that sit on water
-    function drawWaterTileAt(ctx: CanvasRenderingContext2D, screenX: number, screenY: number, gridX: number, gridY: number) {
-      const waterImage = getCachedImage(WATER_ASSET_PATH);
-      if (!waterImage) return;
-      
-      const w = TILE_WIDTH;
-      const h = TILE_HEIGHT;
-      const tileCenterX = screenX + w / 2;
-      const tileCenterY = screenY + h / 2;
-      
-      // Random subcrop of water texture based on tile position for variety
-      const imgW = waterImage.naturalWidth || waterImage.width;
-      const imgH = waterImage.naturalHeight || waterImage.height;
-      
-      // Deterministic "random" offset based on tile position
-      const seedX = ((gridX * 7919 + gridY * 6271) % 1000) / 1000;
-      const seedY = ((gridX * 4177 + gridY * 9311) % 1000) / 1000;
-      
-      // Take a subcrop for variety
-      const cropScale = 0.35;
-      const cropW = imgW * cropScale;
-      const cropH = imgH * cropScale;
-      const maxOffsetX = imgW - cropW;
-      const maxOffsetY = imgH - cropH;
-      const srcX = seedX * maxOffsetX;
-      const srcY = seedY * maxOffsetY;
-      
-      ctx.save();
-      // Clip to isometric diamond shape
-      ctx.beginPath();
-      ctx.moveTo(screenX + w / 2, screenY);           // top
-      ctx.lineTo(screenX + w, screenY + h / 2);       // right
-      ctx.lineTo(screenX + w / 2, screenY + h);       // bottom
-      ctx.lineTo(screenX, screenY + h / 2);           // left
-      ctx.closePath();
-      ctx.clip();
-      
-      const aspectRatio = cropH / cropW;
-      const jitterX = (seedX - 0.5) * w * 0.3;
-      const jitterY = (seedY - 0.5) * h * 0.3;
-      
-      // Draw water with slight transparency
-      const destWidth = w * 1.15;
-      const destHeight = destWidth * aspectRatio;
-      
-      ctx.globalAlpha = 0.95;
-      ctx.drawImage(
-        waterImage,
-        srcX, srcY, cropW, cropH,
-        Math.round(tileCenterX - destWidth / 2 + jitterX * 0.3),
-        Math.round(tileCenterY - destHeight / 2 + jitterY * 0.3),
-        Math.round(destWidth),
-        Math.round(destHeight)
-      );
-      
-      ctx.restore();
-    }
-    
-    // Draw building sprite
-    function drawBuilding(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile) {
-      const buildingType = tile.building.type;
-      const w = TILE_WIDTH;
-      const h = TILE_HEIGHT;
-      
-      // Handle roads separately with adjacency
-      if (buildingType === 'road') {
-        drawRoad(ctx, x, y, tile.x, tile.y, zoom, roadDrawingOptions);
-        return;
-      }
-      
-      // Handle bridges with special rendering
-      if (buildingType === 'bridge') {
-        drawBridgeTile(ctx, x, y, tile.building, tile.x, tile.y, zoom);
-        return;
-      }
-      
-      // Draw water tiles underneath marina/pier buildings
-      if (buildingType === 'marina_docks_small' || buildingType === 'pier_large') {
-        const buildingSize = getBuildingSize(buildingType);
-        // Draw water tiles for each tile in the building's footprint
-        for (let dx = 0; dx < buildingSize.width; dx++) {
-          for (let dy = 0; dy < buildingSize.height; dy++) {
-            const tileGridX = tile.x + dx;
-            const tileGridY = tile.y + dy;
-            const { screenX, screenY } = gridToScreen(tileGridX, tileGridY, 0, 0);
-            drawWaterTileAt(ctx, screenX, screenY, tileGridX, tileGridY);
-          }
-        }
-      }
-      
-      // Check if this building type has a sprite in the tile renderer, parks sheet, or stations sheet
-      const activePack = getActiveSpritePack();
-      const hasTileSprite = BUILDING_TO_SPRITE[buildingType] || 
-        (activePack.parksBuildings && activePack.parksBuildings[buildingType]) ||
-        (activePack.stationsVariants && activePack.stationsVariants[buildingType]);
-      
-      if (hasTileSprite) {
-        // Special handling for water: use separate water.png image with blending for adjacent water tiles
-        if (buildingType === 'water') {
-          const waterImage = getCachedImage(WATER_ASSET_PATH);
-          
-          // Check which adjacent tiles are also water for blending
-          const gridX = tile.x;
-          const gridY = tile.y;
-          const adjacentWater = {
-            north: gridX > 0 && grid[gridY]?.[gridX - 1]?.building.type === 'water',
-            east: gridY > 0 && grid[gridY - 1]?.[gridX]?.building.type === 'water',
-            south: gridX < gridSize - 1 && grid[gridY]?.[gridX + 1]?.building.type === 'water',
-            west: gridY < gridSize - 1 && grid[gridY + 1]?.[gridX]?.building.type === 'water',
-          };
-          
-          // Count adjacent water tiles
-          const adjacentCount = (adjacentWater.north ? 1 : 0) + (adjacentWater.east ? 1 : 0) + 
-                               (adjacentWater.south ? 1 : 0) + (adjacentWater.west ? 1 : 0);
-          
-          if (waterImage) {
-            // Center the water sprite on the tile
-            const tileCenterX = x + w / 2;
-            const tileCenterY = y + h / 2;
-            
-            // Random subcrop of water texture based on tile position for variety
-            const imgW = waterImage.naturalWidth || waterImage.width;
-            const imgH = waterImage.naturalHeight || waterImage.height;
-            
-            // Deterministic "random" offset based on tile position
-            const seedX = ((gridX * 7919 + gridY * 6271) % 1000) / 1000;
-            const seedY = ((gridX * 4177 + gridY * 9311) % 1000) / 1000;
-            
-            // Take a subcrop - use 35% of the image, offset randomly for variety
-            const cropScale = 0.35;
-            const cropW = imgW * cropScale;
-            const cropH = imgH * cropScale;
-            const maxOffsetX = imgW - cropW;
-            const maxOffsetY = imgH - cropH;
-            const srcX = seedX * maxOffsetX;
-            const srcY = seedY * maxOffsetY;
-            
-            // Create a clipping path - expand toward adjacent WATER tiles only
-            // This allows blending between water tiles while preventing bleed onto land
-            const expand = w * 0.4; // How much to expand toward water neighbors
-            
-            // Calculate expanded corners based on water adjacency
-            // North edge (top-left): between left and top corners
-            // East edge (top-right): between top and right corners
-            // South edge (bottom-right): between right and bottom corners
-            // West edge (bottom-left): between bottom and left corners
-            const topY = y - (adjacentWater.north && adjacentWater.east ? expand * 0.5 : 0);
-            const rightX = x + w + ((adjacentWater.east && adjacentWater.south) ? expand * 0.5 : 0);
-            const bottomY = y + h + ((adjacentWater.south && adjacentWater.west) ? expand * 0.5 : 0);
-            const leftX = x - ((adjacentWater.west && adjacentWater.north) ? expand * 0.5 : 0);
-            
-            // Expand individual edges toward water neighbors only
-            // Each edge should only expand if THAT specific edge direction has water
-            const topExpand = (adjacentWater.north && adjacentWater.east) ? expand * 0.3 : 0;
-            const rightExpand = (adjacentWater.east && adjacentWater.south) ? expand * 0.3 : 0;
-            const bottomExpand = (adjacentWater.south && adjacentWater.west) ? expand * 0.3 : 0;
-            const leftExpand = (adjacentWater.west && adjacentWater.north) ? expand * 0.3 : 0;
-            
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(x + w / 2, topY - topExpand);                    // top
-            ctx.lineTo(rightX + rightExpand, y + h / 2);                // right
-            ctx.lineTo(x + w / 2, bottomY + bottomExpand);              // bottom
-            ctx.lineTo(leftX - leftExpand, y + h / 2);                  // left
-            ctx.closePath();
-            ctx.clip();
-            
-            const aspectRatio = cropH / cropW;
-            const savedAlpha = ctx.globalAlpha;
-            
-            // Jitter for variety
-            const jitterX = (seedX - 0.5) * w * 0.3;
-            const jitterY = (seedY - 0.5) * h * 0.3;
-            
-            // For tiles with more water neighbors, draw blended passes
-            if (adjacentCount >= 2) {
-              // Two passes: large soft outer, smaller solid core
-              // Outer pass - large, semi-transparent for blending
-              const outerScale = 2.0 + adjacentCount * 0.3;
-              const outerWidth = w * outerScale;
-              const outerHeight = outerWidth * aspectRatio;
-              ctx.globalAlpha = 0.35;
-              ctx.drawImage(
-                waterImage,
-                srcX, srcY, cropW, cropH,
-                Math.round(tileCenterX - outerWidth / 2 + jitterX),
-                Math.round(tileCenterY - outerHeight / 2 + jitterY),
-                Math.round(outerWidth),
-                Math.round(outerHeight)
-              );
-              
-              // Core pass - full opacity
-              const coreScale = 1.1;
-              const coreWidth = w * coreScale;
-              const coreHeight = coreWidth * aspectRatio;
-              ctx.globalAlpha = 0.9;
-              ctx.drawImage(
-                waterImage,
-                srcX, srcY, cropW, cropH,
-                Math.round(tileCenterX - coreWidth / 2 + jitterX * 0.5),
-                Math.round(tileCenterY - coreHeight / 2 + jitterY * 0.5),
-                Math.round(coreWidth),
-                Math.round(coreHeight)
-              );
-            } else {
-              // Edge tile with few water neighbors - single contained draw
-              const destWidth = w * 1.15;
-              const destHeight = destWidth * aspectRatio;
-              
-              ctx.globalAlpha = 0.95;
-              ctx.drawImage(
-                waterImage,
-                srcX, srcY, cropW, cropH,
-                Math.round(tileCenterX - destWidth / 2 + jitterX * 0.3),
-                Math.round(tileCenterY - destHeight / 2 + jitterY * 0.3),
-                Math.round(destWidth),
-                Math.round(destHeight)
-              );
-            }
-            
-            ctx.globalAlpha = savedAlpha;
-            ctx.restore();
-          } else {
-            // Water image not loaded yet - draw placeholder diamond
-            ctx.fillStyle = '#0ea5e9';
-            ctx.beginPath();
-            ctx.moveTo(x + w / 2, y);
-            ctx.lineTo(x + w, y + h / 2);
-            ctx.lineTo(x + w / 2, y + h);
-            ctx.lineTo(x, y + h / 2);
-            ctx.closePath();
-            ctx.fill();
-          }
-        } else {
-          // ===== TILE RENDERER PATH =====
-          // Handles both single-tile and multi-tile buildings
-          // Get the filtered sprite sheet from cache (or fallback to unfiltered if not available)
-          // Use the active sprite pack's source for cache lookup (activePack already defined above)
-          
-          // Check if building is under construction (constructionProgress < 100)
-          const isUnderConstruction = tile.building.constructionProgress !== undefined &&
-                                       tile.building.constructionProgress < 100;
-          
-          // Construction has two phases:
-          // Phase 1 (0-40%): Foundation/dirt plot phase - just show a dirt mound
-          // Phase 2 (40-100%): Construction scaffolding phase - show construction sprite
-          const constructionProgress = tile.building.constructionProgress ?? 100;
-          const isFoundationPhase = isUnderConstruction && constructionProgress < 40;
-          const isConstructionPhase = isUnderConstruction && constructionProgress >= 40;
-          
-          // If in foundation phase, draw the foundation plot and skip sprite rendering
-          if (isFoundationPhase) {
-            // Get building size to handle multi-tile foundations
-            const buildingSize = getBuildingSize(buildingType);
-            
-            // For multi-tile buildings, we only draw the foundation from the origin tile
-            // (the other tiles are 'empty' and won't have this building type)
-            if (buildingSize.width > 1 || buildingSize.height > 1) {
-              // Draw foundation plots for each tile in the footprint
-              for (let dy = 0; dy < buildingSize.height; dy++) {
-                for (let dx = 0; dx < buildingSize.width; dx++) {
-                  const plotX = x + (dx - dy) * (w / 2);
-                  const plotY = y + (dx + dy) * (h / 2);
-                  drawFoundationPlot(ctx, plotX, plotY, w, h, zoom);
-                }
-              }
-            } else {
-              // Single-tile building - just draw one foundation
-              drawFoundationPlot(ctx, x, y, w, h, zoom);
-            }
-            // Skip the sprite rendering for this tile (foundation plot is already drawn)
-            return;
-          }
-          
-          // Check if building is abandoned
-          const isAbandoned = tile.building.abandoned === true;
-
-          // Use appropriate sprite sheet based on building state
-          // Priority: parks construction > construction > abandoned > parks > dense/modern variants > farm variants > normal
-          let spriteSource = activePack.src;
-          let useDenseVariant: { row: number; col: number } | null = null;
-          let useModernVariant: { row: number; col: number } | null = null;
-          let useFarmVariant: { row: number; col: number } | null = null;
-          let useShopVariant: { row: number; col: number } | null = null;
-          let useStationVariant: { row: number; col: number } | null = null;
-          let useParksBuilding: { row: number; col: number } | null = null;
-          
-          // Check if this is a parks building first
-          const isParksBuilding = activePack.parksBuildings && activePack.parksBuildings[buildingType];
-          
-          if (isConstructionPhase && isParksBuilding && activePack.parksConstructionSrc) {
-            // Parks building under construction (phase 2) - use parks construction sheet
-            useParksBuilding = activePack.parksBuildings![buildingType];
-            spriteSource = activePack.parksConstructionSrc;
-          } else if (isConstructionPhase && activePack.constructionSrc) {
-            // Regular building under construction (phase 2) - use construction sheet
-            spriteSource = activePack.constructionSrc;
-          } else if (isAbandoned && activePack.abandonedSrc) {
-            spriteSource = activePack.abandonedSrc;
-          } else if (isParksBuilding && activePack.parksSrc) {
-            // Check if this building type is from the parks sprite sheet
-            useParksBuilding = activePack.parksBuildings![buildingType];
-            spriteSource = activePack.parksSrc;
-          } else if (activePack.denseSrc && activePack.denseVariants && activePack.denseVariants[buildingType]) {
-            // Check if this building type has dense variants available
-            const denseVariants = activePack.denseVariants[buildingType];
-            const modernVariants = activePack.modernSrc && activePack.modernVariants && activePack.modernVariants[buildingType]
-              ? activePack.modernVariants[buildingType]
-              : [];
-            // Use deterministic random based on tile position to select variant
-            // This ensures the same building always shows the same variant
-            const seed = (tile.x * 31 + tile.y * 17) % 100;
-            // ~50% chance to use a dense/modern variant (when seed < 50)
-            if (seed < 50 && (denseVariants.length > 0 || modernVariants.length > 0)) {
-              // Combine both variant pools and select from them
-              const allVariants = [
-                ...denseVariants.map(v => ({ ...v, source: 'dense' as const })),
-                ...modernVariants.map(v => ({ ...v, source: 'modern' as const })),
-              ];
-              const variantIndex = (tile.x * 7 + tile.y * 13) % allVariants.length;
-              const selectedVariant = allVariants[variantIndex];
-              if (selectedVariant.source === 'modern') {
-                useModernVariant = { row: selectedVariant.row, col: selectedVariant.col };
-                spriteSource = activePack.modernSrc!;
-              } else {
-                useDenseVariant = { row: selectedVariant.row, col: selectedVariant.col };
-                spriteSource = activePack.denseSrc;
-              }
-            }
-          } else if (activePack.modernSrc && activePack.modernVariants && activePack.modernVariants[buildingType]) {
-            // Check if this building type has modern variants available (without dense variants)
-            const variants = activePack.modernVariants[buildingType];
-            const seed = (tile.x * 31 + tile.y * 17) % 100;
-            if (seed < 50 && variants.length > 0) {
-              const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
-              useModernVariant = variants[variantIndex];
-              spriteSource = activePack.modernSrc;
-            }
-          } else if (activePack.farmsSrc && activePack.farmsVariants && activePack.farmsVariants[buildingType]) {
-            // Check if this building type has farm variants available (low-density industrial)
-            const variants = activePack.farmsVariants[buildingType];
-            // Use deterministic random based on tile position to select variant
-            // This ensures the same building always shows the same variant
-            const seed = (tile.x * 31 + tile.y * 17) % 100;
-            // ~50% chance to use a farm variant (when seed < 50)
-            if (seed < 50 && variants.length > 0) {
-              // Select which farm variant to use based on position
-              const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
-              useFarmVariant = variants[variantIndex];
-              spriteSource = activePack.farmsSrc;
-            }
-          } else if (activePack.shopsSrc && activePack.shopsVariants && activePack.shopsVariants[buildingType]) {
-            // Check if this building type has shop variants available (low-density commercial)
-            const variants = activePack.shopsVariants[buildingType];
-            // Use deterministic random based on tile position to select variant
-            // This ensures the same building always shows the same variant
-            const seed = (tile.x * 31 + tile.y * 17) % 100;
-            // ~50% chance to use a shop variant (when seed < 50)
-            if (seed < 50 && variants.length > 0) {
-              // Select which shop variant to use based on position
-              const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
-              useShopVariant = variants[variantIndex];
-              spriteSource = activePack.shopsSrc;
-            }
-          } else if (activePack.stationsSrc && activePack.stationsVariants && activePack.stationsVariants[buildingType]) {
-            // Check if this building type has station variants available (rail stations)
-            const variants = activePack.stationsVariants[buildingType];
-            // Use deterministic random based on tile position to select variant
-            // This ensures the same building always shows the same variant
-            const seed = (tile.x * 31 + tile.y * 17) % 100;
-            // Always use a station variant if available (100% chance)
-            if (variants.length > 0) {
-              // Select which station variant to use based on position
-              const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
-              useStationVariant = variants[variantIndex];
-              spriteSource = activePack.stationsSrc;
-            }
-          }
-
-          const filteredSpriteSheet = getCachedImage(spriteSource, true) || getCachedImage(spriteSource);
-          
-          if (filteredSpriteSheet) {
-            // Use naturalWidth/naturalHeight for accurate source dimensions
-            const sheetWidth = filteredSpriteSheet.naturalWidth || filteredSpriteSheet.width;
-            const sheetHeight = filteredSpriteSheet.naturalHeight || filteredSpriteSheet.height;
-            
-            // Get sprite coordinates - either from parks, dense variant, modern variant, farm variant, shop variant, station variant, or normal mapping
-            let coords: { sx: number; sy: number; sw: number; sh: number } | null;
-            let isDenseVariant = false;
-            let isModernVariant = false;
-            let isFarmVariant = false;
-            let isShopVariant = false;
-            let isStationVariant = false;
-            let isParksBuilding = false;
-            if (useParksBuilding) {
-              isParksBuilding = true;
-              // Calculate coordinates from parks sprite sheet using its own grid dimensions
-              const parksCols = activePack.parksCols || 5;
-              const parksRows = activePack.parksRows || 6;
-              const tileWidth = Math.floor(sheetWidth / parksCols);
-              const tileHeight = Math.floor(sheetHeight / parksRows);
-              let sourceY = useParksBuilding.row * tileHeight;
-              let sourceH = tileHeight;
-              
-              // Special handling for buildings that have content bleeding from row above - shift source down to avoid capturing
-              // content from the sprite above it in the sprite sheet
-              if (buildingType === 'marina_docks_small') {
-                sourceY += tileHeight * 0.15; // Shift down 15% to avoid row above clipping (reduced from 25%)
-                sourceH = tileHeight * 0.85; // Reduce height by 15% to avoid row below clipping
-              } else if (buildingType === 'pier_large') {
-                sourceY += tileHeight * 0.2; // Shift down 20% to avoid row above clipping
-                sourceH = tileHeight * 0.8; // Reduce height by 20% to avoid row below clipping
-              } else if (buildingType === 'amphitheater') {
-                sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
-              } else if (buildingType === 'mini_golf_course') {
-                sourceY += tileHeight * 0.2; // Shift down 20% to crop lower from the top
-                sourceH = tileHeight * 0.8; // Reduce height by 20% to maintain proper aspect
-              } else if (buildingType === 'cabin_house') {
-                sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
-              } else if (buildingType === 'go_kart_track') {
-                sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
-              } else if (buildingType === 'greenhouse_garden') {
-                sourceY += tileHeight * 0.1; // Shift down 10% to crop asset above it
-                sourceH = tileHeight * 0.9; // Reduce height by 10% to maintain proper aspect
-              }
-              
-              // Special handling for buildings that need more height to avoid bottom clipping
-              if (buildingType === 'bleachers_field') {
-                sourceH = tileHeight * 1.1; // Increase height by 10% to avoid bottom clipping
-              }
-              
-              coords = {
-                sx: useParksBuilding.col * tileWidth,
-                sy: sourceY,
-                sw: tileWidth,
-                sh: sourceH,
-              };
-            } else if (useDenseVariant) {
-              isDenseVariant = true;
-              // Calculate coordinates directly from dense variant row/col
-              const tileWidth = Math.floor(sheetWidth / activePack.cols);
-              const tileHeight = Math.floor(sheetHeight / activePack.rows);
-              let sourceY = useDenseVariant.row * tileHeight;
-              let sourceH = tileHeight;
-              // For mall dense variants (rows 2-3), shift source Y down to avoid capturing
-              // content from the row above that bleeds into the cell boundary
-              if (buildingType === 'mall') {
-                sourceY += tileHeight * 0.12; // Shift down ~12% to avoid row above
-              }
-              // For factory_large dense variants (row 4), shift source Y down to avoid capturing
-              // content from the row above that bleeds into the cell boundary
-              if (buildingType === 'factory_large') {
-                sourceY += tileHeight * 0.05; // Shift down ~5% to avoid row above
-                sourceH = tileHeight * 0.95; // Reduce height slightly to avoid row below clipping
-              }
-              // For apartment_high dense variants, add a bit more height to avoid cutoff at bottom
-              if (buildingType === 'apartment_high') {
-                sourceH = tileHeight * 1.05; // Add 5% more height at bottom
-              }
-              coords = {
-                sx: useDenseVariant.col * tileWidth,
-                sy: sourceY,
-                sw: tileWidth,
-                sh: sourceH,
-              };
-            } else if (useModernVariant) {
-              isModernVariant = true;
-              // Calculate coordinates directly from modern variant row/col (same layout as dense: cols/rows)
-              const tileWidth = Math.floor(sheetWidth / activePack.cols);
-              const tileHeight = Math.floor(sheetHeight / activePack.rows);
-              let sourceY = useModernVariant.row * tileHeight;
-              let sourceH = tileHeight;
-              // For mall modern variants (rows 2-3), shift source Y down to avoid capturing
-              // content from the row above that bleeds into the cell boundary
-              if (buildingType === 'mall') {
-                sourceY += tileHeight * 0.15; // Shift down ~15% to avoid row above
-                // For row 3 mall variants, crop bottom to avoid picking up industrial assets from row 4
-                if (useModernVariant.row === 3) {
-                  sourceH = tileHeight * 0.95; // Slight crop at bottom to exclude industrial asset
-                } else {
-                  sourceH = tileHeight * 0.85; // Crop 15% off bottom for other mall rows
-                }
-              }
-              // For apartment_high modern variants, add a bit more height to avoid cutoff at bottom
-              if (buildingType === 'apartment_high') {
-                sourceH = tileHeight * 1.05; // Add 5% more height at bottom
-              }
-              coords = {
-                sx: useModernVariant.col * tileWidth,
-                sy: sourceY,
-                sw: tileWidth,
-                sh: sourceH,
-              };
-            } else if (useFarmVariant) {
-              isFarmVariant = true;
-              // Calculate coordinates directly from farm variant row/col
-              const farmsCols = activePack.farmsCols || 5;
-              const farmsRows = activePack.farmsRows || 6;
-              const tileWidth = Math.floor(sheetWidth / farmsCols);
-              const tileHeight = Math.floor(sheetHeight / farmsRows);
-              const sourceY = useFarmVariant.row * tileHeight;
-              const sourceH = tileHeight;
-              coords = {
-                sx: useFarmVariant.col * tileWidth,
-                sy: sourceY,
-                sw: tileWidth,
-                sh: sourceH,
-              };
-            } else if (useShopVariant) {
-              isShopVariant = true;
-              // Calculate coordinates directly from shop variant row/col
-              const shopsCols = activePack.shopsCols || 5;
-              const shopsRows = activePack.shopsRows || 6;
-              const tileWidth = Math.floor(sheetWidth / shopsCols);
-              const tileHeight = Math.floor(sheetHeight / shopsRows);
-              const sourceY = useShopVariant.row * tileHeight;
-              const sourceH = tileHeight;
-              coords = {
-                sx: useShopVariant.col * tileWidth,
-                sy: sourceY,
-                sw: tileWidth,
-                sh: sourceH,
-              };
-            } else if (useStationVariant) {
-              isStationVariant = true;
-              // Calculate coordinates directly from station variant row/col
-              const stationsCols = activePack.stationsCols || 5;
-              const stationsRows = activePack.stationsRows || 6;
-              const tileWidth = Math.floor(sheetWidth / stationsCols);
-              const tileHeight = Math.floor(sheetHeight / stationsRows);
-              let sourceY = useStationVariant.row * tileHeight;
-              let sourceH = tileHeight;
-              
-              // Special handling for rows that have content bleeding from row above
-              // Third row (row 2, 0-indexed) - shift down to avoid capturing content from row above
-              if (useStationVariant.row === 2) {
-                sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
-              }
-              // Fourth row (row 3, 0-indexed) - shift down to avoid capturing content from row above
-              // Also reduce height slightly to crop out bottom clipping from row below
-              if (useStationVariant.row === 3) {
-                sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
-                sourceH -= tileHeight * 0.05; // Reduce height by 5% to crop bottom clipping
-              }
-              // Fifth row (row 4, 0-indexed) - shift down to avoid capturing content from row above
-              // Also reduce height to crop out bottom clipping from row below
-              if (useStationVariant.row === 4) {
-                sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
-                sourceH -= tileHeight * 0.1; // Reduce height by 10% to crop bottom clipping
-              }
-              
-              coords = {
-                sx: useStationVariant.col * tileWidth,
-                sy: sourceY,
-                sw: tileWidth,
-                sh: sourceH,
-              };
-            } else {
-              // getSpriteCoords handles building type to sprite key mapping
-              coords = getSpriteCoords(buildingType, sheetWidth, sheetHeight);
-              
-              // Special cropping for factory_large base sprite - crop bottom to remove asset below
-              if (buildingType === 'factory_large' && coords) {
-                const tileHeight = Math.floor(sheetHeight / activePack.rows);
-                coords.sh = coords.sh - tileHeight * 0.08; // Crop 8% from bottom
-              }
-            }
-            
-            if (coords) {
-              // Get building size to handle multi-tile buildings
-              const buildingSize = getBuildingSize(buildingType);
-              const isMultiTile = buildingSize.width > 1 || buildingSize.height > 1;
-              
-              // Calculate draw position for multi-tile buildings
-              // Multi-tile buildings need to be positioned at the front-most corner
-              let drawPosX = x;
-              let drawPosY = y;
-              
-              if (isMultiTile) {
-                // Calculate offset to position sprite at the front-most visible corner
-                // In isometric view, the front-most corner is at (originX + width - 1, originY + height - 1)
-                const frontmostOffsetX = buildingSize.width - 1;
-                const frontmostOffsetY = buildingSize.height - 1;
-                const screenOffsetX = (frontmostOffsetX - frontmostOffsetY) * (w / 2);
-                const screenOffsetY = (frontmostOffsetX + frontmostOffsetY) * (h / 2);
-                drawPosX = x + screenOffsetX;
-                drawPosY = y + screenOffsetY;
-              }
-              
-              // Calculate destination size preserving aspect ratio of source sprite
-              // Scale factor: 1.2 base (reduced from 1.5 for ~20% smaller)
-              // Multi-tile buildings scale with their footprint
-              let scaleMultiplier = isMultiTile ? Math.max(buildingSize.width, buildingSize.height) : 1;
-              // Special scale adjustment for airport (no scaling - was scaled up 5%, now scaled down 5%)
-              if (buildingType === 'airport') {
-                scaleMultiplier *= 1.0; // Scale down 5% from previous 1.05
-              }
-              // Special scale adjustment for school (scaled up 5%)
-              if (buildingType === 'school') {
-                scaleMultiplier *= 1.05; // Scale up by 5%
-              }
-              // Special scale adjustment for university (scaled down 5%)
-              if (buildingType === 'university') {
-                scaleMultiplier *= 0.95; // Scale down by 5%
-              }
-              // Special scale adjustment for space_program (scaled up 6%)
-              if (buildingType === 'space_program') {
-                scaleMultiplier *= 1.06; // Scale up by 6% (was 10%, reduced 4%)
-              }
-              // Special scale adjustment for stadium (scaled down 30%)
-              if (buildingType === 'stadium') {
-                scaleMultiplier *= 0.7; // Scale down by 30%
-              }
-              // Special scale adjustment for water_tower (scaled down 10%)
-              if (buildingType === 'water_tower') {
-                scaleMultiplier *= 0.9; // Scale down by 10%
-              }
-              // Special scale adjustment for subway_station (scaled down 30%)
-              if (buildingType === 'subway_station') {
-                scaleMultiplier *= 0.7; // Scale down by 30%
-              }
-              // Special scale adjustment for police_station (scaled down 3%)
-              if (buildingType === 'police_station') {
-                scaleMultiplier *= 0.97; // Scale down by 3%
-              }
-              // Special scale adjustment for fire_station (scaled down 3%)
-              if (buildingType === 'fire_station') {
-                scaleMultiplier *= 0.97; // Scale down by 3%
-              }
-              // Special scale adjustment for hospital (scaled down 10%)
-              if (buildingType === 'hospital') {
-                scaleMultiplier *= 0.9; // Scale down by 10%
-              }
-              // Special scale adjustment for house_small (scaled up 8%)
-              if (buildingType === 'house_small') {
-                scaleMultiplier *= 1.08; // Scale up by 8%
-              }
-              // Special scale adjustment for apartments
-              if (buildingType === 'apartment_low') {
-                scaleMultiplier *= 1.15; // Scale up by 15%
-              }
-              if (buildingType === 'apartment_high') {
-                scaleMultiplier *= 1.38; // Scale up by 38% (20% + 15%)
-              }
-              // Special scale adjustment for office_high (scaled up 20%)
-              if (buildingType === 'office_high') {
-                scaleMultiplier *= 1.20;
-              }
-              // Special scale adjustment for dense mall variants (scaled down 15%)
-              if (buildingType === 'mall' && isDenseVariant) {
-                scaleMultiplier *= 0.85;
-              }
-              // Special scale adjustment for modern mall variants (scaled down 15%)
-              if (buildingType === 'mall' && isModernVariant) {
-                scaleMultiplier *= 0.85;
-              }
-              // Apply dense-specific scale if building uses dense variant and has custom scale in config
-              if (isDenseVariant && activePack.denseScales && buildingType in activePack.denseScales) {
-                scaleMultiplier *= activePack.denseScales[buildingType];
-              }
-              // Apply modern-specific scale if building uses modern variant and has custom scale in config
-              if (isModernVariant && activePack.modernScales && buildingType in activePack.modernScales) {
-                scaleMultiplier *= activePack.modernScales[buildingType];
-              }
-              // Apply farm-specific scale if building uses farm variant and has custom scale in config
-              if (isFarmVariant && activePack.farmsScales && buildingType in activePack.farmsScales) {
-                scaleMultiplier *= activePack.farmsScales[buildingType];
-              }
-              // Apply shop-specific scale if building uses shop variant and has custom scale in config
-              if (isShopVariant && activePack.shopsScales && buildingType in activePack.shopsScales) {
-                scaleMultiplier *= activePack.shopsScales[buildingType];
-              }
-              // Apply station-specific scale if building uses station variant and has custom scale in config
-              if (isStationVariant && activePack.stationsScales && buildingType in activePack.stationsScales) {
-                scaleMultiplier *= activePack.stationsScales[buildingType];
-              }
-              // Apply parks-specific scale if building is from parks sheet and has custom scale in config
-              if (isParksBuilding && activePack.parksScales && buildingType in activePack.parksScales) {
-                scaleMultiplier *= activePack.parksScales[buildingType];
-              }
-              // Apply construction-specific scale if building is in construction phase (phase 2) and has custom scale
-              if (isConstructionPhase && activePack.constructionScales && buildingType in activePack.constructionScales) {
-                scaleMultiplier *= activePack.constructionScales[buildingType];
-              }
-              // Apply abandoned-specific scale if building is abandoned and has custom scale
-              if (isAbandoned && activePack.abandonedScales && buildingType in activePack.abandonedScales) {
-                scaleMultiplier *= activePack.abandonedScales[buildingType];
-              }
-              // Apply global scale from sprite pack if available
-              const globalScale = activePack.globalScale ?? 1;
-              const destWidth = w * 1.2 * scaleMultiplier * globalScale;
-              const aspectRatio = coords.sh / coords.sw;  // height/width ratio of source
-              const destHeight = destWidth * aspectRatio;
-              
-              // Position: center horizontally on tile/footprint, anchor bottom of sprite at tile bottom
-              let drawX = drawPosX + w / 2 - destWidth / 2;
-              
-              // Apply per-sprite horizontal offset adjustments
-              const spriteKey = BUILDING_TO_SPRITE[buildingType];
-              let horizontalOffset = (spriteKey && SPRITE_HORIZONTAL_OFFSETS[spriteKey]) ? SPRITE_HORIZONTAL_OFFSETS[spriteKey] * w : 0;
-              // Apply parks-specific horizontal offset if available
-              if (isParksBuilding && activePack.parksHorizontalOffsets && buildingType in activePack.parksHorizontalOffsets) {
-                horizontalOffset = activePack.parksHorizontalOffsets[buildingType] * w;
-              }
-              // Apply farm-specific horizontal offset if available
-              if (isFarmVariant && activePack.farmsHorizontalOffsets && buildingType in activePack.farmsHorizontalOffsets) {
-                horizontalOffset = activePack.farmsHorizontalOffsets[buildingType] * w;
-              }
-              // Apply shop-specific horizontal offset if available
-              if (isShopVariant && activePack.shopsHorizontalOffsets && buildingType in activePack.shopsHorizontalOffsets) {
-                horizontalOffset = activePack.shopsHorizontalOffsets[buildingType] * w;
-              }
-              // Apply station-specific horizontal offset if available
-              if (isStationVariant && activePack.stationsHorizontalOffsets && buildingType in activePack.stationsHorizontalOffsets) {
-                horizontalOffset = activePack.stationsHorizontalOffsets[buildingType] * w;
-              }
-              drawX += horizontalOffset;
-              
-              // Simple positioning: sprite bottom aligns with tile/footprint bottom
-              // Add vertical push to compensate for transparent space at bottom of sprites
-              let drawY: number;
-              let verticalPush: number;
-              if (isMultiTile) {
-                // Multi-tile sprites need larger push to sit on their footprint
-                const footprintDepth = buildingSize.width + buildingSize.height - 2;
-                verticalPush = footprintDepth * h * 0.25;
-              } else {
-                // Single-tile sprites also need push (sprites have transparent bottom padding)
-                verticalPush = destHeight * 0.15;
-              }
-              // Use state-specific offset if available, then fall back to building-type or sprite-key offsets
-              // Priority: parks-construction > construction > abandoned > parks > dense > building-type > sprite-key
-              let extraOffset = 0;
-              if (isConstructionPhase && isParksBuilding && activePack.parksConstructionVerticalOffsets && buildingType in activePack.parksConstructionVerticalOffsets) {
-                // Parks building in construction phase (phase 2) - use parks construction offset
-                extraOffset = activePack.parksConstructionVerticalOffsets[buildingType] * h;
-              } else if (isConstructionPhase && activePack.constructionVerticalOffsets && buildingType in activePack.constructionVerticalOffsets) {
-                // Regular building in construction phase (phase 2) - use construction offset
-                extraOffset = activePack.constructionVerticalOffsets[buildingType] * h;
-              } else if (isAbandoned && activePack.abandonedVerticalOffsets && buildingType in activePack.abandonedVerticalOffsets) {
-                // Abandoned buildings may need different positioning than normal
-                extraOffset = activePack.abandonedVerticalOffsets[buildingType] * h;
-              } else if (isParksBuilding && activePack.parksVerticalOffsets && buildingType in activePack.parksVerticalOffsets) {
-                // Parks buildings may need specific positioning
-                extraOffset = activePack.parksVerticalOffsets[buildingType] * h;
-              } else if (isDenseVariant && activePack.denseVerticalOffsets && buildingType in activePack.denseVerticalOffsets) {
-                // Dense variants may need different positioning than normal
-                extraOffset = activePack.denseVerticalOffsets[buildingType] * h;
-              } else if (isModernVariant && activePack.modernVerticalOffsets && buildingType in activePack.modernVerticalOffsets) {
-                // Modern variants may need different positioning than normal
-                extraOffset = activePack.modernVerticalOffsets[buildingType] * h;
-              } else if (isFarmVariant && activePack.farmsVerticalOffsets && buildingType in activePack.farmsVerticalOffsets) {
-                // Farm variants may need different positioning than normal
-                extraOffset = activePack.farmsVerticalOffsets[buildingType] * h;
-              } else if (isShopVariant && activePack.shopsVerticalOffsets && buildingType in activePack.shopsVerticalOffsets) {
-                // Shop variants may need different positioning than normal
-                extraOffset = activePack.shopsVerticalOffsets[buildingType] * h;
-              } else if (isStationVariant && activePack.stationsVerticalOffsets && buildingType in activePack.stationsVerticalOffsets) {
-                // Station variants may need different positioning than normal
-                extraOffset = activePack.stationsVerticalOffsets[buildingType] * h;
-              } else if (activePack.buildingVerticalOffsets && buildingType in activePack.buildingVerticalOffsets) {
-                // Building-type-specific offset (for buildings sharing sprites but needing different positioning)
-                extraOffset = activePack.buildingVerticalOffsets[buildingType] * h;
-              } else if (spriteKey && SPRITE_VERTICAL_OFFSETS[spriteKey]) {
-                extraOffset = SPRITE_VERTICAL_OFFSETS[spriteKey] * h;
-              }
-              // Special vertical offset adjustment for hospital (shift up 0.1 tiles)
-              if (buildingType === 'hospital') {
-                extraOffset -= 0.1 * h; // Shift up by 0.1 tiles
-              }
-              verticalPush += extraOffset;
-              
-              drawY = drawPosY + h - destHeight + verticalPush;
-              
-              // Check if building should be horizontally flipped
-              // Some buildings are mirrored by default and the flip flag inverts that
-              // Note: marina and pier are NOT in this list - they face the default direction
-              const defaultMirroredBuildings: string[] = [];
-              const isDefaultMirrored = defaultMirroredBuildings.includes(buildingType);
-              
-              // Check if this is a waterfront asset - these use water-facing logic set at build time
-              const isWaterfrontAsset = requiresWaterAdjacency(buildingType);
-              
-              // PERF: Determine flip based on cached road adjacency (O(1) lookup instead of O(n) per frame)
-              // Buildings should face roads when possible, otherwise fall back to random
-              const shouldRoadMirror = (() => {
-                if (isWaterfrontAsset) return false; // Waterfront buildings use water-facing logic
-                
-                // PERF: Use pre-computed road adjacency from tile metadata cache
-                const originMetadata = getTileMetadata(tile.x, tile.y);
-                if (originMetadata?.hasAdjacentRoad) {
-                  // Face the road
-                  return originMetadata.shouldFlipForRoad;
-                }
-                
-                // No road adjacent - fall back to deterministic random mirroring for visual variety
-                const mirrorSeed = (tile.x * 47 + tile.y * 83) % 100;
-                return mirrorSeed < 50;
-              })();
-              
-              // Final flip decision: combine default mirror state, explicit flip flag, and road/random mirror
-              const baseFlipped = isDefaultMirrored ? !tile.building.flipped : tile.building.flipped === true;
-              const isFlipped = baseFlipped !== shouldRoadMirror; // XOR: if both true or both false, no flip; if one true, flip
-              
-              if (isFlipped) {
-                // Apply horizontal flip around the center of the sprite
-                ctx.save();
-                const centerX = Math.round(drawX + destWidth / 2);
-                ctx.translate(centerX, 0);
-                ctx.scale(-1, 1);
-                ctx.translate(-centerX, 0);
-                
-                // Draw the flipped sprite
-                ctx.drawImage(
-                  filteredSpriteSheet,
-                  coords.sx, coords.sy, coords.sw, coords.sh,
-                  Math.round(drawX), Math.round(drawY),
-                  Math.round(destWidth), Math.round(destHeight)
-                );
-                
-                ctx.restore();
-              } else {
-                // Draw the sprite with correct aspect ratio (normal buildings)
-                ctx.drawImage(
-                  filteredSpriteSheet,
-                  coords.sx, coords.sy, coords.sw, coords.sh,  // Source: exact tile from sprite sheet
-                  Math.round(drawX), Math.round(drawY),        // Destination position
-                  Math.round(destWidth), Math.round(destHeight) // Destination size (preserving aspect ratio)
-                );
-              }
-            }
-          } else {
-            // Sprite sheet not loaded yet - draw placeholder building
-            drawPlaceholderBuilding(ctx, x, y, buildingType, w, h);
-          }
-        }
-      }
-      
-      // Draw fire effect
-      if (tile.building.onFire) {
-        const fireX = x + w / 2;
-        const fireY = y - 10;
-        
-        ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
-        ctx.beginPath();
-        ctx.ellipse(fireX, fireY, 18, 25, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
-        ctx.beginPath();
-        ctx.ellipse(fireX, fireY + 5, 10, 15, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = 'rgba(255, 255, 200, 0.9)';
-        ctx.beginPath();
-        ctx.ellipse(fireX, fireY + 8, 5, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    
-    // Draw tiles in isometric order (back to front)
-    // PERF: Only iterate through diagonal bands that intersect the visible viewport
-    for (let sum = visibleMinSum; sum <= visibleMaxSum; sum++) {
-      for (let x = Math.max(0, sum - gridSize + 1); x <= Math.min(sum, gridSize - 1); x++) {
-        const y = sum - x;
-        if (y < 0 || y >= gridSize) continue;
-        
-        const { screenX, screenY } = gridToScreen(x, y, 0, 0);
-        
-        // Viewport culling
-        if (screenX + TILE_WIDTH < viewLeft || screenX > viewRight ||
-            screenY + TILE_HEIGHT * 4 < viewTop || screenY > viewBottom) {
-          continue;
-        }
-        
-        const tile = grid[y][x];
-        
-        // PERF: Hover and selection highlights are now rendered on a separate canvas layer
-        // Only keep drag rect and subway station highlights in main render (these change infrequently)
-        
-        // Check if tile is in drag selection rectangle (only show for zoning tools)
-        const isInDragRect = showsDragGrid && dragStartTile && dragEndTile && 
-          x >= Math.min(dragStartTile.x, dragEndTile.x) &&
-          x <= Math.max(dragStartTile.x, dragEndTile.x) &&
-          y >= Math.min(dragStartTile.y, dragEndTile.y) &&
-          y <= Math.max(dragStartTile.y, dragEndTile.y);
-
-        // PERF: Use pre-computed tile metadata (O(1) lookup instead of expensive per-tile calculations)
-        const tileMetadata = getTileMetadata(x, y);
-        const needsGreyBase = tileMetadata?.needsGreyBase ?? false;
-        const needsGreenBaseOverWater = tileMetadata?.needsGreenBaseOverWater ?? false;
-        const needsGreenBaseForPark = tileMetadata?.needsGreenBaseForPark ?? false;
-        
-        // Draw base tile for all tiles (including water), but skip gray bases for buildings and green bases for grass/empty adjacent to water or parks
-        // Highlight subway stations when subway overlay is active
-        const isSubwayStationHighlight = overlayMode === 'subway' && tile.building.type === 'subway_station';
-        drawIsometricTile(ctx, screenX, screenY, tile, !!(isInDragRect || isSubwayStationHighlight), zoom, true, needsGreenBaseOverWater || needsGreenBaseForPark);
-        
-        if (needsGreyBase) {
-          baseTileQueue.push({ screenX, screenY, tile, depth: x + y });
-        }
-        
-        if (needsGreenBaseOverWater || needsGreenBaseForPark) {
-          greenBaseTileQueue.push({ screenX, screenY, tile, depth: x + y });
-        }
-        
-        // Separate water tiles into their own queue (drawn after base tiles, below other buildings)
-        if (tile.building.type === 'water') {
-          const size = getBuildingSize(tile.building.type);
-          const depth = x + y + size.width + size.height - 2;
-          waterQueue.push({ screenX, screenY, tile, depth });
-        }
-        // Roads go to their own queue (drawn above water)
-        else if (tile.building.type === 'road') {
-          const depth = x + y;
-          roadQueue.push({ screenX, screenY, tile, depth });
-        }
-        // Bridges go to a separate queue (drawn after roads to cover centerlines)
-        else if (tile.building.type === 'bridge') {
-          const depth = x + y;
-          bridgeQueue.push({ screenX, screenY, tile, depth });
-        }
-        // Rail tiles - drawn after roads, above water
-        else if (tile.building.type === 'rail') {
-          const depth = x + y;
-          railQueue.push({ screenX, screenY, tile, depth });
-        }
-        // Check for beach tiles (grass/empty tiles adjacent to water) - use pre-computed metadata
-        else if ((tile.building.type === 'grass' || tile.building.type === 'empty') &&
-                 (tileMetadata?.isAdjacentToWater ?? false)) {
-          beachQueue.push({ screenX, screenY, tile, depth: x + y });
-        }
-        // Other buildings go to regular building queue
-        else {
-          const isBuilding = tile.building.type !== 'grass' && tile.building.type !== 'empty';
-          if (isBuilding) {
-            const size = getBuildingSize(tile.building.type);
-            const depth = x + y + size.width + size.height - 2;
-            buildingQueue.push({ screenX, screenY, tile, depth });
-          }
-        }
-        
-        // For subway overlay, show ALL non-water tiles (valid placement areas + existing subway)
-        // For other overlays, show buildings only
-        const showOverlay =
-          overlayMode !== 'none' &&
-          (overlayMode === 'subway' 
-            ? tile.building.type !== 'water'  // For subway mode, show all non-water tiles
-            : (tile.building.type !== 'grass' &&
-               tile.building.type !== 'water' &&
-               tile.building.type !== 'road'));
-        if (showOverlay) {
-          overlayQueue.push({ screenX, screenY, tile });
-        }
-      }
-    }
-    
-    // Draw water sprites (after base tiles, below other buildings)
-    // Add clipping to prevent water from overflowing map boundaries
-    ctx.save();
-    // Create clipping path for map boundaries - form a diamond shape around the map
-    // Get the four corner tiles of the map
-    const topLeft = gridToScreen(0, 0, 0, 0);
-    const topRight = gridToScreen(gridSize - 1, 0, 0, 0);
-    const bottomRight = gridToScreen(gridSize - 1, gridSize - 1, 0, 0);
-    const bottomLeft = gridToScreen(0, gridSize - 1, 0, 0);
-    const w = TILE_WIDTH;
-    const h = TILE_HEIGHT;
-    
-    // Create clipping path following the outer edges of the map
-    // The path goes around the perimeter: top -> right -> bottom -> left -> back to top
-    ctx.beginPath();
-    // Start at top point (top-left tile's top corner)
-    ctx.moveTo(topLeft.screenX + w / 2, topLeft.screenY);
-    // Go to right point (top-right tile's right corner)
-    ctx.lineTo(topRight.screenX + w, topRight.screenY + h / 2);
-    // Go to bottom point (bottom-right tile's bottom corner)
-    ctx.lineTo(bottomRight.screenX + w / 2, bottomRight.screenY + h);
-    // Go to left point (bottom-left tile's left corner)
-    ctx.lineTo(bottomLeft.screenX, bottomLeft.screenY + h / 2);
-    // Close the path back to top
-    ctx.closePath();
-    ctx.clip();
-    
-    // PERF: Use insertion sort instead of .sort() - O(n) for nearly-sorted data
-    insertionSortByDepth(waterQueue);
-    // PERF: Use for loop instead of forEach to avoid function call overhead
-    for (let i = 0; i < waterQueue.length; i++) {
-      const { tile, screenX, screenY } = waterQueue[i];
-      drawBuilding(ctx, screenX, screenY, tile);
-    }
-    
-    ctx.restore(); // Remove clipping after drawing water
-    
-    // Draw beaches on water tiles (after water, outside clipping region)
-    // Note: waterQueue is already sorted from above
-    // PERF: Use for loop instead of forEach
-    for (let i = 0; i < waterQueue.length; i++) {
-      const { tile, screenX, screenY } = waterQueue[i];
-      // Compute land adjacency for each edge (opposite of water adjacency)
-      // Only consider tiles within bounds - don't draw beaches on map edges
-      // Also exclude beaches next to marina docks, piers, and bridges (bridges are over water)
-      const adjacentLand = {
-        north: (tile.x - 1 >= 0 && tile.x - 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x - 1, tile.y) && !hasMarinaPier(tile.x - 1, tile.y) && !isBridge(tile.x - 1, tile.y),
-        east: (tile.x >= 0 && tile.x < gridSize && tile.y - 1 >= 0 && tile.y - 1 < gridSize) && !isWater(tile.x, tile.y - 1) && !hasMarinaPier(tile.x, tile.y - 1) && !isBridge(tile.x, tile.y - 1),
-        south: (tile.x + 1 >= 0 && tile.x + 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x + 1, tile.y) && !hasMarinaPier(tile.x + 1, tile.y) && !isBridge(tile.x + 1, tile.y),
-        west: (tile.x >= 0 && tile.x < gridSize && tile.y + 1 >= 0 && tile.y + 1 < gridSize) && !isWater(tile.x, tile.y + 1) && !hasMarinaPier(tile.x, tile.y + 1) && !isBridge(tile.x, tile.y + 1),
-      };
-      drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
-    }
-    
-    // PERF: Pre-compute tile dimensions once outside loops
-    const tileWidth = TILE_WIDTH;
-    const tileHeight = TILE_HEIGHT;
-    const halfTileWidth = tileWidth / 2;
-    const halfTileHeight = tileHeight / 2;
-    
-    // Draw green base tiles for grass/empty tiles adjacent to water BEFORE bridges
-    // This ensures bridge railings are drawn on top of the green base tiles
-    insertionSortByDepth(greenBaseTileQueue);
-    for (let i = 0; i < greenBaseTileQueue.length; i++) {
-      const { tile, screenX, screenY } = greenBaseTileQueue[i];
-      drawGreenBaseTile(ctx, screenX, screenY, tile, zoom);
-    }
-    
-    // Draw roads (above water, needs full redraw including base tile)
-    insertionSortByDepth(roadQueue);
-    // PERF: Use for loop instead of forEach
-    for (let i = 0; i < roadQueue.length; i++) {
-      const { tile, screenX, screenY } = roadQueue[i];
-      
-      // Draw road base tile first (grey diamond)
-      ctx.fillStyle = '#4a4a4a';
-      ctx.beginPath();
-      ctx.moveTo(screenX + halfTileWidth, screenY);
-      ctx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
-      ctx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
-      ctx.lineTo(screenX, screenY + halfTileHeight);
-      ctx.closePath();
-      ctx.fill();
-      
-      // Draw road markings and sidewalks
-      drawBuilding(ctx, screenX, screenY, tile);
-      
-      // If this road has a rail overlay, draw just the rail tracks (ties and rails, no ballast)
-      // Crossing signals/gates are drawn later (after rail tiles) to avoid z-order issues
-      if (tile.hasRailOverlay) {
-        drawRailTracksOnly(ctx, screenX, screenY, tile.x, tile.y, grid, gridSize, zoom);
-      }
-    }
-    
-    // Draw bridges AFTER roads to ensure bridge decks cover road centerlines
-    insertionSortByDepth(bridgeQueue);
-    for (let i = 0; i < bridgeQueue.length; i++) {
-      const { tile, screenX, screenY } = bridgeQueue[i];
-      
-      // Draw water tile underneath the bridge
-      drawWaterTileAt(ctx, screenX, screenY, tile.x, tile.y);
-      
-      // Draw bridge structure
-      drawBuilding(ctx, screenX, screenY, tile);
-    }
-    
-    // Draw rail tracks (above water, similar to roads)
-    insertionSortByDepth(railQueue);
-    // PERF: Use for loop instead of forEach
-    for (let i = 0; i < railQueue.length; i++) {
-      const { tile, screenX, screenY } = railQueue[i];
-      // Draw rail base tile first (dark gravel colored diamond)
-      ctx.fillStyle = '#5B6345'; // Dark gravel color for contrast with ballast
-      ctx.beginPath();
-      ctx.moveTo(screenX + halfTileWidth, screenY);
-      ctx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
-      ctx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
-      ctx.lineTo(screenX, screenY + halfTileHeight);
-      ctx.closePath();
-      ctx.fill();
-      
-      // Draw edge shading for depth
-      ctx.strokeStyle = '#4B5335';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(screenX + halfTileWidth, screenY + tileHeight);
-      ctx.lineTo(screenX, screenY + halfTileHeight);
-      ctx.lineTo(screenX + halfTileWidth, screenY);
-      ctx.stroke();
-      
-      // Draw the rail tracks
-      drawRailTrack(ctx, screenX, screenY, tile.x, tile.y, grid, gridSize, zoom);
-    }
-    
-    // Draw gray building base tiles (after rail, before crossings)
-    insertionSortByDepth(baseTileQueue);
-    // PERF: Use for loop instead of forEach
-    for (let i = 0; i < baseTileQueue.length; i++) {
-      const { tile, screenX, screenY } = baseTileQueue[i];
-      drawGreyBaseTile(ctx, screenX, screenY, tile, zoom);
-    }
-    
-    // Draw suspension bridge towers AGAIN on main canvas after base tiles
-    // Draw suspension bridge FRONT towers on main canvas after base tiles
-    // Only the front tower is drawn here (back tower was drawn before deck in drawBridgeTile)
-    for (let i = 0; i < bridgeQueue.length; i++) {
-      const { tile, screenX, screenY } = bridgeQueue[i];
-      if (tile.building.bridgeType === 'suspension') {
-        drawSuspensionBridgeTowers(ctx, screenX, screenY, tile.building, zoom);
-      }
-    }
-    
-    // Draw railroad crossing signals and gates AFTER base tiles to ensure they appear on top
-    // PERF: Build a Set of crossing keys for O(1) lookup instead of calling isRailroadCrossing
-    const crossingKeySet = new Set<number>();
-    const cachedCrossings = crossingPositionsRef.current;
-    for (let i = 0; i < cachedCrossings.length; i++) {
-      const { x, y } = cachedCrossings[i];
-      crossingKeySet.add(y * gridSize + x);
-    }
-    
-    // PERF: Pre-compute constants used in loop
-    const currentTrains = trainsRef.current;
-    const currentFlashTimer = crossingFlashTimerRef.current;
-    const gateAnglesMap = crossingGateAnglesRef.current;
-    
-    // Only iterate roads with rail overlay that are crossings
-    // PERF: Use for loop instead of forEach
-    for (let i = 0; i < roadQueue.length; i++) {
-      const { tile, screenX, screenY } = roadQueue[i];
-      if (tile.hasRailOverlay) {
-        // PERF: Use numeric key and Set lookup instead of isRailroadCrossing call
-        const crossingKey = tile.y * gridSize + tile.x;
-        if (crossingKeySet.has(crossingKey)) {
-          const gateAngle = gateAnglesMap.get(crossingKey) ?? 0;
-          const crossingState = getCrossingStateForTile(currentTrains, tile.x, tile.y);
-          const isActive = crossingState !== 'open';
-          
-          drawRailroadCrossing(
-            ctx,
-            screenX,
-            screenY,
-            tile.x,
-            tile.y,
-            grid,
-            gridSize,
-            zoom,
-            currentFlashTimer,
-            gateAngle,
-            isActive
-          );
-        }
-      }
-    }
-    
-    // Note: Beach drawing has been moved to water tiles (drawBeachOnWater)
-    // The beachQueue is no longer used for drawing beaches on land tiles
-    
-    
-    // Draw buildings sorted by depth so multi-tile sprites sit above adjacent tiles
-    // NOTE: Building sprites are now drawn on a separate canvas (buildingsCanvasRef) 
-    // that renders on top of cars/trains. We render them here so we can use the same
-    // drawBuilding function and context.
-    insertionSortByDepth(buildingQueue);
-    
-    // Render buildings on the buildings canvas (on top of cars/trains)
-    const buildingsCanvas = buildingsCanvasRef.current;
-    if (buildingsCanvas) {
-      // Set canvas size in memory (scaled for DPI)
-      buildingsCanvas.width = canvasSize.width;
-      buildingsCanvas.height = canvasSize.height;
-      
-      const buildingsCtx = buildingsCanvas.getContext('2d');
-      if (buildingsCtx) {
-        // Clear buildings canvas
-        buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
-        buildingsCtx.clearRect(0, 0, buildingsCanvas.width, buildingsCanvas.height);
-        
-        // Apply same transform as main canvas
-        buildingsCtx.scale(dpr, dpr);
-        buildingsCtx.translate(offset.x, offset.y);
-        buildingsCtx.scale(zoom, zoom);
-        
-        // Disable image smoothing for crisp pixel art
-        buildingsCtx.imageSmoothingEnabled = false;
-        
-        // Draw buildings on the buildings canvas
-        // PERF: Use for loop instead of forEach
-        for (let i = 0; i < buildingQueue.length; i++) {
-          const { tile, screenX, screenY } = buildingQueue[i];
-          drawBuilding(buildingsCtx, screenX, screenY, tile);
-        }
-        
-        // Draw suspension bridge towers ON TOP of buildings
-        // These need to appear above nearby buildings for proper visual layering
-        for (let i = 0; i < bridgeQueue.length; i++) {
-          const { tile, screenX, screenY } = bridgeQueue[i];
-          if (tile.building.bridgeType === 'suspension') {
-            drawSuspensionBridgeTowers(buildingsCtx, screenX, screenY, tile.building, zoom);
-          }
-        }
-        
-        // Draw suspension bridge cables ON TOP of towers
-        for (let i = 0; i < bridgeQueue.length; i++) {
-          const { tile, screenX, screenY } = bridgeQueue[i];
-          if (tile.building.bridgeType === 'suspension') {
-            drawSuspensionBridgeOverlay(buildingsCtx, screenX, screenY, tile.building, zoom);
-          }
-        }
-        
-        // NOTE: Recreation pedestrians are now drawn in the animation loop on the air canvas
-        // so their animations are smooth (the buildings canvas only updates when grid changes)
-        
-        // Draw overlays on the buildings canvas so they appear ON TOP of buildings
-        // (The buildings canvas is layered above the main canvas, so overlays must be drawn here)
-        // PERF: Use for loop instead of forEach
-        for (let i = 0; i < overlayQueue.length; i++) {
-          const { tile, screenX, screenY } = overlayQueue[i];
-          // Get service coverage for this tile
-          const coverage = {
-            fire: state.services.fire[tile.y][tile.x],
-            police: state.services.police[tile.y][tile.x],
-            health: state.services.health[tile.y][tile.x],
-            education: state.services.education[tile.y][tile.x],
-          };
-          
-          const fillStyle = getOverlayFillStyle(overlayMode, tile, coverage);
-          // Only draw if there's actually a color to show
-          if (fillStyle !== 'rgba(0, 0, 0, 0)') {
-            buildingsCtx.fillStyle = fillStyle;
-            buildingsCtx.beginPath();
-            buildingsCtx.moveTo(screenX + halfTileWidth, screenY);
-            buildingsCtx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
-            buildingsCtx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
-            buildingsCtx.lineTo(screenX, screenY + halfTileHeight);
-            buildingsCtx.closePath();
-            buildingsCtx.fill();
-          }
-        }
-        
-        // Draw service radius circles and building highlights for the active overlay
-        if (overlayMode !== 'none' && overlayMode !== 'subway') {
-          const serviceBuildingTypes = OVERLAY_TO_BUILDING_TYPES[overlayMode];
-          const circleColor = OVERLAY_CIRCLE_COLORS[overlayMode];
-          const circleFillColor = OVERLAY_CIRCLE_FILL_COLORS[overlayMode];
-          const highlightColor = OVERLAY_HIGHLIGHT_COLORS[overlayMode];
-          
-          // Find all service buildings of this type and draw their radii
-          for (let y = 0; y < gridSize; y++) {
-            for (let x = 0; x < gridSize; x++) {
-              const tile = grid[y][x];
-              if (!serviceBuildingTypes.includes(tile.building.type)) continue;
-              
-              // Skip buildings under construction
-              if (tile.building.constructionProgress !== undefined && tile.building.constructionProgress < 100) continue;
-              
-              // Skip abandoned buildings (they don't provide coverage in simulation)
-              if (tile.building.abandoned) continue;
-              
-              // Get service config for this building type
-              const config = SERVICE_CONFIG[tile.building.type as keyof typeof SERVICE_CONFIG];
-              if (!config || !('range' in config)) continue;
-              
-              const range = config.range;
-              
-              // NOTE: For multi-tile service buildings (e.g. 2x2 hospital, 3x3 university),
-              // coverage is computed from the building's anchor tile (top-left of footprint)
-              // in the simulation. We center the radius on that same tile to keep the
-              // overlay consistent with actual service coverage.
-              const { screenX: bldgScreenX, screenY: bldgScreenY } = gridToScreen(x, y, 0, 0);
-              const centerX = bldgScreenX + halfTileWidth;
-              const centerY = bldgScreenY + halfTileHeight;
-              
-              // Draw isometric ellipse for the radius
-              // In isometric view, a circle becomes an ellipse
-              // The radius in tiles needs to be converted to screen pixels
-              const radiusX = range * halfTileWidth;
-              const radiusY = range * halfTileHeight;
-              
-              buildingsCtx.strokeStyle = circleColor;
-              buildingsCtx.lineWidth = 2 / zoom; // Keep line width consistent at different zoom levels
-              buildingsCtx.beginPath();
-              buildingsCtx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
-              buildingsCtx.stroke();
-              
-              // Draw a subtle filled ellipse for better visibility
-              buildingsCtx.fillStyle = circleFillColor;
-              buildingsCtx.fill();
-              
-              // Draw highlight glow around the service building
-              buildingsCtx.strokeStyle = highlightColor;
-              buildingsCtx.lineWidth = 3 / zoom;
-              buildingsCtx.beginPath();
-              buildingsCtx.moveTo(bldgScreenX + halfTileWidth, bldgScreenY);
-              buildingsCtx.lineTo(bldgScreenX + tileWidth, bldgScreenY + halfTileHeight);
-              buildingsCtx.lineTo(bldgScreenX + halfTileWidth, bldgScreenY + tileHeight);
-              buildingsCtx.lineTo(bldgScreenX, bldgScreenY + halfTileHeight);
-              buildingsCtx.closePath();
-              buildingsCtx.stroke();
-              
-              // Draw a dot at the building center
-              buildingsCtx.fillStyle = highlightColor;
-              buildingsCtx.beginPath();
-              buildingsCtx.arc(centerX, centerY, 4 / zoom, 0, Math.PI * 2);
-              buildingsCtx.fill();
-            }
-          }
-        }
-        
-        buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
-      }
-    }
-    
-    // Draw water body names (after everything else so they're on top)
-    if (waterBodies && waterBodies.length > 0) {
-      ctx.save();
-      ctx.font = `${Math.max(10, 12 / zoom)}px sans-serif`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // Use same viewport calculation as main rendering (accounting for DPR)
-      const viewWidth = canvasSize.width / (dpr * zoom);
-      const viewHeight = canvasSize.height / (dpr * zoom);
+      // Calculate visible tile range for culling (account for DPR in canvas size)
+      const viewWidth = canvas.width / (dpr * zoom);
+      const viewHeight = canvas.height / (dpr * zoom);
       const viewLeft = -offset.x / zoom - TILE_WIDTH;
       const viewTop = -offset.y / zoom - TILE_HEIGHT * 2;
       const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH;
       const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 2;
-      
-      for (const waterBody of waterBodies) {
-        if (waterBody.tiles.length === 0) continue;
-        
-        // Convert grid coordinates to screen coordinates (context is already translated)
-        const { screenX, screenY } = gridToScreen(waterBody.centerX, waterBody.centerY, 0, 0);
-        
-        // Only draw if visible on screen (with some padding for text)
-        if (screenX >= viewLeft - 100 && screenX <= viewRight + 100 &&
-            screenY >= viewTop - 50 && screenY <= viewBottom + 50) {
-          // Draw text with outline for better visibility, centered on tile
-          ctx.strokeText(waterBody.name, screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT / 2);
-          ctx.fillText(waterBody.name, screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT / 2);
+
+      // PERF: Pre-compute visible diagonal range to skip entire rows of tiles
+      // In isometric rendering, screenY = (x + y) * (TILE_HEIGHT / 2), so sum = x + y = screenY * 2 / TILE_HEIGHT
+      // Add padding for tall buildings that may extend above their tile position
+      const visibleMinSum = Math.max(0, Math.floor((viewTop - TILE_HEIGHT * 6) * 2 / TILE_HEIGHT));
+      const visibleMaxSum = Math.min(gridSize * 2 - 2, Math.ceil((viewBottom + TILE_HEIGHT) * 2 / TILE_HEIGHT));
+
+      // PERF: Use cached render queue arrays to avoid GC pressure
+      // Clear arrays by setting length = 0 (much faster than recreating)
+      const queues = renderQueuesRef.current;
+      queues.buildingQueue.length = 0;
+      queues.waterQueue.length = 0;
+      queues.roadQueue.length = 0;
+      queues.bridgeQueue.length = 0;
+      queues.railQueue.length = 0;
+      queues.beachQueue.length = 0;
+      queues.baseTileQueue.length = 0;
+      queues.greenBaseTileQueue.length = 0;
+      queues.overlayQueue.length = 0;
+
+      const buildingQueue = queues.buildingQueue;
+      const waterQueue = queues.waterQueue;
+      const roadQueue = queues.roadQueue;
+      const bridgeQueue = queues.bridgeQueue;
+      const railQueue = queues.railQueue;
+      const beachQueue = queues.beachQueue;
+      const baseTileQueue = queues.baseTileQueue;
+      const greenBaseTileQueue = queues.greenBaseTileQueue;
+      const overlayQueue = queues.overlayQueue;
+
+      // PERF: Insertion sort for nearly-sorted arrays (O(n) vs O(n log n) for .sort())
+      // Since tiles are iterated in diagonal order, queues are already nearly sorted
+      function insertionSortByDepth<T extends { depth: number }>(arr: T[]): void {
+        for (let i = 1; i < arr.length; i++) {
+          const current = arr[i];
+          let j = i - 1;
+          // Only move elements that are strictly greater (maintains stability)
+          while (j >= 0 && arr[j].depth > current.depth) {
+            arr[j + 1] = arr[j];
+            j--;
+          }
+          arr[j + 1] = current;
         }
       }
-      
+
+      // Helper function to check if a tile is adjacent to water (uses pre-computed metadata for O(1) lookup)
+      function isAdjacentToWater(gridX: number, gridY: number): boolean {
+        const metadata = getTileMetadata(gridX, gridY);
+        return metadata?.isAdjacentToWater ?? false;
+      }
+
+      // Helper function to check if a tile is water
+      function isWater(gridX: number, gridY: number): boolean {
+        if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+        return grid[gridY][gridX].building.type === 'water';
+      }
+
+      // Helper function to check if a tile has a road or bridge
+      function hasRoad(gridX: number, gridY: number): boolean {
+        if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+        const type = grid[gridY][gridX].building.type;
+        return type === 'road' || type === 'bridge';
+      }
+
+      // Helper function to check if a tile is a bridge (for beach exclusion)
+      function isBridge(gridX: number, gridY: number): boolean {
+        if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+        return grid[gridY][gridX].building.type === 'bridge';
+      }
+
+      // Helper function to check if a tile has a marina dock or pier (no beaches next to these)
+      // Also checks 'empty' tiles that are part of multi-tile marina buildings
+      function hasMarinaPier(gridX: number, gridY: number): boolean {
+        if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+        const buildingType = grid[gridY][gridX].building.type;
+        if (buildingType === 'marina_docks_small' || buildingType === 'pier_large') return true;
+
+        // Check if this is an 'empty' tile that belongs to a marina (2x2 building)
+        // Marina is 2x2, so check up to 1 tile away for the origin
+        if (buildingType === 'empty') {
+          for (let dy = 0; dy <= 1; dy++) {
+            for (let dx = 0; dx <= 1; dx++) {
+              const checkX = gridX - dx;
+              const checkY = gridY - dy;
+              if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
+                const checkType = grid[checkY][checkX].building.type;
+                if (checkType === 'marina_docks_small') {
+                  // Verify this tile is within the 2x2 footprint
+                  if (gridX >= checkX && gridX < checkX + 2 && gridY >= checkY && gridY < checkY + 2) {
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+        }
+        return false;
+      }
+
+      // Helper to get cached road merge analysis (invalidates when grid changes)
+      function getCachedMergeInfo(gx: number, gy: number): ReturnType<typeof analyzeMergedRoad> {
+        const currentVersion = gridVersionRef.current;
+        if (roadAnalysisCacheVersionRef.current !== currentVersion) {
+          roadAnalysisCacheRef.current.clear();
+          roadAnalysisCacheVersionRef.current = currentVersion;
+        }
+
+        const key = `${gx},${gy}`;
+        let info = roadAnalysisCacheRef.current.get(key);
+        if (!info) {
+          info = analyzeMergedRoad(grid, gridSize, gx, gy);
+          roadAnalysisCacheRef.current.set(key, info);
+        }
+        return info;
+      }
+
+      // Create road drawing options for the extracted drawRoad function
+      const roadDrawingOptions: RoadDrawingOptions = {
+        hasRoad,
+        getMergeInfo: getCachedMergeInfo,
+        isMobile,
+        isPanning: isPanningRef.current,
+        isPinchZooming: isPinchZoomingRef.current,
+        trafficLightTimer: trafficLightTimerRef.current,
+      };
+
+      // Draw bridge tile - draws as a SINGLE continuous shape to avoid gaps
+      function drawBridgeTile(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        building: Building,
+        gridX: number,
+        gridY: number,
+        currentZoom: number
+      ) {
+        const w = TILE_WIDTH;
+        const h = TILE_HEIGHT;
+
+        // Parse bridge properties using extracted helper
+        const {
+          bridgeType,
+          orientation,
+          variant,
+          position,
+          bridgeIndex,
+          bridgeSpan,
+          isRailBridge,
+        } = parseBridgeProperties(building);
+
+        // Get style from extracted constants
+        const style = getBridgeStyle(bridgeType, variant);
+
+        // Rail bridges are shifted down slightly on the Y axis
+        const yOffset = getRailBridgeYOffset(isRailBridge);
+        const adjustedY = y + yOffset;
+
+        const cx = x + w / 2;
+        const cy = adjustedY + h / 2;
+
+        // Bridge width - rail bridges are 20% skinnier than road bridges
+        const bridgeWidthRatio = getBridgeWidthRatio(isRailBridge);
+        const halfWidth = w * bridgeWidthRatio * 0.5;
+
+        // Calculate bridge edge geometry using extracted helper
+        const edges = calculateBridgeEdges(x, y, adjustedY, orientation);
+        const { northEdge, eastEdge, southEdge, westEdge, startEdge, endEdge, perpX, perpY, neDirX, neDirY, nwDirX, nwDirY } = edges;
+
+        // ============================================================
+        // DRAW SUPPORT PILLARS (one per tile, at front position to avoid z-order issues)
+        // ============================================================
+        const pillarW = 4;
+        const pillarH = 14;
+
+        // Only draw pillar on every other tile to reduce count, and place at back position (0.35)
+        // Water tiles toward startEdge are rendered BEFORE this bridge tile, so pillar won't be covered
+        // Suspension bridges don't need base pillars - they have tower supports instead
+        const shouldDrawPillar = bridgeType !== 'suspension' && ((bridgeIndex % 2 === 0) || position === 'start' || position === 'end');
+
+        if (shouldDrawPillar) {
+          // Place pillar toward the "start" edge (back in render order) - water there is already drawn
+          const pillarT = 0.35; // Position along the tile (0.35 = toward start/back)
+          const pillarPos = {
+            x: startEdge.x + (endEdge.x - startEdge.x) * pillarT,
+            y: startEdge.y + (endEdge.y - startEdge.y) * pillarT
+          };
+
+          // Use extracted pillar drawing function
+          drawBridgePillar(ctx, pillarPos.x, pillarPos.y, pillarW, pillarH, style.support);
+        }
+
+        // ============================================================
+        // DRAW ROAD CONNECTOR AT BRIDGE ENDS (covers road centerline and fills gap)
+        // ============================================================
+        // At the start/end of a bridge, we need to draw a road segment that:
+        // 1. Fills the gap between the road and the elevated bridge deck
+        // 2. Covers up the yellow centerline from the adjacent road
+
+        const deckElevation = 3;
+
+        // Travel direction for connector extension
+        const dx = endEdge.x - startEdge.x;
+        const dy = endEdge.y - startEdge.y;
+        const travelLen = Math.hypot(dx, dy);
+        const travelDirX = dx / travelLen;
+        const travelDirY = dy / travelLen;
+
+        // Calculate how far to extend beyond the bridge tile (to cover the road's centerline)
+        const extensionAmount = 8; // Extend into the road tile to cover centerline
+
+        // Store connector info for drawing borders after the deck
+        const connectorBordersToDraw: Array<{
+          extendedX: number;
+          extendedY: number;
+          connectorEdgeX: number;
+          connectorEdgeY: number;
+        }> = [];
+
+        // Helper to draw a connector fill from bridge edge to road
+        const drawConnectorFill = (connectorEdge: { x: number; y: number }, extensionDir: number) => {
+          // Extended edge position (going toward the adjacent road)
+          const extendedX = connectorEdge.x + travelDirX * extensionAmount * extensionDir;
+          const extendedY = connectorEdge.y + travelDirY * extensionAmount * extensionDir;
+
+          // Draw a connector parallelogram from the extended position to the bridge edge
+          // The extended end (in the road) is at ground level, the bridge end is elevated
+          const connectorRoadLeft = { x: extendedX + perpX * halfWidth, y: extendedY + perpY * halfWidth };
+          const connectorRoadRight = { x: extendedX - perpX * halfWidth, y: extendedY - perpY * halfWidth };
+          const connectorBridgeLeft = { x: connectorEdge.x + perpX * halfWidth, y: connectorEdge.y - deckElevation + perpY * halfWidth };
+          const connectorBridgeRight = { x: connectorEdge.x - perpX * halfWidth, y: connectorEdge.y - deckElevation - perpY * halfWidth };
+
+          // Draw the connector (use appropriate color for road or rail)
+          ctx.fillStyle = getBridgeDeckColor(isRailBridge, style);
+          ctx.beginPath();
+          ctx.moveTo(connectorRoadLeft.x, connectorRoadLeft.y);
+          ctx.lineTo(connectorBridgeLeft.x, connectorBridgeLeft.y);
+          ctx.lineTo(connectorBridgeRight.x, connectorBridgeRight.y);
+          ctx.lineTo(connectorRoadRight.x, connectorRoadRight.y);
+          ctx.closePath();
+          ctx.fill();
+
+          // Store info for drawing borders after deck
+          if (!isRailBridge) {
+            connectorBordersToDraw.push({
+              extendedX,
+              extendedY,
+              connectorEdgeX: connectorEdge.x,
+              connectorEdgeY: connectorEdge.y,
+            });
+          }
+        };
+
+        // Helper to draw connector borders (called after deck is drawn)
+        const drawConnectorBorders = () => {
+          if (isRailBridge) return;
+
+          const borderInset = halfWidth * 0.22;
+          const borderHalfWidth = halfWidth - borderInset;
+
+          ctx.strokeStyle = '#606060'; // Lighter grey border for visibility
+          ctx.lineWidth = 0.75;
+
+          for (const border of connectorBordersToDraw) {
+            // Road-side border (at extended/ground level end)
+            ctx.beginPath();
+            ctx.moveTo(border.extendedX + perpX * borderHalfWidth, border.extendedY + perpY * borderHalfWidth);
+            ctx.lineTo(border.extendedX - perpX * borderHalfWidth, border.extendedY - perpY * borderHalfWidth);
+            ctx.stroke();
+
+            // Bridge-side border (at elevated end)
+            ctx.beginPath();
+            ctx.moveTo(border.connectorEdgeX + perpX * borderHalfWidth, border.connectorEdgeY - deckElevation + perpY * borderHalfWidth);
+            ctx.lineTo(border.connectorEdgeX - perpX * borderHalfWidth, border.connectorEdgeY - deckElevation - perpY * borderHalfWidth);
+            ctx.stroke();
+          }
+        };
+
+        // For 1x1 bridges (span of 1), draw connectors on BOTH ends
+        // SKIP connectors for rail bridges - they don't need road-style ramps
+        const isSingleTileBridge = bridgeSpan === 1;
+
+        if (!isRailBridge) {
+          if (position === 'start' || isSingleTileBridge) {
+            // Draw connector fill at start edge (extending backward)
+            drawConnectorFill(startEdge, -1);
+          }
+
+          if (position === 'end' || isSingleTileBridge) {
+            // Draw connector fill at end edge (extending forward)
+            drawConnectorFill(endEdge, 1);
+          }
+        }
+
+        // ============================================================
+        // DRAW BRIDGE DECK AS SINGLE CONTINUOUS SHAPE
+        // ============================================================
+
+        // For rail bridges, extend the deck slightly in the travel direction to close gaps between tiles
+        // This compensates for sub-pixel rendering issues with the narrower rail bridge deck
+        const railGapFix = isRailBridge ? 1.5 : 0;
+        const extendedStartEdge = {
+          x: startEdge.x - travelDirX * railGapFix,
+          y: startEdge.y - travelDirY * railGapFix
+        };
+        const extendedEndEdge = {
+          x: endEdge.x + travelDirX * railGapFix,
+          y: endEdge.y + travelDirY * railGapFix
+        };
+
+        // The deck is elevated uniformly above water
+        const startY = extendedStartEdge.y - deckElevation;
+        const endY = extendedEndEdge.y - deckElevation;
+
+        // Use perpendicular direction (90° CCW of travel) for deck corners
+        // This matches how roads compute their perpendicular using getPerp() for proper alignment
+        // perpX and perpY were computed earlier using the bridge direction
+
+        // Pre-compute deck corners for deck drawing (uses isometric-aligned perpendicular)
+        const startLeft = { x: extendedStartEdge.x + perpX * halfWidth, y: startY + perpY * halfWidth };
+        const startRight = { x: extendedStartEdge.x - perpX * halfWidth, y: startY - perpY * halfWidth };
+        const endLeft = { x: extendedEndEdge.x + perpX * halfWidth, y: endY + perpY * halfWidth };
+        const endRight = { x: extendedEndEdge.x - perpX * halfWidth, y: endY - perpY * halfWidth };
+
+        // Draw suspension bridge towers BEFORE the deck so deck appears on top
+        if (bridgeType === 'suspension' && currentZoom >= 0.5) {
+          // Tower perpendicular (true 90°)
+          const tDx = endEdge.x - startEdge.x;
+          const tDy = endEdge.y - startEdge.y;
+          const tTravelLen = Math.hypot(tDx, tDy);
+          const towerPerpX = -tDy / tTravelLen;
+          const towerPerpY = tDx / tTravelLen;
+
+          // Tower dimensions and positions
+          const suspTowerW = 3;
+          const suspTowerH = 27;
+          const suspTowerSpacing = w * 0.45;
+          const backTowerYOff = -5;
+          const frontTowerYOff = 8;
+
+          const leftTowerX = cx + towerPerpX * suspTowerSpacing;
+          const leftTowerY = cy + towerPerpY * suspTowerSpacing;
+          const rightTowerX = cx - towerPerpX * suspTowerSpacing;
+          const rightTowerY = cy - towerPerpY * suspTowerSpacing;
+
+          const backTower = leftTowerY < rightTowerY
+            ? { x: leftTowerX, y: leftTowerY }
+            : { x: rightTowerX, y: rightTowerY };
+          const frontTower = leftTowerY < rightTowerY
+            ? { x: rightTowerX, y: rightTowerY }
+            : { x: leftTowerX, y: leftTowerY };
+
+          // Check if this is a middle tower tile
+          const middleIdx = Math.floor((bridgeSpan - 1) / 2);
+          const hasSpan = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
+          const isMiddleTower = position === 'middle' && (
+            (hasSpan && bridgeSpan > 6 && bridgeIndex === middleIdx) ||
+            (!hasSpan && ((x / w + adjustedY / h) % 5 === 2))
+          );
+
+          // Only draw on start/end tiles or middle tower tiles
+          if (position === 'start' || position === 'end' || isMiddleTower) {
+            // Style - 3 variants
+            const supportColors = ['#909090', '#808080', '#858580'];
+            const baseColors = ['#606060', '#555555', '#555550'];
+            const safeVar = variant % 3;
+            const supportCol = supportColors[safeVar];
+            const baseCol = baseColors[safeVar];
+
+            // Tower dimensions
+            const towerH = suspTowerH + 8;
+            const baseH = 6;
+            const baseW = suspTowerW + 2;
+
+            // Draw back tower - shorter and no base
+            const backTowerH = 15; // Shorter to avoid intersecting roads
+            const backTowerShiftUp = 2.5; // Small shift up
+            ctx.fillStyle = supportCol;
+            ctx.fillRect(
+              backTower.x - suspTowerW / 2,
+              cy - backTowerH + backTowerYOff - backTowerShiftUp,
+              suspTowerW,
+              backTowerH
+            );
+
+            // Draw front tower with concrete base
+            ctx.fillStyle = baseCol;
+            ctx.fillRect(
+              frontTower.x - baseW / 2,
+              cy - suspTowerH + frontTowerYOff + towerH - baseH,
+              baseW,
+              baseH
+            );
+            ctx.fillStyle = supportCol;
+            ctx.fillRect(
+              frontTower.x - suspTowerW / 2,
+              cy - suspTowerH + frontTowerYOff,
+              suspTowerW,
+              towerH - baseH
+            );
+          }
+        }
+
+        // Draw the deck as a parallelogram with tile-edge-aligned sides
+        // Rail bridges use metallic steel color, road bridges use asphalt
+        ctx.fillStyle = getBridgeDeckColor(isRailBridge, style);
+        ctx.beginPath();
+        ctx.moveTo(startLeft.x, startLeft.y);
+        ctx.lineTo(endLeft.x, endLeft.y);
+        ctx.lineTo(endRight.x, endRight.y);
+        ctx.lineTo(startRight.x, startRight.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // ============================================================
+        // BRIDGE BARRIERS (railings on both sides)
+        // ============================================================
+        if (currentZoom >= 0.4) {
+          const barrierW = 2;
+          ctx.fillStyle = style.barrier;
+
+          // Left barrier (using perpendicular direction for proper alignment)
+          const startLeftOuter = { x: extendedStartEdge.x + perpX * (halfWidth + barrierW), y: startY + perpY * (halfWidth + barrierW) };
+          const endLeftOuter = { x: extendedEndEdge.x + perpX * (halfWidth + barrierW), y: endY + perpY * (halfWidth + barrierW) };
+          ctx.beginPath();
+          ctx.moveTo(startLeft.x, startLeft.y);
+          ctx.lineTo(endLeft.x, endLeft.y);
+          ctx.lineTo(endLeftOuter.x, endLeftOuter.y);
+          ctx.lineTo(startLeftOuter.x, startLeftOuter.y);
+          ctx.closePath();
+          ctx.fill();
+
+          // Right barrier  
+          const startRightOuter = { x: extendedStartEdge.x - perpX * (halfWidth + barrierW), y: startY - perpY * (halfWidth + barrierW) };
+          const endRightOuter = { x: extendedEndEdge.x - perpX * (halfWidth + barrierW), y: endY - perpY * (halfWidth + barrierW) };
+          ctx.beginPath();
+          ctx.moveTo(startRight.x, startRight.y);
+          ctx.lineTo(endRight.x, endRight.y);
+          ctx.lineTo(endRightOuter.x, endRightOuter.y);
+          ctx.lineTo(startRightOuter.x, startRightOuter.y);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // ============================================================
+        // LANE MARKINGS (road) or RAIL TRACKS (rail)
+        // ============================================================
+        if (isRailBridge) {
+          // Draw rail tracks on rail bridge - DOUBLE TRACKS matching railSystem.ts
+          if (currentZoom >= 0.4) {
+            const railGauge = w * TRACK_GAUGE_RATIO;
+            const halfGauge = railGauge / 2;
+            const trackSep = w * TRACK_SEPARATION_RATIO;
+            const halfSep = trackSep / 2;
+            const railWidth = currentZoom >= 0.7 ? 0.85 : 0.7;
+
+            // Draw ties (metal/treated wood sleepers on bridge) for both tracks
+            ctx.strokeStyle = RAIL_COLORS.BRIDGE_TIE;
+            ctx.lineWidth = 1;
+            ctx.lineCap = 'butt';
+
+            const numTies = 7; // Match TIES_PER_TILE
+            const tieHalfLen = w * 0.065; // Half-length of each tie
+
+            // Use original (non-extended) edges for ties to align with adjacent rail tiles
+            // The extended edges are only for the deck/rails to avoid sub-pixel gaps
+            const tieStartY = startEdge.y - deckElevation;
+            const tieEndY = endEdge.y - deckElevation;
+
+            for (let trackOffset of [halfSep, -halfSep]) {
+              // Track center line - use original edges for tie alignment with adjacent tiles
+              const trackStartX = startEdge.x + perpX * trackOffset;
+              const trackStartY = tieStartY + perpY * trackOffset;
+              const trackEndX = endEdge.x + perpX * trackOffset;
+              const trackEndY = tieEndY + perpY * trackOffset;
+
+              // Match railSystem.ts: use (i + 0.5) / numTies to center ties, avoiding edge overlap
+              for (let i = 0; i < numTies; i++) {
+                const t = (i + 0.5) / numTies;
+                const tieX = trackStartX + (trackEndX - trackStartX) * t;
+                const tieY = trackStartY + (trackEndY - trackStartY) * t;
+
+                ctx.beginPath();
+                ctx.moveTo(tieX + perpX * tieHalfLen, tieY + perpY * tieHalfLen);
+                ctx.lineTo(tieX - perpX * tieHalfLen, tieY - perpY * tieHalfLen);
+                ctx.stroke();
+              }
+            }
+
+            // Draw rails (4 rails total - 2 per track)
+            // Draw shadow first, then rails on top
+            for (let trackOffset of [halfSep, -halfSep]) {
+              // Use extended edges to match bridge deck alignment
+              const trackStartX = extendedStartEdge.x + perpX * trackOffset;
+              const trackStartY = startY + perpY * trackOffset;
+              const trackEndX = extendedEndEdge.x + perpX * trackOffset;
+              const trackEndY = endY + perpY * trackOffset;
+
+              // Rail shadows
+              ctx.strokeStyle = RAIL_COLORS.RAIL_SHADOW;
+              ctx.lineWidth = railWidth + 0.3;
+              ctx.lineCap = 'round';
+
+              // Left rail shadow
+              ctx.beginPath();
+              ctx.moveTo(trackStartX + perpX * halfGauge + 0.3, trackStartY + perpY * halfGauge + 0.3);
+              ctx.lineTo(trackEndX + perpX * halfGauge + 0.3, trackEndY + perpY * halfGauge + 0.3);
+              ctx.stroke();
+
+              // Right rail shadow
+              ctx.beginPath();
+              ctx.moveTo(trackStartX - perpX * halfGauge + 0.3, trackStartY - perpY * halfGauge + 0.3);
+              ctx.lineTo(trackEndX - perpX * halfGauge + 0.3, trackEndY - perpY * halfGauge + 0.3);
+              ctx.stroke();
+
+              // Rails
+              ctx.strokeStyle = RAIL_COLORS.RAIL;
+              ctx.lineWidth = railWidth;
+
+              // Left rail
+              ctx.beginPath();
+              ctx.moveTo(trackStartX + perpX * halfGauge, trackStartY + perpY * halfGauge);
+              ctx.lineTo(trackEndX + perpX * halfGauge, trackEndY + perpY * halfGauge);
+              ctx.stroke();
+
+              // Right rail
+              ctx.beginPath();
+              ctx.moveTo(trackStartX - perpX * halfGauge, trackStartY - perpY * halfGauge);
+              ctx.lineTo(trackEndX - perpX * halfGauge, trackEndY - perpY * halfGauge);
+              ctx.stroke();
+            }
+          }
+        } else {
+          // Draw lane markings for road bridge
+          if (currentZoom >= 0.6) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 0.5; // Half as wide as before (was 1)
+            ctx.setLineDash([1.5, 2]); // 2x more frequent (was [4, 6])
+            ctx.lineCap = 'round';
+
+            // Calculate dash offset to align dashes across bridge tiles
+            // Use grid position to create consistent offset
+            const travelDx = endEdge.x - startEdge.x;
+            const travelDy = endEdge.y - startEdge.y;
+            const travelLen = Math.hypot(travelDx, travelDy);
+
+            // Create offset based on tile position to align dashes across tiles
+            // Use a combination of grid coordinates to create unique but consistent offset
+            const offsetBase = (gridX * 17 + gridY * 23) % 100; // Pseudo-random but consistent per tile
+            const dashPatternLength = 1.5 + 2; // Total length of one dash cycle
+            const dashOffset = (offsetBase / 100) * dashPatternLength;
+
+            ctx.setLineDash([1.5, 2]);
+            ctx.lineDashOffset = -dashOffset;
+
+            ctx.beginPath();
+            ctx.moveTo(startEdge.x, startY);
+            ctx.lineTo(endEdge.x, endY);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.lineDashOffset = 0;
+            ctx.lineCap = 'butt';
+          }
+        }
+
+        // ============================================================
+        // BRIDGE TYPE-SPECIFIC DECORATIONS
+        // ============================================================
+
+        // NOTE: Suspension bridge front tower and cables are now drawn in drawSuspensionBridgeOverlay
+        // which is called after buildings for proper z-ordering
+
+        // Large bridge truss structure (skip for rail bridges and 1-tile bridges)
+        if (bridgeType === 'large' && currentZoom >= 0.5 && !isRailBridge && bridgeSpan > 1) {
+          ctx.strokeStyle = style.accent;
+          ctx.lineWidth = 1.5;
+          const trussHLeft = 3;
+          const trussHRight = 5;
+
+          // Top beams on both sides (using tile-edge-aligned direction)
+          ctx.beginPath();
+          ctx.moveTo(startLeft.x, startLeft.y - trussHLeft);
+          ctx.lineTo(endLeft.x, endLeft.y - trussHLeft);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(startRight.x, startRight.y - trussHRight);
+          ctx.lineTo(endRight.x, endRight.y - trussHRight);
+          ctx.stroke();
+
+          // Vertical supports
+          for (let i = 0; i <= 4; i++) {
+            const t = i / 4;
+            const leftX = startLeft.x + (endLeft.x - startLeft.x) * t;
+            const leftY = startLeft.y + (endLeft.y - startLeft.y) * t;
+            const rightX = startRight.x + (endRight.x - startRight.x) * t;
+            const rightY = startRight.y + (endRight.y - startRight.y) * t;
+
+            ctx.beginPath();
+            ctx.moveTo(leftX, leftY);
+            ctx.lineTo(leftX, leftY - trussHLeft);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(rightX, rightY);
+            ctx.lineTo(rightX, rightY - trussHRight);
+            ctx.stroke();
+          }
+        }
+
+        // ============================================================
+        // DRAW CONNECTOR BORDERS (after deck so they're on top)
+        // ============================================================
+        drawConnectorBorders();
+      }
+
+      // Draw suspension bridge towers on main canvas (after base tiles, before buildings canvas)
+      // This ensures towers appear above base tiles but below the buildings canvas
+      function drawSuspensionBridgeTowers(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        building: Building,
+        currentZoom: number
+      ) {
+        if (building.bridgeType !== 'suspension' || currentZoom < 0.5) return;
+
+        const w = TILE_WIDTH;
+        const h = TILE_HEIGHT;
+
+        const orientation = building.bridgeOrientation || 'ns';
+        const variant = building.bridgeVariant || 0;
+        const position = building.bridgePosition || 'middle';
+        const bridgeIndex = building.bridgeIndex ?? 0;
+        const bridgeSpan = building.bridgeSpan ?? 1;
+        const trackType = building.bridgeTrackType || 'road';
+        const isRailBridge = trackType === 'rail';
+
+        // Rail bridges are shifted down - match the offset from drawBridgeTile
+        const yOffset = isRailBridge ? h * 0.1 : 0;
+        const adjustedY = y + yOffset;
+
+        const cx = x + w / 2;
+        const cy = adjustedY + h / 2;
+
+        // Edge points - use adjustedY for rail bridges
+        const northEdge = { x: x + w * 0.25, y: adjustedY + h * 0.25 };
+        const eastEdge = { x: x + w * 0.75, y: adjustedY + h * 0.25 };
+        const southEdge = { x: x + w * 0.75, y: adjustedY + h * 0.75 };
+        const westEdge = { x: x + w * 0.25, y: adjustedY + h * 0.75 };
+
+        let startEdge: { x: number; y: number };
+        let endEdge: { x: number; y: number };
+
+        if (orientation === 'ns') {
+          startEdge = northEdge;
+          endEdge = southEdge;
+        } else {
+          startEdge = eastEdge;
+          endEdge = westEdge;
+        }
+
+        // Tower perpendicular (true 90°)
+        const dx = endEdge.x - startEdge.x;
+        const dy = endEdge.y - startEdge.y;
+        const travelLen = Math.hypot(dx, dy);
+        const towerPerpX = -dy / travelLen;
+        const towerPerpY = dx / travelLen;
+
+        // Tower dimensions and positions
+        const suspTowerW = 3;
+        const suspTowerH = 27;
+        const suspTowerSpacing = w * 0.45;
+        const backTowerYOffset = -5;
+        const frontTowerYOffset = 8;
+
+        const leftTowerX = cx + towerPerpX * suspTowerSpacing;
+        const leftTowerY = cy + towerPerpY * suspTowerSpacing;
+        const rightTowerX = cx - towerPerpX * suspTowerSpacing;
+        const rightTowerY = cy - towerPerpY * suspTowerSpacing;
+
+        const backTower = leftTowerY < rightTowerY
+          ? { x: leftTowerX, y: leftTowerY, isLeft: true }
+          : { x: rightTowerX, y: rightTowerY, isLeft: false };
+        const frontTower = leftTowerY < rightTowerY
+          ? { x: rightTowerX, y: rightTowerY, isLeft: false }
+          : { x: leftTowerX, y: leftTowerY, isLeft: true };
+
+        // Check if this is a middle tower tile
+        const middleIndex = Math.floor((bridgeSpan - 1) / 2);
+        const hasSpanInfo = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
+        const isMiddleTowerTile = position === 'middle' && (
+          (hasSpanInfo && bridgeSpan > 6 && bridgeIndex === middleIndex) ||
+          (!hasSpanInfo && ((x / w + adjustedY / h) % 5 === 2))
+        );
+
+        // Only draw on start/end tiles or middle tower tiles
+        if (position !== 'start' && position !== 'end' && !isMiddleTowerTile) return;
+
+        // Style - 3 variants
+        const supportColors = ['#909090', '#808080', '#858580'];
+        const baseColors = ['#606060', '#555555', '#555550'];
+        const safeVariant = variant % 3;
+        const supportColor = supportColors[safeVariant];
+        const baseColor = baseColors[safeVariant];
+
+        // Tower dimensions
+        const towerHeight = suspTowerH + 8;
+        const baseHeight = 6;
+        const baseWidth = suspTowerW + 2;
+
+        // Draw back tower - shorter and no base
+        const backTowerHeight = 22;
+        const backTowerShiftUp = 4;
+        ctx.fillStyle = supportColor;
+        ctx.fillRect(
+          backTower.x - suspTowerW / 2,
+          cy - backTowerHeight + backTowerYOffset - backTowerShiftUp,
+          suspTowerW,
+          backTowerHeight
+        );
+
+        // Draw front tower with concrete base
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(
+          frontTower.x - baseWidth / 2,
+          cy - suspTowerH + frontTowerYOffset + towerHeight - baseHeight,
+          baseWidth,
+          baseHeight
+        );
+        ctx.fillStyle = supportColor;
+        ctx.fillRect(
+          frontTower.x - suspTowerW / 2,
+          cy - suspTowerH + frontTowerYOffset,
+          suspTowerW,
+          towerHeight - baseHeight
+        );
+      }
+
+      // Draw suspension bridge cables as an overlay (on top of buildings)
+      // This is called separately after buildings are drawn for proper z-ordering
+      function drawSuspensionBridgeOverlay(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        building: Building,
+        currentZoom: number
+      ) {
+        if (building.bridgeType !== 'suspension' || currentZoom < 0.5) return;
+
+        const w = TILE_WIDTH;
+        const h = TILE_HEIGHT;
+
+        const orientation = building.bridgeOrientation || 'ns';
+        const variant = building.bridgeVariant || 0;
+        const position = building.bridgePosition || 'middle';
+        const bridgeIndex = building.bridgeIndex ?? 0;
+        const bridgeSpan = building.bridgeSpan ?? 1;
+        const trackType = building.bridgeTrackType || 'road';
+        const isRailBridge = trackType === 'rail';
+
+        // Rail bridges are shifted down - match the offset from drawBridgeTile
+        const yOffset = isRailBridge ? h * 0.1 : 0;
+        const adjustedY = y + yOffset;
+
+        const cx = x + w / 2;
+        const cy = adjustedY + h / 2;
+
+        // Bridge width for deck positioning - match drawBridgeTile
+        const bridgeWidthRatio = isRailBridge ? 0.36 : 0.45;
+        const halfWidth = w * bridgeWidthRatio * 0.5;
+
+        // Edge points - use adjustedY for rail bridges
+        const northEdge = { x: x + w * 0.25, y: adjustedY + h * 0.25 };
+        const eastEdge = { x: x + w * 0.75, y: adjustedY + h * 0.25 };
+        const southEdge = { x: x + w * 0.75, y: adjustedY + h * 0.75 };
+        const westEdge = { x: x + w * 0.25, y: adjustedY + h * 0.75 };
+
+        // Isometric direction vectors
+        const neEdgeLen = Math.hypot(w / 2, h / 2);
+        const neDirX = (w / 2) / neEdgeLen;
+        const neDirY = (h / 2) / neEdgeLen;
+        const nwDirX = -(w / 2) / neEdgeLen;
+        const nwDirY = (h / 2) / neEdgeLen;
+
+        let startEdge: { x: number; y: number };
+        let endEdge: { x: number; y: number };
+        let perpX: number;
+        let perpY: number;
+
+        if (orientation === 'ns') {
+          startEdge = northEdge;
+          endEdge = southEdge;
+          perpX = nwDirX;
+          perpY = nwDirY;
+        } else {
+          startEdge = eastEdge;
+          endEdge = westEdge;
+          perpX = neDirX;
+          perpY = neDirY;
+        }
+
+        const deckElevation = 3;
+        const startY = startEdge.y - deckElevation;
+        const endY = endEdge.y - deckElevation;
+
+        // Tower perpendicular (true 90°)
+        const dx = endEdge.x - startEdge.x;
+        const dy = endEdge.y - startEdge.y;
+        const travelLen = Math.hypot(dx, dy);
+        const travelDirX = dx / travelLen;
+        const travelDirY = dy / travelLen;
+        const towerPerpX = -dy / travelLen;
+        const towerPerpY = dx / travelLen;
+
+        // Deck corners for cable attachment
+        const startLeft = { x: startEdge.x + perpX * halfWidth, y: startY + perpY * halfWidth };
+        const startRight = { x: startEdge.x - perpX * halfWidth, y: startY - perpY * halfWidth };
+        const endLeft = { x: endEdge.x + perpX * halfWidth, y: endY + perpY * halfWidth };
+        const endRight = { x: endEdge.x - perpX * halfWidth, y: endY - perpY * halfWidth };
+
+        // Cable attachment points
+        const barrierOffset = 3;
+        const cableExtension = 18;
+        const cableAttachLeft = {
+          startX: startLeft.x + perpX * barrierOffset - travelDirX * cableExtension,
+          startY: startLeft.y + perpY * barrierOffset - travelDirY * cableExtension,
+          endX: endLeft.x + perpX * barrierOffset + travelDirX * cableExtension,
+          endY: endLeft.y + perpY * barrierOffset + travelDirY * cableExtension
+        };
+        const cableAttachRight = {
+          startX: startRight.x - perpX * barrierOffset - travelDirX * cableExtension,
+          startY: startRight.y - perpY * barrierOffset - travelDirY * cableExtension,
+          endX: endRight.x - perpX * barrierOffset + travelDirX * cableExtension,
+          endY: endRight.y - perpY * barrierOffset + travelDirY * cableExtension
+        };
+
+        // Tower dimensions and positions
+        const suspTowerH = 27;
+        const suspTowerSpacing = w * 0.45;
+        const backTowerYOffset = -5;
+        const frontTowerYOffset = 8;
+
+        const leftTowerX = cx + towerPerpX * suspTowerSpacing;
+        const leftTowerY = cy + towerPerpY * suspTowerSpacing;
+        const rightTowerX = cx - towerPerpX * suspTowerSpacing;
+        const rightTowerY = cy - towerPerpY * suspTowerSpacing;
+
+        const backTower = leftTowerY < rightTowerY
+          ? { x: leftTowerX, y: leftTowerY, isLeft: true }
+          : { x: rightTowerX, y: rightTowerY, isLeft: false };
+        const frontTower = leftTowerY < rightTowerY
+          ? { x: rightTowerX, y: rightTowerY, isLeft: false }
+          : { x: leftTowerX, y: leftTowerY, isLeft: true };
+
+        // Check if this is a middle tower tile
+        const middleIndex = Math.floor((bridgeSpan - 1) / 2);
+        const hasSpanInfo = building.bridgeSpan !== undefined && building.bridgeSpan > 1;
+        const isMiddleTowerTile = position === 'middle' && (
+          (hasSpanInfo && bridgeSpan > 6 && bridgeIndex === middleIndex) ||
+          (!hasSpanInfo && ((x / w + adjustedY / h) % 5 === 2))
+        );
+
+        // Only draw on start/end tiles or middle tower tiles
+        if (position !== 'start' && position !== 'end' && !isMiddleTowerTile) return;
+
+        // Style - 3 variants: red cables, grey cables, green/rust cables
+        const cableColors = ['#DC143C', '#708090', '#5a7a5a'];  // Red, steel grey, weathered green
+        const safeVariant = variant % 3;  // Ensure variant is in range
+        const cableColor = cableColors[safeVariant];
+
+        // NOTE: Towers are drawn on the main canvas (via drawSuspensionBridgeTowers) 
+        // so they appear below the bridge deck but above base tiles
+
+        // Draw cables only (on buildings canvas, above buildings)
+        ctx.strokeStyle = cableColor;
+        ctx.lineWidth = 1.25;
+
+        const leftBarrierMidX = (cableAttachLeft.startX + cableAttachLeft.endX) / 2;
+        const rightBarrierMidX = (cableAttachRight.startX + cableAttachRight.endX) / 2;
+
+        const backToLeft = Math.abs(backTower.x - leftBarrierMidX);
+        const backToRight = Math.abs(backTower.x - rightBarrierMidX);
+        const backAttach = backToLeft < backToRight ? cableAttachLeft : cableAttachRight;
+        const frontAttach = backToLeft < backToRight ? cableAttachRight : cableAttachLeft;
+
+        const drawCableArc = (fromX: number, fromY: number, toX: number, toY: number) => {
+          const midX = (fromX + toX) / 2;
+          const midY = (fromY + toY) / 2;
+          const sag = 8;
+          const controlX = midX;
+          const controlY = midY + sag;
+
+          ctx.beginPath();
+          ctx.moveTo(fromX, fromY);
+          ctx.quadraticCurveTo(controlX, controlY, toX, toY);
+          ctx.stroke();
+        };
+
+        const backTowerTop = cy - suspTowerH + backTowerYOffset;
+        drawCableArc(backTower.x, backTowerTop, backAttach.startX, backAttach.startY);
+        drawCableArc(backTower.x, backTowerTop, backAttach.endX, backAttach.endY);
+
+        const frontTowerTop = cy - suspTowerH + frontTowerYOffset;
+        drawCableArc(frontTower.x, frontTowerTop, frontAttach.startX, frontAttach.startY);
+        drawCableArc(frontTower.x, frontTowerTop, frontAttach.endX, frontAttach.endY);
+      }
+
+      // Draw isometric tile base
+      function drawIsometricTile(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile, highlight: boolean, currentZoom: number, skipGreyBase: boolean = false, skipGreenBase: boolean = false) {
+        const w = TILE_WIDTH;
+        const h = TILE_HEIGHT;
+
+        // Determine tile colors (top face and shading)
+        let topColor = '#4a7c3f'; // grass
+        let strokeColor = '#2d4a26';
+
+        // PERF: Use pre-computed tile metadata for grey base check (O(1) lookup)
+        const tileRenderMetadata = getTileMetadata(tile.x, tile.y);
+        const isPark = tileRenderMetadata?.isPartOfParkBuilding ||
+          ['park', 'park_large', 'tennis', 'basketball_courts', 'playground_small',
+            'playground_large', 'baseball_field_small', 'soccer_field_small', 'football_field',
+            'skate_park', 'mini_golf_course', 'bleachers_field', 'go_kart_track', 'amphitheater',
+            'greenhouse_garden', 'animal_pens_farm', 'cabin_house', 'campground', 'marina_docks_small',
+            'pier_large', 'roller_coaster_small', 'community_garden', 'pond_park', 'park_gate',
+            'mountain_lodge', 'mountain_trailhead'].includes(tile.building.type);
+        const hasGreyBase = tileRenderMetadata?.needsGreyBase ?? false;
+
+        if (tile.building.type === 'water') {
+          topColor = '#2563eb';
+          strokeColor = '#1e3a8a';
+        } else if (tile.building.type === 'road' || tile.building.type === 'bridge') {
+          topColor = '#4a4a4a';
+          strokeColor = '#333';
+        } else if (isPark) {
+          topColor = '#4a7c3f';
+          strokeColor = '#2d4a26';
+        } else if (hasGreyBase && !skipGreyBase) {
+          // Grey/concrete base tiles for ALL buildings (except parks)
+          // Skip if skipGreyBase is true (will be drawn later after water)
+          topColor = '#6b7280';
+          strokeColor = '#374151';
+        } else if (tile.zone === 'residential') {
+          if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
+            topColor = '#3d7c3f';
+          } else {
+            topColor = '#2d5a2d';
+          }
+          strokeColor = '#22c55e';
+        } else if (tile.zone === 'commercial') {
+          if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
+            topColor = '#3a5c7c';
+          } else {
+            topColor = '#2a4a6a';
+          }
+          strokeColor = '#3b82f6';
+        } else if (tile.zone === 'industrial') {
+          if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
+            topColor = '#7c5c3a';
+          } else {
+            topColor = '#6a4a2a';
+          }
+          strokeColor = '#f59e0b';
+        }
+
+        // Skip drawing green base for tiles adjacent to water (will be drawn later over water)
+        // This includes grass, empty, and tree tiles - all have green bases
+        // Also skip bridge tiles - they will have water drawn underneath them in the road queue
+        const shouldSkipDrawing = (skipGreenBase && (tile.building.type === 'grass' || tile.building.type === 'empty' || tile.building.type === 'tree')) ||
+          tile.building.type === 'bridge';
+
+        // Draw the isometric diamond (top face)
+        if (!shouldSkipDrawing) {
+          ctx.fillStyle = topColor;
+          ctx.beginPath();
+          ctx.moveTo(x + w / 2, y);
+          ctx.lineTo(x + w, y + h / 2);
+          ctx.lineTo(x + w / 2, y + h);
+          ctx.lineTo(x, y + h / 2);
+          ctx.closePath();
+          ctx.fill();
+
+          // Draw grid lines only when zoomed in (hide when zoom < 0.6)
+          if (currentZoom >= 0.6) {
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+
+          // Draw zone border with dashed line (hide when zoomed out, only on grass/empty tiles - not on roads or buildings)
+          if (tile.zone !== 'none' &&
+            currentZoom >= 0.95 &&
+            (tile.building.type === 'grass' || tile.building.type === 'empty')) {
+            ctx.strokeStyle = tile.zone === 'residential' ? '#22c55e' :
+              tile.zone === 'commercial' ? '#3b82f6' : '#f59e0b';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 2]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        }
+
+        // Highlight on hover/select (always draw, even if base was skipped)
+        if (highlight) {
+          // Draw a semi-transparent fill for better visibility
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+          ctx.beginPath();
+          ctx.moveTo(x + w / 2, y);
+          ctx.lineTo(x + w, y + h / 2);
+          ctx.lineTo(x + w / 2, y + h);
+          ctx.lineTo(x, y + h / 2);
+          ctx.closePath();
+          ctx.fill();
+
+          // Draw white border
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      // Helper function to draw water tile at a given screen position
+      // Used for marina/pier buildings that sit on water
+      function drawWaterTileAt(ctx: CanvasRenderingContext2D, screenX: number, screenY: number, gridX: number, gridY: number) {
+        const waterImage = getCachedImage(WATER_ASSET_PATH);
+        if (!waterImage) return;
+
+        const w = TILE_WIDTH;
+        const h = TILE_HEIGHT;
+        const tileCenterX = screenX + w / 2;
+        const tileCenterY = screenY + h / 2;
+
+        // Random subcrop of water texture based on tile position for variety
+        const imgW = waterImage.naturalWidth || waterImage.width;
+        const imgH = waterImage.naturalHeight || waterImage.height;
+
+        // Deterministic "random" offset based on tile position
+        const seedX = ((gridX * 7919 + gridY * 6271) % 1000) / 1000;
+        const seedY = ((gridX * 4177 + gridY * 9311) % 1000) / 1000;
+
+        // Take a subcrop for variety
+        const cropScale = 0.35;
+        const cropW = imgW * cropScale;
+        const cropH = imgH * cropScale;
+        const maxOffsetX = imgW - cropW;
+        const maxOffsetY = imgH - cropH;
+        const srcX = seedX * maxOffsetX;
+        const srcY = seedY * maxOffsetY;
+
+        ctx.save();
+        // Clip to isometric diamond shape
+        ctx.beginPath();
+        ctx.moveTo(screenX + w / 2, screenY);           // top
+        ctx.lineTo(screenX + w, screenY + h / 2);       // right
+        ctx.lineTo(screenX + w / 2, screenY + h);       // bottom
+        ctx.lineTo(screenX, screenY + h / 2);           // left
+        ctx.closePath();
+        ctx.clip();
+
+        const aspectRatio = cropH / cropW;
+        const jitterX = (seedX - 0.5) * w * 0.3;
+        const jitterY = (seedY - 0.5) * h * 0.3;
+
+        // Draw water with slight transparency
+        const destWidth = w * 1.15;
+        const destHeight = destWidth * aspectRatio;
+
+        ctx.globalAlpha = 0.95;
+        ctx.drawImage(
+          waterImage,
+          srcX, srcY, cropW, cropH,
+          Math.round(tileCenterX - destWidth / 2 + jitterX * 0.3),
+          Math.round(tileCenterY - destHeight / 2 + jitterY * 0.3),
+          Math.round(destWidth),
+          Math.round(destHeight)
+        );
+
+        ctx.restore();
+      }
+
+      // Draw building sprite
+      function drawBuilding(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile) {
+        const buildingType = tile.building.type;
+        const w = TILE_WIDTH;
+        const h = TILE_HEIGHT;
+
+        // Handle roads separately with adjacency
+        if (buildingType === 'road') {
+          drawRoad(ctx, x, y, tile.x, tile.y, zoom, roadDrawingOptions);
+          return;
+        }
+
+        // Handle bridges with special rendering
+        if (buildingType === 'bridge') {
+          drawBridgeTile(ctx, x, y, tile.building, tile.x, tile.y, zoom);
+          return;
+        }
+
+        // Draw water tiles underneath marina/pier buildings
+        if (buildingType === 'marina_docks_small' || buildingType === 'pier_large') {
+          const buildingSize = getBuildingSize(buildingType);
+          // Draw water tiles for each tile in the building's footprint
+          for (let dx = 0; dx < buildingSize.width; dx++) {
+            for (let dy = 0; dy < buildingSize.height; dy++) {
+              const tileGridX = tile.x + dx;
+              const tileGridY = tile.y + dy;
+              const { screenX, screenY } = gridToScreen(tileGridX, tileGridY, 0, 0);
+              drawWaterTileAt(ctx, screenX, screenY, tileGridX, tileGridY);
+            }
+          }
+        }
+
+        // Check if this building type has a sprite in the tile renderer, parks sheet, or stations sheet
+        const activePack = getActiveSpritePack();
+        const hasTileSprite = BUILDING_TO_SPRITE[buildingType] ||
+          (activePack.parksBuildings && activePack.parksBuildings[buildingType]) ||
+          (activePack.stationsVariants && activePack.stationsVariants[buildingType]);
+
+        if (hasTileSprite) {
+          // Special handling for water: use separate water.png image with blending for adjacent water tiles
+          if (buildingType === 'water') {
+            const waterImage = getCachedImage(WATER_ASSET_PATH);
+
+            // Check which adjacent tiles are also water for blending
+            const gridX = tile.x;
+            const gridY = tile.y;
+            const adjacentWater = {
+              north: gridX > 0 && grid[gridY]?.[gridX - 1]?.building.type === 'water',
+              east: gridY > 0 && grid[gridY - 1]?.[gridX]?.building.type === 'water',
+              south: gridX < gridSize - 1 && grid[gridY]?.[gridX + 1]?.building.type === 'water',
+              west: gridY < gridSize - 1 && grid[gridY + 1]?.[gridX]?.building.type === 'water',
+            };
+
+            // Count adjacent water tiles
+            const adjacentCount = (adjacentWater.north ? 1 : 0) + (adjacentWater.east ? 1 : 0) +
+              (adjacentWater.south ? 1 : 0) + (adjacentWater.west ? 1 : 0);
+
+            if (waterImage) {
+              // Center the water sprite on the tile
+              const tileCenterX = x + w / 2;
+              const tileCenterY = y + h / 2;
+
+              // Random subcrop of water texture based on tile position for variety
+              const imgW = waterImage.naturalWidth || waterImage.width;
+              const imgH = waterImage.naturalHeight || waterImage.height;
+
+              // Deterministic "random" offset based on tile position
+              const seedX = ((gridX * 7919 + gridY * 6271) % 1000) / 1000;
+              const seedY = ((gridX * 4177 + gridY * 9311) % 1000) / 1000;
+
+              // Take a subcrop - use 35% of the image, offset randomly for variety
+              const cropScale = 0.35;
+              const cropW = imgW * cropScale;
+              const cropH = imgH * cropScale;
+              const maxOffsetX = imgW - cropW;
+              const maxOffsetY = imgH - cropH;
+              const srcX = seedX * maxOffsetX;
+              const srcY = seedY * maxOffsetY;
+
+              // Create a clipping path - expand toward adjacent WATER tiles only
+              // This allows blending between water tiles while preventing bleed onto land
+              const expand = w * 0.4; // How much to expand toward water neighbors
+
+              // Calculate expanded corners based on water adjacency
+              // North edge (top-left): between left and top corners
+              // East edge (top-right): between top and right corners
+              // South edge (bottom-right): between right and bottom corners
+              // West edge (bottom-left): between bottom and left corners
+              const topY = y - (adjacentWater.north && adjacentWater.east ? expand * 0.5 : 0);
+              const rightX = x + w + ((adjacentWater.east && adjacentWater.south) ? expand * 0.5 : 0);
+              const bottomY = y + h + ((adjacentWater.south && adjacentWater.west) ? expand * 0.5 : 0);
+              const leftX = x - ((adjacentWater.west && adjacentWater.north) ? expand * 0.5 : 0);
+
+              // Expand individual edges toward water neighbors only
+              // Each edge should only expand if THAT specific edge direction has water
+              const topExpand = (adjacentWater.north && adjacentWater.east) ? expand * 0.3 : 0;
+              const rightExpand = (adjacentWater.east && adjacentWater.south) ? expand * 0.3 : 0;
+              const bottomExpand = (adjacentWater.south && adjacentWater.west) ? expand * 0.3 : 0;
+              const leftExpand = (adjacentWater.west && adjacentWater.north) ? expand * 0.3 : 0;
+
+              ctx.save();
+              ctx.beginPath();
+              ctx.moveTo(x + w / 2, topY - topExpand);                    // top
+              ctx.lineTo(rightX + rightExpand, y + h / 2);                // right
+              ctx.lineTo(x + w / 2, bottomY + bottomExpand);              // bottom
+              ctx.lineTo(leftX - leftExpand, y + h / 2);                  // left
+              ctx.closePath();
+              ctx.clip();
+
+              const aspectRatio = cropH / cropW;
+              const savedAlpha = ctx.globalAlpha;
+
+              // Jitter for variety
+              const jitterX = (seedX - 0.5) * w * 0.3;
+              const jitterY = (seedY - 0.5) * h * 0.3;
+
+              // For tiles with more water neighbors, draw blended passes
+              if (adjacentCount >= 2) {
+                // Two passes: large soft outer, smaller solid core
+                // Outer pass - large, semi-transparent for blending
+                const outerScale = 2.0 + adjacentCount * 0.3;
+                const outerWidth = w * outerScale;
+                const outerHeight = outerWidth * aspectRatio;
+                ctx.globalAlpha = 0.35;
+                ctx.drawImage(
+                  waterImage,
+                  srcX, srcY, cropW, cropH,
+                  Math.round(tileCenterX - outerWidth / 2 + jitterX),
+                  Math.round(tileCenterY - outerHeight / 2 + jitterY),
+                  Math.round(outerWidth),
+                  Math.round(outerHeight)
+                );
+
+                // Core pass - full opacity
+                const coreScale = 1.1;
+                const coreWidth = w * coreScale;
+                const coreHeight = coreWidth * aspectRatio;
+                ctx.globalAlpha = 0.9;
+                ctx.drawImage(
+                  waterImage,
+                  srcX, srcY, cropW, cropH,
+                  Math.round(tileCenterX - coreWidth / 2 + jitterX * 0.5),
+                  Math.round(tileCenterY - coreHeight / 2 + jitterY * 0.5),
+                  Math.round(coreWidth),
+                  Math.round(coreHeight)
+                );
+              } else {
+                // Edge tile with few water neighbors - single contained draw
+                const destWidth = w * 1.15;
+                const destHeight = destWidth * aspectRatio;
+
+                ctx.globalAlpha = 0.95;
+                ctx.drawImage(
+                  waterImage,
+                  srcX, srcY, cropW, cropH,
+                  Math.round(tileCenterX - destWidth / 2 + jitterX * 0.3),
+                  Math.round(tileCenterY - destHeight / 2 + jitterY * 0.3),
+                  Math.round(destWidth),
+                  Math.round(destHeight)
+                );
+              }
+
+              ctx.globalAlpha = savedAlpha;
+              ctx.restore();
+            } else {
+              // Water image not loaded yet - draw placeholder diamond
+              ctx.fillStyle = '#0ea5e9';
+              ctx.beginPath();
+              ctx.moveTo(x + w / 2, y);
+              ctx.lineTo(x + w, y + h / 2);
+              ctx.lineTo(x + w / 2, y + h);
+              ctx.lineTo(x, y + h / 2);
+              ctx.closePath();
+              ctx.fill();
+            }
+          } else {
+            // ===== TILE RENDERER PATH =====
+            // Handles both single-tile and multi-tile buildings
+            // Get the filtered sprite sheet from cache (or fallback to unfiltered if not available)
+            // Use the active sprite pack's source for cache lookup (activePack already defined above)
+
+            // Check if building is under construction (constructionProgress < 100)
+            const isUnderConstruction = tile.building.constructionProgress !== undefined &&
+              tile.building.constructionProgress < 100;
+
+            // Construction has two phases:
+            // Phase 1 (0-40%): Foundation/dirt plot phase - just show a dirt mound
+            // Phase 2 (40-100%): Construction scaffolding phase - show construction sprite
+            const constructionProgress = tile.building.constructionProgress ?? 100;
+            const isFoundationPhase = isUnderConstruction && constructionProgress < 40;
+            const isConstructionPhase = isUnderConstruction && constructionProgress >= 40;
+
+            // If in foundation phase, draw the foundation plot and skip sprite rendering
+            if (isFoundationPhase) {
+              // Get building size to handle multi-tile foundations
+              const buildingSize = getBuildingSize(buildingType);
+
+              // For multi-tile buildings, we only draw the foundation from the origin tile
+              // (the other tiles are 'empty' and won't have this building type)
+              if (buildingSize.width > 1 || buildingSize.height > 1) {
+                // Draw foundation plots for each tile in the footprint
+                for (let dy = 0; dy < buildingSize.height; dy++) {
+                  for (let dx = 0; dx < buildingSize.width; dx++) {
+                    const plotX = x + (dx - dy) * (w / 2);
+                    const plotY = y + (dx + dy) * (h / 2);
+                    drawFoundationPlot(ctx, plotX, plotY, w, h, zoom);
+                  }
+                }
+              } else {
+                // Single-tile building - just draw one foundation
+                drawFoundationPlot(ctx, x, y, w, h, zoom);
+              }
+              // Skip the sprite rendering for this tile (foundation plot is already drawn)
+              return;
+            }
+
+            // Check if building is abandoned
+            const isAbandoned = tile.building.abandoned === true;
+
+            // Use appropriate sprite sheet based on building state
+            // Priority: parks construction > construction > abandoned > parks > dense/modern variants > farm variants > normal
+            let spriteSource = activePack.src;
+            let useDenseVariant: { row: number; col: number } | null = null;
+            let useModernVariant: { row: number; col: number } | null = null;
+            let useFarmVariant: { row: number; col: number } | null = null;
+            let useShopVariant: { row: number; col: number } | null = null;
+            let useStationVariant: { row: number; col: number } | null = null;
+            let useParksBuilding: { row: number; col: number } | null = null;
+
+            // Check if this is a parks building first
+            const isParksBuilding = activePack.parksBuildings && activePack.parksBuildings[buildingType];
+
+            if (isConstructionPhase && isParksBuilding && activePack.parksConstructionSrc) {
+              // Parks building under construction (phase 2) - use parks construction sheet
+              useParksBuilding = activePack.parksBuildings![buildingType];
+              spriteSource = activePack.parksConstructionSrc;
+            } else if (isConstructionPhase && activePack.constructionSrc) {
+              // Regular building under construction (phase 2) - use construction sheet
+              spriteSource = activePack.constructionSrc;
+            } else if (isAbandoned && activePack.abandonedSrc) {
+              spriteSource = activePack.abandonedSrc;
+            } else if (isParksBuilding && activePack.parksSrc) {
+              // Check if this building type is from the parks sprite sheet
+              useParksBuilding = activePack.parksBuildings![buildingType];
+              spriteSource = activePack.parksSrc;
+            } else if (activePack.denseSrc && activePack.denseVariants && activePack.denseVariants[buildingType]) {
+              // Check if this building type has dense variants available
+              const denseVariants = activePack.denseVariants[buildingType];
+              const modernVariants = activePack.modernSrc && activePack.modernVariants && activePack.modernVariants[buildingType]
+                ? activePack.modernVariants[buildingType]
+                : [];
+              // Use deterministic random based on tile position to select variant
+              // This ensures the same building always shows the same variant
+              const seed = (tile.x * 31 + tile.y * 17) % 100;
+              // ~50% chance to use a dense/modern variant (when seed < 50)
+              if (seed < 50 && (denseVariants.length > 0 || modernVariants.length > 0)) {
+                // Combine both variant pools and select from them
+                const allVariants = [
+                  ...denseVariants.map(v => ({ ...v, source: 'dense' as const })),
+                  ...modernVariants.map(v => ({ ...v, source: 'modern' as const })),
+                ];
+                const variantIndex = (tile.x * 7 + tile.y * 13) % allVariants.length;
+                const selectedVariant = allVariants[variantIndex];
+                if (selectedVariant.source === 'modern') {
+                  useModernVariant = { row: selectedVariant.row, col: selectedVariant.col };
+                  spriteSource = activePack.modernSrc!;
+                } else {
+                  useDenseVariant = { row: selectedVariant.row, col: selectedVariant.col };
+                  spriteSource = activePack.denseSrc;
+                }
+              }
+            } else if (activePack.modernSrc && activePack.modernVariants && activePack.modernVariants[buildingType]) {
+              // Check if this building type has modern variants available (without dense variants)
+              const variants = activePack.modernVariants[buildingType];
+              const seed = (tile.x * 31 + tile.y * 17) % 100;
+              if (seed < 50 && variants.length > 0) {
+                const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
+                useModernVariant = variants[variantIndex];
+                spriteSource = activePack.modernSrc;
+              }
+            } else if (activePack.farmsSrc && activePack.farmsVariants && activePack.farmsVariants[buildingType]) {
+              // Check if this building type has farm variants available (low-density industrial)
+              const variants = activePack.farmsVariants[buildingType];
+              // Use deterministic random based on tile position to select variant
+              // This ensures the same building always shows the same variant
+              const seed = (tile.x * 31 + tile.y * 17) % 100;
+              // ~50% chance to use a farm variant (when seed < 50)
+              if (seed < 50 && variants.length > 0) {
+                // Select which farm variant to use based on position
+                const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
+                useFarmVariant = variants[variantIndex];
+                spriteSource = activePack.farmsSrc;
+              }
+            } else if (activePack.shopsSrc && activePack.shopsVariants && activePack.shopsVariants[buildingType]) {
+              // Check if this building type has shop variants available (low-density commercial)
+              const variants = activePack.shopsVariants[buildingType];
+              // Use deterministic random based on tile position to select variant
+              // This ensures the same building always shows the same variant
+              const seed = (tile.x * 31 + tile.y * 17) % 100;
+              // ~50% chance to use a shop variant (when seed < 50)
+              if (seed < 50 && variants.length > 0) {
+                // Select which shop variant to use based on position
+                const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
+                useShopVariant = variants[variantIndex];
+                spriteSource = activePack.shopsSrc;
+              }
+            } else if (activePack.stationsSrc && activePack.stationsVariants && activePack.stationsVariants[buildingType]) {
+              // Check if this building type has station variants available (rail stations)
+              const variants = activePack.stationsVariants[buildingType];
+              // Use deterministic random based on tile position to select variant
+              // This ensures the same building always shows the same variant
+              const seed = (tile.x * 31 + tile.y * 17) % 100;
+              // Always use a station variant if available (100% chance)
+              if (variants.length > 0) {
+                // Select which station variant to use based on position
+                const variantIndex = (tile.x * 7 + tile.y * 13) % variants.length;
+                useStationVariant = variants[variantIndex];
+                spriteSource = activePack.stationsSrc;
+              }
+            }
+
+            const filteredSpriteSheet = getCachedImage(spriteSource, true) || getCachedImage(spriteSource);
+
+            if (filteredSpriteSheet) {
+              // Use naturalWidth/naturalHeight for accurate source dimensions
+              const sheetWidth = filteredSpriteSheet.naturalWidth || filteredSpriteSheet.width;
+              const sheetHeight = filteredSpriteSheet.naturalHeight || filteredSpriteSheet.height;
+
+              // Get sprite coordinates - either from parks, dense variant, modern variant, farm variant, shop variant, station variant, or normal mapping
+              let coords: { sx: number; sy: number; sw: number; sh: number } | null;
+              let isDenseVariant = false;
+              let isModernVariant = false;
+              let isFarmVariant = false;
+              let isShopVariant = false;
+              let isStationVariant = false;
+              let isParksBuilding = false;
+              if (useParksBuilding) {
+                isParksBuilding = true;
+                // Calculate coordinates from parks sprite sheet using its own grid dimensions
+                const parksCols = activePack.parksCols || 5;
+                const parksRows = activePack.parksRows || 6;
+                const tileWidth = Math.floor(sheetWidth / parksCols);
+                const tileHeight = Math.floor(sheetHeight / parksRows);
+                let sourceY = useParksBuilding.row * tileHeight;
+                let sourceH = tileHeight;
+
+                // Special handling for buildings that have content bleeding from row above - shift source down to avoid capturing
+                // content from the sprite above it in the sprite sheet
+                if (buildingType === 'marina_docks_small') {
+                  sourceY += tileHeight * 0.15; // Shift down 15% to avoid row above clipping (reduced from 25%)
+                  sourceH = tileHeight * 0.85; // Reduce height by 15% to avoid row below clipping
+                } else if (buildingType === 'pier_large') {
+                  sourceY += tileHeight * 0.2; // Shift down 20% to avoid row above clipping
+                  sourceH = tileHeight * 0.8; // Reduce height by 20% to avoid row below clipping
+                } else if (buildingType === 'amphitheater') {
+                  sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
+                } else if (buildingType === 'mini_golf_course') {
+                  sourceY += tileHeight * 0.2; // Shift down 20% to crop lower from the top
+                  sourceH = tileHeight * 0.8; // Reduce height by 20% to maintain proper aspect
+                } else if (buildingType === 'cabin_house') {
+                  sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
+                } else if (buildingType === 'go_kart_track') {
+                  sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
+                } else if (buildingType === 'greenhouse_garden') {
+                  sourceY += tileHeight * 0.1; // Shift down 10% to crop asset above it
+                  sourceH = tileHeight * 0.9; // Reduce height by 10% to maintain proper aspect
+                }
+
+                // Special handling for buildings that need more height to avoid bottom clipping
+                if (buildingType === 'bleachers_field') {
+                  sourceH = tileHeight * 1.1; // Increase height by 10% to avoid bottom clipping
+                }
+
+                coords = {
+                  sx: useParksBuilding.col * tileWidth,
+                  sy: sourceY,
+                  sw: tileWidth,
+                  sh: sourceH,
+                };
+              } else if (useDenseVariant) {
+                isDenseVariant = true;
+                // Calculate coordinates directly from dense variant row/col
+                const tileWidth = Math.floor(sheetWidth / activePack.cols);
+                const tileHeight = Math.floor(sheetHeight / activePack.rows);
+                let sourceY = useDenseVariant.row * tileHeight;
+                let sourceH = tileHeight;
+                // For mall dense variants (rows 2-3), shift source Y down to avoid capturing
+                // content from the row above that bleeds into the cell boundary
+                if (buildingType === 'mall') {
+                  sourceY += tileHeight * 0.12; // Shift down ~12% to avoid row above
+                }
+                // For factory_large dense variants (row 4), shift source Y down to avoid capturing
+                // content from the row above that bleeds into the cell boundary
+                if (buildingType === 'factory_large') {
+                  sourceY += tileHeight * 0.05; // Shift down ~5% to avoid row above
+                  sourceH = tileHeight * 0.95; // Reduce height slightly to avoid row below clipping
+                }
+                // For apartment_high dense variants, add a bit more height to avoid cutoff at bottom
+                if (buildingType === 'apartment_high') {
+                  sourceH = tileHeight * 1.05; // Add 5% more height at bottom
+                }
+                coords = {
+                  sx: useDenseVariant.col * tileWidth,
+                  sy: sourceY,
+                  sw: tileWidth,
+                  sh: sourceH,
+                };
+              } else if (useModernVariant) {
+                isModernVariant = true;
+                // Calculate coordinates directly from modern variant row/col (same layout as dense: cols/rows)
+                const tileWidth = Math.floor(sheetWidth / activePack.cols);
+                const tileHeight = Math.floor(sheetHeight / activePack.rows);
+                let sourceY = useModernVariant.row * tileHeight;
+                let sourceH = tileHeight;
+                // For mall modern variants (rows 2-3), shift source Y down to avoid capturing
+                // content from the row above that bleeds into the cell boundary
+                if (buildingType === 'mall') {
+                  sourceY += tileHeight * 0.15; // Shift down ~15% to avoid row above
+                  // For row 3 mall variants, crop bottom to avoid picking up industrial assets from row 4
+                  if (useModernVariant.row === 3) {
+                    sourceH = tileHeight * 0.95; // Slight crop at bottom to exclude industrial asset
+                  } else {
+                    sourceH = tileHeight * 0.85; // Crop 15% off bottom for other mall rows
+                  }
+                }
+                // For apartment_high modern variants, add a bit more height to avoid cutoff at bottom
+                if (buildingType === 'apartment_high') {
+                  sourceH = tileHeight * 1.05; // Add 5% more height at bottom
+                }
+                coords = {
+                  sx: useModernVariant.col * tileWidth,
+                  sy: sourceY,
+                  sw: tileWidth,
+                  sh: sourceH,
+                };
+              } else if (useFarmVariant) {
+                isFarmVariant = true;
+                // Calculate coordinates directly from farm variant row/col
+                const farmsCols = activePack.farmsCols || 5;
+                const farmsRows = activePack.farmsRows || 6;
+                const tileWidth = Math.floor(sheetWidth / farmsCols);
+                const tileHeight = Math.floor(sheetHeight / farmsRows);
+                const sourceY = useFarmVariant.row * tileHeight;
+                const sourceH = tileHeight;
+                coords = {
+                  sx: useFarmVariant.col * tileWidth,
+                  sy: sourceY,
+                  sw: tileWidth,
+                  sh: sourceH,
+                };
+              } else if (useShopVariant) {
+                isShopVariant = true;
+                // Calculate coordinates directly from shop variant row/col
+                const shopsCols = activePack.shopsCols || 5;
+                const shopsRows = activePack.shopsRows || 6;
+                const tileWidth = Math.floor(sheetWidth / shopsCols);
+                const tileHeight = Math.floor(sheetHeight / shopsRows);
+                const sourceY = useShopVariant.row * tileHeight;
+                const sourceH = tileHeight;
+                coords = {
+                  sx: useShopVariant.col * tileWidth,
+                  sy: sourceY,
+                  sw: tileWidth,
+                  sh: sourceH,
+                };
+              } else if (useStationVariant) {
+                isStationVariant = true;
+                // Calculate coordinates directly from station variant row/col
+                const stationsCols = activePack.stationsCols || 5;
+                const stationsRows = activePack.stationsRows || 6;
+                const tileWidth = Math.floor(sheetWidth / stationsCols);
+                const tileHeight = Math.floor(sheetHeight / stationsRows);
+                let sourceY = useStationVariant.row * tileHeight;
+                let sourceH = tileHeight;
+
+                // Special handling for rows that have content bleeding from row above
+                // Third row (row 2, 0-indexed) - shift down to avoid capturing content from row above
+                if (useStationVariant.row === 2) {
+                  sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
+                }
+                // Fourth row (row 3, 0-indexed) - shift down to avoid capturing content from row above
+                // Also reduce height slightly to crop out bottom clipping from row below
+                if (useStationVariant.row === 3) {
+                  sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
+                  sourceH -= tileHeight * 0.05; // Reduce height by 5% to crop bottom clipping
+                }
+                // Fifth row (row 4, 0-indexed) - shift down to avoid capturing content from row above
+                // Also reduce height to crop out bottom clipping from row below
+                if (useStationVariant.row === 4) {
+                  sourceY += tileHeight * 0.1; // Shift down 10% to avoid row above clipping
+                  sourceH -= tileHeight * 0.1; // Reduce height by 10% to crop bottom clipping
+                }
+
+                coords = {
+                  sx: useStationVariant.col * tileWidth,
+                  sy: sourceY,
+                  sw: tileWidth,
+                  sh: sourceH,
+                };
+              } else {
+                // getSpriteCoords handles building type to sprite key mapping
+                coords = getSpriteCoords(buildingType, sheetWidth, sheetHeight);
+
+                // Special cropping for factory_large base sprite - crop bottom to remove asset below
+                if (buildingType === 'factory_large' && coords) {
+                  const tileHeight = Math.floor(sheetHeight / activePack.rows);
+                  coords.sh = coords.sh - tileHeight * 0.08; // Crop 8% from bottom
+                }
+              }
+
+              if (coords) {
+                // Get building size to handle multi-tile buildings
+                const buildingSize = getBuildingSize(buildingType);
+                const isMultiTile = buildingSize.width > 1 || buildingSize.height > 1;
+
+                // Calculate draw position for multi-tile buildings
+                // Multi-tile buildings need to be positioned at the front-most corner
+                let drawPosX = x;
+                let drawPosY = y;
+
+                if (isMultiTile) {
+                  // Calculate offset to position sprite at the front-most visible corner
+                  // In isometric view, the front-most corner is at (originX + width - 1, originY + height - 1)
+                  const frontmostOffsetX = buildingSize.width - 1;
+                  const frontmostOffsetY = buildingSize.height - 1;
+                  const screenOffsetX = (frontmostOffsetX - frontmostOffsetY) * (w / 2);
+                  const screenOffsetY = (frontmostOffsetX + frontmostOffsetY) * (h / 2);
+                  drawPosX = x + screenOffsetX;
+                  drawPosY = y + screenOffsetY;
+                }
+
+                // Calculate destination size preserving aspect ratio of source sprite
+                // Scale factor: 1.2 base (reduced from 1.5 for ~20% smaller)
+                // Multi-tile buildings scale with their footprint
+                let scaleMultiplier = isMultiTile ? Math.max(buildingSize.width, buildingSize.height) : 1;
+                // Special scale adjustment for airport (no scaling - was scaled up 5%, now scaled down 5%)
+                if (buildingType === 'airport') {
+                  scaleMultiplier *= 1.0; // Scale down 5% from previous 1.05
+                }
+                // Special scale adjustment for school (scaled up 5%)
+                if (buildingType === 'school') {
+                  scaleMultiplier *= 1.05; // Scale up by 5%
+                }
+                // Special scale adjustment for university (scaled down 5%)
+                if (buildingType === 'university') {
+                  scaleMultiplier *= 0.95; // Scale down by 5%
+                }
+                // Special scale adjustment for space_program (scaled up 6%)
+                if (buildingType === 'space_program') {
+                  scaleMultiplier *= 1.06; // Scale up by 6% (was 10%, reduced 4%)
+                }
+                // Special scale adjustment for stadium (scaled down 30%)
+                if (buildingType === 'stadium') {
+                  scaleMultiplier *= 0.7; // Scale down by 30%
+                }
+                // Special scale adjustment for water_tower (scaled down 10%)
+                if (buildingType === 'water_tower') {
+                  scaleMultiplier *= 0.9; // Scale down by 10%
+                }
+                // Special scale adjustment for subway_station (scaled down 30%)
+                if (buildingType === 'subway_station') {
+                  scaleMultiplier *= 0.7; // Scale down by 30%
+                }
+                // Special scale adjustment for police_station (scaled down 3%)
+                if (buildingType === 'police_station') {
+                  scaleMultiplier *= 0.97; // Scale down by 3%
+                }
+                // Special scale adjustment for fire_station (scaled down 3%)
+                if (buildingType === 'fire_station') {
+                  scaleMultiplier *= 0.97; // Scale down by 3%
+                }
+                // Special scale adjustment for hospital (scaled down 10%)
+                if (buildingType === 'hospital') {
+                  scaleMultiplier *= 0.9; // Scale down by 10%
+                }
+                // Special scale adjustment for house_small (scaled up 8%)
+                if (buildingType === 'house_small') {
+                  scaleMultiplier *= 1.08; // Scale up by 8%
+                }
+                // Special scale adjustment for apartments
+                if (buildingType === 'apartment_low') {
+                  scaleMultiplier *= 1.15; // Scale up by 15%
+                }
+                if (buildingType === 'apartment_high') {
+                  scaleMultiplier *= 1.38; // Scale up by 38% (20% + 15%)
+                }
+                // Special scale adjustment for office_high (scaled up 20%)
+                if (buildingType === 'office_high') {
+                  scaleMultiplier *= 1.20;
+                }
+                // Special scale adjustment for dense mall variants (scaled down 15%)
+                if (buildingType === 'mall' && isDenseVariant) {
+                  scaleMultiplier *= 0.85;
+                }
+                // Special scale adjustment for modern mall variants (scaled down 15%)
+                if (buildingType === 'mall' && isModernVariant) {
+                  scaleMultiplier *= 0.85;
+                }
+                // Apply dense-specific scale if building uses dense variant and has custom scale in config
+                if (isDenseVariant && activePack.denseScales && buildingType in activePack.denseScales) {
+                  scaleMultiplier *= activePack.denseScales[buildingType];
+                }
+                // Apply modern-specific scale if building uses modern variant and has custom scale in config
+                if (isModernVariant && activePack.modernScales && buildingType in activePack.modernScales) {
+                  scaleMultiplier *= activePack.modernScales[buildingType];
+                }
+                // Apply farm-specific scale if building uses farm variant and has custom scale in config
+                if (isFarmVariant && activePack.farmsScales && buildingType in activePack.farmsScales) {
+                  scaleMultiplier *= activePack.farmsScales[buildingType];
+                }
+                // Apply shop-specific scale if building uses shop variant and has custom scale in config
+                if (isShopVariant && activePack.shopsScales && buildingType in activePack.shopsScales) {
+                  scaleMultiplier *= activePack.shopsScales[buildingType];
+                }
+                // Apply station-specific scale if building uses station variant and has custom scale in config
+                if (isStationVariant && activePack.stationsScales && buildingType in activePack.stationsScales) {
+                  scaleMultiplier *= activePack.stationsScales[buildingType];
+                }
+                // Apply parks-specific scale if building is from parks sheet and has custom scale in config
+                if (isParksBuilding && activePack.parksScales && buildingType in activePack.parksScales) {
+                  scaleMultiplier *= activePack.parksScales[buildingType];
+                }
+                // Apply construction-specific scale if building is in construction phase (phase 2) and has custom scale
+                if (isConstructionPhase && activePack.constructionScales && buildingType in activePack.constructionScales) {
+                  scaleMultiplier *= activePack.constructionScales[buildingType];
+                }
+                // Apply abandoned-specific scale if building is abandoned and has custom scale
+                if (isAbandoned && activePack.abandonedScales && buildingType in activePack.abandonedScales) {
+                  scaleMultiplier *= activePack.abandonedScales[buildingType];
+                }
+                // Apply global scale from sprite pack if available
+                const globalScale = activePack.globalScale ?? 1;
+                const destWidth = w * 1.2 * scaleMultiplier * globalScale;
+                const aspectRatio = coords.sh / coords.sw;  // height/width ratio of source
+                const destHeight = destWidth * aspectRatio;
+
+                // Position: center horizontally on tile/footprint, anchor bottom of sprite at tile bottom
+                let drawX = drawPosX + w / 2 - destWidth / 2;
+
+                // Apply per-sprite horizontal offset adjustments
+                const spriteKey = BUILDING_TO_SPRITE[buildingType];
+                let horizontalOffset = (spriteKey && SPRITE_HORIZONTAL_OFFSETS[spriteKey]) ? SPRITE_HORIZONTAL_OFFSETS[spriteKey] * w : 0;
+                // Apply parks-specific horizontal offset if available
+                if (isParksBuilding && activePack.parksHorizontalOffsets && buildingType in activePack.parksHorizontalOffsets) {
+                  horizontalOffset = activePack.parksHorizontalOffsets[buildingType] * w;
+                }
+                // Apply farm-specific horizontal offset if available
+                if (isFarmVariant && activePack.farmsHorizontalOffsets && buildingType in activePack.farmsHorizontalOffsets) {
+                  horizontalOffset = activePack.farmsHorizontalOffsets[buildingType] * w;
+                }
+                // Apply shop-specific horizontal offset if available
+                if (isShopVariant && activePack.shopsHorizontalOffsets && buildingType in activePack.shopsHorizontalOffsets) {
+                  horizontalOffset = activePack.shopsHorizontalOffsets[buildingType] * w;
+                }
+                // Apply station-specific horizontal offset if available
+                if (isStationVariant && activePack.stationsHorizontalOffsets && buildingType in activePack.stationsHorizontalOffsets) {
+                  horizontalOffset = activePack.stationsHorizontalOffsets[buildingType] * w;
+                }
+                drawX += horizontalOffset;
+
+                // Simple positioning: sprite bottom aligns with tile/footprint bottom
+                // Add vertical push to compensate for transparent space at bottom of sprites
+                let drawY: number;
+                let verticalPush: number;
+                if (isMultiTile) {
+                  // Multi-tile sprites need larger push to sit on their footprint
+                  const footprintDepth = buildingSize.width + buildingSize.height - 2;
+                  verticalPush = footprintDepth * h * 0.25;
+                } else {
+                  // Single-tile sprites also need push (sprites have transparent bottom padding)
+                  verticalPush = destHeight * 0.15;
+                }
+                // Use state-specific offset if available, then fall back to building-type or sprite-key offsets
+                // Priority: parks-construction > construction > abandoned > parks > dense > building-type > sprite-key
+                let extraOffset = 0;
+                if (isConstructionPhase && isParksBuilding && activePack.parksConstructionVerticalOffsets && buildingType in activePack.parksConstructionVerticalOffsets) {
+                  // Parks building in construction phase (phase 2) - use parks construction offset
+                  extraOffset = activePack.parksConstructionVerticalOffsets[buildingType] * h;
+                } else if (isConstructionPhase && activePack.constructionVerticalOffsets && buildingType in activePack.constructionVerticalOffsets) {
+                  // Regular building in construction phase (phase 2) - use construction offset
+                  extraOffset = activePack.constructionVerticalOffsets[buildingType] * h;
+                } else if (isAbandoned && activePack.abandonedVerticalOffsets && buildingType in activePack.abandonedVerticalOffsets) {
+                  // Abandoned buildings may need different positioning than normal
+                  extraOffset = activePack.abandonedVerticalOffsets[buildingType] * h;
+                } else if (isParksBuilding && activePack.parksVerticalOffsets && buildingType in activePack.parksVerticalOffsets) {
+                  // Parks buildings may need specific positioning
+                  extraOffset = activePack.parksVerticalOffsets[buildingType] * h;
+                } else if (isDenseVariant && activePack.denseVerticalOffsets && buildingType in activePack.denseVerticalOffsets) {
+                  // Dense variants may need different positioning than normal
+                  extraOffset = activePack.denseVerticalOffsets[buildingType] * h;
+                } else if (isModernVariant && activePack.modernVerticalOffsets && buildingType in activePack.modernVerticalOffsets) {
+                  // Modern variants may need different positioning than normal
+                  extraOffset = activePack.modernVerticalOffsets[buildingType] * h;
+                } else if (isFarmVariant && activePack.farmsVerticalOffsets && buildingType in activePack.farmsVerticalOffsets) {
+                  // Farm variants may need different positioning than normal
+                  extraOffset = activePack.farmsVerticalOffsets[buildingType] * h;
+                } else if (isShopVariant && activePack.shopsVerticalOffsets && buildingType in activePack.shopsVerticalOffsets) {
+                  // Shop variants may need different positioning than normal
+                  extraOffset = activePack.shopsVerticalOffsets[buildingType] * h;
+                } else if (isStationVariant && activePack.stationsVerticalOffsets && buildingType in activePack.stationsVerticalOffsets) {
+                  // Station variants may need different positioning than normal
+                  extraOffset = activePack.stationsVerticalOffsets[buildingType] * h;
+                } else if (activePack.buildingVerticalOffsets && buildingType in activePack.buildingVerticalOffsets) {
+                  // Building-type-specific offset (for buildings sharing sprites but needing different positioning)
+                  extraOffset = activePack.buildingVerticalOffsets[buildingType] * h;
+                } else if (spriteKey && SPRITE_VERTICAL_OFFSETS[spriteKey]) {
+                  extraOffset = SPRITE_VERTICAL_OFFSETS[spriteKey] * h;
+                }
+                // Special vertical offset adjustment for hospital (shift up 0.1 tiles)
+                if (buildingType === 'hospital') {
+                  extraOffset -= 0.1 * h; // Shift up by 0.1 tiles
+                }
+                verticalPush += extraOffset;
+
+                drawY = drawPosY + h - destHeight + verticalPush;
+
+                // Check if building should be horizontally flipped
+                // Some buildings are mirrored by default and the flip flag inverts that
+                // Note: marina and pier are NOT in this list - they face the default direction
+                const defaultMirroredBuildings: string[] = [];
+                const isDefaultMirrored = defaultMirroredBuildings.includes(buildingType);
+
+                // Check if this is a waterfront asset - these use water-facing logic set at build time
+                const isWaterfrontAsset = requiresWaterAdjacency(buildingType);
+
+                // PERF: Determine flip based on cached road adjacency (O(1) lookup instead of O(n) per frame)
+                // Buildings should face roads when possible, otherwise fall back to random
+                const shouldRoadMirror = (() => {
+                  if (isWaterfrontAsset) return false; // Waterfront buildings use water-facing logic
+
+                  // PERF: Use pre-computed road adjacency from tile metadata cache
+                  const originMetadata = getTileMetadata(tile.x, tile.y);
+                  if (originMetadata?.hasAdjacentRoad) {
+                    // Face the road
+                    return originMetadata.shouldFlipForRoad;
+                  }
+
+                  // No road adjacent - fall back to deterministic random mirroring for visual variety
+                  const mirrorSeed = (tile.x * 47 + tile.y * 83) % 100;
+                  return mirrorSeed < 50;
+                })();
+
+                // Final flip decision: combine default mirror state, explicit flip flag, and road/random mirror
+                const baseFlipped = isDefaultMirrored ? !tile.building.flipped : tile.building.flipped === true;
+                const isFlipped = baseFlipped !== shouldRoadMirror; // XOR: if both true or both false, no flip; if one true, flip
+
+                if (isFlipped) {
+                  // Apply horizontal flip around the center of the sprite
+                  ctx.save();
+                  const centerX = Math.round(drawX + destWidth / 2);
+                  ctx.translate(centerX, 0);
+                  ctx.scale(-1, 1);
+                  ctx.translate(-centerX, 0);
+
+                  // Draw the flipped sprite
+                  ctx.drawImage(
+                    filteredSpriteSheet,
+                    coords.sx, coords.sy, coords.sw, coords.sh,
+                    Math.round(drawX), Math.round(drawY),
+                    Math.round(destWidth), Math.round(destHeight)
+                  );
+
+                  ctx.restore();
+                } else {
+                  // Draw the sprite with correct aspect ratio (normal buildings)
+                  ctx.drawImage(
+                    filteredSpriteSheet,
+                    coords.sx, coords.sy, coords.sw, coords.sh,  // Source: exact tile from sprite sheet
+                    Math.round(drawX), Math.round(drawY),        // Destination position
+                    Math.round(destWidth), Math.round(destHeight) // Destination size (preserving aspect ratio)
+                  );
+                }
+              }
+            } else {
+              // Sprite sheet not loaded yet - draw placeholder building
+              drawPlaceholderBuilding(ctx, x, y, buildingType, w, h);
+            }
+          }
+        }
+
+        // Draw fire effect
+        if (tile.building.onFire) {
+          const fireX = x + w / 2;
+          const fireY = y - 10;
+
+          ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
+          ctx.beginPath();
+          ctx.ellipse(fireX, fireY, 18, 25, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
+          ctx.beginPath();
+          ctx.ellipse(fireX, fireY + 5, 10, 15, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(255, 255, 200, 0.9)';
+          ctx.beginPath();
+          ctx.ellipse(fireX, fireY + 8, 5, 8, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Draw tiles in isometric order (back to front)
+      // PERF: Only iterate through diagonal bands that intersect the visible viewport
+      for (let sum = visibleMinSum; sum <= visibleMaxSum; sum++) {
+        for (let x = Math.max(0, sum - gridSize + 1); x <= Math.min(sum, gridSize - 1); x++) {
+          const y = sum - x;
+          if (y < 0 || y >= gridSize) continue;
+
+          const { screenX, screenY } = gridToScreen(x, y, 0, 0);
+
+          // Viewport culling
+          if (screenX + TILE_WIDTH < viewLeft || screenX > viewRight ||
+            screenY + TILE_HEIGHT * 4 < viewTop || screenY > viewBottom) {
+            continue;
+          }
+
+          const tile = grid[y][x];
+
+          // PERF: Hover and selection highlights are now rendered on a separate canvas layer
+          // Only keep drag rect and subway station highlights in main render (these change infrequently)
+
+          // Check if tile is in drag selection rectangle (only show for zoning tools)
+          const isInDragRect = showsDragGrid && dragStartTile && dragEndTile &&
+            x >= Math.min(dragStartTile.x, dragEndTile.x) &&
+            x <= Math.max(dragStartTile.x, dragEndTile.x) &&
+            y >= Math.min(dragStartTile.y, dragEndTile.y) &&
+            y <= Math.max(dragStartTile.y, dragEndTile.y);
+
+          // PERF: Use pre-computed tile metadata (O(1) lookup instead of expensive per-tile calculations)
+          const tileMetadata = getTileMetadata(x, y);
+          const needsGreyBase = tileMetadata?.needsGreyBase ?? false;
+          const needsGreenBaseOverWater = tileMetadata?.needsGreenBaseOverWater ?? false;
+          const needsGreenBaseForPark = tileMetadata?.needsGreenBaseForPark ?? false;
+
+          // Draw base tile for all tiles (including water), but skip gray bases for buildings and green bases for grass/empty adjacent to water or parks
+          // Highlight subway stations when subway overlay is active
+          const isSubwayStationHighlight = overlayMode === 'subway' && tile.building.type === 'subway_station';
+          drawIsometricTile(ctx, screenX, screenY, tile, !!(isInDragRect || isSubwayStationHighlight), zoom, true, needsGreenBaseOverWater || needsGreenBaseForPark);
+
+          if (needsGreyBase) {
+            baseTileQueue.push({ screenX, screenY, tile, depth: x + y });
+          }
+
+          if (needsGreenBaseOverWater || needsGreenBaseForPark) {
+            greenBaseTileQueue.push({ screenX, screenY, tile, depth: x + y });
+          }
+
+          // Separate water tiles into their own queue (drawn after base tiles, below other buildings)
+          if (tile.building.type === 'water') {
+            const size = getBuildingSize(tile.building.type);
+            const depth = x + y + size.width + size.height - 2;
+            waterQueue.push({ screenX, screenY, tile, depth });
+          }
+          // Roads go to their own queue (drawn above water)
+          else if (tile.building.type === 'road') {
+            const depth = x + y;
+            roadQueue.push({ screenX, screenY, tile, depth });
+          }
+          // Bridges go to a separate queue (drawn after roads to cover centerlines)
+          else if (tile.building.type === 'bridge') {
+            const depth = x + y;
+            bridgeQueue.push({ screenX, screenY, tile, depth });
+          }
+          // Rail tiles - drawn after roads, above water
+          else if (tile.building.type === 'rail') {
+            const depth = x + y;
+            railQueue.push({ screenX, screenY, tile, depth });
+          }
+          // Check for beach tiles (grass/empty tiles adjacent to water) - use pre-computed metadata
+          else if ((tile.building.type === 'grass' || tile.building.type === 'empty') &&
+            (tileMetadata?.isAdjacentToWater ?? false)) {
+            beachQueue.push({ screenX, screenY, tile, depth: x + y });
+          }
+          // Other buildings go to regular building queue
+          else {
+            const isBuilding = tile.building.type !== 'grass' && tile.building.type !== 'empty';
+            if (isBuilding) {
+              const size = getBuildingSize(tile.building.type);
+              const depth = x + y + size.width + size.height - 2;
+              buildingQueue.push({ screenX, screenY, tile, depth });
+            }
+          }
+
+          // For subway overlay, show ALL non-water tiles (valid placement areas + existing subway)
+          // For other overlays, show buildings only
+          const showOverlay =
+            overlayMode !== 'none' &&
+            (overlayMode === 'subway'
+              ? tile.building.type !== 'water'  // For subway mode, show all non-water tiles
+              : (tile.building.type !== 'grass' &&
+                tile.building.type !== 'water' &&
+                tile.building.type !== 'road'));
+          if (showOverlay) {
+            overlayQueue.push({ screenX, screenY, tile });
+          }
+        }
+      }
+
+      // Draw water sprites (after base tiles, below other buildings)
+      // Add clipping to prevent water from overflowing map boundaries
+      ctx.save();
+      // Create clipping path for map boundaries - form a diamond shape around the map
+      // Get the four corner tiles of the map
+      const topLeft = gridToScreen(0, 0, 0, 0);
+      const topRight = gridToScreen(gridSize - 1, 0, 0, 0);
+      const bottomRight = gridToScreen(gridSize - 1, gridSize - 1, 0, 0);
+      const bottomLeft = gridToScreen(0, gridSize - 1, 0, 0);
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+
+      // Create clipping path following the outer edges of the map
+      // The path goes around the perimeter: top -> right -> bottom -> left -> back to top
+      ctx.beginPath();
+      // Start at top point (top-left tile's top corner)
+      ctx.moveTo(topLeft.screenX + w / 2, topLeft.screenY);
+      // Go to right point (top-right tile's right corner)
+      ctx.lineTo(topRight.screenX + w, topRight.screenY + h / 2);
+      // Go to bottom point (bottom-right tile's bottom corner)
+      ctx.lineTo(bottomRight.screenX + w / 2, bottomRight.screenY + h);
+      // Go to left point (bottom-left tile's left corner)
+      ctx.lineTo(bottomLeft.screenX, bottomLeft.screenY + h / 2);
+      // Close the path back to top
+      ctx.closePath();
+      ctx.clip();
+
+      // PERF: Use insertion sort instead of .sort() - O(n) for nearly-sorted data
+      insertionSortByDepth(waterQueue);
+      // PERF: Use for loop instead of forEach to avoid function call overhead
+      for (let i = 0; i < waterQueue.length; i++) {
+        const { tile, screenX, screenY } = waterQueue[i];
+        drawBuilding(ctx, screenX, screenY, tile);
+      }
+
+      ctx.restore(); // Remove clipping after drawing water
+
+      // Draw beaches on water tiles (after water, outside clipping region)
+      // Note: waterQueue is already sorted from above
+      // PERF: Use for loop instead of forEach
+      for (let i = 0; i < waterQueue.length; i++) {
+        const { tile, screenX, screenY } = waterQueue[i];
+        // Compute land adjacency for each edge (opposite of water adjacency)
+        // Only consider tiles within bounds - don't draw beaches on map edges
+        // Also exclude beaches next to marina docks, piers, and bridges (bridges are over water)
+        const adjacentLand = {
+          north: (tile.x - 1 >= 0 && tile.x - 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x - 1, tile.y) && !hasMarinaPier(tile.x - 1, tile.y) && !isBridge(tile.x - 1, tile.y),
+          east: (tile.x >= 0 && tile.x < gridSize && tile.y - 1 >= 0 && tile.y - 1 < gridSize) && !isWater(tile.x, tile.y - 1) && !hasMarinaPier(tile.x, tile.y - 1) && !isBridge(tile.x, tile.y - 1),
+          south: (tile.x + 1 >= 0 && tile.x + 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x + 1, tile.y) && !hasMarinaPier(tile.x + 1, tile.y) && !isBridge(tile.x + 1, tile.y),
+          west: (tile.x >= 0 && tile.x < gridSize && tile.y + 1 >= 0 && tile.y + 1 < gridSize) && !isWater(tile.x, tile.y + 1) && !hasMarinaPier(tile.x, tile.y + 1) && !isBridge(tile.x, tile.y + 1),
+        };
+        drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
+      }
+
+      // PERF: Pre-compute tile dimensions once outside loops
+      const tileWidth = TILE_WIDTH;
+      const tileHeight = TILE_HEIGHT;
+      const halfTileWidth = tileWidth / 2;
+      const halfTileHeight = tileHeight / 2;
+
+      // Draw green base tiles for grass/empty tiles adjacent to water BEFORE bridges
+      // This ensures bridge railings are drawn on top of the green base tiles
+      insertionSortByDepth(greenBaseTileQueue);
+      for (let i = 0; i < greenBaseTileQueue.length; i++) {
+        const { tile, screenX, screenY } = greenBaseTileQueue[i];
+        drawGreenBaseTile(ctx, screenX, screenY, tile, zoom);
+      }
+
+      // Draw roads (above water, needs full redraw including base tile)
+      insertionSortByDepth(roadQueue);
+      // PERF: Use for loop instead of forEach
+      for (let i = 0; i < roadQueue.length; i++) {
+        const { tile, screenX, screenY } = roadQueue[i];
+
+        // Check if this is a bridge tile (road over water)
+        if (isBridgeTile(tile) && tile.building.bridgeInfo) {
+          // Draw bridge with elevated deck and structure
+          drawBridgeTile(ctx, screenX, screenY, tile.building.bridgeInfo, zoom);
+
+          // Draw road markings on the bridge deck (with Y offset for height)
+          const deckOffset = getBridgeDeckOffset(tile.building.bridgeInfo);
+          drawBuilding(ctx, screenX, screenY - deckOffset, tile);
+        } else {
+          // Draw normal road base tile first (grey diamond)
+          ctx.fillStyle = '#4a4a4a';
+          ctx.beginPath();
+          ctx.moveTo(screenX + halfTileWidth, screenY);
+          ctx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
+          ctx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
+          ctx.lineTo(screenX, screenY + halfTileHeight);
+          ctx.closePath();
+          ctx.fill();
+
+          // Draw road markings and sidewalks
+          drawBuilding(ctx, screenX, screenY, tile);
+        }
+
+        // If this road has a rail overlay, draw just the rail tracks (ties and rails, no ballast)
+        // Crossing signals/gates are drawn later (after rail tiles) to avoid z-order issues
+        if (tile.hasRailOverlay) {
+          const trackYOffset = isBridgeTile(tile) && tile.building.bridgeInfo
+            ? getBridgeDeckOffset(tile.building.bridgeInfo)
+            : 0;
+          drawRailTracksOnly(ctx, screenX, screenY - trackYOffset, tile.x, tile.y, grid, gridSize, zoom);
+        }
+      }
+
+      // Draw bridges AFTER roads to ensure bridge decks cover road centerlines
+      insertionSortByDepth(bridgeQueue);
+      for (let i = 0; i < bridgeQueue.length; i++) {
+        const { tile, screenX, screenY } = bridgeQueue[i];
+
+        // Draw water tile underneath the bridge
+        drawWaterTileAt(ctx, screenX, screenY, tile.x, tile.y);
+
+        // Draw bridge structure
+        drawBuilding(ctx, screenX, screenY, tile);
+      }
+
+      // Draw rail tracks (above water, similar to roads)
+      insertionSortByDepth(railQueue);
+      // PERF: Use for loop instead of forEach
+      for (let i = 0; i < railQueue.length; i++) {
+        const { tile, screenX, screenY } = railQueue[i];
+        // Draw rail base tile first (dark gravel colored diamond)
+        ctx.fillStyle = '#5B6345'; // Dark gravel color for contrast with ballast
+        ctx.beginPath();
+        ctx.moveTo(screenX + halfTileWidth, screenY);
+        ctx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
+        ctx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
+        ctx.lineTo(screenX, screenY + halfTileHeight);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw edge shading for depth
+        ctx.strokeStyle = '#4B5335';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(screenX + halfTileWidth, screenY + tileHeight);
+        ctx.lineTo(screenX, screenY + halfTileHeight);
+        ctx.lineTo(screenX + halfTileWidth, screenY);
+        ctx.stroke();
+
+        // Draw the rail tracks
+        drawRailTrack(ctx, screenX, screenY, tile.x, tile.y, grid, gridSize, zoom);
+      }
+
+      // Draw gray building base tiles (after rail, before crossings)
+      insertionSortByDepth(baseTileQueue);
+      // PERF: Use for loop instead of forEach
+      for (let i = 0; i < baseTileQueue.length; i++) {
+        const { tile, screenX, screenY } = baseTileQueue[i];
+        drawGreyBaseTile(ctx, screenX, screenY, tile, zoom);
+      }
+
+      // Draw suspension bridge towers AGAIN on main canvas after base tiles
+      // Draw suspension bridge FRONT towers on main canvas after base tiles
+      // Only the front tower is drawn here (back tower was drawn before deck in drawBridgeTile)
+      for (let i = 0; i < bridgeQueue.length; i++) {
+        const { tile, screenX, screenY } = bridgeQueue[i];
+        if (tile.building.bridgeType === 'suspension') {
+          drawSuspensionBridgeTowers(ctx, screenX, screenY, tile.building, zoom);
+        }
+      }
+
+      // Draw railroad crossing signals and gates AFTER base tiles to ensure they appear on top
+      // PERF: Build a Set of crossing keys for O(1) lookup instead of calling isRailroadCrossing
+      const crossingKeySet = new Set<number>();
+      const cachedCrossings = crossingPositionsRef.current;
+      for (let i = 0; i < cachedCrossings.length; i++) {
+        const { x, y } = cachedCrossings[i];
+        crossingKeySet.add(y * gridSize + x);
+      }
+
+      // PERF: Pre-compute constants used in loop
+      const currentTrains = trainsRef.current;
+      const currentFlashTimer = crossingFlashTimerRef.current;
+      const gateAnglesMap = crossingGateAnglesRef.current;
+
+      // Only iterate roads with rail overlay that are crossings
+      // PERF: Use for loop instead of forEach
+      for (let i = 0; i < roadQueue.length; i++) {
+        const { tile, screenX, screenY } = roadQueue[i];
+        if (tile.hasRailOverlay) {
+          // PERF: Use numeric key and Set lookup instead of isRailroadCrossing call
+          const crossingKey = tile.y * gridSize + tile.x;
+          if (crossingKeySet.has(crossingKey)) {
+            const gateAngle = gateAnglesMap.get(crossingKey) ?? 0;
+            const crossingState = getCrossingStateForTile(currentTrains, tile.x, tile.y);
+            const isActive = crossingState !== 'open';
+
+            drawRailroadCrossing(
+              ctx,
+              screenX,
+              screenY,
+              tile.x,
+              tile.y,
+              grid,
+              gridSize,
+              zoom,
+              currentFlashTimer,
+              gateAngle,
+              isActive
+            );
+          }
+        }
+      }
+
+      // Note: Beach drawing has been moved to water tiles (drawBeachOnWater)
+      // The beachQueue is no longer used for drawing beaches on land tiles
+
+
+      // Draw buildings sorted by depth so multi-tile sprites sit above adjacent tiles
+      // NOTE: Building sprites are now drawn on a separate canvas (buildingsCanvasRef) 
+      // that renders on top of cars/trains. We render them here so we can use the same
+      // drawBuilding function and context.
+      insertionSortByDepth(buildingQueue);
+
+      // Render buildings on the buildings canvas (on top of cars/trains)
+      const buildingsCanvas = buildingsCanvasRef.current;
+      if (buildingsCanvas) {
+        // Set canvas size in memory (scaled for DPI)
+        buildingsCanvas.width = canvasSize.width;
+        buildingsCanvas.height = canvasSize.height;
+
+        const buildingsCtx = buildingsCanvas.getContext('2d');
+        if (buildingsCtx) {
+          // Clear buildings canvas
+          buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
+          buildingsCtx.clearRect(0, 0, buildingsCanvas.width, buildingsCanvas.height);
+
+          // Apply same transform as main canvas
+          buildingsCtx.scale(dpr, dpr);
+          buildingsCtx.translate(offset.x, offset.y);
+          buildingsCtx.scale(zoom, zoom);
+
+          // Disable image smoothing for crisp pixel art
+          buildingsCtx.imageSmoothingEnabled = false;
+
+          // Draw buildings on the buildings canvas
+          // PERF: Use for loop instead of forEach
+          for (let i = 0; i < buildingQueue.length; i++) {
+            const { tile, screenX, screenY } = buildingQueue[i];
+            drawBuilding(buildingsCtx, screenX, screenY, tile);
+          }
+
+          // Draw suspension bridge towers ON TOP of buildings
+          // These need to appear above nearby buildings for proper visual layering
+          for (let i = 0; i < bridgeQueue.length; i++) {
+            const { tile, screenX, screenY } = bridgeQueue[i];
+            if (tile.building.bridgeType === 'suspension') {
+              drawSuspensionBridgeTowers(buildingsCtx, screenX, screenY, tile.building, zoom);
+            }
+          }
+
+          // Draw suspension bridge cables ON TOP of towers
+          for (let i = 0; i < bridgeQueue.length; i++) {
+            const { tile, screenX, screenY } = bridgeQueue[i];
+            if (tile.building.bridgeType === 'suspension') {
+              drawSuspensionBridgeOverlay(buildingsCtx, screenX, screenY, tile.building, zoom);
+            }
+          }
+
+          // NOTE: Recreation pedestrians are now drawn in the animation loop on the air canvas
+          // so their animations are smooth (the buildings canvas only updates when grid changes)
+
+          // Draw overlays on the buildings canvas so they appear ON TOP of buildings
+          // (The buildings canvas is layered above the main canvas, so overlays must be drawn here)
+          // PERF: Use for loop instead of forEach
+          for (let i = 0; i < overlayQueue.length; i++) {
+            const { tile, screenX, screenY } = overlayQueue[i];
+            // Get service coverage for this tile
+            const coverage = {
+              fire: state.services.fire[tile.y][tile.x],
+              police: state.services.police[tile.y][tile.x],
+              health: state.services.health[tile.y][tile.x],
+              education: state.services.education[tile.y][tile.x],
+            };
+
+            const fillStyle = getOverlayFillStyle(overlayMode, tile, coverage);
+            // Only draw if there's actually a color to show
+            if (fillStyle !== 'rgba(0, 0, 0, 0)') {
+              buildingsCtx.fillStyle = fillStyle;
+              buildingsCtx.beginPath();
+              buildingsCtx.moveTo(screenX + halfTileWidth, screenY);
+              buildingsCtx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
+              buildingsCtx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
+              buildingsCtx.lineTo(screenX, screenY + halfTileHeight);
+              buildingsCtx.closePath();
+              buildingsCtx.fill();
+            }
+          }
+
+          // Draw service radius circles and building highlights for the active overlay
+          if (overlayMode !== 'none' && overlayMode !== 'subway') {
+            const serviceBuildingTypes = OVERLAY_TO_BUILDING_TYPES[overlayMode];
+            const circleColor = OVERLAY_CIRCLE_COLORS[overlayMode];
+            const circleFillColor = OVERLAY_CIRCLE_FILL_COLORS[overlayMode];
+            const highlightColor = OVERLAY_HIGHLIGHT_COLORS[overlayMode];
+
+            // Find all service buildings of this type and draw their radii
+            for (let y = 0; y < gridSize; y++) {
+              for (let x = 0; x < gridSize; x++) {
+                const tile = grid[y][x];
+                if (!serviceBuildingTypes.includes(tile.building.type)) continue;
+
+                // Skip buildings under construction
+                if (tile.building.constructionProgress !== undefined && tile.building.constructionProgress < 100) continue;
+
+                // Skip abandoned buildings (they don't provide coverage in simulation)
+                if (tile.building.abandoned) continue;
+
+                // Get service config for this building type
+                const config = SERVICE_CONFIG[tile.building.type as keyof typeof SERVICE_CONFIG];
+                if (!config || !('range' in config)) continue;
+
+                const range = config.range;
+
+                // NOTE: For multi-tile service buildings (e.g. 2x2 hospital, 3x3 university),
+                // coverage is computed from the building's anchor tile (top-left of footprint)
+                // in the simulation. We center the radius on that same tile to keep the
+                // overlay consistent with actual service coverage.
+                const { screenX: bldgScreenX, screenY: bldgScreenY } = gridToScreen(x, y, 0, 0);
+                const centerX = bldgScreenX + halfTileWidth;
+                const centerY = bldgScreenY + halfTileHeight;
+
+                // Draw isometric ellipse for the radius
+                // In isometric view, a circle becomes an ellipse
+                // The radius in tiles needs to be converted to screen pixels
+                const radiusX = range * halfTileWidth;
+                const radiusY = range * halfTileHeight;
+
+                buildingsCtx.strokeStyle = circleColor;
+                buildingsCtx.lineWidth = 2 / zoom; // Keep line width consistent at different zoom levels
+                buildingsCtx.beginPath();
+                buildingsCtx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+                buildingsCtx.stroke();
+
+                // Draw a subtle filled ellipse for better visibility
+                buildingsCtx.fillStyle = circleFillColor;
+                buildingsCtx.fill();
+
+                // Draw highlight glow around the service building
+                buildingsCtx.strokeStyle = highlightColor;
+                buildingsCtx.lineWidth = 3 / zoom;
+                buildingsCtx.beginPath();
+                buildingsCtx.moveTo(bldgScreenX + halfTileWidth, bldgScreenY);
+                buildingsCtx.lineTo(bldgScreenX + tileWidth, bldgScreenY + halfTileHeight);
+                buildingsCtx.lineTo(bldgScreenX + halfTileWidth, bldgScreenY + tileHeight);
+                buildingsCtx.lineTo(bldgScreenX, bldgScreenY + halfTileHeight);
+                buildingsCtx.closePath();
+                buildingsCtx.stroke();
+
+                // Draw a dot at the building center
+                buildingsCtx.fillStyle = highlightColor;
+                buildingsCtx.beginPath();
+                buildingsCtx.arc(centerX, centerY, 4 / zoom, 0, Math.PI * 2);
+                buildingsCtx.fill();
+              }
+            }
+          }
+
+          buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+      }
+
+      // Draw water body names (after everything else so they're on top)
+      if (waterBodies && waterBodies.length > 0) {
+        ctx.save();
+        ctx.font = `${Math.max(10, 12 / zoom)}px sans-serif`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Use same viewport calculation as main rendering (accounting for DPR)
+        const viewWidth = canvasSize.width / (dpr * zoom);
+        const viewHeight = canvasSize.height / (dpr * zoom);
+        const viewLeft = -offset.x / zoom - TILE_WIDTH;
+        const viewTop = -offset.y / zoom - TILE_HEIGHT * 2;
+        const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH;
+        const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 2;
+
+        for (const waterBody of waterBodies) {
+          if (waterBody.tiles.length === 0) continue;
+
+          // Convert grid coordinates to screen coordinates (context is already translated)
+          const { screenX, screenY } = gridToScreen(waterBody.centerX, waterBody.centerY, 0, 0);
+
+          // Only draw if visible on screen (with some padding for text)
+          if (screenX >= viewLeft - 100 && screenX <= viewRight + 100 &&
+            screenY >= viewTop - 50 && screenY <= viewBottom + 50) {
+            // Draw text with outline for better visibility, centered on tile
+            ctx.strokeText(waterBody.name, screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT / 2);
+            ctx.fillText(waterBody.name, screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT / 2);
+          }
+        }
+
+        ctx.restore();
+      }
+
       ctx.restore();
-    }
-    
-    ctx.restore();
     }); // End requestAnimationFrame callback
-    
+
     // PERF: Cleanup - cancel pending render on unmount or deps change
     return () => {
       if (renderPendingRef.current !== null) {
@@ -3322,34 +3340,34 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         renderPendingRef.current = null;
       }
     };
-  // PERF: hoveredTile and selectedTile removed from deps - now rendered on separate hover canvas layer
+    // PERF: hoveredTile and selectedTile removed from deps - now rendered on separate hover canvas layer
   }, [grid, gridSize, offset, zoom, overlayMode, imagesLoaded, imageLoadVersion, canvasSize, dragStartTile, dragEndTile, state.services, currentSpritePack, waterBodies, getTileMetadata, showsDragGrid, isMobile]);
-  
+
   // PERF: Lightweight hover/selection overlay - renders ONLY tile highlights
   // This runs frequently (on mouse move) but is extremely fast since it only draws simple shapes
   useEffect(() => {
     const canvas = hoverCanvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Clear the hover canvas
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Apply transform (same as main canvas)
     ctx.scale(dpr, dpr);
     ctx.translate(offset.x, offset.y);
     ctx.scale(zoom, zoom);
-    
+
     // Helper to draw highlight diamond
     const drawHighlight = (screenX: number, screenY: number, color: string = 'rgba(255, 255, 255, 0.25)', strokeColor: string = '#ffffff') => {
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
-      
+
       // Draw semi-transparent fill
       ctx.fillStyle = color;
       ctx.beginPath();
@@ -3359,24 +3377,24 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       ctx.lineTo(screenX, screenY + h / 2);
       ctx.closePath();
       ctx.fill();
-      
+
       // Draw border
       ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 2;
       ctx.stroke();
     };
-    
+
     // Draw hovered tile highlight (with multi-tile preview for buildings)
     if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
       // Check if selectedTool is a building type (not a non-building tool)
       const nonBuildingTools: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water', 'zone_land'];
       const isBuildingTool = selectedTool && !nonBuildingTools.includes(selectedTool);
-      
+
       if (isBuildingTool) {
         // Get building size and draw preview for all tiles in footprint
         const buildingType = selectedTool as BuildingType;
         const buildingSize = getBuildingSize(buildingType);
-        
+
         // Draw highlight for each tile in the building footprint
         for (let dx = 0; dx < buildingSize.width; dx++) {
           for (let dy = 0; dy < buildingSize.height; dy++) {
@@ -3394,7 +3412,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         drawHighlight(screenX, screenY);
       }
     }
-    
+
     // Draw selected tile highlight (including multi-tile buildings)
     if (selectedTile && selectedTile.x >= 0 && selectedTile.x < gridSize && selectedTile.y >= 0 && selectedTile.y < gridSize) {
       const selectedOrigin = grid[selectedTile.y]?.[selectedTile.x];
@@ -3413,14 +3431,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-    
+
     // Draw road/rail drag preview with bridge validity indication
     if (isDragging && (selectedTool === 'road' || selectedTool === 'rail') && dragStartTile && dragEndTile) {
       const minX = Math.min(dragStartTile.x, dragEndTile.x);
       const maxX = Math.max(dragStartTile.x, dragEndTile.x);
       const minY = Math.min(dragStartTile.y, dragEndTile.y);
       const maxY = Math.max(dragStartTile.y, dragEndTile.y);
-      
+
       // Collect all tiles in the path
       const pathTiles: { x: number; y: number; isWater: boolean }[] = [];
       for (let x = minX; x <= maxX; x++) {
@@ -3431,33 +3449,33 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
         }
       }
-      
+
       // Analyze the path for bridge validity
       // A valid bridge: water tiles that are bounded by land/road on both ends
       // An invalid partial crossing: water tiles that don't form a complete bridge
       const analyzePathForBridges = () => {
         const result: Map<string, 'valid' | 'invalid' | 'land'> = new Map();
-        
+
         // Determine if this is a horizontal or vertical path
         const isHorizontal = maxX - minX > maxY - minY;
-        
+
         // Sort tiles by their position along the path
-        const sortedTiles = [...pathTiles].sort((a, b) => 
+        const sortedTiles = [...pathTiles].sort((a, b) =>
           isHorizontal ? a.x - b.x : a.y - b.y
         );
-        
+
         // Find water segments and check if they're valid bridges
         let i = 0;
         while (i < sortedTiles.length) {
           const tile = sortedTiles[i];
-          
+
           if (!tile.isWater) {
             // Land tile - always valid
             result.set(`${tile.x},${tile.y}`, 'land');
             i++;
             continue;
           }
-          
+
           // Found water - find the extent of this water segment
           const waterStart = i;
           while (i < sortedTiles.length && sortedTiles[i].isWater) {
@@ -3465,15 +3483,15 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
           const waterEnd = i - 1;
           const waterLength = waterEnd - waterStart + 1;
-          
+
           // Check if this water segment is bounded by land on both sides
           const hasLandBefore = waterStart > 0 && !sortedTiles[waterStart - 1].isWater;
           const hasLandAfter = waterEnd < sortedTiles.length - 1 && !sortedTiles[waterEnd + 1].isWater;
-          
+
           // Also check if there's existing land/road adjacent to the start/end of path
           let hasExistingLandBefore = false;
           let hasExistingLandAfter = false;
-          
+
           if (waterStart === 0) {
             // Check the tile before the path start
             const firstWater = sortedTiles[waterStart];
@@ -3484,7 +3502,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               hasExistingLandBefore = prevTile.building.type !== 'water';
             }
           }
-          
+
           if (waterEnd === sortedTiles.length - 1) {
             // Check the tile after the path end
             const lastWater = sortedTiles[waterEnd];
@@ -3495,29 +3513,29 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               hasExistingLandAfter = nextTile.building.type !== 'water';
             }
           }
-          
-          const isValidBridge = (hasLandBefore || hasExistingLandBefore) && 
-                                (hasLandAfter || hasExistingLandAfter) &&
-                                waterLength <= 10; // Max bridge span
-          
+
+          const isValidBridge = (hasLandBefore || hasExistingLandBefore) &&
+            (hasLandAfter || hasExistingLandAfter) &&
+            waterLength <= 10; // Max bridge span
+
           // Mark all water tiles in this segment
           for (let j = waterStart; j <= waterEnd; j++) {
             const waterTile = sortedTiles[j];
             result.set(`${waterTile.x},${waterTile.y}`, isValidBridge ? 'valid' : 'invalid');
           }
         }
-        
+
         return result;
       };
-      
+
       const bridgeAnalysis = analyzePathForBridges();
-      
+
       // Draw preview for each tile in the path
       for (const tile of pathTiles) {
         const { screenX, screenY } = gridToScreen(tile.x, tile.y, 0, 0);
         const key = `${tile.x},${tile.y}`;
         const status = bridgeAnalysis.get(key) || 'land';
-        
+
         if (status === 'valid') {
           // Valid bridge - show blue/cyan placeholder
           drawHighlight(screenX, screenY, 'rgba(59, 130, 246, 0.5)', '#3b82f6');
@@ -3528,10 +3546,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         // Land tiles don't need special preview - they're already being placed
       }
     }
-    
+
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile]);
-  
+
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
     const canvas = carsCanvasRef.current;
@@ -3540,35 +3558,35 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const ctx = canvas.getContext('2d');
     const airCtx = airCanvas.getContext('2d');
     if (!ctx || !airCtx) return;
-    
+
     ctx.imageSmoothingEnabled = false;
     airCtx.imageSmoothingEnabled = false;
-    
+
     const clearAirCanvas = () => {
       airCtx.setTransform(1, 0, 0, 1, 0, 0);
       airCtx.clearRect(0, 0, airCanvas.width, airCanvas.height);
     };
-    
+
     let animationFrameId: number;
     let lastTime = performance.now();
     let lastRenderTime = 0;
-    
+
     // Target 30fps on mobile (33ms per frame), 60fps on desktop (16ms per frame)
     const targetFrameTime = isMobile ? 33 : 16;
-    
+
     const render = (time: number) => {
       animationFrameId = requestAnimationFrame(render);
-      
+
       // Frame rate limiting for mobile - skip frames to maintain target FPS
       const timeSinceLastRender = time - lastRenderTime;
       if (isMobile && timeSinceLastRender < targetFrameTime) {
         return; // Skip this frame on mobile to reduce CPU load
       }
-      
+
       const delta = Math.min((time - lastTime) / 1000, 0.3);
       lastTime = time;
       lastRenderTime = time;
-      
+
       if (delta > 0) {
         updateCars(delta);
         spawnCrimeIncidents(delta); // Spawn new crime incidents
@@ -3586,14 +3604,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
         trafficLightTimerRef.current += delta; // Update traffic light cycle timer
         crossingFlashTimerRef.current += delta; // Update crossing flash timer
-        
+
         // Update railroad crossing gate angles based on train proximity
         // PERF: Use cached crossing positions instead of O(n²) grid scan
         const trains = trainsRef.current;
         const gateAngles = crossingGateAnglesRef.current;
         const gateSpeedMult = speed === 0 ? 0 : speed === 1 ? 1 : speed === 2 ? 2.5 : 4;
         const crossings = crossingPositionsRef.current;
-        
+
         // Iterate only over known crossings (O(k) where k = number of crossings)
         for (let i = 0; i < crossings.length; i++) {
           const { x: gx, y: gy } = crossings[i];
@@ -3601,10 +3619,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           const key = gy * gridSize + gx;
           const currentAngle = gateAngles.get(key) ?? 0;
           const crossingState = getCrossingStateForTile(trains, gx, gy);
-          
+
           // Determine target angle based on state
           const targetAngle = crossingState === 'open' ? 0 : 90;
-          
+
           // Animate gate toward target
           if (currentAngle !== targetAngle) {
             const angleDelta = GATE_ANIMATION_SPEED * delta * gateSpeedMult;
@@ -3620,7 +3638,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const skipAnimatedElements = isMobile && (isPanningRef.current || isPinchZoomingRef.current);
       // PERF: Skip small elements (boats, helis, smog) on desktop when panning while very zoomed out
       const skipSmallElements = !isMobile && isPanningRef.current && zoomRef.current < SKIP_SMALL_ELEMENTS_ZOOM_THRESHOLD;
-      
+
       if (skipAnimatedElements) {
         // Clear the canvases but don't draw anything - hides all animated elements while panning/zooming
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -3639,13 +3657,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         drawPedestrians(ctx); // Draw walking pedestrians (below buildings)
         drawEmergencyVehicles(ctx); // Draw emergency vehicles!
         clearAirCanvas();
-        
+
         // Draw incident indicators on air canvas (above buildings so tooltips are visible)
         drawIncidentIndicators(airCtx, delta); // Draw fire/crime incident indicators!
-        
+
         // Draw recreation pedestrians on air canvas (above parks, not other buildings)
         drawRecreationPedestrians(airCtx); // Draw recreation pedestrians (at parks, benches, etc.)
-        
+
         if (!skipSmallElements) {
           drawHelicopters(airCtx); // Draw helicopters (skip when panning zoomed out on desktop)
           drawSeaplanes(airCtx); // Draw seaplanes (skip when panning zoomed out on desktop)
@@ -3654,27 +3672,27 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         drawFireworks(airCtx); // Draw fireworks above everything (nighttime only)
       }
     };
-    
+
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
   }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile, grid, gridSize, speed]);
-  
+
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {
     const canvas = lightingCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // PERF: Hide lighting during mobile panning/zooming for better performance
     if (isMobile && (isPanningRef.current || isPinchZoomingRef.current)) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       return;
     }
-    
+
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Calculate darkness based on visualHour (0-23)
     // Dawn: 5-7, Day: 7-18, Dusk: 18-20, Night: 20-5
     const getDarkness = (h: number): number => {
@@ -3683,16 +3701,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       if (h >= 18 && h < 20) return (h - 18) / 2; // Dusk transition
       return 1; // Night
     };
-    
+
     const darkness = getDarkness(visualHour);
-    
+
     // Clear canvas first
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // If it's full daylight, just clear and return (early exit)
     if (darkness <= 0.01) return;
-    
+
     // Get ambient color based on time
     const getAmbientColor = (h: number): { r: number; g: number; b: number } => {
       if (h >= 7 && h < 18) return { r: 255, g: 255, b: 255 };
@@ -3706,14 +3724,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
       return { r: 20, g: 30, b: 60 };
     };
-    
+
     const ambient = getAmbientColor(visualHour);
-    
+
     // Apply darkness overlay
     const alpha = darkness * 0.6;
     ctx.fillStyle = `rgba(${ambient.r}, ${ambient.g}, ${ambient.b}, ${alpha})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     // Calculate viewport bounds once
     const viewWidth = canvas.width / (dpr * zoom);
     const viewHeight = canvas.height / (dpr * zoom);
@@ -3721,57 +3739,57 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const viewTop = -offset.y / zoom - TILE_HEIGHT * 4;
     const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH * 2;
     const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 4;
-    
+
     // PERF: Pre-compute visible diagonal range to skip entire rows of tiles
     // In isometric rendering, screenY = (x + y) * (TILE_HEIGHT / 2), so sum = x + y = screenY * 2 / TILE_HEIGHT
     // Add padding for tall buildings that may extend above their tile position
     const visibleMinSum = Math.max(0, Math.floor((viewTop - TILE_HEIGHT * 6) * 2 / TILE_HEIGHT));
     const visibleMaxSum = Math.min(gridSize * 2 - 2, Math.ceil((viewBottom + TILE_HEIGHT) * 2 / TILE_HEIGHT));
-    
+
     const gridToScreen = (gx: number, gy: number) => ({
       screenX: (gx - gy) * TILE_WIDTH / 2,
       screenY: (gx + gy) * TILE_HEIGHT / 2,
     });
-    
+
     const lightIntensity = Math.min(1, darkness * 1.3);
-    
+
     // Pre-calculate pseudo-random function
     const pseudoRandom = (seed: number, n: number) => {
       const s = Math.sin(seed + n * 12.9898) * 43758.5453;
       return s - Math.floor(s);
     };
-    
+
     // Set for building types that are not lit
     const nonLitTypes = new Set(['grass', 'empty', 'water', 'road', 'tree', 'park', 'park_large', 'tennis']);
     const residentialTypes = new Set(['house_small', 'house_medium', 'mansion', 'apartment_low', 'apartment_high']);
     const commercialTypes = new Set(['shop_small', 'shop_medium', 'office_low', 'office_high', 'mall']);
-    
+
     // Collect light sources in a single pass through visible tiles
-    const lightCutouts: Array<{x: number, y: number, type: 'road' | 'building', buildingType?: string, seed?: number}> = [];
-    const coloredGlows: Array<{x: number, y: number, type: string}> = [];
-    
+    const lightCutouts: Array<{ x: number, y: number, type: 'road' | 'building', buildingType?: string, seed?: number }> = [];
+    const coloredGlows: Array<{ x: number, y: number, type: string }> = [];
+
     // PERF: On mobile, sample fewer lights to reduce gradient count
     const roadSampleRate = isMobile ? 3 : 1; // Every 3rd road on mobile
     let roadCounter = 0;
-    
+
     // PERF: Only iterate through diagonal bands that intersect the visible viewport
     // This skips entire rows of tiles that can't possibly be visible, significantly reducing iterations
     for (let sum = visibleMinSum; sum <= visibleMaxSum; sum++) {
       for (let x = Math.max(0, sum - gridSize + 1); x <= Math.min(sum, gridSize - 1); x++) {
         const y = sum - x;
         if (y < 0 || y >= gridSize) continue;
-        
+
         const { screenX, screenY } = gridToScreen(x, y);
-        
+
         // Viewport culling for horizontal bounds
         if (screenX + TILE_WIDTH < viewLeft || screenX > viewRight ||
-            screenY + TILE_HEIGHT * 3 < viewTop || screenY > viewBottom) {
+          screenY + TILE_HEIGHT * 3 < viewTop || screenY > viewBottom) {
           continue;
         }
-        
+
         const tile = grid[y][x];
         const buildingType = tile.building.type;
-        
+
         if (buildingType === 'road' || buildingType === 'bridge') {
           roadCounter++;
           // PERF: On mobile, only include every Nth road light
@@ -3783,27 +3801,27 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
         } else if (!nonLitTypes.has(buildingType) && tile.building.powered) {
           lightCutouts.push({ x, y, type: 'building', buildingType, seed: x * 1000 + y });
-          
+
           // Check for special colored glows (skip on mobile for performance)
-          if (!isMobile && (buildingType === 'hospital' || buildingType === 'fire_station' || 
-              buildingType === 'police_station' || buildingType === 'power_plant')) {
+          if (!isMobile && (buildingType === 'hospital' || buildingType === 'fire_station' ||
+            buildingType === 'police_station' || buildingType === 'power_plant')) {
             coloredGlows.push({ x, y, type: buildingType });
           }
         }
       }
     }
-    
+
     // Draw light cutouts (destination-out)
     ctx.globalCompositeOperation = 'destination-out';
     ctx.save();
     ctx.scale(dpr * zoom, dpr * zoom);
     ctx.translate(offset.x / zoom, offset.y / zoom);
-    
+
     for (const light of lightCutouts) {
       const { screenX, screenY } = gridToScreen(light.x, light.y);
       const tileCenterX = screenX + TILE_WIDTH / 2;
       const tileCenterY = screenY + TILE_HEIGHT / 2;
-      
+
       if (light.type === 'road') {
         const lightRadius = 28;
         const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, lightRadius);
@@ -3819,24 +3837,24 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         const isResidential = residentialTypes.has(buildingType);
         const isCommercial = commercialTypes.has(buildingType);
         const glowStrength = isCommercial ? 0.9 : isResidential ? 0.65 : 0.75;
-        
+
         // PERF: On mobile, skip individual window lights - just use ground glow
         if (!isMobile) {
           let numWindows = 2;
           if (buildingType.includes('medium') || buildingType.includes('low')) numWindows = 3;
           if (buildingType.includes('high') || buildingType === 'mall') numWindows = 5;
           if (buildingType === 'mansion' || buildingType === 'office_high') numWindows = 4;
-          
+
           const windowSize = 5;
           const buildingHeight = -18;
-          
+
           for (let i = 0; i < numWindows; i++) {
             const isLit = pseudoRandom(light.seed, i) < (isResidential ? 0.55 : 0.75);
             if (!isLit) continue;
-            
+
             const wx = tileCenterX + (pseudoRandom(light.seed, i + 10) - 0.5) * 22;
             const wy = tileCenterY + buildingHeight + (pseudoRandom(light.seed, i + 20) - 0.5) * 16;
-            
+
             const gradient = ctx.createRadialGradient(wx, wy, 0, wx, wy, windowSize * 2.5);
             gradient.addColorStop(0, `rgba(255, 255, 255, ${glowStrength * lightIntensity})`);
             gradient.addColorStop(0.5, `rgba(255, 255, 255, ${glowStrength * 0.4 * lightIntensity})`);
@@ -3847,7 +3865,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             ctx.fill();
           }
         }
-        
+
         // Ground glow (on mobile, use a simpler/stronger single gradient)
         const groundGlowRadius = isMobile ? TILE_WIDTH * 0.5 : TILE_WIDTH * 0.6;
         const groundGlowAlpha = isMobile ? 0.4 : 0.28;
@@ -3863,20 +3881,20 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.fill();
       }
     }
-    
+
     ctx.restore();
-    
+
     // Draw colored glows (source-over)
     ctx.globalCompositeOperation = 'source-over';
     ctx.save();
     ctx.scale(dpr * zoom, dpr * zoom);
     ctx.translate(offset.x / zoom, offset.y / zoom);
-    
+
     for (const glow of coloredGlows) {
       const { screenX, screenY } = gridToScreen(glow.x, glow.y);
       const tileCenterX = screenX + TILE_WIDTH / 2;
       const tileCenterY = screenY + TILE_HEIGHT / 2;
-      
+
       if (glow.type === 'road') {
         const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, 20);
         gradient.addColorStop(0, `rgba(255, 210, 130, ${0.3 * lightIntensity})`);
@@ -3889,7 +3907,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       } else {
         let glowColor: { r: number; g: number; b: number } | null = null;
         let glowRadius = 20;
-        
+
         if (glow.type === 'hospital') {
           glowColor = { r: 255, g: 80, b: 80 };
           glowRadius = 25;
@@ -3903,7 +3921,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           glowColor = { r: 255, g: 200, b: 50 };
           glowRadius = 30;
         }
-        
+
         if (glowColor) {
           const gradient = ctx.createRadialGradient(
             tileCenterX, tileCenterY - 15, 0,
@@ -3919,12 +3937,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-    
+
     ctx.restore();
     ctx.globalCompositeOperation = 'source-over';
-    
+
   }, [grid, gridSize, visualHour, offset, zoom, canvasSize.width, canvasSize.height, isMobile, isPanning]);
-  
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
       setIsPanning(true);
@@ -3933,7 +3951,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       e.preventDefault();
       return;
     }
-    
+
     if (e.button === 0) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
@@ -3991,26 +4009,26 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
     }
   }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
-  
+
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
     const n = gridSize;
     const padding = 100; // Allow some over-scroll
-    
+
     // Map bounds in world coordinates
     const mapLeft = -(n - 1) * TILE_WIDTH / 2;
     const mapRight = (n - 1) * TILE_WIDTH / 2;
     const mapTop = 0;
     const mapBottom = (n - 1) * TILE_HEIGHT;
-    
+
     const minOffsetX = padding - mapRight * currentZoom;
     const maxOffsetX = canvasW - padding - mapLeft * currentZoom;
     const minOffsetY = padding - mapBottom * currentZoom;
     const maxOffsetY = canvasH - padding - mapTop * currentZoom;
-    
+
     return { minOffsetX, maxOffsetX, minOffsetY, maxOffsetY };
   }, [gridSize]);
-  
+
   // Clamp offset to keep camera within reasonable bounds
   const clampOffset = useCallback((newOffset: { x: number; y: number }, currentZoom: number) => {
     const bounds = getMapBounds(currentZoom, canvasSize.width, canvasSize.height);
@@ -4023,26 +4041,26 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Handle minimap navigation - center the view on the target tile
   useEffect(() => {
     if (!navigationTarget) return;
-    
+
     // Convert grid coordinates to screen coordinates
     const { screenX, screenY } = gridToScreen(navigationTarget.x, navigationTarget.y, 0, 0);
-    
+
     // Calculate offset to center this position on the canvas
     const centerX = canvasSize.width / 2;
     const centerY = canvasSize.height / 2;
-    
+
     const newOffset = {
       x: centerX - screenX * zoom,
       y: centerY - screenY * zoom,
     };
-    
+
     // Clamp and set the new offset - this is a legitimate use case for responding to navigation requests
     const bounds = getMapBounds(zoom, canvasSize.width, canvasSize.height);
     setOffset({ // eslint-disable-line
       x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, newOffset.x)),
       y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
     });
-    
+
     // Signal that navigation is complete
     onNavigationComplete?.();
   }, [navigationTarget, zoom, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete]);
@@ -4073,22 +4091,22 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       setOffset(clampOffset(newOffset, zoom));
       return;
     }
-    
+
     const rect = containerRef.current?.getBoundingClientRect();
     if (rect) {
       const mouseX = (e.clientX - rect.left) / zoom;
       const mouseY = (e.clientY - rect.top) / zoom;
       const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
-      
+
       if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
         // Only update hovered tile if it actually changed to avoid unnecessary re-renders
         setHoveredTile(prev => (prev?.x === gridX && prev?.y === gridY) ? prev : { x: gridX, y: gridY });
-        
+
         // Check for fire or crime incidents at this tile for tooltip display
         const tile = grid[gridY]?.[gridX];
         const crimeKey = `${gridX},${gridY}`;
         const crimeIncident = activeCrimeIncidentsRef.current.get(crimeKey);
-        
+
         if (tile?.building.onFire) {
           // Fire incident
           setHoveredIncident({
@@ -4112,7 +4130,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           // No incident at this tile
           setHoveredIncident(null);
         }
-        
+
         // Update drag rectangle end point for zoning tools
         if (isDragging && showsDragGrid && dragStartTile) {
           setDragEndTile({ x: gridX, y: gridY });
@@ -4121,7 +4139,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         else if (isDragging && (selectedTool === 'road' || selectedTool === 'rail' || selectedTool === 'subway') && dragStartTile) {
           const dx = Math.abs(gridX - dragStartTile.x);
           const dy = Math.abs(gridY - dragStartTile.y);
-          
+
           // Lock direction after moving at least 1 tile
           let direction = roadDrawDirection;
           if (!direction && (dx > 0 || dy > 0)) {
@@ -4129,7 +4147,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             direction = dx >= dy ? 'h' : 'v';
             setRoadDrawDirection(direction);
           }
-          
+
           // Calculate target position along the locked axis
           let targetX = gridX;
           let targetY = gridY;
@@ -4138,16 +4156,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           } else if (direction === 'v') {
             targetX = dragStartTile.x; // Lock to vertical
           }
-          
+
           setDragEndTile({ x: targetX, y: targetY });
-          
+
           // Place all tiles from start to target in a straight line
           // Skip water tiles - they'll be handled on mouse up for bridge creation
           const minX = Math.min(dragStartTile.x, targetX);
           const maxX = Math.max(dragStartTile.x, targetX);
           const minY = Math.min(dragStartTile.y, targetY);
           const maxY = Math.max(dragStartTile.y, targetY);
-          
+
           for (let x = minX; x <= maxX; x++) {
             for (let y = minY; y <= maxY; y++) {
               const key = `${x},${y}`;
@@ -4172,7 +4190,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
     }
   }, [isPanning, dragStart, offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile, clampOffset, grid]);
-  
+
   const handleMouseUp = useCallback(() => {
     if (panCandidateRef.current && !isPanning && selectedTool === 'select') {
       const { gridX, gridY } = panCandidateRef.current;
@@ -4192,14 +4210,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const maxX = Math.max(dragStartTile.x, dragEndTile.x);
       const minY = Math.min(dragStartTile.y, dragEndTile.y);
       const maxY = Math.max(dragStartTile.y, dragEndTile.y);
-      
+
       for (let x = minX; x <= maxX; x++) {
         for (let y = minY; y <= maxY; y++) {
           placeAtTile(x, y);
         }
       }
     }
-    
+
     // After placing roads or rail, create bridges for valid water crossings and check for city discovery
     if (isDragging && (selectedTool === 'road' || selectedTool === 'rail') && dragStartTile && dragEndTile) {
       // Collect all tiles in the drag path
@@ -4207,17 +4225,17 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const maxX = Math.max(dragStartTile.x, dragEndTile.x);
       const minY = Math.min(dragStartTile.y, dragEndTile.y);
       const maxY = Math.max(dragStartTile.y, dragEndTile.y);
-      
+
       const pathTiles: { x: number; y: number }[] = [];
       for (let x = minX; x <= maxX; x++) {
         for (let y = minY; y <= maxY; y++) {
           pathTiles.push({ x, y });
         }
       }
-      
+
       // Create bridges for valid water crossings in the drag path
       finishTrackDrag(pathTiles, selectedTool as 'road' | 'rail');
-      
+
       // Use setTimeout to allow state to update first, then check for discoverable cities
       setTimeout(() => {
         checkAndDiscoverCities((discoveredCity) => {
@@ -4226,7 +4244,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         });
       }, 50);
     }
-    
+
     // Clear drag state
     setIsDragging(false);
     setDragStartTile(null);
@@ -4234,45 +4252,45 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     setIsPanning(false);
     setRoadDrawDirection(null);
     placedRoadTilesRef.current.clear();
-    
+
     // Clear hovered tile when mouse leaves
     if (!containerRef.current) {
       setHoveredTile(null);
     }
   }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, finishTrackDrag, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
-  
+
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    
+
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    
+
     // Mouse position relative to canvas (in screen pixels)
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-    
+
     // Calculate new zoom with proportional scaling for smoother feel
     // Use smaller base delta (0.05) and scale by current zoom for consistent feel at all levels
     const baseZoomDelta = 0.05;
     const scaledDelta = baseZoomDelta * Math.max(0.5, zoom); // Scale with zoom, min 0.5x
     const zoomDelta = e.deltaY > 0 ? -scaledDelta : scaledDelta;
     const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + zoomDelta));
-    
+
     if (newZoom === zoom) return;
-    
+
     // World position under the mouse before zoom
     // screen = world * zoom + offset → world = (screen - offset) / zoom
     const worldX = (mouseX - offset.x) / zoom;
     const worldY = (mouseY - offset.y) / zoom;
-    
+
     // After zoom, keep the same world position under the mouse
     // mouseX = worldX * newZoom + newOffset.x → newOffset.x = mouseX - worldX * newZoom
     const newOffsetX = mouseX - worldX * newZoom;
     const newOffsetY = mouseY - worldY * newZoom;
-    
+
     // Clamp to map bounds
     const clampedOffset = clampOffset({ x: newOffsetX, y: newOffsetY }, newZoom);
-    
+
     setOffset(clampedOffset);
     setZoom(newZoom);
   }, [zoom, offset, clampOffset]);
@@ -4329,7 +4347,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
       const currentCenter = getTouchCenter(e.touches[0], e.touches[1]);
       const rect = containerRef.current?.getBoundingClientRect();
-      
+
       if (rect && lastTouchCenterRef.current) {
         // Calculate center position relative to canvas
         const centerX = currentCenter.x - rect.left;
@@ -4361,7 +4379,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touchStart = touchStartRef.current;
-    
+
     if (e.touches.length === 0) {
       // All fingers lifted
       if (touchStart && e.changedTouches.length === 1) {
@@ -4411,12 +4429,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       lastTouchCenterRef.current = null;
     }
   }, [zoom, offset, gridSize, selectedTool, placeAtTile, setSelectedTile, findBuildingOrigin]);
-  
+
   return (
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden touch-none"
-      style={{ 
+      style={{
         cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
       }}
       onMouseDown={handleMouseDown}
@@ -4467,7 +4485,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         className="absolute top-0 left-0 pointer-events-none"
         style={{ mixBlendMode: 'multiply' }}
       />
-      
+
       {selectedTile && selectedTool === 'select' && !isMobile && (
         <TileInfoPanel
           tile={grid[selectedTile.y][selectedTile.x]}
@@ -4475,13 +4493,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           onClose={() => setSelectedTile(null)}
         />
       )}
-      
+
       {/* City Connection Dialog */}
       {cityConnectionDialog && (() => {
         // Find a discovered but not connected city in this direction
         const city = adjacentCities.find(c => c.direction === cityConnectionDialog.direction && c.discovered && !c.connected);
         if (!city) return null;
-        
+
         return (
           <Dialog open={true} onOpenChange={() => {
             setCityConnectionDialog(null);
@@ -4530,25 +4548,24 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           </Dialog>
         );
       })()}
-      
+
       {hoveredTile && selectedTool !== 'select' && TOOL_INFO[selectedTool] && (() => {
         // Check if this is a waterfront building tool and if placement is valid
         const buildingType = (selectedTool as string) as BuildingType;
         const isWaterfrontTool = requiresWaterAdjacency(buildingType);
         let isWaterfrontPlacementInvalid = false;
-        
+
         if (isWaterfrontTool && hoveredTile) {
           const size = getBuildingSize(buildingType);
           const waterCheck = getWaterAdjacency(grid, hoveredTile.x, hoveredTile.y, size.width, size.height, gridSize);
           isWaterfrontPlacementInvalid = !waterCheck.hasWater;
         }
-        
+
         return (
-          <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-sm ${
-            isWaterfrontPlacementInvalid 
-              ? 'bg-destructive/90 border border-destructive-foreground/30 text-destructive-foreground' 
+          <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-sm ${isWaterfrontPlacementInvalid
+              ? 'bg-destructive/90 border border-destructive-foreground/30 text-destructive-foreground'
               : 'bg-card/90 border border-border'
-          }`}>
+            }`}>
             {isDragging && dragStartTile && dragEndTile && showsDragGrid ? (
               <>
                 {TOOL_INFO[selectedTool].name} - {Math.abs(dragEndTile.x - dragStartTile.x) + 1}x{Math.abs(dragEndTile.y - dragStartTile.y) + 1} area
@@ -4569,22 +4586,22 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           </div>
         );
       })()}
-      
+
       {/* Incident Tooltip - shows when hovering over fire or crime */}
       {hoveredIncident && (() => {
         // Calculate position to avoid overflow
         const tooltipWidth = 200;
         const padding = 16;
         const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
-        
+
         // Check if tooltip would overflow right edge
         const wouldOverflowRight = hoveredIncident.screenX + padding + tooltipWidth > viewportWidth - padding;
-        const left = wouldOverflowRight 
-          ? hoveredIncident.screenX - tooltipWidth - padding 
+        const left = wouldOverflowRight
+          ? hoveredIncident.screenX - tooltipWidth - padding
           : hoveredIncident.screenX + padding;
-        
+
         return (
-          <div 
+          <div
             className="fixed pointer-events-none z-[100]"
             style={{ left, top: hoveredIncident.screenY - 8 }}
           >
@@ -4597,23 +4614,23 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
                   <SafetyIcon size={14} className="text-blue-400" />
                 )}
                 <span className="text-xs font-semibold text-sidebar-foreground">
-                  {hoveredIncident.type === 'fire' 
+                  {hoveredIncident.type === 'fire'
                     ? getFireNameForTile(hoveredIncident.x, hoveredIncident.y)
-                    : hoveredIncident.crimeType 
+                    : hoveredIncident.crimeType
                       ? getCrimeName(hoveredIncident.crimeType)
                       : 'Incident'}
                 </span>
               </div>
-              
+
               {/* Description */}
               <p className="text-[11px] text-muted-foreground leading-tight">
-                {hoveredIncident.type === 'fire' 
+                {hoveredIncident.type === 'fire'
                   ? getFireDescriptionForTile(hoveredIncident.x, hoveredIncident.y)
-                  : hoveredIncident.crimeType 
+                  : hoveredIncident.crimeType
                     ? getCrimeDescription(hoveredIncident.crimeType)
                     : 'Incident reported.'}
               </p>
-              
+
               {/* Location */}
               <div className="mt-1.5 pt-1.5 border-t border-sidebar-border/50 text-[10px] text-muted-foreground/60 font-mono">
                 ({hoveredIncident.x}, {hoveredIncident.y})
@@ -4622,7 +4639,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           </div>
         );
       })()}
-      
+
     </div>
   );
 }

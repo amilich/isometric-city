@@ -17,6 +17,7 @@ import {
   getRandomBeachTile,
   spawnPedestrianAtBeach,
 } from './pedestrianSystem';
+import { isBridgeTile, getBridgeDeckOffset } from './bridgeSystem';
 
 /** Train type for crossing detection (minimal interface) */
 export interface TrainForCrossing {
@@ -1053,7 +1054,13 @@ export function useVehicleSystems(
       const centerY = screenY + TILE_HEIGHT / 2;
       const meta = DIRECTION_META[car.direction];
       const carX = centerX + meta.vec.dx * car.progress + meta.normal.nx * car.laneOffset;
-      const carY = centerY + meta.vec.dy * car.progress + meta.normal.ny * car.laneOffset;
+      
+      // Check if this car is on a bridge tile and offset Y position for bridge height
+      const tile = currentGrid[car.tileY]?.[car.tileX];
+      const bridgeOffset = tile && isBridgeTile(tile) && tile.building.bridgeInfo 
+        ? getBridgeDeckOffset(tile.building.bridgeInfo) 
+        : 0;
+      const carY = centerY + meta.vec.dy * car.progress + meta.normal.ny * car.laneOffset - bridgeOffset;
       
       ctx.save();
       ctx.translate(carX, carY);
@@ -1212,7 +1219,13 @@ export function useVehicleSystems(
       const centerY = screenY + TILE_HEIGHT / 2;
       const meta = DIRECTION_META[vehicle.direction];
       const vehicleX = centerX + meta.vec.dx * vehicle.progress + meta.normal.nx * vehicle.laneOffset;
-      const vehicleY = centerY + meta.vec.dy * vehicle.progress + meta.normal.ny * vehicle.laneOffset;
+      
+      // Check if this vehicle is on a bridge tile and offset Y position for bridge height
+      const tile = currentGrid[vehicle.tileY]?.[vehicle.tileX];
+      const bridgeOffset = tile && isBridgeTile(tile) && tile.building.bridgeInfo 
+        ? getBridgeDeckOffset(tile.building.bridgeInfo) 
+        : 0;
+      const vehicleY = centerY + meta.vec.dy * vehicle.progress + meta.normal.ny * vehicle.laneOffset - bridgeOffset;
       
       if (vehicleX < viewLeft - 40 || vehicleX > viewRight + 40 || vehicleY < viewTop - 60 || vehicleY > viewBottom + 60) {
         return;

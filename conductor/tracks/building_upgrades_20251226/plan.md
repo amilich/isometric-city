@@ -24,11 +24,11 @@ Integrate the upgrade logic into the core simulation loops using the new utility
 ## Phase 3: UI - Selection Modal & Upgrade Logic
 Implement the user interface for upgrading buildings and the logic for processing the upgrade.
 
-- [ ] Task: Create `UpgradeSection` component in `src/components/game/BuildingUpgradeUI.tsx`.
-- [ ] Task: Integrate `UpgradeSection` into the building selection modal (likely in `src/components/Game.tsx` or a dedicated modal component).
-- [ ] Task: Implement the `upgradeBuilding` action in `GameContext` (or relevant state manager) to handle the transaction and state update.
-- [ ] Task: Add stat comparison display (Current vs. Next) in the upgrade UI.
-- [ ] Task: Write tests for the upgrade action, ensuring funds are deducted and the `isUpgraded` flag is set correctly.
+- [x] Task: Create `UpgradeSection` component in `src/components/game/BuildingUpgradeUI.tsx`. [7eb6acc]
+- [x] Task: Integrate `UpgradeSection` into the building selection modal (likely in `src/components/Game.tsx` or a dedicated modal component). [7eb6acc]
+- [x] Task: Implement the `upgradeBuilding` action in `GameContext` (or relevant state manager) to handle the transaction and state update. [7eb6acc]
+- [x] Task: Add stat comparison display (Current vs. Next) in the upgrade UI. [7eb6acc]
+- [x] Task: Write tests for the upgrade action, ensuring funds are deducted and the `isUpgraded` flag is set correctly. [7eb6acc]
 - [ ] Task: Conductor - User Manual Verification 'UI & Upgrade Logic' (Protocol in workflow.md)
 
 ## Phase 4: Visuals & Feedback

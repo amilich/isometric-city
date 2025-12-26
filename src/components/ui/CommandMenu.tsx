@@ -211,10 +211,10 @@ function buildMenuItems(): MenuItem[] {
 
   // Panels
   const panels: { panel: 'budget' | 'statistics' | 'advisors' | 'settings'; name: string; description: string; keywords: string[] }[] = [
-    { panel: 'budget', name: 'Budget', description: 'Manage city finances and funding', keywords: ['budget', 'money', 'finance', 'tax', 'funding'] },
-    { panel: 'statistics', name: 'Statistics', description: 'View city statistics and charts', keywords: ['statistics', 'stats', 'charts', 'data', 'info'] },
-    { panel: 'advisors', name: 'Advisors', description: 'Get advice from city advisors', keywords: ['advisors', 'advice', 'help', 'tips'] },
-    { panel: 'settings', name: 'Settings', description: 'Game settings and preferences', keywords: ['settings', 'options', 'preferences', 'config'] },
+    { panel: 'budget', name: 'sidebar.budget.name', description: 'sidebar.budget.description', keywords: ['budget', 'money', 'finance', 'tax', 'funding'] },
+    { panel: 'statistics', name: 'sidebar.statistics.name', description: 'sidebar.statistics.description', keywords: ['statistics', 'stats', 'charts', 'data', 'info'] },
+    { panel: 'advisors', name: 'sidebar.advisors.name', description: 'sidebar.advisors.description', keywords: ['advisors', 'advice', 'help', 'tips'] },
+    { panel: 'settings', name: 'sidebar.settings.name', description: 'sidebar.settings.description', keywords: ['settings', 'options', 'preferences', 'config'] },
   ];
 
   panels.forEach(({ panel, name, description, keywords }) => {

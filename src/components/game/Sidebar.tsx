@@ -393,7 +393,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         {Object.entries(directCategories).map(([category, tools]) => (
           <div key={category} className="mb-1">
             <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground">
-              {category}
+              {t(category)}
             </div>
             <div className="px-2 flex flex-col gap-0.5">
               {tools.map(tool => {
@@ -451,10 +451,10 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
       <div className="border-t border-sidebar-border p-2">
         <div className="grid grid-cols-4 gap-1">
           {[
-            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: 'sidebar.budget' },
-            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: 'sidebar.statistics' },
-            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: 'sidebar.advisors' },
-            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: 'sidebar.settings' },
+            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: 'sidebar.budget.name' },
+            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: 'sidebar.statistics.name' },
+            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: 'sidebar.advisors.name' },
+            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: 'sidebar.settings.name' },
           ].map(({ panel, icon, label }) => (
             <Button
               key={panel}

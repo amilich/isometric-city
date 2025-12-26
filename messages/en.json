@@ -246,16 +246,28 @@
     "tools": "Tools",
     "zones": "Zones",
     "buildings": "BUILDINGS",
-    "budget": "Budget",
-    "statistics": "Statistics",
-    "advisors": "Advisors",
-    "settings": "Settings",
-    "exit_dialog": {
-      "title": "Exit to Main Menu",
-      "description": "Would you like to save your city before exiting?",
-      "exit": "Exit Without Saving",
-      "save": "Save & Exit"
+    "budget": {
+      "name": "Budget",
+      "description": "Manage city finances and funding"
+    },
+    "statistics": {
+      "name": "Statistics",
+      "description": "View city statistics and charts"
+    },
+    "advisors": {
+      "name": "Advisors",
+      "description": "Get advice from city advisors"
+    },
+    "settings": {
+      "name": "Settings",
+      "description": "Game settings and preferences"
     }
+  },
+  "exit_dialog": {
+    "title": "Exit to Main Menu",
+    "description": "Would you like to save your city before exiting?",
+    "exit": "Exit Without Saving",
+    "save": "Save & Exit"
   },
   "app": {
     "cost": "Cost",

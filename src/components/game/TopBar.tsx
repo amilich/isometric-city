@@ -145,8 +145,8 @@ export const StatsPanel = React.memo(function StatsPanel() {
   return (
     <div className="h-8 bg-secondary/50 border-b border-border flex items-center justify-center gap-8 text-xs">
       <MiniStat icon={<HappyIcon size={12} />} label={t('statistics.happiness')} value={stats.happiness} />
-      <MiniStat icon={<HealthIcon size={12} />} label={t('statistics.health')} value={stats.health} />
-      <MiniStat icon={<EducationIcon size={12} />} label={t('statistics.education')} value={stats.education} />
+      <MiniStat icon={<HealthIcon size={12} />} label={t('budget.health')} value={stats.health} />
+      <MiniStat icon={<EducationIcon size={12} />} label={t('budget.education')} value={stats.education} />
       <MiniStat icon={<SafetyIcon size={12} />} label={t('statistics.safety')} value={stats.safety} />
       <MiniStat icon={<EnvironmentIcon size={12} />} label={t('statistics.environment')} value={stats.environment} />
     </div>

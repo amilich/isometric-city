@@ -356,7 +356,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   ], [t]);
   
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={0} skipDelayDuration={0} disableHoverableContent>
       <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-40">
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">

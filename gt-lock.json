@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "entries": {
+    "brc_nmhe8jz9vx2i0u9ov4qjfeta": {
+      "879f3a5f954ee8b75bf1e91f4ea9916b41c933e5beba7eb6362647a637c9c66d": {
+        "8cafa7583f545d9e4500b30fadb351b39108771cf3fceaa9308d7eaf5cc1704d": {
+          "ja": {
+            "updatedAt": "2025-12-26T12:11:37.742Z",
+            "postProcessHash": "ab4fcede0ec4a808dbfc5d2a6a44ebfa785d6aa5db1b5ba1c2a64ef82cd8967d"
+          }
+        }
+      }
+    }
+  }
+}

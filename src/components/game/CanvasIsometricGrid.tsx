@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
-import { TOOL_INFO, Tile, BuildingType, AdjacentCity } from '@/types/game';
+import { TOOL_INFO, Tile, BuildingType, AdjacentCity, Tool } from '@/types/game';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
 import { getSpriteCoords, BUILDING_TO_SPRITE, SPRITE_VERTICAL_OFFSETS, SPRITE_HORIZONTAL_OFFSETS, getActiveSpritePack } from '@/lib/renderConfig';
@@ -55,7 +55,12 @@ import {
 } from '@/components/game/drawing';
 import {
   getOverlayFillStyle,
+  OVERLAY_TO_BUILDING_TYPES,
+  OVERLAY_CIRCLE_COLORS,
+  OVERLAY_CIRCLE_FILL_COLORS,
+  OVERLAY_HIGHLIGHT_COLORS,
 } from '@/components/game/overlays';
+import { SERVICE_CONFIG } from '@/lib/simulation';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
 import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
 import { TileInfoPanel } from '@/components/game/panels';
@@ -118,16 +123,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const {
-    state,
-    placeAtTile,
-    beginUserAction,
-    endUserAction,
-    connectToCity,
-    checkAndDiscoverCities,
-    currentSpritePack,
-    visualHour,
-  } = useGame();
+  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -265,7 +261,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const [roadDrawDirection, setRoadDrawDirection] = useState<'h' | 'v' | null>(null);
   const placedRoadTilesRef = useRef<Set<string>>(new Set());
   // Track progressive image loading - start true to render immediately with placeholders
-  const [imagesLoaded] = useState(true);
+  const [imagesLoaded, setImagesLoaded] = useState(true);
   // Counter to trigger re-renders when new images become available
   const [imageLoadVersion, setImageLoadVersion] = useState(0);
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
@@ -275,7 +271,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const keysPressedRef = useRef<Set<string>>(new Set());
 
   // Only zoning tools show the grid/rectangle selection visualization
-  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'].includes(selectedTool);
+  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water'].includes(selectedTool);
   
   // Roads, bulldoze, and other tools support drag-to-place but don't show the grid
   const supportsDragPlace = selectedTool !== 'select';
@@ -2666,40 +2662,15 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
         }
         
-        // Overlay visibility rules (keep heavy heatmaps from drawing on every grass tile).
+        // For subway overlay, show ALL non-water tiles (valid placement areas + existing subway)
+        // For other overlays, show buildings only
         const showOverlay =
           overlayMode !== 'none' &&
-          (() => {
-            if (overlayMode === 'subway') {
-              return tile.building.type !== 'water';
-            }
-
-            if (overlayMode === 'traffic') {
-              return tile.building.type === 'road';
-            }
-
-            if (overlayMode === 'crime') {
-              // Crime is most relevant to zoned areas.
-              return tile.building.type !== 'water' && tile.zone !== 'none';
-            }
-
-            if (overlayMode === 'landValue') {
-              // Show zoned tiles (even if undeveloped) plus any non-grass features.
-              return tile.building.type !== 'water' && (tile.zone !== 'none' || tile.building.type !== 'grass');
-            }
-
-            if (overlayMode === 'pollution') {
-              // Show buildings/roads, and any tiles with noticeable pollution.
-              return tile.building.type !== 'water' && (tile.building.type !== 'grass' || tile.pollution > 2);
-            }
-
-            // Service/utility overlays (power/water/fire/police/health/education): buildings only
-            return (
-              tile.building.type !== 'grass' &&
-              tile.building.type !== 'water' &&
-              tile.building.type !== 'road'
-            );
-          })();
+          (overlayMode === 'subway' 
+            ? tile.building.type !== 'water'  // For subway mode, show all non-water tiles
+            : (tile.building.type !== 'grass' &&
+               tile.building.type !== 'water' &&
+               tile.building.type !== 'road'));
         if (showOverlay) {
           overlayQueue.push({ screenX, screenY, tile });
         }
@@ -2921,34 +2892,98 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         
         // Draw overlays on the buildings canvas so they appear ON TOP of buildings
         // (The buildings canvas is layered above the main canvas, so overlays must be drawn here)
-        // Reuse a single object to avoid per-tile allocations.
-        const servicesAt = {
-          fire: 0,
-          police: 0,
-          health: 0,
-          education: 0,
-          power: false,
-          water: false,
-        };
         // PERF: Use for loop instead of forEach
         for (let i = 0; i < overlayQueue.length; i++) {
           const { tile, screenX, screenY } = overlayQueue[i];
-
-          servicesAt.fire = state.services.fire[tile.y][tile.x];
-          servicesAt.police = state.services.police[tile.y][tile.x];
-          servicesAt.health = state.services.health[tile.y][tile.x];
-          servicesAt.education = state.services.education[tile.y][tile.x];
-          servicesAt.power = state.services.power[tile.y][tile.x];
-          servicesAt.water = state.services.water[tile.y][tile.x];
-
-          buildingsCtx.fillStyle = getOverlayFillStyle(overlayMode, tile, servicesAt, grid, gridSize);
-          buildingsCtx.beginPath();
-          buildingsCtx.moveTo(screenX + halfTileWidth, screenY);
-          buildingsCtx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
-          buildingsCtx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
-          buildingsCtx.lineTo(screenX, screenY + halfTileHeight);
-          buildingsCtx.closePath();
-          buildingsCtx.fill();
+          // Get service coverage for this tile
+          const coverage = {
+            fire: state.services.fire[tile.y][tile.x],
+            police: state.services.police[tile.y][tile.x],
+            health: state.services.health[tile.y][tile.x],
+            education: state.services.education[tile.y][tile.x],
+          };
+          
+          const fillStyle = getOverlayFillStyle(overlayMode, tile, coverage);
+          // Only draw if there's actually a color to show
+          if (fillStyle !== 'rgba(0, 0, 0, 0)') {
+            buildingsCtx.fillStyle = fillStyle;
+            buildingsCtx.beginPath();
+            buildingsCtx.moveTo(screenX + halfTileWidth, screenY);
+            buildingsCtx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
+            buildingsCtx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
+            buildingsCtx.lineTo(screenX, screenY + halfTileHeight);
+            buildingsCtx.closePath();
+            buildingsCtx.fill();
+          }
+        }
+        
+        // Draw service radius circles and building highlights for the active overlay
+        if (overlayMode !== 'none' && overlayMode !== 'subway') {
+          const serviceBuildingTypes = OVERLAY_TO_BUILDING_TYPES[overlayMode];
+          const circleColor = OVERLAY_CIRCLE_COLORS[overlayMode];
+          const circleFillColor = OVERLAY_CIRCLE_FILL_COLORS[overlayMode];
+          const highlightColor = OVERLAY_HIGHLIGHT_COLORS[overlayMode];
+          
+          // Find all service buildings of this type and draw their radii
+          for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+              const tile = grid[y][x];
+              if (!serviceBuildingTypes.includes(tile.building.type)) continue;
+              
+              // Skip buildings under construction
+              if (tile.building.constructionProgress !== undefined && tile.building.constructionProgress < 100) continue;
+              
+              // Skip abandoned buildings (they don't provide coverage in simulation)
+              if (tile.building.abandoned) continue;
+              
+              // Get service config for this building type
+              const config = SERVICE_CONFIG[tile.building.type as keyof typeof SERVICE_CONFIG];
+              if (!config || !('range' in config)) continue;
+              
+              const range = config.range;
+              
+              // NOTE: For multi-tile service buildings (e.g. 2x2 hospital, 3x3 university),
+              // coverage is computed from the building's anchor tile (top-left of footprint)
+              // in the simulation. We center the radius on that same tile to keep the
+              // overlay consistent with actual service coverage.
+              const { screenX: bldgScreenX, screenY: bldgScreenY } = gridToScreen(x, y, 0, 0);
+              const centerX = bldgScreenX + halfTileWidth;
+              const centerY = bldgScreenY + halfTileHeight;
+              
+              // Draw isometric ellipse for the radius
+              // In isometric view, a circle becomes an ellipse
+              // The radius in tiles needs to be converted to screen pixels
+              const radiusX = range * halfTileWidth;
+              const radiusY = range * halfTileHeight;
+              
+              buildingsCtx.strokeStyle = circleColor;
+              buildingsCtx.lineWidth = 2 / zoom; // Keep line width consistent at different zoom levels
+              buildingsCtx.beginPath();
+              buildingsCtx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+              buildingsCtx.stroke();
+              
+              // Draw a subtle filled ellipse for better visibility
+              buildingsCtx.fillStyle = circleFillColor;
+              buildingsCtx.fill();
+              
+              // Draw highlight glow around the service building
+              buildingsCtx.strokeStyle = highlightColor;
+              buildingsCtx.lineWidth = 3 / zoom;
+              buildingsCtx.beginPath();
+              buildingsCtx.moveTo(bldgScreenX + halfTileWidth, bldgScreenY);
+              buildingsCtx.lineTo(bldgScreenX + tileWidth, bldgScreenY + halfTileHeight);
+              buildingsCtx.lineTo(bldgScreenX + halfTileWidth, bldgScreenY + tileHeight);
+              buildingsCtx.lineTo(bldgScreenX, bldgScreenY + halfTileHeight);
+              buildingsCtx.closePath();
+              buildingsCtx.stroke();
+              
+              // Draw a dot at the building center
+              buildingsCtx.fillStyle = highlightColor;
+              buildingsCtx.beginPath();
+              buildingsCtx.arc(centerX, centerY, 4 / zoom, 0, Math.PI * 2);
+              buildingsCtx.fill();
+            }
+          }
         }
         
         buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -3045,10 +3080,33 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       ctx.stroke();
     };
     
-    // Draw hovered tile highlight
+    // Draw hovered tile highlight (with multi-tile preview for buildings)
     if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
-      const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
-      drawHighlight(screenX, screenY);
+      // Check if selectedTool is a building type (not a non-building tool)
+      const nonBuildingTools: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water'];
+      const isBuildingTool = selectedTool && !nonBuildingTools.includes(selectedTool);
+      
+      if (isBuildingTool) {
+        // Get building size and draw preview for all tiles in footprint
+        const buildingType = selectedTool as BuildingType;
+        const buildingSize = getBuildingSize(buildingType);
+        
+        // Draw highlight for each tile in the building footprint
+        for (let dx = 0; dx < buildingSize.width; dx++) {
+          for (let dy = 0; dy < buildingSize.height; dy++) {
+            const tx = hoveredTile.x + dx;
+            const ty = hoveredTile.y + dy;
+            if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+              const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+              drawHighlight(screenX, screenY);
+            }
+          }
+        }
+      } else {
+        // Single tile highlight for non-building tools
+        const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+        drawHighlight(screenX, screenY);
+      }
     }
     
     // Draw selected tile highlight (including multi-tile buildings)
@@ -3071,7 +3129,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, offset, zoom, gridSize, grid]);
+  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
@@ -3515,9 +3573,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           setIsDragging(true);
         } else if (supportsDragPlace) {
           panCandidateRef.current = null;
-          // Begin an undoable user action. The snapshot is only committed
-          // if a placement actually changes game state.
-          beginUserAction();
           // For roads, bulldoze, and other tools, start drag-to-place
           setDragStartTile({ x: gridX, y: gridY });
           setDragEndTile({ x: gridX, y: gridY });
@@ -3534,7 +3589,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, beginUserAction, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
+  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
@@ -3663,100 +3718,40 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
         // For roads, rail, and subways, use straight-line snapping
         else if (isDragging && (selectedTool === 'road' || selectedTool === 'rail' || selectedTool === 'subway') && dragStartTile) {
-          // Lock axis for road/rail/subway drawing (snap to straight lines)
-          let direction = roadDrawDirection;
           const dx = Math.abs(gridX - dragStartTile.x);
           const dy = Math.abs(gridY - dragStartTile.y);
-
-          // Determine direction based on first movement
+          
+          // Lock direction after moving at least 1 tile
+          let direction = roadDrawDirection;
           if (!direction && (dx > 0 || dy > 0)) {
+            // Lock to the axis with more movement, or horizontal if equal
             direction = dx >= dy ? 'h' : 'v';
             setRoadDrawDirection(direction);
           }
-
-          const startX = dragStartTile.x;
-          const startY = dragStartTile.y;
-
-          // Shift = corner mode (L-shaped path)
-          if (e.shiftKey && direction) {
-            setDragEndTile({ x: gridX, y: gridY });
-
-            if (direction === 'h') {
-              // First: horizontal from (startX, startY) -> (gridX, startY)
-              const minX = Math.min(startX, gridX);
-              const maxX = Math.max(startX, gridX);
-              for (let x = minX; x <= maxX; x++) {
-                const tileKey = `${x},${startY}`;
-                if (!placedRoadTilesRef.current.has(tileKey)) {
-                  placeAtTile(x, startY);
-                  placedRoadTilesRef.current.add(tileKey);
-                }
-              }
-
-              // Then: vertical from (gridX, startY) -> (gridX, gridY)
-              const minY = Math.min(startY, gridY);
-              const maxY = Math.max(startY, gridY);
-              for (let y = minY; y <= maxY; y++) {
-                const tileKey = `${gridX},${y}`;
-                if (!placedRoadTilesRef.current.has(tileKey)) {
-                  placeAtTile(gridX, y);
-                  placedRoadTilesRef.current.add(tileKey);
-                }
-              }
-            } else {
-              // First: vertical from (startX, startY) -> (startX, gridY)
-              const minY = Math.min(startY, gridY);
-              const maxY = Math.max(startY, gridY);
-              for (let y = minY; y <= maxY; y++) {
-                const tileKey = `${startX},${y}`;
-                if (!placedRoadTilesRef.current.has(tileKey)) {
-                  placeAtTile(startX, y);
-                  placedRoadTilesRef.current.add(tileKey);
-                }
-              }
-
-              // Then: horizontal from (startX, gridY) -> (gridX, gridY)
-              const minX = Math.min(startX, gridX);
-              const maxX = Math.max(startX, gridX);
-              for (let x = minX; x <= maxX; x++) {
-                const tileKey = `${x},${gridY}`;
-                if (!placedRoadTilesRef.current.has(tileKey)) {
-                  placeAtTile(x, gridY);
-                  placedRoadTilesRef.current.add(tileKey);
-                }
-              }
-            }
-          } else {
-            // Straight-line mode (axis locked)
-            let targetX = gridX;
-            let targetY = gridY;
-
-            // Update direction if not set
-            if (!direction) {
-              direction = dx >= dy ? 'h' : 'v';
-            }
-
-            if (direction === 'h') {
-              targetY = dragStartTile.y;
-            } else {
-              targetX = dragStartTile.x;
-            }
-
-            setDragEndTile({ x: targetX, y: targetY });
-
-            // Place all tiles from start to target in a straight line
-            const minX = Math.min(dragStartTile.x, targetX);
-            const maxX = Math.max(dragStartTile.x, targetX);
-            const minY = Math.min(dragStartTile.y, targetY);
-            const maxY = Math.max(dragStartTile.y, targetY);
-
-            for (let x = minX; x <= maxX; x++) {
-              for (let y = minY; y <= maxY; y++) {
-                const tileKey = `${x},${y}`;
-                if (!placedRoadTilesRef.current.has(tileKey)) {
-                  placeAtTile(x, y);
-                  placedRoadTilesRef.current.add(tileKey);
-                }
+          
+          // Calculate target position along the locked axis
+          let targetX = gridX;
+          let targetY = gridY;
+          if (direction === 'h') {
+            targetY = dragStartTile.y; // Lock to horizontal
+          } else if (direction === 'v') {
+            targetX = dragStartTile.x; // Lock to vertical
+          }
+          
+          setDragEndTile({ x: targetX, y: targetY });
+          
+          // Place all tiles from start to target in a straight line
+          const minX = Math.min(dragStartTile.x, targetX);
+          const maxX = Math.max(dragStartTile.x, targetX);
+          const minY = Math.min(dragStartTile.y, targetY);
+          const maxY = Math.max(dragStartTile.y, targetY);
+          
+          for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+              const key = `${x},${y}`;
+              if (!placedRoadTilesRef.current.has(key)) {
+                placeAtTile(x, y);
+                placedRoadTilesRef.current.add(key);
               }
             }
           }
@@ -3784,8 +3779,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     // Fill the drag rectangle when mouse is released (only for zoning tools)
     if (isDragging && dragStartTile && dragEndTile && showsDragGrid) {
-      // Zoning rect is committed on mouse up, so take the undo snapshot now.
-      beginUserAction();
       const minX = Math.min(dragStartTile.x, dragEndTile.x);
       const maxX = Math.max(dragStartTile.x, dragEndTile.x);
       const minY = Math.min(dragStartTile.y, dragEndTile.y);
@@ -3796,11 +3789,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           placeAtTile(x, y);
         }
       }
-
-      endUserAction();
-    } else if (isDragging && selectedTool !== 'select') {
-      // Drag-to-place tools begin on mouse down
-      endUserAction();
     }
     
     // After placing roads or rail, check if any cities should be discovered
@@ -3827,7 +3815,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!containerRef.current) {
       setHoveredTile(null);
     }
-  }, [isDragging, showsDragGrid, dragStartTile, dragEndTile, selectedTool, placeAtTile, beginUserAction, endUserAction, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
+  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -4057,8 +4045,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         <TileInfoPanel
           tile={grid[selectedTile.y][selectedTile.x]}
           services={state.services}
-          grid={grid}
-          gridSize={gridSize}
           onClose={() => setSelectedTile(null)}
         />
       )}

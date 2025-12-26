@@ -1,74 +1,62 @@
-# Isometric City
+# IsoCity
 
-A cozy, browser-based isometric city builder with zoning, services, utilities, transit, disasters, stats, advisors, and lots of quality-of-life tooling.
+IsoCity is a open-source isometric city-building simulation game built with **Next.js**, **TypeScript**, and **Tailwind CSS**. It leverages the HTML5 Canvas API for high-performance rendering of isometric graphics, featuring complex systems for economic simulation, trains, planes, seaplanes, helicopters, cars, pedestrians, and more.
 
-## Quick start
+![IsoCity Banner](public/readme-image.png)
 
-```bash
-npm install
-npm run dev
-```
+## Features
 
-Then open the local dev URL printed in your terminal.
+-   **Isometric Rendering Engine**: Custom-built rendering system using HTML5 Canvas (`CanvasIsometricGrid`) capable of handling complex depth sorting and layer management.
+-   **Dynamic Simulation**:
+    -   **Traffic System**: Autonomous vehicles including cars, trains, and aircraft (planes/seaplanes).
+    -   **Pedestrian System**: Pathfinding and crowd simulation for city inhabitants.
+    -   **Economy & Resources**: Resource management, zoning (Residential, Commercial, Industrial), and city growth logic.
+-   **Interactive Grid**: Tile-based placement system for buildings, roads, parks, and utilities.
+-   **State Management**: Save/Load functionality for multiple cities.
+-   **Responsive Design**: Mobile-friendly interface with specialized touch controls and toolbars.
 
-### Production build
+## Tech Stack
 
-```bash
-npm run build
-npm run start
-```
+-   **Framework**: [Next.js 14+](https://nextjs.org/) (App Router)
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/) components.
+-   **Graphics**: HTML5 Canvas API (No external game engine libraries; pure native implementation).
+-   **Icons**: Lucide React.
 
-## Gameplay highlights
+## Getting Started
 
-- **Drag-to-build tools**: roads, rail, subway, bulldoze, and zoning support click-drag for fast layout.
-- **Zoning & growth**: residential / commercial / industrial areas grow over time based on conditions and demand.
-- **Utilities & services**: power, water, education, safety, health, and recreation all influence your city.
-- **Transit**: rail and subway networks plus stations.
-- **Disasters**: optional challenges you can toggle in settings.
-- **Statistics**: charts and city metrics for planning and debugging your economy.
-- **Sharing & saves**: export/import saves and share cities via link.
+### Prerequisites
 
-## Controls
+-   Node.js (v18 or higher)
+-   npm or yarn
 
-### Mouse / trackpad
-- **Left click**: place / interact (depending on tool)
-- **Click-drag**: zone areas, build roads/rail/subways, bulldoze
-- **Middle mouse drag** (or **Alt + drag**): pan camera
-- **Wheel / pinch**: zoom
+### Installation
 
-### Keyboard shortcuts
-- **Ctrl/⌘ + K**: open command menu
-- **Ctrl/⌘ + S**: quick-save snapshot
-- **Ctrl/⌘ + Z**: undo
-- **Ctrl/⌘ + Shift + Z** or **Ctrl + Y**: redo
-- **Space** (or **P**): pause / resume simulation
-- **O**: cycle overlay modes (**Shift+O** cycles backwards)
-- **[ / ]**: slower / faster simulation speed
-- **?** (or **F1**): open the in-game Help panel
-- **Esc**: close panels / clear selection / return to Select tool
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/amilich/isometric-city.git
+    cd isometric-city
+    ```
 
-#### Tool hotkeys
-- **1** Select
-- **2** Road
-- **3** Rail
-- **4** Subway
-- **B** Bulldoze
-- **T** Tree
-- **R** Residential zone
-- **C** Commercial zone
-- **I** Industrial zone
-- **D** De-zone
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-### Road/rail “corner mode”
-When dragging **Road**, **Rail**, or **Subway**:
-- Hold **Shift** while dragging to draw an **L-shaped** path (corner turn) instead of a straight snapped line.
+3.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
 
-## In-game Help
-Use the sidebar **Info** button, the command menu (search “Help”), or press **?** to open an in-game Help & Shortcuts panel.
+4.  **Open the game:**
+    Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Exporting images
-From **Settings**, you can download a **PNG preview** of your city (useful for sharing in chats/Discord/GitHub issues).
+## Contributing
 
----
+Contributions are welcome! Whether it's reporting a bug, proposing a new feature, or submitting a pull request, your input is valued.
 
-If you add new sprites or sheets, check the docs in the `skills/` folder for the project workflow.
+Please ensure your code follows the existing style and conventions.
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.

@@ -947,12 +947,26 @@ function buildBridges(
     opportunity.bridgeType
   );
   
-  const span = opportunity.waterTiles.length;
-  opportunity.waterTiles.forEach((pos, index) => {
+  // Sort waterTiles consistently to ensure same result regardless of scan direction
+  // For NS orientation (bridges going NW-SE on screen): sort by x first (grid row), then by y
+  // For EW orientation (bridges going NE-SW on screen): sort by y first (grid column), then by x
+  // This ensures 'start' is always at the NW/NE end and 'end' at the SE/SW end
+  const sortedTiles = [...opportunity.waterTiles].sort((a, b) => {
+    if (opportunity.orientation === 'ns') {
+      // NS bridges: sort by x first (lower x = more NW on screen)
+      return a.x !== b.x ? a.x - b.x : a.y - b.y;
+    } else {
+      // EW bridges: sort by y first (lower y = more NE on screen)
+      return a.y !== b.y ? a.y - b.y : a.x - b.x;
+    }
+  });
+  
+  const span = sortedTiles.length;
+  sortedTiles.forEach((pos, index) => {
     let position: 'start' | 'middle' | 'end';
     if (index === 0) {
       position = 'start';
-    } else if (index === opportunity.waterTiles.length - 1) {
+    } else if (index === sortedTiles.length - 1) {
       position = 'end';
     } else {
       position = 'middle';

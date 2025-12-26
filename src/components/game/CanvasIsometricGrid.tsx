@@ -2105,13 +2105,33 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         // Draw lane markings for road bridge
         if (currentZoom >= 0.6) {
           ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([4, 6]);
+          ctx.lineWidth = 0.5; // Half as wide as before (was 1)
+          ctx.setLineDash([1.5, 2]); // 2x more frequent (was [4, 6])
+          ctx.lineCap = 'round';
+          
+          // Calculate dash offset to align dashes across bridge tiles
+          // Use grid position to create consistent offset
+          const travelDx = endEdge.x - startEdge.x;
+          const travelDy = endEdge.y - startEdge.y;
+          const travelLen = Math.hypot(travelDx, travelDy);
+          
+          // Create offset based on tile position to align dashes across tiles
+          // Use a combination of grid coordinates to create unique but consistent offset
+          const offsetBase = (gridX * 17 + gridY * 23) % 100; // Pseudo-random but consistent per tile
+          const dashPatternLength = 1.5 + 2; // Total length of one dash cycle
+          const dashOffset = (offsetBase / 100) * dashPatternLength;
+          
+          ctx.setLineDash([1.5, 2]);
+          ctx.lineDashOffset = -dashOffset;
+          
           ctx.beginPath();
           ctx.moveTo(startEdge.x, startY);
           ctx.lineTo(endEdge.x, endY);
           ctx.stroke();
+          
           ctx.setLineDash([]);
+          ctx.lineDashOffset = 0;
+          ctx.lineCap = 'butt';
         }
       }
       

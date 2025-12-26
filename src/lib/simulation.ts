@@ -1485,6 +1485,70 @@ export function isServiceBuildingRoadConnected(
   return false;
 }
 
+// Road connectivity cache for service buildings
+// Maps building position (y * gridSize + x) to connectivity status
+// Invalidate when roads are added/removed
+let serviceBuildingRoadCache: Map<number, boolean> = new Map();
+let serviceBuildingRoadCacheVersion: number = 0;
+
+/**
+ * Get road connectivity for a service building (cached).
+ * 
+ * @param grid - The game grid
+ * @param x - X coordinate of building origin
+ * @param y - Y coordinate of building origin
+ * @param buildingType - Type of service building
+ * @param gridSize - Size of the grid
+ * @param cacheVersion - Current cache version (increment to invalidate)
+ * @returns true if building has road connectivity
+ */
+export function getServiceBuildingRoadConnectivity(
+  grid: Tile[][],
+  x: number,
+  y: number,
+  buildingType: BuildingType,
+  gridSize: number,
+  cacheVersion: number
+): boolean {
+  // Check if this is a service building
+  if (!SERVICE_BUILDING_TYPES.has(buildingType)) {
+    return true; // Non-service buildings don't need road connectivity
+  }
+  
+  const cacheKey = y * gridSize + x;
+  
+  // Check cache (only if version matches)
+  if (serviceBuildingRoadCacheVersion === cacheVersion) {
+    const cached = serviceBuildingRoadCache.get(cacheKey);
+    if (cached !== undefined) {
+      return cached;
+    }
+  } else {
+    // Cache version mismatch - clear cache and update version
+    serviceBuildingRoadCache.clear();
+    serviceBuildingRoadCacheVersion = cacheVersion;
+  }
+  
+  // Compute connectivity (always recompute if not in cache)
+  const connected = isServiceBuildingRoadConnected(grid, x, y, buildingType, gridSize);
+  
+  // Cache result (only if version matches)
+  if (serviceBuildingRoadCacheVersion === cacheVersion) {
+    serviceBuildingRoadCache.set(cacheKey, connected);
+  }
+  
+  return connected;
+}
+
+/**
+ * Invalidate the road connectivity cache.
+ * Call this when roads are added or removed.
+ */
+export function invalidateServiceBuildingRoadCache(): void {
+  serviceBuildingRoadCacheVersion++;
+  serviceBuildingRoadCache.clear();
+}
+
 // Evolve buildings based on conditions, reserving footprints as density increases
 function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceCoverage, demand?: { residential: number; commercial: number; industrial: number }): Building {
   const tile = grid[y][x];

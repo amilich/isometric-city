@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+      "driver-mcp": {
+        "type": "http",
+        "url": "https://api.us1.driverai.com/mcp/v1",
+        "headers": {
+          "X-API-Key": "drv-1klC8fU6KzuYyo5DD5rhDWFoc7Kr4DKD"
+        }
+      }
+    }
+  }

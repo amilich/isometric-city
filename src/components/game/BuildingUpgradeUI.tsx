@@ -79,7 +79,10 @@ export function BuildingUpgradeUI({ tile, money, onUpgrade }: BuildingUpgradeUIP
               size="sm" 
               className="w-full bg-purple-600 hover:bg-purple-500 text-white text-xs h-8 shadow-sm"
               disabled={!canAfford}
-              onClick={() => onUpgrade(tile.x, tile.y)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpgrade(tile.x, tile.y);
+              }}
             >
               Apply Upgrade
             </Button>

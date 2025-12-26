@@ -39,6 +39,8 @@ export function TileInfoPanel({
     <Card 
       className={`${isMobile ? 'fixed left-0 right-0 w-full rounded-none border-x-0 border-t border-b z-30' : 'absolute top-4 right-4 w-72'}`} 
       style={isMobile ? { top: 'calc(72px + env(safe-area-inset-top, 0px))' } : undefined}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-sans">Tile ({x}, {y})</CardTitle>

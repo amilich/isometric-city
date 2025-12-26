@@ -64,6 +64,23 @@ export const AIRPLANE_COLORS = ['#ffffff', '#1e40af', '#dc2626', '#059669', '#7c
 export const CONTRAIL_MAX_AGE = 3.0; // seconds
 export const CONTRAIL_SPAWN_INTERVAL = 0.02; // seconds between contrail particles
 
+// Airplane taxi and dynamics constants
+export const AIRPLANE_TAXI_SPEED = 12; // Speed when taxiing (px/sec) - slow ground movement
+export const AIRPLANE_TAKEOFF_SPEED = 80; // Speed during takeoff run
+export const AIRPLANE_FLIGHT_SPEED_MIN = 90; // Minimum cruising speed
+export const AIRPLANE_FLIGHT_SPEED_MAX = 130; // Maximum cruising speed
+export const AIRPLANE_SPAWN_INTERVAL_MIN = 1.5; // Minimum seconds between spawns
+export const AIRPLANE_SPAWN_INTERVAL_MAX = 4; // Maximum seconds between spawns
+export const AIRPLANE_PARKED_TIME_MIN = 3; // Minimum seconds parked at gate
+export const AIRPLANE_PARKED_TIME_MAX = 8; // Maximum seconds parked
+export const AIRPLANE_TAXI_TIME_MIN = 2; // Minimum seconds taxiing to runway
+export const AIRPLANE_TAXI_TIME_MAX = 5; // Maximum seconds taxiing
+export const AIRPLANE_FLIGHT_TIME_MIN = 15; // Minimum flight time in seconds
+export const AIRPLANE_FLIGHT_TIME_MAX = 35; // Maximum flight time
+export const MAX_AIRPLANES = 60; // Maximum airplanes in the city
+export const MAX_PARKED_PLANES_PER_AIRPORT = 3; // Max parked planes per airport
+export const AIRPLANE_MIN_ZOOM = 0.3; // Minimum zoom to show airplanes
+
 // Airplane sprite sheet configuration
 export const AIRPLANE_SPRITE_SRC = '/assets/sprites_red_water_new_planes.png';
 export const AIRPLANE_SPRITE_COLS = 5; // 5 columns per row

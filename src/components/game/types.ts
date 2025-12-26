@@ -23,7 +23,7 @@ export type Car = {
 };
 
 // Airplane types for airport animation
-export type AirplaneState = 'flying' | 'landing' | 'taking_off' | 'taxiing';
+export type AirplaneState = 'parked' | 'taxiing_to_runway' | 'taking_off' | 'flying' | 'landing' | 'taxiing_to_gate';
 
 // Plane model types from the sprite sheet
 export type PlaneType = '737' | '777' | '747' | 'a380' | 'g650' | 'seaplane';
@@ -42,6 +42,8 @@ export type Airplane = {
   y: number;
   // Flight direction in radians
   angle: number;
+  // Target angle for smooth turning during taxi
+  targetAngle: number;
   // Current state
   state: AirplaneState;
   // Speed (pixels per second in screen space)
@@ -53,12 +55,27 @@ export type Airplane = {
   // Airport tile coordinates (for landing/takeoff reference)
   airportX: number;
   airportY: number;
+  // Airport screen coordinates (center of airport)
+  airportScreenX: number;
+  airportScreenY: number;
+  // Runway start/end positions in screen coordinates
+  runwayStartX: number;
+  runwayStartY: number;
+  runwayEndX: number;
+  runwayEndY: number;
+  // Runway heading (angle in radians pointing towards takeoff direction)
+  runwayHeading: number;
   // Progress for landing/takeoff (0-1)
   stateProgress: number;
   // Contrail particles
   contrail: ContrailParticle[];
-  // Time until despawn (for flying planes)
+  // Time until state change
   lifeTime: number;
+  // Time spent in current taxi state
+  taxiTime: number;
+  // Parked position (within airport)
+  parkPositionX: number;
+  parkPositionY: number;
   // Plane color/style (legacy, for fallback rendering)
   color: string;
   // Plane model type from sprite sheet

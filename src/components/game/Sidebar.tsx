@@ -337,7 +337,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   ], []);
   
   return (
-    <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-40">
+    <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-[60]">
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
           <span className="text-sidebar-foreground font-bold tracking-tight">ISOCITY</span>

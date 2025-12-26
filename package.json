@@ -25,6 +25,7 @@
     "@vercel/analytics": "^1.6.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "gt-next": "^6.12.3",
     "lucide-react": "^0.453.0",
     "lz-string": "^1.5.0",
     "next": "^16.1.1",

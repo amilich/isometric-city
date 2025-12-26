@@ -18,6 +18,7 @@ import {
   CheckIcon,
 } from '@/components/ui/Icons';
 import { copyShareUrl } from '@/lib/shareState';
+import { LocaleSelector } from 'gt-next';
 
 // ============================================================================
 // TIME OF DAY ICON
@@ -234,9 +235,9 @@ export const TopBar = React.memo(function TopBar() {
           <DemandIndicator label="C" demand={stats.demand.commercial} color="text-blue-500" />
           <DemandIndicator label="I" demand={stats.demand.industrial} color="text-amber-500" />
         </div>
-        
+
         <Separator orientation="vertical" className="h-8" />
-        
+
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs">Tax</span>
           <Slider
@@ -249,6 +250,10 @@ export const TopBar = React.memo(function TopBar() {
           />
           <span className="text-foreground text-xs font-mono tabular-nums w-8">{taxRate}%</span>
         </div>
+
+        <Separator orientation="vertical" className="h-8" />
+
+        <LocaleSelector />
       </div>
     </div>
   );

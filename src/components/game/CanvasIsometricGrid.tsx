@@ -141,7 +141,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, isSidebarCollapsed } = useGame();
+  const { state, placeAtTile, upgradeBuilding, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, isSidebarCollapsed } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -4532,11 +4532,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         style={{ mixBlendMode: 'multiply' }}
       />
       
-      {selectedTile && selectedTool === 'select' && !isMobile && (
+      {selectedTile && selectedTool === 'select' && (
         <TileInfoPanel
           tile={grid[selectedTile.y][selectedTile.x]}
           services={state.services}
+          money={state.stats.money}
+          onUpgrade={upgradeBuilding}
           onClose={() => setSelectedTile(null)}
+          isMobile={isMobile}
         />
       )}
       

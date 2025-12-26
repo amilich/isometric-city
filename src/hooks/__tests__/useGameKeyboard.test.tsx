@@ -235,4 +235,27 @@ describe('useGameKeyboard', () => {
     triggerKeyDown('?');
     expect(mockOnToggleHelp).toHaveBeenCalled();
   });
+
+  it('cycles overlays on O', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+
+    triggerKeyDown('o');
+    expect(mockSetOverlayMode).toHaveBeenCalledWith('traffic');
+  });
+
+  it('cycles sports tools on A', () => {
+    runHook({
+      overlayMode: 'none',
+      setOverlayMode: mockSetOverlayMode,
+      selectedTile: null,
+      setSelectedTile: mockSetSelectedTile,
+    });
+    triggerKeyDown('a');
+    expect(mockSetTool).toHaveBeenCalledWith('basketball_courts');
+  });
 });

@@ -2,9 +2,9 @@
 
 ## Phase 1: Shortcuts & Overlay Infrastructure
 
-- [ ] Task: Remap Sports category shortcut to 'A' in `src/game/shortcuts.ts` (or relevant file).
-- [ ] Task: Implement `O` key handler to cycle overlays in `Game.tsx` or `useGameKeyboard.ts`.
-- [ ] Task: Ensure current overlays (Traffic, etc.) respond to the new cycling mechanism.
+- [x] Task: Remap Sports category shortcut to 'A' in `src/game/shortcuts.ts` (or relevant file).
+- [x] Task: Implement `O` key handler to cycle overlays in `Game.tsx` or `useGameKeyboard.ts`.
+- [x] Task: Ensure current overlays (Traffic, etc.) respond to the new cycling mechanism.
 - [ ] Task: Conductor - Phase 1 Verification
 
 ## Phase 2: Target Level Overlay Implementation

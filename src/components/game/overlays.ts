@@ -84,6 +84,24 @@ export const OVERLAY_CONFIG: Record<OverlayMode, OverlayConfig> = {
     activeColor: 'bg-yellow-500',
     hoverColor: 'hover:bg-yellow-600',
   },
+  traffic: {
+    label: 'Traffic',
+    title: 'Traffic Density',
+    activeColor: 'bg-orange-500',
+    hoverColor: 'hover:bg-orange-600',
+  },
+  land_value: {
+    label: 'Land Value',
+    title: 'Land Value Map',
+    activeColor: 'bg-emerald-500',
+    hoverColor: 'hover:bg-emerald-600',
+  },
+  target_level: {
+    label: 'Target Level',
+    title: 'Growth Potential',
+    activeColor: 'bg-cyan-500',
+    hoverColor: 'hover:bg-cyan-600',
+  },
 };
 
 /** Map of building tools to their corresponding overlay mode */
@@ -184,6 +202,22 @@ export function getOverlayFillStyle(
         ? 'rgba(245, 158, 11, 0.7)'  // Bright amber for existing subway
         : 'rgba(40, 30, 20, 0.4)';   // Dark brown tint for "underground" view
 
+    case 'traffic':
+      // Traffic visualization: Green (low) to Red (high)
+      if (tile.traffic <= 0) return NO_OVERLAY;
+      // Normalize traffic 0-100
+      const trafficIntensity = Math.min(1, tile.traffic / 50); // Scale up sensitivity
+      return `rgba(${Math.floor(255 * trafficIntensity)}, ${Math.floor(255 * (1 - trafficIntensity))}, 0, 0.4)`;
+
+    case 'land_value':
+      // Land Value visualization: Dark Blue (low) to Bright Green (high)
+      const lvIntensity = Math.min(1, tile.landValue / 100);
+      return `rgba(0, ${Math.floor(255 * lvIntensity)}, ${Math.floor(100 + 155 * (1 - lvIntensity))}, 0.4)`;
+
+    case 'target_level':
+      // Placeholder for Phase 2
+      return NO_OVERLAY;
+
     case 'none':
     default:
       return NO_OVERLAY;
@@ -200,7 +234,8 @@ export function getOverlayForTool(tool: string): OverlayMode {
 
 /** List of all overlay modes (for iteration) */
 export const OVERLAY_MODES: OverlayMode[] = [
-  'none', 'power', 'water', 'fire', 'police', 'health', 'education', 'subway'
+  'none', 'power', 'water', 'fire', 'police', 'health', 'education', 'subway',
+  'traffic', 'land_value', 'target_level'
 ];
 
 // ============================================================================
@@ -217,6 +252,9 @@ export const OVERLAY_TO_BUILDING_TYPES: Record<OverlayMode, string[]> = {
   health: ['hospital'],
   education: ['school', 'university'],
   subway: ['subway_station'],
+  traffic: [],
+  land_value: [],
+  target_level: [],
 };
 
 /** Overlay circle stroke colors (light/visible colors) */
@@ -229,6 +267,9 @@ export const OVERLAY_CIRCLE_COLORS: Record<OverlayMode, string> = {
   health: 'rgba(134, 239, 172, 0.8)',  // Light green
   education: 'rgba(196, 181, 253, 0.8)', // Light purple
   subway: 'rgba(253, 224, 71, 0.8)',   // Yellow
+  traffic: 'rgba(249, 115, 22, 0.8)',  // Orange
+  land_value: 'rgba(16, 185, 129, 0.8)', // Emerald
+  target_level: 'rgba(6, 182, 212, 0.8)', // Cyan
 };
 
 /** Building highlight glow colors */
@@ -241,6 +282,9 @@ export const OVERLAY_HIGHLIGHT_COLORS: Record<OverlayMode, string> = {
   health: 'rgba(34, 197, 94, 1)',      // Green
   education: 'rgba(168, 85, 247, 1)',  // Purple
   subway: 'rgba(234, 179, 8, 1)',      // Yellow
+  traffic: 'rgba(249, 115, 22, 1)',    // Orange
+  land_value: 'rgba(16, 185, 129, 1)', // Emerald
+  target_level: 'rgba(6, 182, 212, 1)', // Cyan
 };
 
 /** Overlay circle fill colors (subtle, for area visibility) */
@@ -253,4 +297,7 @@ export const OVERLAY_CIRCLE_FILL_COLORS: Record<OverlayMode, string> = {
   health: 'rgba(134, 239, 172, 0.12)',
   education: 'rgba(196, 181, 253, 0.12)',
   subway: 'rgba(253, 224, 71, 0.12)',
+  traffic: 'rgba(249, 115, 22, 0.12)',
+  land_value: 'rgba(16, 185, 129, 0.12)',
+  target_level: 'rgba(6, 182, 212, 0.12)',
 };

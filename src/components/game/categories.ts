@@ -25,7 +25,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     key: 'sports', 
     label: 'Sports', 
     tools: ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'],
-    shortcut: 'o' // 'S' is taken, 'O' for SpOrts?
+    shortcut: 'a' // 'S' is taken, 'A' for Athletics/Sports
   },
   { 
     key: 'recreation', 

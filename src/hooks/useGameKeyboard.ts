@@ -45,6 +45,14 @@ export function useGameKeyboard({
       } else if (e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         setTool('bulldoze');
+      } else if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        // Cycle overlays: None -> Traffic -> LandValue -> TargetLevel -> None
+        if (overlayMode === 'none') setOverlayMode('traffic');
+        else if (overlayMode === 'traffic') setOverlayMode('land_value');
+        else if (overlayMode === 'land_value') setOverlayMode('target_level');
+        else if (overlayMode === 'target_level') setOverlayMode('none');
+        else setOverlayMode('none'); // Reset if in another mode (e.g. power)
       } else if (e.key === ' ') {
         e.preventDefault();
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)

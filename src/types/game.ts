@@ -212,6 +212,9 @@ export type BridgeType = 'small' | 'medium' | 'large' | 'suspension';
 // Bridge orientation
 export type BridgeOrientation = 'ns' | 'ew';
 
+// What the bridge carries (road or rail)
+export type BridgeTrackType = 'road' | 'rail';
+
 export interface Building {
   type: BuildingType;
   level: number;
@@ -233,6 +236,7 @@ export interface Building {
   bridgePosition?: 'start' | 'middle' | 'end'; // Position within the bridge span
   bridgeIndex?: number; // Index of this tile within the bridge (0-based)
   bridgeSpan?: number; // Total number of tiles in this bridge
+  bridgeTrackType?: BridgeTrackType; // What the bridge carries: 'road' or 'rail'
 }
 
 // City definition for multi-city maps

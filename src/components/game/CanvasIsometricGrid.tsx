@@ -101,6 +101,9 @@ import {
   drawRailroadCrossing,
   getCrossingStateForTile,
   GATE_ANIMATION_SPEED,
+  TRACK_GAUGE_RATIO,
+  TRACK_SEPARATION_RATIO,
+  RAIL_COLORS,
 } from '@/components/game/railSystem';
 import {
   spawnTrain,
@@ -127,7 +130,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, placeAtTile, finishRoadDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { state, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
@@ -1667,8 +1670,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const position = building.bridgePosition || 'middle';
       const bridgeIndex = building.bridgeIndex ?? 0;
       const bridgeSpan = building.bridgeSpan ?? 1;
+      const trackType = building.bridgeTrackType || 'road'; // 'road' or 'rail'
+      const isRailBridge = trackType === 'rail';
       
-      // Bridge styles - all use road-like asphalt colors
+      // Bridge styles - road bridges use asphalt, rail bridges use gravel/ballast
       const bridgeStyles: Record<string, { asphalt: string; barrier: string; accent: string; support: string; cable?: string }[]> = {
         small: [
           { asphalt: ROAD_COLORS.ASPHALT, barrier: '#707070', accent: '#606060', support: '#404040' },
@@ -1692,8 +1697,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       
       const style = bridgeStyles[bridgeType]?.[variant] || bridgeStyles.small[0];
       
-      // Bridge width - match road surface width
-      const bridgeWidthRatio = 0.45;
+      // Bridge width - rail bridges are 10% skinnier than road bridges
+      const bridgeWidthRatio = isRailBridge ? 0.405 : 0.45; // 0.45 * 0.9 = 0.405
       const halfWidth = w * bridgeWidthRatio * 0.5;
       
       // For bridges, we draw a SINGLE continuous parallelogram from edge to edge
@@ -1813,15 +1818,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const travelDirX = dx / travelLen;
       const travelDirY = dy / travelLen;
       
-      if (position === 'start' || position === 'end') {
-        // Determine which edge connects to land (road) and which direction to extend
-        const connectorEdge = position === 'start' ? startEdge : endEdge;
-        // For 'start', extend BACKWARD (opposite of travel); for 'end', extend FORWARD (in travel direction)
-        const extensionDir = position === 'start' ? -1 : 1;
-        
-        // Calculate how far to extend beyond the bridge tile (to cover the road's centerline)
-        const extensionAmount = 8; // Extend into the road tile to cover centerline
-        
+      // Calculate how far to extend beyond the bridge tile (to cover the road's centerline)
+      const extensionAmount = 8; // Extend into the road tile to cover centerline
+      
+      // Helper to draw a connector from bridge edge to road
+      const drawConnector = (connectorEdge: { x: number; y: number }, extensionDir: number) => {
         // Extended edge position (going toward the adjacent road)
         const extendedX = connectorEdge.x + travelDirX * extensionAmount * extensionDir;
         const extendedY = connectorEdge.y + travelDirY * extensionAmount * extensionDir;
@@ -1833,8 +1834,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         const connectorBridgeLeft = { x: connectorEdge.x + perpX * halfWidth, y: connectorEdge.y - deckElevation + perpY * halfWidth };
         const connectorBridgeRight = { x: connectorEdge.x - perpX * halfWidth, y: connectorEdge.y - deckElevation - perpY * halfWidth };
         
-        // Draw the connector (asphalt color to match road/bridge)
-        ctx.fillStyle = style.asphalt;
+        // Draw the connector (use appropriate color for road or rail)
+        ctx.fillStyle = isRailBridge ? '#6B6355' : style.asphalt;
         ctx.beginPath();
         ctx.moveTo(connectorRoadLeft.x, connectorRoadLeft.y);
         ctx.lineTo(connectorBridgeLeft.x, connectorBridgeLeft.y);
@@ -1842,6 +1843,19 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         ctx.lineTo(connectorRoadRight.x, connectorRoadRight.y);
         ctx.closePath();
         ctx.fill();
+      };
+      
+      // For 1x1 bridges (span of 1), draw connectors on BOTH ends
+      const isSingleTileBridge = bridgeSpan === 1;
+      
+      if (position === 'start' || isSingleTileBridge) {
+        // Draw connector at start edge (extending backward)
+        drawConnector(startEdge, -1);
+      }
+      
+      if (position === 'end' || isSingleTileBridge) {
+        // Draw connector at end edge (extending forward)
+        drawConnector(endEdge, 1);
       }
       
       // ============================================================
@@ -1928,7 +1942,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
       
       // Draw the deck as a parallelogram with tile-edge-aligned sides
-      ctx.fillStyle = style.asphalt;
+      // Rail bridges use gravel/ballast color, road bridges use asphalt
+      ctx.fillStyle = isRailBridge ? '#6B6355' : style.asphalt; // Gravel for rail, asphalt for road
       ctx.beginPath();
       ctx.moveTo(startLeft.x, startLeft.y);
       ctx.lineTo(endLeft.x, endLeft.y);
@@ -1968,17 +1983,104 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
       
       // ============================================================
-      // LANE MARKINGS (dashed center line)
+      // LANE MARKINGS (road) or RAIL TRACKS (rail)
       // ============================================================
-      if (currentZoom >= 0.6) {
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 6]);
-        ctx.beginPath();
-        ctx.moveTo(startEdge.x, startY);
-        ctx.lineTo(endEdge.x, endY);
-        ctx.stroke();
-        ctx.setLineDash([]);
+      if (isRailBridge) {
+        // Draw rail tracks on rail bridge - DOUBLE TRACKS matching railSystem.ts
+        if (currentZoom >= 0.4) {
+          const railGauge = w * TRACK_GAUGE_RATIO;
+          const halfGauge = railGauge / 2;
+          const trackSep = w * TRACK_SEPARATION_RATIO;
+          const halfSep = trackSep / 2;
+          const railWidth = currentZoom >= 0.7 ? 0.85 : 0.7;
+          
+          // Helper to offset a point along perpendicular
+          const offsetPt = (pt: { x: number; y: number }, offset: number) => ({
+            x: pt.x + perpX * offset,
+            y: pt.y + perpY * offset
+          });
+          
+          // Draw ties (wooden sleepers) for both tracks
+          ctx.strokeStyle = RAIL_COLORS.TIE;
+          ctx.lineWidth = currentZoom >= 0.7 ? 2.5 : 2;
+          ctx.lineCap = 'butt';
+          
+          const numTies = 7; // Match TIES_PER_TILE
+          const tieHalfLen = w * 0.065; // Half-length of each tie
+          
+          for (let trackOffset of [halfSep, -halfSep]) {
+            // Track center line
+            const trackStartX = startEdge.x + perpX * trackOffset;
+            const trackStartY = startY + perpY * trackOffset;
+            const trackEndX = endEdge.x + perpX * trackOffset;
+            const trackEndY = endY + perpY * trackOffset;
+            
+            for (let i = 0; i <= numTies; i++) {
+              const t = i / numTies;
+              const tieX = trackStartX + (trackEndX - trackStartX) * t;
+              const tieY = trackStartY + (trackEndY - trackStartY) * t;
+              
+              ctx.beginPath();
+              ctx.moveTo(tieX + perpX * tieHalfLen, tieY + perpY * tieHalfLen);
+              ctx.lineTo(tieX - perpX * tieHalfLen, tieY - perpY * tieHalfLen);
+              ctx.stroke();
+            }
+          }
+          
+          // Draw rails (4 rails total - 2 per track)
+          // Draw shadow first, then rails on top
+          for (let trackOffset of [halfSep, -halfSep]) {
+            const trackStartX = startEdge.x + perpX * trackOffset;
+            const trackStartY = startY + perpY * trackOffset;
+            const trackEndX = endEdge.x + perpX * trackOffset;
+            const trackEndY = endY + perpY * trackOffset;
+            
+            // Rail shadows
+            ctx.strokeStyle = RAIL_COLORS.RAIL_SHADOW;
+            ctx.lineWidth = railWidth + 0.3;
+            ctx.lineCap = 'round';
+            
+            // Left rail shadow
+            ctx.beginPath();
+            ctx.moveTo(trackStartX + perpX * halfGauge + 0.3, trackStartY + perpY * halfGauge + 0.3);
+            ctx.lineTo(trackEndX + perpX * halfGauge + 0.3, trackEndY + perpY * halfGauge + 0.3);
+            ctx.stroke();
+            
+            // Right rail shadow
+            ctx.beginPath();
+            ctx.moveTo(trackStartX - perpX * halfGauge + 0.3, trackStartY - perpY * halfGauge + 0.3);
+            ctx.lineTo(trackEndX - perpX * halfGauge + 0.3, trackEndY - perpY * halfGauge + 0.3);
+            ctx.stroke();
+            
+            // Rails
+            ctx.strokeStyle = RAIL_COLORS.RAIL;
+            ctx.lineWidth = railWidth;
+            
+            // Left rail
+            ctx.beginPath();
+            ctx.moveTo(trackStartX + perpX * halfGauge, trackStartY + perpY * halfGauge);
+            ctx.lineTo(trackEndX + perpX * halfGauge, trackEndY + perpY * halfGauge);
+            ctx.stroke();
+            
+            // Right rail
+            ctx.beginPath();
+            ctx.moveTo(trackStartX - perpX * halfGauge, trackStartY - perpY * halfGauge);
+            ctx.lineTo(trackEndX - perpX * halfGauge, trackEndY - perpY * halfGauge);
+            ctx.stroke();
+          }
+        }
+      } else {
+        // Draw lane markings for road bridge
+        if (currentZoom >= 0.6) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 6]);
+          ctx.beginPath();
+          ctx.moveTo(startEdge.x, startY);
+          ctx.lineTo(endEdge.x, endY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
       }
       
       // ============================================================
@@ -4389,8 +4491,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
     }
     
-    // After placing roads, create bridges for valid water crossings and check for city discovery
-    if (isDragging && selectedTool === 'road' && dragStartTile && dragEndTile) {
+    // After placing roads or rail, create bridges for valid water crossings and check for city discovery
+    if (isDragging && (selectedTool === 'road' || selectedTool === 'rail') && dragStartTile && dragEndTile) {
       // Collect all tiles in the drag path
       const minX = Math.min(dragStartTile.x, dragEndTile.x);
       const maxX = Math.max(dragStartTile.x, dragEndTile.x);
@@ -4405,19 +4507,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
       
       // Create bridges for valid water crossings in the drag path
-      finishRoadDrag(pathTiles);
+      finishTrackDrag(pathTiles, selectedTool as 'road' | 'rail');
       
-      // Use setTimeout to allow state to update first, then check for discoverable cities
-      setTimeout(() => {
-        checkAndDiscoverCities((discoveredCity) => {
-          // Show dialog for the newly discovered city
-          setCityConnectionDialog({ direction: discoveredCity.direction });
-        });
-      }, 50);
-    }
-    
-    // After placing rail, check if any cities should be discovered
-    if (isDragging && selectedTool === 'rail') {
       // Use setTimeout to allow state to update first, then check for discoverable cities
       setTimeout(() => {
         checkAndDiscoverCities((discoveredCity) => {
@@ -4439,7 +4530,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!containerRef.current) {
       setHoveredTile(null);
     }
-  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, finishRoadDrag, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
+  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, finishTrackDrag, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();

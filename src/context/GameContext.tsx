@@ -57,7 +57,7 @@ type GameContextValue = {
   setActivePanel: (panel: GameState['activePanel']) => void;
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
   placeAtTile: (x: number, y: number) => void;
-  finishRoadDrag: (pathTiles: { x: number; y: number }[]) => void; // Create bridges after road drag
+  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail') => void; // Create bridges after road/rail drag
   connectToCity: (cityId: string) => void;
   discoverCity: (cityId: string) => void;
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
@@ -784,9 +784,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Called after a road drag operation to create bridges for water crossings
-  const finishRoadDrag = useCallback((pathTiles: { x: number; y: number }[]) => {
-    setState((prev) => createBridgesOnPath(prev, pathTiles));
+  // Called after a road/rail drag operation to create bridges for water crossings
+  const finishTrackDrag = useCallback((pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail') => {
+    setState((prev) => createBridgesOnPath(prev, pathTiles, trackType));
   }, []);
 
   const connectToCity = useCallback((cityId: string) => {
@@ -1230,7 +1230,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setActivePanel,
     setBudgetFunding,
     placeAtTile,
-    finishRoadDrag,
+    finishTrackDrag,
     connectToCity,
     discoverCity,
     checkAndDiscoverCities,

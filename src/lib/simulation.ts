@@ -786,7 +786,8 @@ function createBridgeBuilding(
   variant: number,
   position: 'start' | 'middle' | 'end',
   index: number,
-  span: number
+  span: number,
+  trackType: 'road' | 'rail' = 'road'
 ): Building {
   return {
     type: 'bridge',
@@ -806,6 +807,7 @@ function createBridgeBuilding(
     bridgePosition: position,
     bridgeIndex: index,
     bridgeSpan: span,
+    bridgeTrackType: trackType,
   };
 }
 
@@ -832,6 +834,7 @@ interface BridgeOpportunity {
   span: number;
   bridgeType: BridgeType;
   waterTiles: { x: number; y: number }[];
+  trackType: 'road' | 'rail'; // What the bridge carries
 }
 
 /** Scan for a bridge opportunity in a specific direction */
@@ -842,7 +845,8 @@ function scanForBridgeInDirection(
   startY: number,
   dx: number,
   dy: number,
-  orientation: BridgeOrientation
+  orientation: BridgeOrientation,
+  trackType: 'road' | 'rail'
 ): BridgeOpportunity | null {
   const waterTiles: { x: number; y: number }[] = [];
   let x = startX + dx;
@@ -859,10 +863,10 @@ function scanForBridgeInDirection(
       if (waterTiles.length > MAX_BRIDGE_SPAN) {
         return null; // Too wide to bridge
       }
-    } else if (tile.building.type === 'road') {
-      // Found a ROAD on the other side - valid bridge opportunity!
-      // Note: We only connect to roads, NOT to bridges
-      // This prevents creating spurious bridges when placing roads near existing bridges
+    } else if (tile.building.type === trackType) {
+      // Found the same track type on the other side - valid bridge opportunity!
+      // Note: We only connect to the same track type, NOT to bridges
+      // This prevents creating spurious bridges when placing tracks near existing bridges
       if (waterTiles.length > 0) {
         const span = waterTiles.length;
         const bridgeType = getBridgeTypeForSpan(span);
@@ -876,6 +880,7 @@ function scanForBridgeInDirection(
           span,
           bridgeType,
           waterTiles,
+          trackType,
         };
       }
       return null;
@@ -883,7 +888,7 @@ function scanForBridgeInDirection(
       // Found a bridge - don't create another bridge connecting to it
       return null;
     } else {
-      // Found land that's not a road - no bridge possible in this direction
+      // Found land that's not the same track type - no bridge possible in this direction
       break;
     }
     
@@ -894,37 +899,38 @@ function scanForBridgeInDirection(
   return null;
 }
 
-/** Detect if placing a road creates a bridge opportunity from this tile */
+/** Detect if placing a road or rail creates a bridge opportunity from this tile */
 function detectBridgeOpportunity(
   grid: Tile[][],
   gridSize: number,
   x: number,
-  y: number
+  y: number,
+  trackType: 'road' | 'rail'
 ): BridgeOpportunity | null {
   const tile = grid[y]?.[x];
   if (!tile) return null;
   
-  // Only check from ROAD tiles, not bridges
-  // Bridges should only be created when dragging a road across water to another road
-  if (tile.building.type !== 'road') {
+  // Only check from the specified track type tiles, not bridges
+  // Bridges should only be created when dragging across water to another tile of the same type
+  if (tile.building.type !== trackType) {
     return null;
   }
   
-  // Check each direction for water followed by road
+  // Check each direction for water followed by same track type
   // North (x-1, y stays same in grid coords)
-  const northOpp = scanForBridgeInDirection(grid, gridSize, x, y, -1, 0, 'ns');
+  const northOpp = scanForBridgeInDirection(grid, gridSize, x, y, -1, 0, 'ns', trackType);
   if (northOpp) return northOpp;
   
   // South (x+1, y stays same)
-  const southOpp = scanForBridgeInDirection(grid, gridSize, x, y, 1, 0, 'ns');
+  const southOpp = scanForBridgeInDirection(grid, gridSize, x, y, 1, 0, 'ns', trackType);
   if (southOpp) return southOpp;
   
   // East (x stays, y-1)
-  const eastOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, -1, 'ew');
+  const eastOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, -1, 'ew', trackType);
   if (eastOpp) return eastOpp;
   
   // West (x stays, y+1)
-  const westOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, 1, 'ew');
+  const westOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, 1, 'ew', trackType);
   if (westOpp) return westOpp;
   
   return null;
@@ -958,43 +964,47 @@ function buildBridges(
       variant,
       position,
       index,
-      span
+      span,
+      opportunity.trackType
     );
     // Keep the tile as having no zone
     grid[pos.y][pos.x].zone = 'none';
   });
 }
 
-/** Check and create bridges after road placement */
+/** Check and create bridges after road or rail placement */
 function checkAndCreateBridges(
   grid: Tile[][],
   gridSize: number,
   placedX: number,
-  placedY: number
+  placedY: number,
+  trackType: 'road' | 'rail'
 ): void {
   // Check for bridge opportunities from the placed tile
-  const opportunity = detectBridgeOpportunity(grid, gridSize, placedX, placedY);
+  const opportunity = detectBridgeOpportunity(grid, gridSize, placedX, placedY, trackType);
   if (opportunity) {
     buildBridges(grid, opportunity);
   }
 }
 
 /**
- * Create bridges along a road drag path.
- * This is called after a road drag operation completes to create bridges
+ * Create bridges along a road or rail drag path.
+ * This is called after a road/rail drag operation completes to create bridges
  * for any valid water crossings in the path.
  * 
  * IMPORTANT: Bridges are only created if the drag path actually crosses water.
- * This prevents auto-creating bridges when placing individual road tiles on
+ * This prevents auto-creating bridges when placing individual tiles on
  * opposite sides of water.
  * 
  * @param state - Current game state
  * @param pathTiles - Array of {x, y} coordinates that were part of the drag
+ * @param trackType - Whether this is a 'road' or 'rail' bridge
  * @returns Updated game state with bridges created
  */
 export function createBridgesOnPath(
   state: GameState,
-  pathTiles: { x: number; y: number }[]
+  pathTiles: { x: number; y: number }[],
+  trackType: 'road' | 'rail' = 'road'
 ): GameState {
   if (pathTiles.length === 0) return state;
   
@@ -1012,11 +1022,11 @@ export function createBridgesOnPath(
   
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
   
-  // Check each road tile in the path for bridge opportunities
+  // Check each tile of the specified track type in the path for bridge opportunities
   for (const tile of pathTiles) {
-    // Only check from actual road tiles (not water or other types)
-    if (newGrid[tile.y]?.[tile.x]?.building.type === 'road') {
-      checkAndCreateBridges(newGrid, state.gridSize, tile.x, tile.y);
+    // Only check from actual track type tiles (not water or other types)
+    if (newGrid[tile.y]?.[tile.x]?.building.type === trackType) {
+      checkAndCreateBridges(newGrid, state.gridSize, tile.x, tile.y, trackType);
     }
   }
   

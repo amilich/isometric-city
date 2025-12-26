@@ -621,6 +621,48 @@ function drawTies(
     }
   };
 
+  // Approximate quadratic bezier length (sufficient for tie allocation)
+  const approxQuadraticBezierLength = (
+    p0: { x: number; y: number },
+    p1: { x: number; y: number },
+    p2: { x: number; y: number },
+    samples: number = 12
+  ): number => {
+    let total = 0;
+    let prevX = p0.x;
+    let prevY = p0.y;
+    for (let i = 1; i <= samples; i++) {
+      const t = i / samples;
+      const u = 1 - t;
+      const x = u * u * p0.x + 2 * u * t * p1.x + t * t * p2.x;
+      const y = u * u * p0.y + 2 * u * t * p1.y + t * t * p2.y;
+      total += Math.hypot(x - prevX, y - prevY);
+      prevX = x;
+      prevY = y;
+    }
+    return total;
+  };
+
+  const allocateCurveTies = (len0: number, len1: number, basePerTrack: number): { ties0: number; ties1: number } => {
+    const totalTies = basePerTrack * 2;
+    const denom = len0 + len1;
+    if (!Number.isFinite(denom) || denom <= 0) return { ties0: basePerTrack, ties1: basePerTrack };
+
+    // Allocate ties proportional to curve length, but keep the adjustment subtle.
+    const ideal0 = Math.round((totalTies * len0) / denom);
+    const deltaCap = 2; // "a few" more/less on turns
+    let delta = ideal0 - basePerTrack;
+    if (delta > deltaCap) delta = deltaCap;
+    if (delta < -deltaCap) delta = -deltaCap;
+
+    // Ensure each track still has a reasonable minimum number of ties.
+    const minPerTrack = Math.max(2, Math.floor(basePerTrack / 2));
+    let ties0 = basePerTrack + delta;
+    ties0 = Math.max(minPerTrack, Math.min(totalTies - minPerTrack, ties0));
+    const ties1 = totalTies - ties0;
+    return { ties0, ties1 };
+  };
+
   // Draw ties for double track along a curve
   const drawDoubleCurveTies = (
     from: { x: number; y: number },
@@ -635,16 +677,22 @@ function drawTies(
     curvePerp: { x: number; y: number },
     numTies: number
   ) => {
-    // Track 0
     const from0 = offsetPoint(from, fromPerp, halfSep);
     const to0 = offsetPoint(to, toPerp, halfSep);
     const ctrl0 = offsetPoint(control, curvePerp, halfSep);
-    drawSingleCurveTies(from0, to0, ctrl0, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, numTies);
-    // Track 1
+
     const from1 = offsetPoint(from, fromPerp, -halfSep);
     const to1 = offsetPoint(to, toPerp, -halfSep);
     const ctrl1 = offsetPoint(control, curvePerp, -halfSep);
-    drawSingleCurveTies(from1, to1, ctrl1, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, numTies);
+
+    // Curved ties: outer track has longer arc length than inner track.
+    // Allocate "a few" extra ties to the longer curve and remove a few from the shorter one.
+    const len0 = approxQuadraticBezierLength(from0, ctrl0, to0);
+    const len1 = approxQuadraticBezierLength(from1, ctrl1, to1);
+    const { ties0, ties1 } = allocateCurveTies(len0, len1, numTies);
+
+    drawSingleCurveTies(from0, to0, ctrl0, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, ties0);
+    drawSingleCurveTies(from1, to1, ctrl1, fromTieDir, toTieDir, fromTiePerpDir, toTiePerpDir, ties1);
   };
 
   const tiesHalf = Math.ceil(TIES_PER_TILE / 2);

@@ -126,15 +126,21 @@ export const SEAPLANE_COLORS = ['#ffffff', '#1e40af', '#dc2626', '#f97316', '#05
 export const MAX_SEAPLANES = 25; // Maximum seaplanes in the city
 export const SEAPLANE_SPAWN_INTERVAL_MIN = 3; // Minimum seconds between spawns
 export const SEAPLANE_SPAWN_INTERVAL_MAX = 8; // Maximum seconds between spawns
-export const SEAPLANE_TAXI_TIME_MIN = 3; // Minimum seconds taxiing on water before takeoff
-export const SEAPLANE_TAXI_TIME_MAX = 8; // Maximum seconds taxiing
-export const SEAPLANE_FLIGHT_TIME_MIN = 20; // Minimum flight time in seconds
-export const SEAPLANE_FLIGHT_TIME_MAX = 40; // Maximum flight time
+export const SEAPLANE_TAXI_TIME_MIN = 5; // Minimum seconds taxiing on water before docking/takeoff
+export const SEAPLANE_TAXI_TIME_MAX = 12; // Maximum seconds taxiing
+export const SEAPLANE_FLIGHT_TIME_MIN = 25; // Minimum flight time in seconds
+export const SEAPLANE_FLIGHT_TIME_MAX = 50; // Maximum flight time
 export const SEAPLANE_WATER_SPEED = 20; // Speed when taxiing on water (px/sec)
 export const SEAPLANE_TAKEOFF_SPEED = 60; // Speed during takeoff run
 export const SEAPLANE_FLIGHT_SPEED_MIN = 70; // Minimum cruising speed
 export const SEAPLANE_FLIGHT_SPEED_MAX = 100; // Maximum cruising speed
 export const SEAPLANE_MIN_ZOOM = 0.3; // Minimum zoom to show seaplanes
+// Seaplane dock/marina constants
+export const SEAPLANE_DOCK_TIME_MIN = 8; // Minimum seconds docked at marina/pier
+export const SEAPLANE_DOCK_TIME_MAX = 20; // Maximum seconds docked
+export const SEAPLANE_DOCK_APPROACH_DIST = 30; // Distance from dock to start final docking
+export const SEAPLANE_DOCK_SPEED = 8; // Slow speed when approaching dock
+export const SEAPLANE_MAX_FLIGHT_CYCLES = 3; // Max takeoff/landing cycles before despawning
 
 // Helicopter system constants
 export const HELICOPTER_MIN_POPULATION = 3000; // Minimum population required for helicopter activity

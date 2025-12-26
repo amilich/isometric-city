@@ -110,29 +110,19 @@ export function getOverlayButtonClass(mode: OverlayMode, isActive: boolean): str
 // Overlay Fill Style Calculation
 // ============================================================================
 
-/** Color configuration for coverage-based overlays */
-const COVERAGE_COLORS = {
-  fire: {
-    baseR: 239, baseG: 68, baseB: 68,
-    intensityG: 100, intensityB: 100,
-    baseAlpha: 0.3, intensityAlpha: 0.4,
-  },
-  police: {
-    baseR: 59, baseG: 130, baseB: 246,
-    intensityR: 100, intensityG: 100, intensityB: -50,
-    baseAlpha: 0.3, intensityAlpha: 0.4,
-  },
-  health: {
-    baseR: 34, baseG: 197, baseB: 94,
-    intensityR: 100, intensityG: -50, intensityB: 50,
-    baseAlpha: 0.3, intensityAlpha: 0.4,
-  },
-  education: {
-    baseR: 147, baseG: 51, baseB: 234,
-    intensityR: 50, intensityG: 100, intensityB: -50,
-    baseAlpha: 0.3, intensityAlpha: 0.4,
-  },
-} as const;
+/**
+ * Helper to interpolate between Red (bad) and Green (good) based on intensity (0-1)
+ */
+function getRedToGreenColor(intensity: number, alpha: number = 0.4): string {
+  // Red-500: 239, 68, 68
+  // Green-500: 34, 197, 94
+  
+  const r = Math.round(239 + (34 - 239) * intensity);
+  const g = Math.round(68 + (197 - 68) * intensity);
+  const b = Math.round(68 + (94 - 68) * intensity);
+  
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 /**
  * Calculate the fill style color for an overlay tile.
@@ -159,27 +149,24 @@ export function getOverlayFillStyle(
         : 'rgba(239, 68, 68, 0.4)'; // Red for not watered
 
     case 'fire': {
-      const intensity = coverage.fire / 100;
-      const colors = COVERAGE_COLORS.fire;
-      return `rgba(${colors.baseR}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
+      // 0 coverage = Red, 100 coverage = Green
+      const intensity = Math.min(1, Math.max(0, coverage.fire / 100));
+      return getRedToGreenColor(intensity);
     }
 
     case 'police': {
-      const intensity = coverage.police / 100;
-      const colors = COVERAGE_COLORS.police;
-      return `rgba(${colors.baseR + Math.floor(intensity * colors.intensityR)}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
+      const intensity = Math.min(1, Math.max(0, coverage.police / 100));
+      return getRedToGreenColor(intensity);
     }
 
     case 'health': {
-      const intensity = coverage.health / 100;
-      const colors = COVERAGE_COLORS.health;
-      return `rgba(${colors.baseR + Math.floor(intensity * colors.intensityR)}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
+      const intensity = Math.min(1, Math.max(0, coverage.health / 100));
+      return getRedToGreenColor(intensity);
     }
 
     case 'education': {
-      const intensity = coverage.education / 100;
-      const colors = COVERAGE_COLORS.education;
-      return `rgba(${colors.baseR + Math.floor(intensity * colors.intensityR)}, ${colors.baseG + Math.floor(intensity * colors.intensityG)}, ${colors.baseB + Math.floor(intensity * colors.intensityB)}, ${colors.baseAlpha + intensity * colors.intensityAlpha})`;
+      const intensity = Math.min(1, Math.max(0, coverage.education / 100));
+      return getRedToGreenColor(intensity);
     }
 
     case 'subway':

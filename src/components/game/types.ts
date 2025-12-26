@@ -478,7 +478,6 @@ export type OverlayMode =
   | 'health' 
   | 'education' 
   | 'subway'
-  | 'traffic'
   | 'land_value'
   | 'target_level';
 

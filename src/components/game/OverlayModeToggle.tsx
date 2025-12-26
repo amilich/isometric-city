@@ -44,7 +44,6 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   health: <HealthIcon size={14} />,
   education: <EducationIcon size={14} />,
   subway: <SubwayIcon size={14} />,
-  traffic: <RoadIcon size={14} />,
   land_value: <DollarSignIcon size={14} />,
   target_level: <TargetIcon size={14} />,
 };

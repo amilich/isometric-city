@@ -31,10 +31,10 @@ export const metadata: Metadata = {
       : 'http://localhost:3000'
   ),
   title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
-  description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
+  description: 'Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet.',
   openGraph: {
     title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
-    description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
+    description: 'Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet.',
     type: 'website',
     images: [
       {
@@ -42,14 +42,14 @@ export const metadata: Metadata = {
         width: 1179,
         height: 1406,
         type: 'image/png',
-        alt: 'Truncgil MyCity - Isometric city builder game screenshot',
+        alt: 'Truncgil MyCity - İzometrik şehir kurma oyunu ekran görüntüsü',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
-    description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
+    description: 'Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet.',
     images: [
       {
         url: '/opengraph-image',

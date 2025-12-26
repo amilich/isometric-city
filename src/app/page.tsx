@@ -6,26 +6,12 @@ import { GameProvider } from '@/context/GameContext';
 import Game from '@/components/Game';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
+import { getStateFromUrl } from '@/lib/shareState';
+import { safeDeserializeFromStorage } from '@/lib/storageCompression';
 import { SavedCityMeta } from '@/types/game';
-import { decompressFromUTF16 } from 'lz-string';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
-
-// Must match the encoding used in GameContext.tsx
-const STORAGE_VALUE_PREFIX = 'v2:'; // lz-string UTF16 compressed JSON
-
-function parseFromStorage<T>(raw: string): T | null {
-  try {
-    const json = raw.startsWith(STORAGE_VALUE_PREFIX)
-      ? decompressFromUTF16(raw.slice(STORAGE_VALUE_PREFIX.length))
-      : raw;
-    if (!json) return null;
-    return JSON.parse(json) as T;
-  } catch {
-    return null;
-  }
-}
 
 // Background color to filter from sprite sheets (red)
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -34,38 +20,32 @@ const COLOR_THRESHOLD = 155;
 // Filter red background from sprite sheet
 function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
-  const width = img.naturalWidth || img.width;
-  const height = img.naturalHeight || img.height;
-  canvas.width = width;
-  canvas.height = height;
-
-  // `willReadFrequently` helps browsers optimize for getImageData-heavy usage
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  
+  const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
-
+  
   ctx.drawImage(img, 0, 0);
-  const imageData = ctx.getImageData(0, 0, width, height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
-
-  // Compare squared distances to avoid sqrt/pow in a tight loop
-  const thresholdSq = COLOR_THRESHOLD * COLOR_THRESHOLD;
-  const br = BACKGROUND_COLOR.r;
-  const bg = BACKGROUND_COLOR.g;
-  const bb = BACKGROUND_COLOR.b;
-
+  
   for (let i = 0; i < data.length; i += 4) {
-    // Skip already transparent pixels
-    if (data[i + 3] === 0) continue;
-
-    const dr = data[i] - br;
-    const dg = data[i + 1] - bg;
-    const db = data[i + 2] - bb;
-
-    if (dr * dr + dg * dg + db * db <= thresholdSq) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    
+    const distance = Math.sqrt(
+      Math.pow(r - BACKGROUND_COLOR.r, 2) +
+      Math.pow(g - BACKGROUND_COLOR.g, 2) +
+      Math.pow(b - BACKGROUND_COLOR.b, 2)
+    );
+    
+    if (distance <= COLOR_THRESHOLD) {
       data[i + 3] = 0; // Make transparent
     }
   }
-
+  
   ctx.putImageData(imageData, 0, 0);
   return canvas;
 }
@@ -86,7 +66,7 @@ function hasSavedGame(): boolean {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = parseFromStorage<any>(saved);
+      const parsed = safeDeserializeFromStorage<any>(saved);
       return !!(parsed && parsed.grid && parsed.gridSize && parsed.stats);
     }
   } catch {
@@ -101,8 +81,8 @@ function loadSavedCities(): SavedCityMeta[] {
   try {
     const saved = localStorage.getItem(SAVED_CITIES_INDEX_KEY);
     if (saved) {
-      const parsed = parseFromStorage<any>(saved);
-      if (parsed && Array.isArray(parsed)) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
         return parsed as SavedCityMeta[];
       }
     }
@@ -116,19 +96,8 @@ function loadSavedCities(): SavedCityMeta[] {
 function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: number; cols?: number; cellSize?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [filteredSheet, setFilteredSheet] = useState<HTMLCanvasElement | null>(null);
-  const [spritePackId, setSpritePackId] = useState(DEFAULT_SPRITE_PACK_ID);
-  const spritePack = useMemo(() => getSpritePack(spritePackId), [spritePackId]);
-
-  // Try to match the user's last selected sprite pack on the landing page
-  useEffect(() => {
-    try {
-      const savedPack = localStorage.getItem('isocity-sprite-pack');
-      if (savedPack) setSpritePackId(savedPack);
-    } catch {
-      // Ignore storage errors (private mode, blocked storage, etc.)
-    }
-  }, []);
-
+  const spritePack = useMemo(() => getSpritePack(DEFAULT_SPRITE_PACK_ID), []);
+  
   // Get random sprite keys from the sprite order, pre-validated to have valid coords
   const randomSpriteKeys = useMemo(() => {
     // Filter to only sprites that have valid building type mappings
@@ -143,7 +112,6 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
   
   // Load and filter sprite sheet
   useEffect(() => {
-    setFilteredSheet(null);
     const img = new Image();
     img.onload = () => {
       const filtered = filterBackgroundColor(img);
@@ -207,15 +175,7 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      const maybeRoundRect = (
-        ctx as unknown as { roundRect?: (x: number, y: number, w: number, h: number, r: number) => void }
-      ).roundRect;
-      if (typeof maybeRoundRect === 'function') {
-        maybeRoundRect.call(ctx, cellX + 2, cellY + 2, cellSize - 4, cellSize - 4, 4);
-      } else {
-        // Fallback for older browsers that don't support CanvasRenderingContext2D.roundRect
-        ctx.rect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4);
-      }
+      ctx.roundRect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4, 4);
       ctx.fill();
       ctx.stroke();
       
@@ -260,31 +220,12 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
       onClick={onLoad}
       className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200 group"
     >
-      <div className="flex gap-3 items-center">
-        <div className="w-16 h-16 flex-shrink-0 bg-white/5 border border-white/10 overflow-hidden">
-          {city.preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={city.preview}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-[10px] text-white/30">
-              No preview
-            </div>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
-            {city.cityName}
-          </h3>
-          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-            <span>Pop: {city.population.toLocaleString()}</span>
-            <span>${city.money.toLocaleString()}</span>
-          </div>
-        </div>
+      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
+        {city.cityName}
+      </h3>
+      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+        <span>Pop: {city.population.toLocaleString()}</span>
+        <span>${city.money.toLocaleString()}</span>
       </div>
     </button>
   );
@@ -304,7 +245,9 @@ export default function HomePage() {
     const checkSavedGame = () => {
       setIsChecking(false);
       setSavedCities(loadSavedCities());
-      if (hasSavedGame()) {
+      // If the user opened a shared link (#s=...), jump straight into the game.
+      const hasSharedUrl = !!getStateFromUrl();
+      if (hasSharedUrl || hasSavedGame()) {
         setShowGame(true);
       }
     };
@@ -374,7 +317,7 @@ export default function HomePage() {
           
           <Button 
             onClick={async () => {
-              const { default: exampleState } = await import('@/resources/example_state_8.json');
+              const { default: exampleState } = await import('@/resources/example_state_9.json');
               localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
               setShowGame(true);
             }}
@@ -383,6 +326,14 @@ export default function HomePage() {
           >
             Load Example
           </Button>
+          <a
+            href="https://github.com/amilich/isometric-city"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+          >
+            Open GitHub
+          </a>
         </div>
         
         {/* Saved Cities */}
@@ -425,7 +376,7 @@ export default function HomePage() {
             </Button>
             <Button 
               onClick={async () => {
-                const { default: exampleState } = await import('@/resources/example_state_8.json');
+                const { default: exampleState } = await import('@/resources/example_state_9.json');
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
                 setShowGame(true);
               }}
@@ -434,6 +385,14 @@ export default function HomePage() {
             >
               Load Example
             </Button>
+            <a
+              href="https://github.com/amilich/isometric-city"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-64 text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+            >
+              Open GitHub
+            </a>
           </div>
           
           {/* Saved Cities */}

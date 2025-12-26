@@ -17,6 +17,7 @@ import {
   DEFAULT_GRID_SIZE,
   placeBuilding,
   placeSubway,
+  placeWaterTerraform,
   simulateTick,
   checkForDiscoverableCities,
   generateRandomAdvancedCity,
@@ -28,9 +29,8 @@ import {
   setActiveSpritePack,
   SpritePack,
 } from '@/lib/renderConfig';
-
-import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
-import { generateCityPreviewDataUrl } from '@/lib/cityPreview';
+import { decompressGameState, getStateFromUrl } from '@/lib/shareState';
+import { safeDeserializeFromStorage, serializeForStorage } from '@/lib/storageCompression';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITY_STORAGE_KEY = 'isocity-saved-city'; // For restoring after viewing shared city
@@ -38,43 +38,6 @@ const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index'; // Index of all sav
 const SAVED_CITY_PREFIX = 'isocity-city-'; // Prefix for individual saved city states
 const SPRITE_PACK_STORAGE_KEY = 'isocity-sprite-pack';
 const DAY_NIGHT_MODE_STORAGE_KEY = 'isocity-day-night-mode';
-
-// Storage encoding
-// We store large blobs (game state / saved cities) compressed to dramatically
-// reduce localStorage pressure. Backwards-compatible: plain JSON (older saves)
-// is still supported.
-const STORAGE_V2_PREFIX = 'v2:'; // UTF16-compressed JSON via lz-string
-
-function encodeJsonForStorage(json: string): string {
-  try {
-    return STORAGE_V2_PREFIX + compressToUTF16(json);
-  } catch {
-    // Fallback to plain JSON if compression fails for any reason
-    return json;
-  }
-}
-
-function decodeJsonFromStorage(raw: string): string | null {
-  try {
-    if (raw.startsWith(STORAGE_V2_PREFIX)) {
-      const decompressed = decompressFromUTF16(raw.slice(STORAGE_V2_PREFIX.length));
-      return decompressed ?? null;
-    }
-    return raw;
-  } catch {
-    return null;
-  }
-}
-
-function parseFromStorage<T>(raw: string): T | null {
-  const json = decodeJsonFromStorage(raw);
-  if (!json) return null;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return null;
-  }
-}
 
 export type DayNightMode = 'auto' | 'day' | 'night';
 
@@ -94,16 +57,6 @@ type GameContextValue = {
   setActivePanel: (panel: GameState['activePanel']) => void;
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
   placeAtTile: (x: number, y: number) => void;
-  /**
-   * Groups a batch of placement operations (drag/rectangle fill) into a single undo step.
-   * CanvasIsometricGrid calls begin/end around user interactions.
-   */
-  beginUserAction: () => void;
-  endUserAction: () => void;
-  undo: () => void;
-  redo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
   connectToCity: (cityId: string) => void;
   discoverCity: (cityId: string) => void;
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
@@ -208,9 +161,8 @@ function loadGameState(): GameState | null {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = parseFromStorage<any>(saved);
+      const parsed = safeDeserializeFromStorage<any>(saved);
       if (!parsed) {
-        // Corrupted or unsupported; clear it.
         localStorage.removeItem(STORAGE_KEY);
         return null;
       }
@@ -250,6 +202,29 @@ function loadGameState(): GameState | null {
         }
         if (!parsed.waterBodies) {
           parsed.waterBodies = [];
+        }
+        // Ensure cities exists for multi-city support
+        if (!parsed.cities) {
+          // Create a default city covering the entire map
+          parsed.cities = [{
+            id: parsed.id || 'default-city',
+            name: parsed.cityName || 'City',
+            bounds: {
+              minX: 0,
+              minY: 0,
+              maxX: (parsed.gridSize || 50) - 1,
+              maxY: (parsed.gridSize || 50) - 1,
+            },
+            economy: {
+              population: parsed.stats?.population || 0,
+              jobs: parsed.stats?.jobs || 0,
+              income: parsed.stats?.income || 0,
+              expenses: parsed.stats?.expenses || 0,
+              happiness: parsed.stats?.happiness || 50,
+              lastCalculated: 0,
+            },
+            color: '#3b82f6',
+          }];
         }
         // Ensure hour exists for day/night cycle
         if (parsed.hour === undefined) {
@@ -308,15 +283,14 @@ function saveGameState(state: GameState): void {
       return;
     }
     
-    const json = JSON.stringify(state);
-    // If the JSON itself is gigantic, bail early to avoid long main-thread stalls.
-    // (We still compress, but an extremely large save is likely to exceed quota anyway.)
-    if (json.length > 12 * 1024 * 1024) {
+    const serializedForStorage = serializeForStorage(state);
+    
+    // Best-effort size guard. Different browsers differ, but ~5MB is a common safe ceiling.
+    if (serializedForStorage.length > 5 * 1024 * 1024) {
       return;
     }
-
-    const encoded = encodeJsonForStorage(json);
-    localStorage.setItem(STORAGE_KEY, encoded);
+    
+    localStorage.setItem(STORAGE_KEY, serializedForStorage);
   } catch (e) {
     // Handle quota exceeded errors
     if (e instanceof DOMException && (e.code === 22 || e.code === 1014)) {
@@ -398,8 +372,7 @@ function saveCityForRestore(state: GameState): void {
         savedAt: Date.now(),
       },
     };
-    const json = JSON.stringify(savedData);
-    localStorage.setItem(SAVED_CITY_STORAGE_KEY, encodeJsonForStorage(json));
+    localStorage.setItem(SAVED_CITY_STORAGE_KEY, serializeForStorage(savedData));
   } catch (e) {
     console.error('Failed to save city for restore:', e);
   }
@@ -411,11 +384,8 @@ function loadSavedCityInfo(): SavedCityInfo {
   try {
     const saved = localStorage.getItem(SAVED_CITY_STORAGE_KEY);
     if (saved) {
-      const parsed = parseFromStorage<any>(saved);
-      if (!parsed) return null;
-      if (parsed.info) {
-        return parsed.info as SavedCityInfo;
-      }
+      const parsed = safeDeserializeFromStorage<any>(saved);
+      if (parsed?.info) return parsed.info as SavedCityInfo;
     }
   } catch (e) {
     console.error('Failed to load saved city info:', e);
@@ -429,9 +399,8 @@ function loadSavedCityState(): GameState | null {
   try {
     const saved = localStorage.getItem(SAVED_CITY_STORAGE_KEY);
     if (saved) {
-      const parsed = parseFromStorage<any>(saved);
-      if (!parsed) return null;
-      if (parsed.state && parsed.state.grid && parsed.state.gridSize && parsed.state.stats) {
+      const parsed = safeDeserializeFromStorage<any>(saved);
+      if (parsed?.state && parsed.state.grid && parsed.state.gridSize && parsed.state.stats) {
         return parsed.state as GameState;
       }
     }
@@ -470,8 +439,10 @@ function loadSavedCitiesIndex(): SavedCityMeta[] {
   try {
     const saved = localStorage.getItem(SAVED_CITIES_INDEX_KEY);
     if (saved) {
-      const parsed = parseFromStorage<any>(saved);
-      if (Array.isArray(parsed)) return parsed as SavedCityMeta[];
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed as SavedCityMeta[];
+      }
     }
   } catch (e) {
     console.error('Failed to load saved cities index:', e);
@@ -483,8 +454,7 @@ function loadSavedCitiesIndex(): SavedCityMeta[] {
 function saveSavedCitiesIndex(cities: SavedCityMeta[]): void {
   if (typeof window === 'undefined') return;
   try {
-    const json = JSON.stringify(cities);
-    localStorage.setItem(SAVED_CITIES_INDEX_KEY, encodeJsonForStorage(json));
+    localStorage.setItem(SAVED_CITIES_INDEX_KEY, JSON.stringify(cities));
   } catch (e) {
     console.error('Failed to save cities index:', e);
   }
@@ -494,13 +464,13 @@ function saveSavedCitiesIndex(cities: SavedCityMeta[]): void {
 function saveCityState(cityId: string, state: GameState): void {
   if (typeof window === 'undefined') return;
   try {
-    const json = JSON.stringify(state);
-    // If the raw JSON is huge, it's likely to exceed quota even when compressed.
-    if (json.length > 12 * 1024 * 1024) {
+    const serializedForStorage = serializeForStorage(state);
+    // Best-effort size guard. Different browsers differ, but ~5MB is a common safe ceiling.
+    if (serializedForStorage.length > 5 * 1024 * 1024) {
       console.error('City state too large to save');
       return;
     }
-    localStorage.setItem(SAVED_CITY_PREFIX + cityId, encodeJsonForStorage(json));
+    localStorage.setItem(SAVED_CITY_PREFIX + cityId, serializedForStorage);
   } catch (e) {
     if (e instanceof DOMException && (e.code === 22 || e.code === 1014)) {
       console.error('localStorage quota exceeded');
@@ -516,8 +486,10 @@ function loadCityState(cityId: string): GameState | null {
   try {
     const saved = localStorage.getItem(SAVED_CITY_PREFIX + cityId);
     if (saved) {
-      const parsed = parseFromStorage<any>(saved);
-      if (parsed && parsed.grid && parsed.gridSize && parsed.stats) return parsed as GameState;
+      const parsed = safeDeserializeFromStorage<any>(saved);
+      if (parsed && parsed.grid && parsed.gridSize && parsed.stats) {
+        return parsed as GameState;
+      }
     }
   } catch (e) {
     console.error('Failed to load city state:', e);
@@ -544,15 +516,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextSaveRef = useRef(false);
   const hasLoadedRef = useRef(false);
-
-  // Undo/redo (in-memory)
-  // We store references to prior immutable GameState objects.
-  // This keeps undo/redo fast and avoids costly full serialization.
-  const UNDO_LIMIT = 30;
-  const undoStackRef = useRef<GameState[]>([]);
-  const redoStackRef = useRef<GameState[]>([]);
-  const pendingUndoSnapshotRef = useRef<GameState | null>(null);
-  const actionDepthRef = useRef(0);
   
   // Sprite pack state
   const [currentSpritePack, setCurrentSpritePack] = useState<SpritePack>(() => getSpritePack(DEFAULT_SPRITE_PACK_ID));
@@ -579,9 +542,61 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const cities = loadSavedCitiesIndex();
     setSavedCities(cities);
     
-    // Load game state
+    // Load game state (or a shared state from URL, if present)
     const saved = loadGameState();
-    if (saved) {
+
+    const shareToken = getStateFromUrl();
+    const sharedPartial = shareToken ? decompressGameState(shareToken) : null;
+
+    if (sharedPartial && sharedPartial.grid && sharedPartial.gridSize) {
+      // If the user already has a local city, keep it around for easy restore.
+      if (saved) {
+        saveCityForRestore(saved);
+      }
+
+      // Build a complete GameState by merging the shared partial into a fresh state.
+      const base = createInitialGameState(
+        sharedPartial.gridSize ?? DEFAULT_GRID_SIZE,
+        sharedPartial.cityName ?? 'Shared City'
+      );
+
+      // Compute a quick, best-effort population/jobs for immediate UI correctness.
+      let population = 0;
+      let jobs = 0;
+      for (let y = 0; y < sharedPartial.grid.length; y++) {
+        for (let x = 0; x < sharedPartial.grid[y].length; x++) {
+          const tile = sharedPartial.grid[y][x];
+          population += tile.building.population || 0;
+          // Subway commercial boost (matches the sim's stat logic)
+          const baseJobs = tile.building.jobs || 0;
+          jobs += tile.hasSubway && tile.zone === 'commercial' ? Math.floor(baseJobs * 1.15) : baseJobs;
+        }
+      }
+
+      const merged: GameState = {
+        ...base,
+        ...sharedPartial,
+        // Keep base id/engine-managed fields; shared state is intentionally minimal.
+        id: base.id,
+        selectedTool: base.selectedTool,
+        speed: base.speed,
+        activePanel: 'none',
+        // Avoid mismatched water-body overlays (waterBodies are too large for URL shares).
+        waterBodies: [],
+        // Merge stats carefully (shared state provides at least money)
+        stats: {
+          ...base.stats,
+          ...(sharedPartial.stats ?? {}),
+          population,
+          jobs,
+          money: sharedPartial.stats?.money ?? base.stats.money,
+        },
+      };
+
+      skipNextSaveRef.current = true; // avoid saving immediately on load
+      setState(merged);
+      setHasExistingGame(true);
+    } else if (saved) {
       skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
       setState(saved);
       setHasExistingGame(true);
@@ -610,8 +625,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
     
     // Store current state reference for saving.
-    // The simulation produces new immutable state objects, so deep copying here
-    // is unnecessary and can cause noticeable main-thread jank on larger cities.
+    // The simulation/update functions treat state immutably, so we can avoid
+    // a full deep-copy here (which was a major perf cost at higher speeds).
     stateToSaveRef.current = state;
   }, [state]);
   
@@ -732,82 +747,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  // --- Undo/Redo ------------------------------------------------------------
-  // Canvas interactions call begin/end to group repeated placement operations
-  // into a single undo step.
-  const beginUserAction = useCallback(() => {
-    actionDepthRef.current += 1;
-    if (actionDepthRef.current === 1) {
-      pendingUndoSnapshotRef.current = state;
-    }
-  }, [state]);
-
-  const endUserAction = useCallback(() => {
-    actionDepthRef.current = Math.max(0, actionDepthRef.current - 1);
-    if (actionDepthRef.current === 0) {
-      // If no placement actually occurred, the pending snapshot is discarded.
-      pendingUndoSnapshotRef.current = null;
-    }
-  }, []);
-
-  const undo = useCallback(() => {
-    const snapshot = undoStackRef.current.pop();
-    if (!snapshot) return;
-
-    // Cancel any in-progress action group
-    pendingUndoSnapshotRef.current = null;
-    actionDepthRef.current = 0;
-
-    setState((prev) => {
-      // Push current state onto redo stack
-      redoStackRef.current.push(prev);
-      if (redoStackRef.current.length > UNDO_LIMIT) {
-        redoStackRef.current.shift();
-      }
-
-      return {
-        ...snapshot,
-        // Keep UI-ish fields from current session
-        selectedTool: prev.selectedTool,
-        activePanel: prev.activePanel,
-        speed: prev.speed,
-        // Keep current notifications so we don't resurrect stale toasts
-        notifications: prev.notifications,
-        // Force transient systems (vehicles, particles) to reset
-        gameVersion: (prev.gameVersion ?? 0) + 1,
-      };
-    });
-  }, []);
-
-  const redo = useCallback(() => {
-    const snapshot = redoStackRef.current.pop();
-    if (!snapshot) return;
-
-    // Cancel any in-progress action group
-    pendingUndoSnapshotRef.current = null;
-    actionDepthRef.current = 0;
-
-    setState((prev) => {
-      // Push current state onto undo stack
-      undoStackRef.current.push(prev);
-      if (undoStackRef.current.length > UNDO_LIMIT) {
-        undoStackRef.current.shift();
-      }
-
-      return {
-        ...snapshot,
-        selectedTool: prev.selectedTool,
-        activePanel: prev.activePanel,
-        speed: prev.speed,
-        notifications: prev.notifications,
-        gameVersion: (prev.gameVersion ?? 0) + 1,
-      };
-    });
-  }, []);
-
-  const canUndo = undoStackRef.current.length > 0;
-  const canRedo = redoStackRef.current.length > 0;
-
   const placeAtTile = useCallback((x: number, y: number) => {
     setState((prev) => {
       const tool = prev.selectedTool;
@@ -840,20 +779,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         
         const nextState = placeSubway(prev, x, y);
         if (nextState === prev) return prev;
-
-        // Commit the pending undo snapshot on first successful placement
-        if (pendingUndoSnapshotRef.current) {
-          const pending = pendingUndoSnapshotRef.current;
-          const last = undoStackRef.current[undoStackRef.current.length - 1];
-          if (last !== pending) {
-            undoStackRef.current.push(pending);
-            if (undoStackRef.current.length > UNDO_LIMIT) {
-              undoStackRef.current.shift();
-            }
-          }
-          redoStackRef.current.length = 0;
-          pendingUndoSnapshotRef.current = null;
-        }
+        
+        return {
+          ...nextState,
+          stats: { ...nextState.stats, money: nextState.stats.money - cost },
+        };
+      }
+      
+      // Handle water terraform tool separately
+      if (tool === 'zone_water') {
+        // Already water
+        if (tile.building.type === 'water') return prev;
+        
+        const nextState = placeWaterTerraform(prev, x, y);
+        if (nextState === prev) return prev;
         
         return {
           ...nextState,
@@ -874,20 +813,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (nextState === prev) return prev;
-
-      // Commit the pending undo snapshot on first successful placement
-      if (pendingUndoSnapshotRef.current) {
-        const pending = pendingUndoSnapshotRef.current;
-        const last = undoStackRef.current[undoStackRef.current.length - 1];
-        if (last !== pending) {
-          undoStackRef.current.push(pending);
-          if (undoStackRef.current.length > UNDO_LIMIT) {
-            undoStackRef.current.shift();
-          }
-        }
-        redoStackRef.current.length = 0;
-        pendingUndoSnapshotRef.current = null;
-      }
 
       if (cost > 0) {
         nextState = {
@@ -1022,11 +947,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const newGame = useCallback((name?: string, size?: number) => {
     clearGameState(); // Clear saved state when starting fresh
-    // Reset undo/redo when starting a new city
-    undoStackRef.current.length = 0;
-    redoStackRef.current.length = 0;
-    pendingUndoSnapshotRef.current = null;
-    actionDepthRef.current = 0;
     const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'IsoCity');
     // Increment gameVersion from current state to ensure vehicles/entities are cleared
     setState((prev) => ({
@@ -1037,7 +957,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const loadState = useCallback((stateString: string): boolean => {
     try {
-      const parsed = JSON.parse(stateString);
+      const parsed = safeDeserializeFromStorage<any>(stateString.trim());
+      if (!parsed) return false;
       // Validate it has essential properties
       if (parsed && 
           parsed.grid && 
@@ -1061,6 +982,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         if (!parsed.waterBodies) {
           parsed.waterBodies = [];
         }
+        // Ensure cities exists for multi-city support
+        if (!parsed.cities) {
+          parsed.cities = [{
+            id: parsed.id || 'default-city',
+            name: parsed.cityName || 'City',
+            bounds: {
+              minX: 0,
+              minY: 0,
+              maxX: (parsed.gridSize || 50) - 1,
+              maxY: (parsed.gridSize || 50) - 1,
+            },
+            economy: {
+              population: parsed.stats?.population || 0,
+              jobs: parsed.stats?.jobs || 0,
+              income: parsed.stats?.income || 0,
+              expenses: parsed.stats?.expenses || 0,
+              happiness: parsed.stats?.happiness || 50,
+              lastCalculated: 0,
+            },
+            color: '#3b82f6',
+          }];
+        }
         // Ensure effectiveTaxRate exists for lagging tax effect
         if (parsed.effectiveTaxRate === undefined) {
           parsed.effectiveTaxRate = parsed.taxRate ?? 9;
@@ -1079,11 +1022,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             }
           }
         }
-        // Reset undo/redo when loading an external state
-        undoStackRef.current.length = 0;
-        redoStackRef.current.length = 0;
-        pendingUndoSnapshotRef.current = null;
-        actionDepthRef.current = 0;
         // Increment gameVersion to clear vehicles/entities when loading a new state
         setState((prev) => ({
           ...(parsed as GameState),
@@ -1103,11 +1041,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const generateRandomCity = useCallback(() => {
     clearGameState(); // Clear saved state when generating a new city
-    // Reset undo/redo when generating a new city
-    undoStackRef.current.length = 0;
-    redoStackRef.current.length = 0;
-    pendingUndoSnapshotRef.current = null;
-    actionDepthRef.current = 0;
     const randomCity = generateRandomAdvancedCity(DEFAULT_GRID_SIZE);
     // Increment gameVersion to ensure vehicles/entities are cleared
     setState((prev) => ({
@@ -1158,16 +1091,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const restoreSavedCity = useCallback((): boolean => {
     const savedState = loadSavedCityState();
     if (savedState) {
-      // Reset undo/redo when restoring a city
-      undoStackRef.current.length = 0;
-      redoStackRef.current.length = 0;
-      pendingUndoSnapshotRef.current = null;
-      actionDepthRef.current = 0;
       skipNextSaveRef.current = true;
-      setState((prev) => ({
-        ...savedState,
-        gameVersion: (prev.gameVersion ?? 0) + 1,
-      }));
+      setState(savedState);
       clearSavedCityStorage();
       return true;
     }
@@ -1186,7 +1111,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Save current city to the multi-save system
   const saveCity = useCallback(() => {
-    const preview = generateCityPreviewDataUrl(state.grid, state.gridSize, { size: 160 }) ?? undefined;
     const cityMeta: SavedCityMeta = {
       id: state.id,
       cityName: state.cityName,
@@ -1196,7 +1120,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       month: state.month,
       gridSize: state.gridSize,
       savedAt: Date.now(),
-      preview,
     };
     
     // Save the city state
@@ -1211,11 +1134,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (existingIndex >= 0) {
         // Update existing entry
         newCities = [...prev];
-        newCities[existingIndex] = {
-          ...cityMeta,
-          // If preview generation fails, keep the previous preview
-          preview: cityMeta.preview ?? prev[existingIndex].preview,
-        };
+        newCities[existingIndex] = cityMeta;
       } else {
         // Add new entry
         newCities = [...prev, cityMeta];
@@ -1253,6 +1172,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!cityState.waterBodies) {
       cityState.waterBodies = [];
     }
+    // Ensure cities exists for multi-city support
+    if (!cityState.cities) {
+      cityState.cities = [{
+        id: cityState.id || 'default-city',
+        name: cityState.cityName || 'City',
+        bounds: {
+          minX: 0,
+          minY: 0,
+          maxX: (cityState.gridSize || 50) - 1,
+          maxY: (cityState.gridSize || 50) - 1,
+        },
+        economy: {
+          population: cityState.stats?.population || 0,
+          jobs: cityState.stats?.jobs || 0,
+          income: cityState.stats?.income || 0,
+          expenses: cityState.stats?.expenses || 0,
+          happiness: cityState.stats?.happiness || 50,
+          lastCalculated: 0,
+        },
+        color: '#3b82f6',
+      }];
+    }
     if (cityState.effectiveTaxRate === undefined) {
       cityState.effectiveTaxRate = cityState.taxRate ?? 9;
     }
@@ -1268,12 +1209,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-
-    // Reset undo/redo when switching to a different saved city
-    undoStackRef.current.length = 0;
-    redoStackRef.current.length = 0;
-    pendingUndoSnapshotRef.current = null;
-    actionDepthRef.current = 0;
     
     skipNextSaveRef.current = true;
     setState((prev) => ({
@@ -1332,12 +1267,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setActivePanel,
     setBudgetFunding,
     placeAtTile,
-    beginUserAction,
-    endUserAction,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
     connectToCity,
     discoverCity,
     checkAndDiscoverCities,

@@ -218,10 +218,35 @@ export function getStateFromUrl(): string | null {
  * Copy share URL to clipboard
  */
 export async function copyShareUrl(state: GameState): Promise<boolean> {
+  const url = createShareUrl(state);
+
+  // Prefer the modern Clipboard API when available.
   try {
-    const url = createShareUrl(state);
-    await navigator.clipboard.writeText(url);
-    return true;
+    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+      return true;
+    }
+  } catch (e) {
+    // Fall through to legacy fallback.
+    console.warn('Clipboard API copy failed, falling back to execCommand.', e);
+  }
+
+  // Legacy fallback (works on more HTTP/non-secure contexts).
+  try {
+    if (typeof document === 'undefined') return false;
+    const el = document.createElement('textarea');
+    el.value = url;
+    el.setAttribute('readonly', '');
+    el.style.position = 'fixed';
+    el.style.top = '0';
+    el.style.left = '0';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(el);
+    return ok;
   } catch (e) {
     console.error('Failed to copy share URL:', e);
     return false;

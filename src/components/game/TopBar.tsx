@@ -9,8 +9,6 @@ import { Separator } from '@/components/ui/separator';
 import {
   PlayIcon,
   PauseIcon,
-  UndoIcon,
-  RedoIcon,
   HappyIcon,
   HealthIcon,
   EducationIcon,
@@ -157,39 +155,21 @@ export const StatsPanel = React.memo(function StatsPanel() {
 // ============================================================================
 
 export const TopBar = React.memo(function TopBar() {
-  const {
-    state,
-    setSpeed,
-    setTaxRate,
-    isSaving,
-    visualHour,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    addNotification,
-  } = useGame();
+  const { state, setSpeed, setTaxRate, isSaving, visualHour } = useGame();
   const { stats, year, month, day, speed, taxRate, cityName } = state;
-  
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
 
   const [shareCopied, setShareCopied] = useState(false);
 
-  const handleCopyShareUrl = React.useCallback(async () => {
+  const handleShare = async () => {
     const ok = await copyShareUrl(state);
     if (ok) {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 1500);
-      addNotification('Share link copied', 'Paste the link to open this city on another device.', '🔗');
-    } else {
-      addNotification(
-        'Unable to copy share link',
-        'Your browser may have blocked clipboard access. You can still export from Settings.',
-        '⚠️',
-      );
     }
-  }, [state, addNotification]);
+  };
+  
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
   
   return (
     <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
@@ -240,39 +220,6 @@ export const TopBar = React.memo(function TopBar() {
             </Button>
           ))}
         </div>
-
-        <div className="flex items-center gap-0 bg-secondary rounded-md p-0 overflow-hidden">
-          <Button
-            onClick={undo}
-            disabled={!canUndo}
-            variant="ghost"
-            size="icon-sm"
-            className="h-7 w-7 p-0 m-0"
-            title="Undo (Ctrl/Cmd+Z)"
-          >
-            <UndoIcon size={12} />
-          </Button>
-          <Button
-            onClick={redo}
-            disabled={!canRedo}
-            variant="ghost"
-            size="icon-sm"
-            className="h-7 w-7 p-0 m-0"
-            title="Redo (Ctrl/Cmd+Shift+Z)"
-          >
-            <RedoIcon size={12} />
-          </Button>
-          <Separator orientation="vertical" className="h-5" />
-          <Button
-            onClick={handleCopyShareUrl}
-            variant="ghost"
-            size="icon-sm"
-            className="h-7 w-7 p-0 m-0"
-            title="Copy share link"
-          >
-            {shareCopied ? <CheckIcon size={12} /> : <ShareIcon size={12} />}
-          </Button>
-        </div>
       </div>
       
       <div className="flex items-center gap-8">
@@ -312,6 +259,26 @@ export const TopBar = React.memo(function TopBar() {
           />
           <span className="text-foreground text-xs font-mono tabular-nums w-8">{taxRate}%</span>
         </div>
+
+        <Separator orientation="vertical" className="h-8" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="h-7 w-7"
+              onClick={handleShare}
+              aria-label="Copy share link"
+              title="Copy share link"
+            >
+              {shareCopied ? <CheckIcon size={14} /> : <ShareIcon size={14} />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{shareCopied ? 'Copied!' : 'Copy share link'}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

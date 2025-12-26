@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
-import { generateCityPreviewDataUrl } from '@/lib/cityPreview';
 
 // Format a date for display
 function formatDate(timestamp: number): string {
@@ -41,7 +40,7 @@ function formatMoney(money: number): string {
 }
 
 export function SettingsPanel() {
-  const { state, setActivePanel, addNotification, setDisastersEnabled, newGame, loadState, exportState, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
+  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -56,6 +55,8 @@ export function SettingsPanel() {
   const [importError, setImportError] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
   const [savedCityInfo, setSavedCityInfo] = useState(getSavedCityInfo());
+
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
   
   // Refresh saved city info when panel opens
   React.useEffect(() => {
@@ -67,7 +68,6 @@ export function SettingsPanel() {
   const [showSpriteTest, setShowSpriteTest] = useState(spriteTestFromUrl);
   const lastUrlValueRef = useRef(spriteTestFromUrl);
   const isUpdatingFromStateRef = useRef(false);
-  const importFileInputRef = useRef<HTMLInputElement>(null);
   
   // Sync state with query parameter when URL changes externally
   useEffect(() => {
@@ -104,77 +104,73 @@ export function SettingsPanel() {
   
   const handleCopyExport = async () => {
     const exported = exportState();
-    await navigator.clipboard.writeText(exported);
+    // Prefer modern clipboard API when available.
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(exported);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = exported;
+        el.setAttribute('readonly', '');
+        el.style.position = 'fixed';
+        el.style.top = '0';
+        el.style.left = '0';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+    } catch (e) {
+      console.warn('Failed to copy export to clipboard:', e);
+      // Still show the export UI; user can use file export instead.
+    }
     setExportCopied(true);
     setTimeout(() => setExportCopied(false), 2000);
   };
 
   const handleDownloadExport = () => {
-    const exported = exportState();
-    const blob = new Blob([exported], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const safeName = (state.cityName || 'isocity')
-      .toLowerCase()
-      .replace(/[^a-z0-9-_]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    const date = new Date().toISOString().slice(0, 10);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${safeName || 'isocity'}-${date}.isocity.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const exported = exportState();
+      const blob = new Blob([exported], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const safeCityName = (cityName || 'IsoCity')
+        .replace(/[^a-z0-9-_ ]/gi, '')
+        .trim()
+        .replace(/\s+/g, '_');
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeCityName || 'IsoCity'}-${new Date().toISOString().slice(0, 10)}.isocity.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to download export file:', e);
+    }
   };
 
-  const handleDownloadPreview = () => {
-    // Generate a high-res mini-map style preview (purely from state; no canvas access needed)
-    const dataUrl = generateCityPreviewDataUrl(state.grid, state.gridSize, { size: 1024 });
-    const safeName = (state.cityName || 'isocity')
-      .toLowerCase()
-      .replace(/[^a-z0-9-_]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    const date = new Date().toISOString().slice(0, 10);
-
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = `${safeName || 'isocity'}-preview-${date}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    addNotification('Preview downloaded', 'Saved a PNG preview of your city.', '🖼️');
-  };
-
-
-  const handleImportFile: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const file = e.target.files?.[0];
-    // Allow re-selecting the same file by resetting the value
-    e.target.value = '';
-    if (!file) return;
-
+  const handleImportFromFile = async (file: File) => {
     setImportError(false);
     setImportSuccess(false);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result || '').trim();
-      if (!text) {
-        setImportError(true);
-        return;
-      }
-      const success = loadState(text);
+    try {
+      const text = await file.text();
+      const success = loadState(text.trim());
       if (success) {
         setImportSuccess(true);
         setImportValue('');
         setTimeout(() => setImportSuccess(false), 2000);
-        setActivePanel('none');
       } else {
         setImportError(true);
       }
-    };
-    reader.onerror = () => {
+    } catch (e) {
+      console.error('Failed to import save file:', e);
       setImportError(true);
-    };
-    reader.readAsText(file);
+    }
   };
   
   const handleImport = () => {
@@ -365,36 +361,21 @@ export function SettingsPanel() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex gap-3">
-                          <div className="w-14 h-14 flex-shrink-0 bg-muted/20 border border-border overflow-hidden">
-                            {city.preview ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={city.preview} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
-                                No preview
-                              </div>
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="font-medium text-sm truncate flex-1">
+                            {city.cityName}
+                            {city.id === currentCityId && (
+                              <span className="ml-2 text-[10px] text-primary">(current)</span>
                             )}
                           </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between mb-1">
-                              <div className="font-medium text-sm truncate flex-1">
-                                {city.cityName}
-                                {city.id === currentCityId && (
-                                  <span className="ml-2 text-[10px] text-primary">(current)</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2 flex-wrap">
-                              <span>Pop: {formatPopulation(city.population)}</span>
-                              <span>{formatMoney(city.money)}</span>
-                              <span>{city.gridSize}×{city.gridSize}</span>
-                            </div>
-                            <div className="text-[10px] text-muted-foreground mb-2">
-                              Saved {formatDate(city.savedAt)}
-                            </div>
-                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
+                          <span>Pop: {formatPopulation(city.population)}</span>
+                          <span>{formatMoney(city.money)}</span>
+                          <span>{city.gridSize}×{city.gridSize}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mb-2">
+                          Saved {formatDate(city.savedAt)}
                         </div>
                         <div className="flex gap-2">
                           {city.id !== currentCityId && (
@@ -525,20 +506,6 @@ export function SettingsPanel() {
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import Game</div>
             <p className="text-muted-foreground text-xs mb-2">Paste a game state to load it</p>
-            <input
-              ref={importFileInputRef}
-              type="file"
-              accept=".json,.isocity.json,application/json,text/plain"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-            <Button
-              variant="outline"
-              className="w-full mb-2"
-              onClick={() => importFileInputRef.current?.click()}
-            >
-              Import from File
-            </Button>
             <textarea
               className="w-full h-20 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
               placeholder="Paste game state here..."
@@ -562,6 +529,34 @@ export function SettingsPanel() {
               disabled={!importValue.trim()}
             >
               Load Game State
+            </Button>
+
+            <div className="flex items-center gap-2 my-3">
+              <div className="h-px bg-border flex-1" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">or</span>
+              <div className="h-px bg-border flex-1" />
+            </div>
+
+            <input
+              ref={importFileInputRef}
+              type="file"
+              accept=".json,.txt,application/json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  await handleImportFromFile(file);
+                }
+                // Allow re-selecting the same file later
+                e.target.value = '';
+              }}
+            />
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => importFileInputRef.current?.click()}
+            >
+              Import from File
             </Button>
           </div>
           

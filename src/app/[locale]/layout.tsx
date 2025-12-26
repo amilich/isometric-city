@@ -1,7 +1,12 @@
+import {NextIntlClientProvider} from 'next-intl';
+import {getMessages} from 'next-intl/server';
+import {notFound} from 'next/navigation';
+import {routing} from '@/i18n/routing';
+
 import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, DM_Sans, Quicksand } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/react'; // Fixed
-import './globals.css';
+import { Analytics } from '@vercel/analytics/react';
+import '@/app/globals.css';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -78,15 +83,37 @@ export const viewport: Viewport = {
   themeColor: '#0f1219',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+type Props = {
+  children: React.ReactNode;
+  params: Promise<{locale: string}>;
+};
+
+export default async function RootLayout({
+  children,
+  params
+}: Props) {
+  const {locale} = await params;
+  
+  if (!routing.locales.includes(locale as any)) {
+    notFound();
+  }
+ 
+  const messages = await getMessages();
+ 
   return (
-    <html lang="en" className={`dark ${playfair.variable} ${dmSans.variable} ${quicksand.variable}`}>
+    <html lang={locale} className={`dark ${playfair.variable} ${dmSans.variable} ${quicksand.variable}`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/assets/buildings/residential.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
       </head>
-      <body className="bg-background text-foreground antialiased font-sans overflow-hidden">{children}<Analytics /></body>
+      <body className="bg-background text-foreground antialiased font-sans overflow-hidden">
+        <NextIntlClientProvider messages={messages}>
+          {children}
+          <Analytics />
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }
+

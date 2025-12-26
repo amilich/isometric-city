@@ -1,0 +1,121 @@
+{
+  "HomePage": {
+    "title": "Truncgil MyCity",
+    "play": "Oyna",
+    "exampleCity": "Örnek Şehir",
+    "savedCities": "Kayıtlı Şehirler",
+    "population": "Pop",
+    "loading": "Yükleniyor...",
+    "welcome_title": "Truncgil MyCity — Kendi Şehrini Oluştur",
+    "welcome_desc": "Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet."
+  },
+  "Game": {
+    "Tools": {
+      "Categories": {
+        "TOOLS": "ARAÇLAR",
+        "ZONES": "BÖLGELER",
+        "BUILDINGS": "BİNALAR",
+        "services": "Hizmetler",
+        "parks": "Parklar",
+        "sports": "Spor",
+        "recreation": "Eğlence",
+        "waterfront": "Sahil",
+        "community": "Topluluk",
+        "utilities": "Altyapı",
+        "special": "Özel"
+      },
+      "Items": {
+        "select": { "name": "Seç", "description": "Bilgi almak için tıklayın" },
+        "bulldoze": { "name": "Yık", "description": "Binaları ve bölgeleri kaldır" },
+        "road": { "name": "Yol", "description": "Şehrinizi bağlayın" },
+        "rail": { "name": "Ray", "description": "Demiryolu hatları inşa et" },
+        "subway": { "name": "Metro", "description": "Yeraltı ulaşımı" },
+        "tree": { "name": "Ağaç", "description": "Çevreyi iyileştirmek için ağaç dik" },
+        "zone_residential": { "name": "Konut", "description": "Evler için bölge" },
+        "zone_commercial": { "name": "Ticari", "description": "Dükkanlar ve ofisler için bölge" },
+        "zone_industrial": { "name": "Endüstriyel", "description": "Fabrikalar için bölge" },
+        "zone_dezone": { "name": "Bölgeyi Kaldır", "description": "Bölgelemeyi kaldır" },
+        "police_station": { "name": "Polis", "description": "Güvenliği artır" },
+        "fire_station": { "name": "İtfaiye", "description": "Yangınları söndür" },
+        "hospital": { "name": "Hastane", "description": "Sağlığı iyileştir (2x2)" },
+        "school": { "name": "Okul", "description": "Temel eğitim (2x2)" },
+        "university": { "name": "Üniversite", "description": "Yüksek eğitim (3x3)" },
+        "park": { "name": "Küçük Park", "description": "Mutluluğu ve arsa değerini artır (1x1)" },
+        "park_large": { "name": "Büyük Park", "description": "Büyük park (3x3)" },
+        "tennis": { "name": "Tenis Kortu", "description": "Spor tesisi" },
+        "power_plant": { "name": "Enerji Santrali", "description": "Elektrik üret (2x2)" },
+        "water_tower": { "name": "Su Kulesi", "description": "Su sağla" },
+        "subway_station": { "name": "Metro İstasyonu", "description": "Metro ağına erişim" },
+        "rail_station": { "name": "Tren İstasyonu", "description": "Yolcu tren istasyonu" },
+        "stadium": { "name": "Stadyum", "description": "Ticari talebi artırır (3x3)" },
+        "museum": { "name": "Müze", "description": "Ticari ve konut talebini artırır (3x3)" },
+        "airport": { "name": "Havalimanı", "description": "Ticari ve endüstriyel talebi artırır (4x4)" },
+        "space_program": { "name": "Uzay Programı", "description": "Endüstriyel ve konut talebini artırır (3x3)" },
+        "city_hall": { "name": "Belediye Binası", "description": "Tüm talep türlerini artırır (2x2)" },
+        "amusement_park": { "name": "Lunapark", "description": "Ticari talebe büyük destek (4x4)" },
+        "basketball_courts": { "name": "Basketbol Sahası", "description": "Açık hava basketbol tesisi" },
+        "playground_small": { "name": "Küçük Oyun Parkı", "description": "Çocuk oyun alanı" },
+        "playground_large": { "name": "Büyük Oyun Parkı", "description": "Daha fazla ekipmanlı büyük oyun alanı (2x2)" },
+        "baseball_field_small": { "name": "Beyzbol Sahası", "description": "Yerel beyzbol sahası (2x2)" },
+        "soccer_field_small": { "name": "Futbol Sahası", "description": "Futbol sahası" },
+        "football_field": { "name": "Futbol Stadyumu", "description": "Futbol stadyumu (2x2)" },
+        "baseball_stadium": { "name": "Beyzbol Stadyumu", "description": "Profesyonel beyzbol sahası (3x3)" },
+        "community_center": { "name": "Toplum Merkezi", "description": "Yerel toplum merkezi" },
+        "office_building_small": { "name": "Küçük Ofis", "description": "Küçük ofis binası" },
+        "swimming_pool": { "name": "Yüzme Havuzu", "description": "Halka açık yüzme tesisi" },
+        "skate_park": { "name": "Kaykay Parkı", "description": "Kaykay parkı" },
+        "mini_golf_course": { "name": "Mini Golf", "description": "Minyatür golf sahası (2x2)" },
+        "bleachers_field": { "name": "Tribünlü Saha", "description": "Oturma alanlı spor sahası" },
+        "go_kart_track": { "name": "Go-Kart Pisti", "description": "Yarış eğlencesi (2x2)" },
+        "amphitheater": { "name": "Amfitiyatro", "description": "Açık hava performans alanı (2x2)" },
+        "greenhouse_garden": { "name": "Sera Bahçesi", "description": "Botanik sera (2x2)" },
+        "animal_pens_farm": { "name": "Hayvan Çiftliği", "description": "Hayvanat bahçesi / çiftlik hayvanları" },
+        "cabin_house": { "name": "Ahşap Ev", "description": "Kırsal kulübe" },
+        "campground": { "name": "Kamp Alanı", "description": "Açık hava kamp alanı" },
+        "marina_docks_small": { "name": "Marina", "description": "Tekne iskeleleri (2x2, suya bitişik olmalı)" },
+        "pier_large": { "name": "İskele", "description": "Sahil iskelesi (suya bitişik olmalı)" },
+        "roller_coaster_small": { "name": "Hız Treni", "description": "Heyecan verici sürüş (2x2)" },
+        "community_garden": { "name": "Hobi Bahçesi", "description": "Ortak bahçecilik alanı" },
+        "pond_park": { "name": "Gölet Parkı", "description": "Manzaralı gölet parkı" },
+        "park_gate": { "name": "Park Kapısı", "description": "Dekoratif park girişi" },
+        "mountain_lodge": { "name": "Dağ Evi", "description": "Doğa tatil evi (2x2)" },
+        "mountain_trailhead": { "name": "Patika Girişi", "description": "Yürüyüş parkuru girişi (3x3)" }
+      }
+    },
+    "Panels": {
+      "Budget": "Bütçe",
+      "Statistics": "İstatistikler",
+      "Advisors": "Danışmanlar",
+      "Settings": "Ayarlar"
+    },
+    "Stats": {
+      "Population": "Nüfus",
+      "Jobs": "İşler",
+      "Funds": "Fonlar",
+      "Monthly": "Aylık",
+      "Tax": "Vergi",
+      "Happiness": "Mutluluk",
+      "Health": "Sağlık",
+      "Education": "Eğitim",
+      "Safety": "Güvenlik",
+      "Environment": "Çevre",
+      "Saving": "Kaydediliyor..."
+    },
+    "Dialogs": {
+      "Exit": {
+        "Title": "Ana Menüye Dön",
+        "Description": "Çıkmadan önce şehrinizi kaydetmek ister misiniz?",
+        "SaveAndExit": "Kaydet ve Çık",
+        "ExitWithoutSaving": "Kaydetmeden Çık"
+      }
+    },
+    "Tooltips": {
+      "Search": "Ara (⌘K)",
+      "BackToMenu": "Ana Menüye Dön",
+      "Pause": "Duraklat",
+      "Normal": "Normal",
+      "Fast": "Hızlı",
+      "VeryFast": "Çok Hızlı"
+    }
+  }
+}

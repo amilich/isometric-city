@@ -8,6 +8,7 @@ import Game from '@/components/Game';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { SavedCityMeta } from '@/types/game';
+import { useTranslations } from 'next-intl';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
@@ -214,6 +215,7 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
 
 // Saved City Card Component
 function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
+  const t = useTranslations('HomePage');
   return (
     <button
       onClick={onLoad}
@@ -223,7 +225,7 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
         {city.cityName}
       </h3>
       <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>Pop: {city.population.toLocaleString()}</span>
+        <span>{t('population')}: {city.population.toLocaleString()}</span>
         <span>₺{city.money.toLocaleString()}</span>
       </div>
     </button>
@@ -233,6 +235,7 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
 const SAVED_CITY_PREFIX = 'isocity-city-';
 
 export default function HomePage() {
+  const t = useTranslations('HomePage');
   const [showGame, setShowGame] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
@@ -274,7 +277,7 @@ export default function HomePage() {
   if (isChecking) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-white/60">Yükleniyor...</div>
+        <div className="text-white/60">{t('loading')}</div>
       </main>
     );
   }
@@ -295,7 +298,7 @@ export default function HomePage() {
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
-          Truncgil MyCity
+          {t('title')}
         </h1>
         
         {/* Sprite Gallery - keep visible even when saves exist */}
@@ -310,7 +313,7 @@ export default function HomePage() {
             variant="game"
             className="w-full py-6 text-xl"
           >
-            Oyna
+            {t('play')}
           </Button>
           
           <Button 
@@ -322,7 +325,7 @@ export default function HomePage() {
             variant="game-success"
             className="w-full py-6 text-xl"
           >
-            Örnek Şehir
+            {t('exampleCity')}
           </Button>
         </div>
         
@@ -330,7 +333,7 @@ export default function HomePage() {
         {savedCities.length > 0 && (
           <div className="w-full max-w-xs mt-4">
             <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-              Kayıtlı Şehirler
+              {t('savedCities')}
             </h2>
             <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
               {savedCities.slice(0, 5).map((city) => (
@@ -369,7 +372,7 @@ export default function HomePage() {
               variant="game"
               className="w-64 py-8 text-2xl"
             >
-              Oyna
+              {t('play')}
             </Button>
             <Button 
               onClick={async () => {
@@ -380,7 +383,7 @@ export default function HomePage() {
               variant="game-success"
               className="w-64 py-8 text-2xl"
             >
-              Örnek Şehir
+              {t('exampleCity')}
             </Button>
           </div>
           
@@ -388,7 +391,7 @@ export default function HomePage() {
           {savedCities.length > 0 && (
             <div className="w-64">
               <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                Kayıtlı Şehirler
+                {t('savedCities')}
               </h2>
               <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
                 {savedCities.slice(0, 5).map((city) => (
@@ -411,3 +414,4 @@ export default function HomePage() {
     </main>
   );
 }
+

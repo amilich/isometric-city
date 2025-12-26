@@ -2,14 +2,14 @@
 
 This plan outlines the steps to implement a modular building upgrade system, allowing players to enhance service buildings with increased range, efficiency, and reduced pollution.
 
-## Phase 1: Foundation & Configuration
+## Phase 1: Foundation & Configuration [checkpoint: 5b67754]
 Establish the data structures and configuration that will drive the upgrade system.
 
 - [x] Task: Update `Building` type in `src/types/game.ts` to include optional `isUpgraded?: boolean`.
 - [x] Task: Create `src/config/buildingUpgrades.ts` with the schema and initial data for Power Plant, Water Tower, Police Station, and Fire Station.
 - [x] Task: Create a utility `getBuildingStats` in a new file `src/lib/upgradeUtils.ts` to handle stat lookups (base vs. upgraded) to keep core simulation code clean.
 - [x] Task: Write unit tests to verify that `getBuildingStats` returns correct values for both normal and upgraded buildings.
-- [ ] Task: Conductor - User Manual Verification 'Foundation & Configuration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Foundation & Configuration' (Protocol in workflow.md)
 
 ## Phase 2: Simulation Integration (TDD)
 Integrate the upgrade logic into the core simulation loops using the new utility.

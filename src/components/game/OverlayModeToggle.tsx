@@ -12,6 +12,9 @@ import {
   HealthIcon,
   EducationIcon,
   SubwayIcon,
+  RoadIcon,
+  MoneyIcon,
+  ChartIcon,
 } from '@/components/ui/Icons';
 import { OverlayMode } from './types';
 import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
@@ -39,6 +42,9 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   health: <HealthIcon size={14} />,
   education: <EducationIcon size={14} />,
   subway: <SubwayIcon size={14} />,
+  traffic: <RoadIcon size={14} />,
+  land_value: <MoneyIcon size={14} />,
+  target_level: <ChartIcon size={14} />,
 };
 
 // ============================================================================
@@ -54,10 +60,12 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
   overlayMode,
   setOverlayMode,
 }: OverlayModeToggleProps) {
+  const activeLabel = OVERLAY_CONFIG[overlayMode]?.label || 'None';
+
   return (
     <Card className="absolute bottom-4 left-4 p-2 shadow-lg bg-card/90 border-border/70 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        View Overlay
+        View Overlay ({activeLabel})
       </div>
       <div className="flex gap-1">
         {(Object.keys(OVERLAY_CONFIG) as OverlayMode[]).map((mode) => {

@@ -18,53 +18,72 @@ Service buildings provide essential coverage to your city. They function based o
 
 | Building | Cost | Size | Range (Tiles) | Effect |
 | :--- | :--- | :--- | :--- | :--- |
-| **Police Station** | $500 | 1x1 | 13 | Reduces crime and increases safety. |
-| **Fire Station** | $500 | 1x1 | 18 | Extinguishes fires and prevents them from starting. |
-| **School** | $400 | 2x2 | 11 | Provides basic education coverage. |
-| **University** | $2,000 | 3x3 | 19 | Provides advanced education coverage. |
-| **Hospital** | $1,000 | 2x2 | 12 | Improves public health. |
+| **Police Station** | $500 | 1x1 | 13 | Reduces crime, Safety +15% locally. |
+| **Fire Station** | $500 | 1x1 | 18 | Extinguishes fires, Safety +10% locally. |
+| **School** | $400 | 2x2 | 11 | Basic Education. Land Value +15. |
+| **University** | $2,000 | 3x3 | 19 | Advanced Education. Land Value +35. |
+| **Hospital** | $1,000 | 2x2 | 12 | Public Health. Land Value +25. |
 
 ### Infrastructure & Utilities
-Utilities in IsoCity are broadcast wirelessly within a specific radius. You do not need to lay power lines or pipes.
-
-| Building | Cost | Size | Range (Tiles) | Description |
+| Building | Cost | Size | Range | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **Power Plant** | $3,000 | 2x2 | 15 | Generates electricity. Essential for most buildings to function. |
-| **Water Tower** | $1,000 | 1x1 | 12 | Provides water. Essential for building growth. |
-| **Road** | $25 | 1x1 | - | Connects zones. Zones must be within **8 tiles** of a road (connected by other zone tiles) to develop. |
-| **Rail** | $40 | 1x1 | - | Increases Commercial and Industrial demand. |
-| **Rail Station** | $1,000 | 2x2 | - | Required to access the rail network. |
-| **Subway** | $50 | 1x1 | - | Underground transit. Boosts commercial job density. |
-| **Subway Station** | $750 | 1x1 | - | Provides access to the subway network. |
+| **Power Plant** | $3,000 | 2x2 | 15 | Generates power. High Pollution (+30). Lowers Land Value (-20). |
+| **Water Tower** | $1,000 | 1x1 | 12 | Provides water. Neutral Land Value (+5). |
+| **Road** | $25 | 1x1 | - | Necessary for development. Slight Pollution (+2). |
+| **Rail** | $40 | 1x1 | - | Boosts Industry. High Pollution (+1), Lowers Land Value (-2). |
+| **Rail Station** | $1,000 | 2x2 | - | Access to Rail. Land Value +20. |
+| **Subway Station** | $750 | 1x1 | - | Access to Subway. Land Value +25. |
 
+### Parks & Recreation
+Parks provide happiness, reduce pollution, and significantly boost local Land Value.
+
+| Building | Cost | Size | Land Value Effect | Pollution Reduction |
+| :--- | :--- | :--- | :--- | :--- |
+| **Small Park** | $150 | 1x1 | +20 | -10 |
+| **Large Park** | $600 | 3x3 | +50 | -25 |
+| **Tennis Court** | $200 | 1x1 | +15 | -5 |
+| **Basketball Court** | $250 | 1x1 | +12 | -3 |
+| **Playground** | $200 | 1x1 | +15 | -5 |
+| **Swimming Pool** | $450 | 1x1 | +18 | -5 |
+| **Stadium** | $5,000 | 3x3 | +40 | - |
+
+### Special Buildings
+These unique structures provide massive city-wide bonuses and demand boosts.
+
+| Building | Cost | Size | Jobs | Impact |
+| :--- | :--- | :--- | :--- | :--- |
+| **City Hall** | $6,000 | 2x2 | 60 | **Global Demand Boost** (Res+8, Com+10, Ind+5). Land Value +50. |
+| **Museum** | $4,000 | 3x3 | 40 | **Commercial Boost** (+15). Land Value +45. |
+| **Airport** | $10,000 | 4x4 | 200 | **Major Commercial/Industrial Boost** (+15/+10). High Pollution (+20). |
+| **Space Program** | $15,000 | 3x3 | 150 | **High-Tech Industry Boost** (+20). Massive Land Value (+80). |
+| **Amusement Park** | $12,000 | 4x4 | 100 | **Commercial Demand Boost** (+18). Land Value +60. |
+
+---
 
 ## Zoning & Growth Mechanics
 
-IsoCity uses a dynamic zoning system where buildings develop organically based on demand, services, and infrastructure.
+### Densification (Levels)
+In IsoCity, **Density** is represented by a building's **Level** (1-5).
+-   **Level 1:** Low density (Small houses, small shops). Max Pop ~6.
+-   **Level 3:** Medium density (Mansions, Offices). Max Pop ~18-90.
+-   **Level 5:** High density (Skyscrapers, High-rises). Max Pop ~260+.
+
+As a zone's **Land Value** and **Service Coverage** improve, existing buildings will automatically "level up," replacing their sprite with a larger, denser structure and increasing their population/job capacity.
 
 ### Zone Types
 | Zone | Primary Purpose | Key Requirements |
 | :--- | :--- | :--- |
-| **Residential** | Provides housing for citizens. | Road access, Power, Water, Low Pollution. |
-| **Commercial** | Provides jobs and shopping. | Road access, Power, Water, Customers (Pop), Employees (Pop). |
-| **Industrial** | Provides heavy-duty jobs. | Road access, Power, Water, Rail/Airport connectivity. |
+| **Residential** | Provides housing. | Road access, Power, Water, Low Pollution. |
+| **Commercial** | Provides jobs/shopping. | Road access, Power, Water, Customers (Pop). |
+| **Industrial** | Provides heavy jobs. | Road access, Power, Water, Rail/Airport connectivity. |
 
 ### Development Requirements
-For a zoned tile to develop into a building, it must meet these criteria:
-1.  **Road Access:** The tile must be within **8 tiles** of a road. Note: Adjacent zones of the same type can "pass through" road access to their neighbors.
-2.  **Utilities:** Most buildings require both **Power** and **Water** to begin construction.
-    -   *Exception:* **Starter Buildings** (Small Houses, Small Shops, and Small Factories/Farms) can develop without utilities, representing self-sufficient operations.
-
-### Building Evolution (Leveling Up)
-Buildings will gradually evolve into higher-density versions (up to **Level 5**) if conditions are favorable.
--   **Land Value:** High land value is the primary driver for high-density development.
--   **Service Coverage:** Proximity to Police, Fire, Health, and Education services boosts evolution.
--   **Building Age:** Older, stable buildings are more likely to densify.
--   **Demand:** High regional demand for a zone type encourages buildings to "level up" faster.
+1.  **Road Access:** Within **8 tiles** of a road.
+2.  **Utilities:** Power and Water required for Level 2+ growth.
 
 ### Abandonment & Recovery
--   **Abandonment:** Buildings may become abandoned if demand for their zone type drops significantly (oversupply) or if they lack essential services for too long.
--   **Recovery:** Abandoned buildings will not produce population or jobs. They can recover or be replaced by new development once demand returns to positive levels.
+-   **Abandonment:** Occurs when demand drops below **-20** (Oversupply) or age > 30.
+-   **Recovery:** Abandoned buildings recover when demand rises above **+10`**.
 
 
 ## System Mechanics

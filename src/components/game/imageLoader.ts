@@ -11,6 +11,30 @@ const COLOR_THRESHOLD = 155; // Adjust this value to be more/less aggressive
 // Image cache for building sprites
 const imageCache = new Map<string, HTMLImageElement>();
 
+// Cache WebP support detection (client-only)
+let _supportsWebp: boolean | null = null;
+function supportsWebp(): boolean {
+  if (_supportsWebp !== null) return _supportsWebp;
+  try {
+    const canvas = document.createElement('canvas');
+    // If canvas can't encode webp, it will return image/png.
+    _supportsWebp =
+      !!canvas.getContext('2d') && canvas.toDataURL('image/webp').startsWith('data:image/webp');
+    return _supportsWebp;
+  } catch {
+    _supportsWebp = false;
+    return _supportsWebp;
+  }
+}
+
+function getWebpCandidate(src: string): string | null {
+  // Only rewrite absolute public paths (what this codebase uses), and only for PNG.
+  if (!/^\/.+/i.test(src)) return null;
+  if (!/\.png$/i.test(src)) return null;
+  // Keep the same path, just swap extension.
+  return src.replace(/\.png$/i, '.webp');
+}
+
 // Event emitter for image loading progress (to trigger re-renders)
 type ImageLoadCallback = () => void;
 const imageLoadCallbacks = new Set<ImageLoadCallback>();
@@ -42,14 +66,38 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   }
   
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      imageCache.set(src, img);
-      notifyImageLoaded(); // Notify listeners that a new image is available
-      resolve(img);
+    const webpSrc = supportsWebp() ? getWebpCandidate(src) : null;
+
+    const loadFrom = (url: string) => {
+      const img = new Image();
+      img.onload = () => {
+        // Cache under both the requested src and the actual loaded URL
+        imageCache.set(src, img);
+        imageCache.set(url, img);
+        notifyImageLoaded(); // Notify listeners that a new image is available
+        resolve(img);
+      };
+      img.onerror = reject;
+      img.src = url;
     };
-    img.onerror = reject;
-    img.src = src;
+
+    if (webpSrc) {
+      const img = new Image();
+      img.onload = () => {
+        imageCache.set(src, img);
+        imageCache.set(webpSrc, img);
+        notifyImageLoaded(); // Notify listeners that a new image is available
+        resolve(img);
+      };
+      img.onerror = () => {
+        // WebP missing or server doesn't have it; fall back to PNG.
+        loadFrom(src);
+      };
+      img.src = webpSrc;
+      return;
+    }
+
+    loadFrom(src);
   });
 }
 

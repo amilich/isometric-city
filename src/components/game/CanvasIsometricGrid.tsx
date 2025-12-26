@@ -3,7 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
 import { TOOL_INFO, Tile, BuildingType, AdjacentCity } from '@/types/game';
-import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency } from '@/lib/simulation';
+import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency, SERVICE_CONFIG } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
 import { getSpriteCoords, BUILDING_TO_SPRITE, SPRITE_VERTICAL_OFFSETS, SPRITE_HORIZONTAL_OFFSETS, getActiveSpritePack } from '@/lib/renderConfig';
 
@@ -3079,6 +3079,50 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
               const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
               drawHighlight(screenX, screenY, fillColor, strokeColor);
+            }
+          }
+        }
+
+        // Draw service coverage radius if applicable
+        // @ts-ignore - SERVICE_CONFIG index access
+        if (SERVICE_CONFIG[selectedTool]) {
+          // @ts-ignore
+          const config = SERVICE_CONFIG[selectedTool];
+          const range = config.range;
+          const rangeSquared = config.rangeSquared;
+          const centerX = hoveredTile.x + Math.floor(size.width / 2);
+          const centerY = hoveredTile.y + Math.floor(size.height / 2);
+          
+          // Draw coverage area
+          // We scan a slightly larger area to show the "red" zone outside coverage
+          const scanRadius = range + 4;
+          
+          for (let dy = -scanRadius; dy <= scanRadius; dy++) {
+            for (let dx = -scanRadius; dx <= scanRadius; dx++) {
+              // Skip the building footprint itself (already drawn above)
+              if (dx >= -Math.floor(size.width/2) && dx < size.width - Math.floor(size.width/2) &&
+                  dy >= -Math.floor(size.height/2) && dy < size.height - Math.floor(size.height/2)) {
+                continue;
+              }
+
+              const tx = centerX + dx;
+              const ty = centerY + dy;
+              
+              if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+                const distSquared = dx * dx + dy * dy;
+                
+                if (distSquared <= rangeSquared) {
+                   // Inside coverage - Green
+                   const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+                   // Very subtle green for coverage area to not obstruct view
+                   drawHighlight(screenX, screenY, 'rgba(74, 222, 128, 0.1)', 'transparent');
+                } else if (distSquared <= (range + 4) * (range + 4)) {
+                   // Just outside coverage - Red
+                   const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+                   // Very subtle red for immediate outside area
+                   drawHighlight(screenX, screenY, 'rgba(248, 113, 113, 0.1)', 'transparent');
+                }
+              }
             }
           }
         }

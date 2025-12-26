@@ -842,7 +842,7 @@ export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityNam
 }
 
 // Service building configuration - defined once, reused across calls
-const SERVICE_CONFIG = {
+export const SERVICE_CONFIG = {
   police_station: { range: 13, rangeSquared: 169, type: 'police' as const },
   fire_station: { range: 18, rangeSquared: 324, type: 'fire' as const },
   hospital: { range: 12, rangeSquared: 144, type: 'health' as const },

@@ -26,4 +26,5 @@
 
 - [x] Task: Manual Data Audit - Randomly sample 5 building stats in the guide and verify against `constants.ts` b0bd5f3
 - [x] Task: Readability Pass - Ensure language is player-facing and avoids internal variable names b0bd5f3
+- [x] Task: Document specific level-up requirements and land value thresholds per user feedback 3ce2cf7
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Review & Verification' (Protocol in workflow.md)

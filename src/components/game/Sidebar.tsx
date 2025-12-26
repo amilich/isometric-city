@@ -3,6 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
+import { SPRITE_PACKS, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { useTranslations } from 'next-intl';
 import {
   BudgetIcon,
@@ -31,6 +32,88 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+const SpritePreview = ({ tool }: { tool: string }) => {
+  const pack = SPRITE_PACKS.find(p => p.id === DEFAULT_SPRITE_PACK_ID) || SPRITE_PACKS[0];
+  let src = pack.src;
+  let cols = pack.cols;
+  let rows = pack.rows;
+  let row = 0;
+  let col = 0;
+  let found = false;
+
+  // Check parks first
+  if (pack.parksBuildings && pack.parksBuildings[tool]) {
+    src = pack.parksSrc || src;
+    cols = pack.parksCols || cols;
+    rows = pack.parksRows || rows;
+    const pos = pack.parksBuildings[tool];
+    row = pos.row;
+    col = pos.col;
+    found = true;
+  }
+  // Check farms
+  else if (pack.farmsVariants && pack.farmsVariants[tool] && pack.farmsVariants[tool].length > 0) {
+     src = pack.farmsSrc || src;
+     cols = pack.farmsCols || cols;
+     rows = pack.farmsRows || rows;
+     row = pack.farmsVariants[tool][0].row;
+     col = pack.farmsVariants[tool][0].col;
+     found = true;
+  }
+   // Check shops
+  else if (pack.shopsVariants && pack.shopsVariants[tool] && pack.shopsVariants[tool].length > 0) {
+     src = pack.shopsSrc || src;
+     cols = pack.shopsCols || cols;
+     rows = pack.shopsRows || rows;
+     row = pack.shopsVariants[tool][0].row;
+     col = pack.shopsVariants[tool][0].col;
+     found = true;
+  }
+   // Check stations
+  else if (pack.stationsVariants && pack.stationsVariants[tool] && pack.stationsVariants[tool].length > 0) {
+     src = pack.stationsSrc || src;
+     cols = pack.stationsCols || cols;
+     rows = pack.stationsRows || rows;
+     row = pack.stationsVariants[tool][0].row;
+     col = pack.stationsVariants[tool][0].col;
+     found = true;
+  }
+  // Default sprite sheet
+  else if (pack.buildingToSprite[tool]) {
+    const spriteKey = pack.buildingToSprite[tool];
+    const index = pack.spriteOrder.indexOf(spriteKey);
+    if (index !== -1) {
+      if (pack.layout === 'column') {
+        col = Math.floor(index / pack.rows);
+        row = index % pack.rows;
+      } else {
+        col = index % pack.cols;
+        row = Math.floor(index / pack.cols);
+      }
+      found = true;
+    }
+  }
+
+  if (!found) return null;
+
+  return (
+    <div className="w-16 h-16 relative overflow-hidden rounded bg-blue-50/10 border border-white/10 flex-shrink-0 shadow-sm">
+      <img 
+        src={src} 
+        alt=""
+        className="max-w-none absolute"
+        style={{
+          width: `${cols * 100}%`,
+          imageRendering: 'pixelated',
+          transform: `translate(-${(col / cols) * 100}%, -${(row / rows) * 100}%)`,
+          top: 0,
+          left: 0
+        }}
+      />
+    </div>
+  );
+};
 
 // Hover Submenu Component for collapsible tool categories
 // Implements triangle-rule safe zone for forgiving cursor navigation
@@ -226,10 +309,13 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                   </TooltipTrigger>
                   {/* Use Portal to render tooltip outside of overflow-hidden container */}
                   <TooltipContent side="right" sideOffset={10} className="z-[99999]">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-bold">{name}</span>
-                      <span className="text-xs text-muted-foreground">{description}</span>
-                      {info.cost > 0 && <span className="text-xs font-mono text-green-400">₺{info.cost.toLocaleString()}</span>}
+                    <div className="flex flex-row gap-3 items-start p-1">
+                      <SpritePreview tool={tool} />
+                      <div className="flex flex-col gap-1 min-w-[140px]">
+                        <span className="font-bold text-base">{name}</span>
+                        <span className="text-xs text-muted-foreground leading-snug">{description}</span>
+                        {info.cost > 0 && <span className="text-sm font-mono text-emerald-400 font-bold mt-1">₺{info.cost.toLocaleString()}</span>}
+                      </div>
                     </div>
                   </TooltipContent>
                 </Tooltip>

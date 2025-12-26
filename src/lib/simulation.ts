@@ -1195,7 +1195,11 @@ export const SERVICE_BUILDING_TYPES = new Set([
 ]);
 
 // Calculate service coverage from service buildings - optimized version
-function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage {
+export function calculateServiceCoverage(
+  grid: Tile[][], 
+  size: number,
+  roadCacheVersion: number = 0
+): ServiceCoverage {
   const services = createServiceCoverage(size);
   
   // First pass: collect all service building positions (much faster than checking every tile)
@@ -1217,6 +1221,20 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
       // Skip abandoned buildings
       if (tile.building.abandoned) {
         continue;
+      }
+      
+      // NEW: Check road connectivity - only include connected buildings
+      const hasRoadConnectivity = getServiceBuildingRoadConnectivity(
+        grid,
+        x,
+        y,
+        buildingType,
+        size,
+        roadCacheVersion
+      );
+      
+      if (!hasRoadConnectivity) {
+        continue; // Skip disconnected service buildings
       }
       
       serviceBuildings.push({ x, y, type: buildingType });
@@ -1490,6 +1508,9 @@ export function isServiceBuildingRoadConnected(
 // Invalidate when roads are added/removed
 let serviceBuildingRoadCache: Map<number, boolean> = new Map();
 let serviceBuildingRoadCacheVersion: number = 0;
+
+// Current road cache version - increments when roads change
+let currentRoadCacheVersion: number = 0;
 
 /**
  * Get road connectivity for a service building (cached).
@@ -2189,7 +2210,7 @@ export function simulateTick(state: GameState): GameState {
   const size = state.gridSize;
   
   // Pre-calculate service coverage once (read-only operation on original grid)
-  const services = calculateServiceCoverage(state.grid, size);
+  const services = calculateServiceCoverage(state.grid, size, currentRoadCacheVersion);
   
   // Track which rows have been modified to avoid unnecessary row cloning
   const modifiedRows = new Set<number>();
@@ -3463,7 +3484,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
   }
   
   // Calculate services and stats
-  const services = calculateServiceCoverage(grid, size);
+  const services = calculateServiceCoverage(grid, size, currentRoadCacheVersion);
   
   // Set power and water for all buildings
   for (let y = 0; y < size; y++) {

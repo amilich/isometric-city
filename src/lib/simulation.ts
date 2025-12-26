@@ -1224,17 +1224,22 @@ export function calculateServiceCoverage(
       }
       
       // NEW: Check road connectivity - only include connected buildings
-      const hasRoadConnectivity = getServiceBuildingRoadConnectivity(
-        grid,
-        x,
-        y,
-        buildingType,
-        size,
-        roadCacheVersion
-      );
+      // EXCEPT: Grandfathered buildings (placed before road requirement) are exempt
+      const isGrandfathered = tile.building.grandfatheredRoadAccess === true;
       
-      if (!hasRoadConnectivity) {
-        continue; // Skip disconnected service buildings
+      if (!isGrandfathered) {
+        const hasRoadConnectivity = getServiceBuildingRoadConnectivity(
+          grid,
+          x,
+          y,
+          buildingType,
+          size,
+          roadCacheVersion
+        );
+        
+        if (!hasRoadConnectivity) {
+          continue; // Skip disconnected service buildings (unless grandfathered)
+        }
       }
       
       serviceBuildings.push({ x, y, type: buildingType });

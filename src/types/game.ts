@@ -229,6 +229,7 @@ export interface Building {
   abandoned: boolean; // Building is abandoned due to low demand, produces nothing
   flipped?: boolean; // Horizontally mirror the sprite (used for waterfront buildings to face water)
   cityId?: string; // ID of the city this building belongs to (for multi-city support)
+  grandfatheredRoadAccess?: boolean; // If true, building was placed before road connectivity requirement (exempt from road check)
   // Bridge-specific properties
   bridgeType?: BridgeType; // Type of bridge (small, medium, large, suspension)
   bridgeOrientation?: BridgeOrientation; // Direction the bridge spans (ns or ew)

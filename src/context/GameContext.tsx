@@ -23,6 +23,7 @@ import {
   checkForDiscoverableCities,
   generateRandomAdvancedCity,
   createBridgesOnPath,
+  SERVICE_BUILDING_TYPES,
 } from '@/lib/simulation';
 import {
   SPRITE_PACKS,
@@ -241,6 +242,15 @@ function loadGameState(): GameState | null {
               // Migrate abandoned property for existing buildings (they're not abandoned)
               if (parsed.grid[y][x]?.building && parsed.grid[y][x].building.abandoned === undefined) {
                 parsed.grid[y][x].building.abandoned = false;
+              }
+              // GRANDFATHER: Mark existing service buildings as exempt from road connectivity requirement
+              // This ensures saved games continue to work without breaking changes
+              if (parsed.grid[y][x]?.building) {
+                const buildingType = parsed.grid[y][x].building.type;
+                if (SERVICE_BUILDING_TYPES.has(buildingType) && 
+                    parsed.grid[y][x].building.grandfatheredRoadAccess === undefined) {
+                  parsed.grid[y][x].building.grandfatheredRoadAccess = true;
+                }
               }
             }
           }

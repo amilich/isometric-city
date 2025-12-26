@@ -3110,17 +3110,29 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               
               if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
                 const distSquared = dx * dx + dy * dy;
+                const distance = Math.sqrt(distSquared);
                 
-                if (distSquared <= rangeSquared) {
-                   // Inside coverage - Green
+                if (distance <= range) {
+                   // Inside coverage - Gradient from Green (center) to Red (edge)
+                   // Percentage 1.0 at center, 0.0 at edge
+                   const percentage = Math.max(0, 1 - distance / range);
+                   
+                   // Interpolate colors
+                   // Red-500: 239, 68, 68
+                   // Green-500: 34, 197, 94
+                   const r = Math.round(239 + (34 - 239) * percentage);
+                   const g = Math.round(68 + (197 - 68) * percentage);
+                   const b = Math.round(68 + (94 - 68) * percentage);
+                   
+                   const color = `rgba(${r}, ${g}, ${b}, 0.25)`; // Slightly more opacity
+                   const stroke = `rgba(${r}, ${g}, ${b}, 0.0)`;
+                   
                    const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
-                   // Very subtle green for coverage area to not obstruct view
-                   drawHighlight(screenX, screenY, 'rgba(74, 222, 128, 0.1)', 'transparent');
-                } else if (distSquared <= (range + 4) * (range + 4)) {
-                   // Just outside coverage - Red
+                   drawHighlight(screenX, screenY, color, stroke);
+                } else if (distance <= range + 4) {
+                   // Just outside coverage - Full Red
                    const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
-                   // Very subtle red for immediate outside area
-                   drawHighlight(screenX, screenY, 'rgba(248, 113, 113, 0.1)', 'transparent');
+                   drawHighlight(screenX, screenY, 'rgba(239, 68, 68, 0.25)', 'transparent');
                 }
               }
             }

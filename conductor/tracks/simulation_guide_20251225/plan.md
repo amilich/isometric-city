@@ -22,7 +22,7 @@
 - [x] Task: Document Economy (Tax income sources, Maintenance expense calculations) 20439db
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Systems & Economy' (Protocol in workflow.md)
 
-## Phase 4: Review & Verification
+## Phase 4: Review & Verification [checkpoint: d64910b]
 
 - [x] Task: Manual Data Audit - Randomly sample 5 building stats in the guide and verify against `constants.ts` b0bd5f3
 - [x] Task: Readability Pass - Ensure language is player-facing and avoids internal variable names b0bd5f3

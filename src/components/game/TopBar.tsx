@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import { useTranslations } from 'next-intl';
 import {
   PlayIcon,
   PauseIcon,
@@ -135,14 +136,15 @@ export function MiniStat({ icon, label, value }: MiniStatProps) {
 export const StatsPanel = React.memo(function StatsPanel() {
   const { state } = useGame();
   const { stats } = state;
+  const t = useTranslations('Game.Stats');
   
   return (
     <div className="h-8 bg-secondary/50 border-b border-border flex items-center justify-center gap-8 text-xs">
-      <MiniStat icon={<HappyIcon size={12} />} label="Mutluluk" value={stats.happiness} />
-      <MiniStat icon={<HealthIcon size={12} />} label="Sağlık" value={stats.health} />
-      <MiniStat icon={<EducationIcon size={12} />} label="Eğitim" value={stats.education} />
-      <MiniStat icon={<SafetyIcon size={12} />} label="Güvenlik" value={stats.safety} />
-      <MiniStat icon={<EnvironmentIcon size={12} />} label="Çevre" value={stats.environment} />
+      <MiniStat icon={<HappyIcon size={12} />} label={t('Happiness')} value={stats.happiness} />
+      <MiniStat icon={<HealthIcon size={12} />} label={t('Health')} value={stats.health} />
+      <MiniStat icon={<EducationIcon size={12} />} label={t('Education')} value={stats.education} />
+      <MiniStat icon={<SafetyIcon size={12} />} label={t('Safety')} value={stats.safety} />
+      <MiniStat icon={<EnvironmentIcon size={12} />} label={t('Environment')} value={stats.environment} />
     </div>
   );
 });
@@ -154,6 +156,8 @@ export const StatsPanel = React.memo(function StatsPanel() {
 export const TopBar = React.memo(function TopBar() {
   const { state, setSpeed, setTaxRate, isSaving, visualHour } = useGame();
   const { stats, year, month, day, speed, taxRate, cityName } = state;
+  const t = useTranslations('Game.Stats');
+  const tTooltips = useTranslations('Game.Tooltips');
   
   const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
@@ -165,7 +169,7 @@ export const TopBar = React.memo(function TopBar() {
           <div className="flex items-center gap-2">
             <h1 className="text-foreground font-semibold text-sm">{cityName}</h1>
             {isSaving && (
-              <span className="text-muted-foreground text-xs italic animate-pulse">Kaydediliyor...</span>
+              <span className="text-muted-foreground text-xs italic animate-pulse">{t('Saving')}</span>
             )}
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono tabular-nums">
@@ -188,7 +192,7 @@ export const TopBar = React.memo(function TopBar() {
               onClick={() => setSpeed(s as 0 | 1 | 2 | 3)}
               variant={speed === s ? 'game-icon-selected' : 'game-icon'}
               className="h-9 w-9 p-0 m-0"
-              title={s === 0 ? 'Duraklat' : s === 1 ? 'Normal' : s === 2 ? 'Hızlı' : 'Çok Hızlı'}
+              title={s === 0 ? tTooltips('Pause') : s === 1 ? tTooltips('Normal') : s === 2 ? tTooltips('Fast') : tTooltips('VeryFast')}
             >
               {s === 0 ? <PauseIcon size={12} /> : 
                s === 1 ? <PlayIcon size={12} /> : 
@@ -209,17 +213,17 @@ export const TopBar = React.memo(function TopBar() {
       </div>
       
       <div className="flex items-center gap-8">
-        <StatBadge value={stats.population.toLocaleString()} label="Nüfus" />
-        <StatBadge value={stats.jobs.toLocaleString()} label="İşler" />
+        <StatBadge value={stats.population.toLocaleString()} label={t('Population')} />
+        <StatBadge value={stats.jobs.toLocaleString()} label={t('Jobs')} />
         <StatBadge 
           value={`₺${stats.money.toLocaleString()}`} 
-          label="Fonlar"
+          label={t('Funds')}
           variant={stats.money < 0 ? 'destructive' : stats.money < 1000 ? 'warning' : 'success'}
         />
         <Separator orientation="vertical" className="h-8" />
         <StatBadge 
           value={`₺${(stats.income - stats.expenses).toLocaleString()}`}  
-          label="Aylık"
+          label={t('Monthly')}
           variant={stats.income - stats.expenses >= 0 ? 'success' : 'destructive'}
         />
       </div>
@@ -234,7 +238,7 @@ export const TopBar = React.memo(function TopBar() {
         <Separator orientation="vertical" className="h-8" />
         
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs">Vergi</span>
+          <span className="text-muted-foreground text-xs">{t('Tax')}</span>
           <Slider
             value={[taxRate]}
             onValueChange={(value: number[]) => setTaxRate(value[0])}

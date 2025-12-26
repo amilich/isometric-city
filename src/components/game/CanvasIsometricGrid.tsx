@@ -2022,25 +2022,19 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           const halfSep = trackSep / 2;
           const railWidth = currentZoom >= 0.7 ? 0.85 : 0.7;
           
-          // Helper to offset a point along perpendicular
-          const offsetPt = (pt: { x: number; y: number }, offset: number) => ({
-            x: pt.x + perpX * offset,
-            y: pt.y + perpY * offset
-          });
-          
           // Draw ties (metal/treated wood sleepers on bridge) for both tracks
           ctx.strokeStyle = RAIL_COLORS.BRIDGE_TIE;
-          ctx.lineWidth = currentZoom >= 0.7 ? 2.5 : 2;
+          ctx.lineWidth = 1;
           ctx.lineCap = 'butt';
           
           const numTies = 7; // Match TIES_PER_TILE
           const tieHalfLen = w * 0.065; // Half-length of each tie
           
           for (let trackOffset of [halfSep, -halfSep]) {
-            // Track center line
-            const trackStartX = startEdge.x + perpX * trackOffset;
+            // Track center line - use extended edges to match bridge deck alignment
+            const trackStartX = extendedStartEdge.x + perpX * trackOffset;
             const trackStartY = startY + perpY * trackOffset;
-            const trackEndX = endEdge.x + perpX * trackOffset;
+            const trackEndX = extendedEndEdge.x + perpX * trackOffset;
             const trackEndY = endY + perpY * trackOffset;
             
             for (let i = 0; i <= numTies; i++) {
@@ -2058,9 +2052,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           // Draw rails (4 rails total - 2 per track)
           // Draw shadow first, then rails on top
           for (let trackOffset of [halfSep, -halfSep]) {
-            const trackStartX = startEdge.x + perpX * trackOffset;
+            // Use extended edges to match bridge deck alignment
+            const trackStartX = extendedStartEdge.x + perpX * trackOffset;
             const trackStartY = startY + perpY * trackOffset;
-            const trackEndX = endEdge.x + perpX * trackOffset;
+            const trackEndX = extendedEndEdge.x + perpX * trackOffset;
             const trackEndY = endY + perpY * trackOffset;
             
             // Rail shadows

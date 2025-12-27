@@ -3,8 +3,10 @@
  * Supports multi-carriage trains (passenger and freight)
  */
 
+import { useCallback } from 'react';
 import { Tile } from '@/types/game';
-import { Train, TrainCarriage, CarriageType, TrainType, CarDirection, TILE_WIDTH, TILE_HEIGHT, TrainSmokeParticle } from './types';
+import { Train, TrainCarriage, CarriageType, TrainType, CarDirection, TILE_WIDTH, TILE_HEIGHT, TrainSmokeParticle, WorldRenderState } from './types';
+import { TRAIN_MIN_ZOOM } from './constants';
 import {
   DIRECTION_META,
   OPPOSITE_DIRECTION,
@@ -1610,4 +1612,97 @@ function lightenColor(color: string, amount: number): string {
   const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + (255 - parseInt(hex.substr(2, 2), 16)) * amount);
   const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + (255 - parseInt(hex.substr(4, 2), 16)) * amount);
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+}
+
+// ============================================================================
+// Train System Hook
+// ============================================================================
+
+export interface TrainSystemRefs {
+  trainsRef: React.MutableRefObject<Train[]>;
+  trainIdRef: React.MutableRefObject<number>;
+  trainSpawnTimerRef: React.MutableRefObject<number>;
+}
+
+export interface TrainSystemState {
+  worldStateRef: React.MutableRefObject<WorldRenderState>;
+  isMobile: boolean;
+  visualHour: number;
+}
+
+/**
+ * Hook to manage train spawning, updating, and rendering.
+ * Follows the same pattern as other vehicle system hooks (boats, barges, etc.)
+ */
+export function useTrainSystem(
+  refs: TrainSystemRefs,
+  systemState: TrainSystemState
+) {
+  const { trainsRef, trainIdRef, trainSpawnTimerRef } = refs;
+  const { worldStateRef, isMobile, visualHour } = systemState;
+
+  /**
+   * Update trains - spawn, move, and manage lifecycle
+   */
+  const updateTrains = useCallback((delta: number) => {
+    const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed } = worldStateRef.current;
+
+    if (!currentGrid || currentGridSize <= 0 || currentSpeed === 0) {
+      return;
+    }
+
+    // Count rail tiles
+    const railTileCount = countRailTiles(currentGrid, currentGridSize);
+    
+    // No trains if not enough rail
+    if (railTileCount < MIN_RAIL_TILES_FOR_TRAINS) {
+      trainsRef.current = [];
+      return;
+    }
+
+    // Calculate max trains based on rail network size
+    const maxTrains = Math.min(MAX_TRAINS, Math.ceil(railTileCount / TRAINS_PER_RAIL_TILES));
+    
+    // Speed multiplier based on game speed
+    const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2 : 3;
+
+    // Spawn timer
+    trainSpawnTimerRef.current -= delta;
+    if (trainsRef.current.length < maxTrains && trainSpawnTimerRef.current <= 0) {
+      const newTrain = spawnTrain(currentGrid, currentGridSize, trainIdRef);
+      if (newTrain) {
+        trainsRef.current.push(newTrain);
+      }
+      trainSpawnTimerRef.current = TRAIN_SPAWN_INTERVAL;
+    }
+
+    // Update existing trains (pass all trains for collision detection)
+    const allTrains = trainsRef.current;
+    trainsRef.current = trainsRef.current.filter(train => 
+      updateTrain(train, delta, speedMultiplier, currentGrid, currentGridSize, allTrains, isMobile)
+    );
+  }, [worldStateRef, trainsRef, trainIdRef, trainSpawnTimerRef, isMobile]);
+
+  /**
+   * Draw trains on the rail network
+   */
+  const drawTrainsCallback = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize, canvasSize: size } = worldStateRef.current;
+
+    if (!currentGrid || currentGridSize <= 0 || trainsRef.current.length === 0) {
+      return;
+    }
+    
+    // Skip drawing trains when very zoomed out (for large map performance)
+    if (currentZoom < TRAIN_MIN_ZOOM) {
+      return;
+    }
+
+    drawTrains(ctx, trainsRef.current, currentOffset, currentZoom, size, currentGrid, currentGridSize, visualHour, isMobile);
+  }, [worldStateRef, trainsRef, visualHour, isMobile]);
+
+  return {
+    updateTrains,
+    drawTrains: drawTrainsCallback,
+  };
 }

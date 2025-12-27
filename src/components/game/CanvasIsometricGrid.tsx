@@ -44,7 +44,6 @@ import {
   ZOOM_MAX,
   WATER_ASSET_PATH,
   AIRPLANE_SPRITE_SRC,
-  TRAIN_MIN_ZOOM,
   HELICOPTER_MIN_ZOOM,
   SMOG_MIN_ZOOM,
   FIREWORK_MIN_ZOOM,
@@ -114,7 +113,6 @@ import { CrimeType, getCrimeName, getCrimeDescription, getFireDescriptionForTile
 import {
   drawRailTrack,
   drawRailTracksOnly,
-  countRailTiles,
   isRailroadCrossing,
   findRailroadCrossings,
   drawRailroadCrossing,
@@ -125,13 +123,9 @@ import {
   RAIL_COLORS,
 } from '@/components/game/railSystem';
 import {
-  spawnTrain,
-  updateTrain,
-  drawTrains,
-  MIN_RAIL_TILES_FOR_TRAINS,
-  MAX_TRAINS,
-  TRAIN_SPAWN_INTERVAL,
-  TRAINS_PER_RAIL_TILES,
+  useTrainSystem,
+  TrainSystemRefs,
+  TrainSystemState,
 } from '@/components/game/trainSystem';
 import { Train } from '@/components/game/types';
 import { useLightingSystem } from '@/components/game/lightingSystem';
@@ -474,6 +468,24 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     updateSmog,
     drawSmog,
   } = useEffectsSystems(effectsSystemRefs, effectsSystemState);
+
+  // Use extracted train system
+  const trainSystemRefs: TrainSystemRefs = {
+    trainsRef,
+    trainIdRef,
+    trainSpawnTimerRef,
+  };
+
+  const trainSystemState: TrainSystemState = {
+    worldStateRef,
+    isMobile,
+    visualHour,
+  };
+
+  const {
+    updateTrains,
+    drawTrains: drawTrainsCallback,
+  } = useTrainSystem(trainSystemRefs, trainSystemState);
   
   // PERF: Sync worldStateRef from latestStateRef (real-time) instead of React state (throttled)
   // This runs on every animation frame via the render loop, not on React state changes
@@ -789,61 +801,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
   // Boats are now handled by useBoatSystem hook (see above)
 
-  // Update trains - spawn, move, and manage lifecycle
-  const updateTrains = useCallback((delta: number) => {
-    const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed } = worldStateRef.current;
-
-    if (!currentGrid || currentGridSize <= 0 || currentSpeed === 0) {
-      return;
-    }
-
-    // Count rail tiles
-    const railTileCount = countRailTiles(currentGrid, currentGridSize);
-    
-    // No trains if not enough rail
-    if (railTileCount < MIN_RAIL_TILES_FOR_TRAINS) {
-      trainsRef.current = [];
-      return;
-    }
-
-    // Calculate max trains based on rail network size
-    const maxTrains = Math.min(MAX_TRAINS, Math.ceil(railTileCount / TRAINS_PER_RAIL_TILES));
-    
-    // Speed multiplier based on game speed
-    const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2 : 3;
-
-    // Spawn timer
-    trainSpawnTimerRef.current -= delta;
-    if (trainsRef.current.length < maxTrains && trainSpawnTimerRef.current <= 0) {
-      const newTrain = spawnTrain(currentGrid, currentGridSize, trainIdRef);
-      if (newTrain) {
-        trainsRef.current.push(newTrain);
-      }
-      trainSpawnTimerRef.current = TRAIN_SPAWN_INTERVAL;
-    }
-
-    // Update existing trains (pass all trains for collision detection)
-    const allTrains = trainsRef.current;
-    trainsRef.current = trainsRef.current.filter(train => 
-      updateTrain(train, delta, speedMultiplier, currentGrid, currentGridSize, allTrains, isMobile)
-    );
-  }, [isMobile]);
-
-  // Draw trains on the rail network
-  const drawTrainsCallback = useCallback((ctx: CanvasRenderingContext2D) => {
-    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize, canvasSize: size } = worldStateRef.current;
-
-    if (!currentGrid || currentGridSize <= 0 || trainsRef.current.length === 0) {
-      return;
-    }
-    
-    // Skip drawing trains when very zoomed out (for large map performance)
-    if (currentZoom < TRAIN_MIN_ZOOM) {
-      return;
-    }
-
-    drawTrains(ctx, trainsRef.current, currentOffset, currentZoom, size, currentGrid, currentGridSize, visualHour, isMobile);
-  }, [visualHour, isMobile]);
+  // Trains are now handled by useTrainSystem hook (see above)
 
   // Fireworks and smog are now handled by useEffectsSystems hook (see above)
 

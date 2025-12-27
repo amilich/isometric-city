@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 import { useMobile } from '@/hooks/useMobile';
@@ -30,213 +31,215 @@ interface MenuItem {
   keywords: string[];
 }
 
-const MENU_CATEGORIES = [
-  { key: 'tools', label: 'Araçlar' },
-  { key: 'zones', label: 'Bölgeler' },
-  { key: 'services', label: 'Hizmetler' },
-  { key: 'parks', label: 'Parklar' },
-  { key: 'sports', label: 'Spor' },
-  { key: 'recreation', label: 'Eğlence' },
-  { key: 'waterfront', label: 'Sahil' },
-  { key: 'community', label: 'Topluluk' },
-  { key: 'utilities', label: 'Altyapı' },
-  { key: 'special', label: 'Özel' },
-  { key: 'panels', label: 'Paneller' },
-] as const;
-
-// Build menu items from tools
-function buildMenuItems(): MenuItem[] {
-  const items: MenuItem[] = [];
-
-  // Tools category
-  const toolsCategory: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway'];
-  toolsCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'tools',
-      keywords: [info.name.toLowerCase(), tool, 'tool', 'infrastructure'],
-    });
-  });
-
-  // Zones category
-  const zonesCategory: Tool[] = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'];
-  zonesCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'zones',
-      keywords: [info.name.toLowerCase(), tool, 'zone', 'zoning'],
-    });
-  });
-
-  // Services
-  const servicesCategory: Tool[] = ['police_station', 'fire_station', 'hospital', 'school', 'university'];
-  servicesCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'services',
-      keywords: [info.name.toLowerCase(), tool, 'service', 'building'],
-    });
-  });
-
-  // Parks
-  const parksCategory: Tool[] = ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'];
-  parksCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'parks',
-      keywords: [info.name.toLowerCase(), tool, 'park', 'green', 'nature'],
-    });
-  });
-
-  // Sports
-  const sportsCategory: Tool[] = ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'];
-  sportsCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'sports',
-      keywords: [info.name.toLowerCase(), tool, 'sports', 'recreation', 'field'],
-    });
-  });
-
-  // Recreation
-  const recreationCategory: Tool[] = ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'];
-  recreationCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'recreation',
-      keywords: [info.name.toLowerCase(), tool, 'recreation', 'entertainment', 'fun'],
-    });
-  });
-
-  // Waterfront
-  const waterfrontCategory: Tool[] = ['marina_docks_small', 'pier_large'];
-  waterfrontCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'waterfront',
-      keywords: [info.name.toLowerCase(), tool, 'water', 'waterfront', 'dock', 'pier', 'marina'],
-    });
-  });
-
-  // Community
-  const communityCategory: Tool[] = ['community_center', 'animal_pens_farm', 'office_building_small'];
-  communityCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'community',
-      keywords: [info.name.toLowerCase(), tool, 'community', 'building'],
-    });
-  });
-
-  // Utilities
-  const utilitiesCategory: Tool[] = ['power_plant', 'water_tower', 'subway_station', 'rail_station'];
-  utilitiesCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'utilities',
-      keywords: [info.name.toLowerCase(), tool, 'utility', 'power', 'water', 'infrastructure', 'transit', 'station', 'train'],
-    });
-  });
-
-  // Special
-  const specialCategory: Tool[] = ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'];
-  specialCategory.forEach(tool => {
-    const info = TOOL_INFO[tool];
-    items.push({
-      id: tool,
-      type: 'tool',
-      tool,
-      name: info.name,
-      description: info.description,
-      cost: info.cost,
-      category: 'special',
-      keywords: [info.name.toLowerCase(), tool, 'special', 'landmark', 'attraction'],
-    });
-  });
-
-  // Panels
-  const panels: { panel: 'budget' | 'statistics' | 'advisors' | 'settings'; name: string; description: string; keywords: string[] }[] = [
-    { panel: 'budget', name: 'Bütçe', description: 'Şehir finansmanını ve fonlamayı yönet', keywords: ['bütçe', 'para', 'finans', 'vergi', 'fonlama'] },
-    { panel: 'statistics', name: 'İstatistikler', description: 'Şehir istatistiklerini ve grafikleri görüntüle', keywords: ['istatistikler', 'istatistik', 'grafikler', 'veri', 'bilgi'] },
-    { panel: 'advisors', name: 'Danışmanlar', description: 'Şehir danışmanlarından tavsiye al', keywords: ['danışmanlar', 'tavsiye', 'yardım', 'ipuçları'] },
-    { panel: 'settings', name: 'Ayarlar', description: 'Oyun ayarları ve tercihler', keywords: ['ayarlar', 'seçenekler', 'tercihler', 'yapılandırma'] },
-  ];
-
-  panels.forEach(({ panel, name, description, keywords }) => {
-    items.push({
-      id: `panel-${panel}`,
-      type: 'panel',
-      panel,
-      name,
-      description,
-      category: 'panels',
-      keywords,
-    });
-  });
-
-  return items;
-}
-
-const ALL_MENU_ITEMS = buildMenuItems();
-
 export function CommandMenu() {
+  const t = useTranslations('Game');
+  const tPanels = useTranslations('Game.Panels');
+  const tCommand = useTranslations('Game.CommandMenu');
+  
   const { isMobileDevice } = useMobile();
   const { state, setTool, setActivePanel } = useGame();
   const { stats } = state;
+
+  const MENU_CATEGORIES = useMemo(() => [
+    { key: 'tools', label: t('Tools.Categories.TOOLS') },
+    { key: 'zones', label: t('Tools.Categories.ZONES') },
+    { key: 'services', label: t('Tools.Categories.services') },
+    { key: 'parks', label: t('Tools.Categories.parks') },
+    { key: 'sports', label: t('Tools.Categories.sports') },
+    { key: 'recreation', label: t('Tools.Categories.recreation') },
+    { key: 'waterfront', label: t('Tools.Categories.waterfront') },
+    { key: 'community', label: t('Tools.Categories.community') },
+    { key: 'utilities', label: t('Tools.Categories.utilities') },
+    { key: 'special', label: t('Tools.Categories.special') },
+    { key: 'panels', label: t('Tools.Categories.panels') || 'Paneller' },
+  ], [t]);
+
+  // Build menu items from tools
+  const ALL_MENU_ITEMS = useMemo(() => {
+    const items: MenuItem[] = [];
+
+    // Tools category
+    const toolsCategory: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway'];
+    toolsCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'tools',
+        keywords: [info.name.toLowerCase(), tool, 'tool', 'infrastructure'],
+      });
+    });
+
+    // Zones category
+    const zonesCategory: Tool[] = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'];
+    zonesCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'zones',
+        keywords: [info.name.toLowerCase(), tool, 'zone', 'zoning'],
+      });
+    });
+
+    // Services
+    const servicesCategory: Tool[] = ['police_station', 'fire_station', 'hospital', 'school', 'university'];
+    servicesCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'services',
+        keywords: [info.name.toLowerCase(), tool, 'service', 'building'],
+      });
+    });
+
+    // Parks
+    const parksCategory: Tool[] = ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'];
+    parksCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'parks',
+        keywords: [info.name.toLowerCase(), tool, 'park', 'green', 'nature'],
+      });
+    });
+
+    // Sports
+    const sportsCategory: Tool[] = ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'];
+    sportsCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'sports',
+        keywords: [info.name.toLowerCase(), tool, 'sports', 'recreation', 'field'],
+      });
+    });
+
+    // Recreation
+    const recreationCategory: Tool[] = ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'];
+    recreationCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'recreation',
+        keywords: [info.name.toLowerCase(), tool, 'recreation', 'entertainment', 'fun'],
+      });
+    });
+
+    // Waterfront
+    const waterfrontCategory: Tool[] = ['marina_docks_small', 'pier_large'];
+    waterfrontCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'waterfront',
+        keywords: [info.name.toLowerCase(), tool, 'water', 'waterfront', 'dock', 'pier', 'marina'],
+      });
+    });
+
+    // Community
+    const communityCategory: Tool[] = ['community_center', 'animal_pens_farm', 'office_building_small'];
+    communityCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'community',
+        keywords: [info.name.toLowerCase(), tool, 'community', 'building'],
+      });
+    });
+
+    // Utilities
+    const utilitiesCategory: Tool[] = ['power_plant', 'water_tower', 'subway_station', 'rail_station'];
+    utilitiesCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'utilities',
+        keywords: [info.name.toLowerCase(), tool, 'utility', 'power', 'water', 'infrastructure', 'transit', 'station', 'train'],
+      });
+    });
+
+    // Special
+    const specialCategory: Tool[] = ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'];
+    specialCategory.forEach(tool => {
+      const info = TOOL_INFO[tool];
+      items.push({
+        id: tool,
+        type: 'tool',
+        tool,
+        name: info.name,
+        description: info.description,
+        cost: info.cost,
+        category: 'special',
+        keywords: [info.name.toLowerCase(), tool, 'special', 'landmark', 'attraction'],
+      });
+    });
+
+    // Panels
+    const panels: { panel: 'budget' | 'statistics' | 'advisors' | 'settings'; name: string; description: string; keywords: string[] }[] = [
+      { panel: 'budget', name: tPanels('Budget'), description: 'Şehir finansmanını ve fonlamayı yönet', keywords: ['bütçe', 'para', 'finans', 'vergi', 'fonlama'] },
+      { panel: 'statistics', name: tPanels('CityStatistics'), description: 'Şehir istatistiklerini ve grafikleri görüntüle', keywords: ['istatistikler', 'istatistik', 'grafikler', 'veri', 'bilgi'] },
+      { panel: 'advisors', name: tPanels('CityAdvisors'), description: 'Şehir danışmanlarından tavsiye al', keywords: ['danışmanlar', 'tavsiye', 'yardım', 'ipuçları'] },
+      { panel: 'settings', name: tPanels('Settings'), description: 'Oyun ayarları ve tercihler', keywords: ['ayarlar', 'seçenekler', 'tercihler', 'yapılandırma'] },
+    ];
+
+    panels.forEach(({ panel, name, description, keywords }) => {
+      items.push({
+        id: `panel-${panel}`,
+        type: 'panel',
+        panel,
+        name,
+        description,
+        category: 'panels',
+        keywords,
+      });
+    });
+
+    return items;
+  }, [t, tPanels]);
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -284,7 +287,7 @@ export function CommandMenu() {
       if (item.category.includes(searchLower)) return true;
       return false;
     });
-  }, [search]);
+  }, [search, ALL_MENU_ITEMS]);
 
   // Group filtered items by category
   const groupedItems = useMemo(() => {
@@ -307,7 +310,7 @@ export function CommandMenu() {
       }
     });
     return result;
-  }, [groupedItems]);
+  }, [groupedItems, MENU_CATEGORIES]);
 
   // Handle keyboard shortcut to open
   useEffect(() => {
@@ -380,7 +383,7 @@ export function CommandMenu() {
         onKeyDown={handleKeyDown}
       >
         <VisuallyHidden.Root>
-          <DialogTitle>Komut Menüsü</DialogTitle>
+          <DialogTitle>{tCommand('Title')}</DialogTitle>
         </VisuallyHidden.Root>
         
         {/* Search input */}
@@ -397,7 +400,7 @@ export function CommandMenu() {
             ref={inputRef}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Araçları, binaları, panelleri ara..."
+            placeholder={tCommand('SearchPlaceholder')}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent h-12 text-sm"
           />
           <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-sidebar-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
@@ -410,7 +413,7 @@ export function CommandMenu() {
           <div ref={listRef} className="p-2">
             {flatItems.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                Sonuç bulunamadı.
+                {tCommand('NoResults')}
               </div>
             ) : (
               MENU_CATEGORIES.map(category => {

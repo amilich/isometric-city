@@ -3,7 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
 import { TOOL_INFO, Tile, BuildingType, AdjacentCity } from '@/types/game';
-import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency } from '@/lib/simulation';
+import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency, SERVICE_CONFIG } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
 import { getSpriteCoords, BUILDING_TO_SPRITE, SPRITE_VERTICAL_OFFSETS, SPRITE_HORIZONTAL_OFFSETS, getActiveSpritePack } from '@/lib/renderConfig';
 
@@ -131,6 +131,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const [offset, setOffset] = useState({ x: isMobile ? 200 : 620, y: isMobile ? 100 : 160 });
   const [isDragging, setIsDragging] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
   const isPanningRef = useRef(false); // Ref for animation loop to check panning state
   const isPinchZoomingRef = useRef(false); // Ref for animation loop to check pinch zoom state
   const zoomRef = useRef(isMobile ? 0.6 : 1); // Ref for animation loop to check zoom level
@@ -536,6 +537,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
       const key = e.key.toLowerCase();
+      
+      if (key === ' ') {
+        setIsSpacePressed(true);
+        e.preventDefault();
+      }
+
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
         pressed.add(key);
         e.preventDefault();
@@ -544,6 +551,14 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
+      
+      if (key === ' ') {
+        setIsSpacePressed(false);
+        if (isPanning) {
+          setIsPanning(false);
+        }
+      }
+
       pressed.delete(key);
     };
 
@@ -3004,8 +3019,130 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     
     // Draw hovered tile highlight
     if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
-      const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
-      drawHighlight(screenX, screenY);
+      // Check if we should show placement preview (building tools)
+      const isBuildingTool = selectedTool && 
+                            selectedTool !== 'select' && 
+                            selectedTool !== 'bulldoze' && 
+                            selectedTool !== 'zone_dezone' && 
+                            TOOL_INFO[selectedTool];
+
+      if (isBuildingTool) {
+        let size = { width: 1, height: 1 };
+        
+        // Try to get building size for accurate preview
+        // Skip for zoning/infrastructure tools that work differently (drag based)
+        if (!['zone_residential', 'zone_commercial', 'zone_industrial', 'road', 'rail', 'wire', 'pipe'].includes(selectedTool)) {
+           try {
+             size = getBuildingSize(selectedTool as BuildingType);
+           } catch (e) {
+             // Fallback to 1x1 if not a standard building type or utility function fails
+           }
+        }
+
+        // Check if placement is valid (basic collision check)
+        let isValid = true;
+        for (let dy = 0; dy < size.height; dy++) {
+          for (let dx = 0; dx < size.width; dx++) {
+            const tx = hoveredTile.x + dx;
+            const ty = hoveredTile.y + dy;
+            
+            // Check bounds
+            if (tx < 0 || tx >= gridSize || ty < 0 || ty >= gridSize) {
+              isValid = false;
+              break;
+            }
+            
+            // Check collision with existing structures
+            // For roads/rails/pipes/wires, we might want to allow placement over some things, 
+            // but for buildings, the tile usually must be empty
+            if (grid[ty] && grid[ty][tx]) {
+              const tile = grid[ty][tx];
+              if (tile.building && tile.building.type !== 'empty') {
+                 isValid = false;
+                 break;
+              }
+            }
+          }
+          if (!isValid) break;
+        }
+
+        // Green for valid, Red for invalid
+        const fillColor = isValid ? 'rgba(74, 222, 128, 0.5)' : 'rgba(248, 113, 113, 0.5)'; // green-400 : red-400
+        const strokeColor = isValid ? '#22c55e' : '#ef4444'; // green-500 : red-500
+
+        // Draw the preview footprint
+        for (let dy = 0; dy < size.height; dy++) {
+          for (let dx = 0; dx < size.width; dx++) {
+            const tx = hoveredTile.x + dx;
+            const ty = hoveredTile.y + dy;
+            
+            if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+              const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+              drawHighlight(screenX, screenY, fillColor, strokeColor);
+            }
+          }
+        }
+
+        // Draw service coverage radius if applicable
+        // @ts-ignore - SERVICE_CONFIG index access
+        if (SERVICE_CONFIG[selectedTool]) {
+          // @ts-ignore
+          const config = SERVICE_CONFIG[selectedTool];
+          const range = config.range;
+          const rangeSquared = config.rangeSquared;
+          const centerX = hoveredTile.x + Math.floor(size.width / 2);
+          const centerY = hoveredTile.y + Math.floor(size.height / 2);
+          
+          // Draw coverage area
+          // We scan a slightly larger area to show the "red" zone outside coverage
+          const scanRadius = range + 4;
+          
+          for (let dy = -scanRadius; dy <= scanRadius; dy++) {
+            for (let dx = -scanRadius; dx <= scanRadius; dx++) {
+              // Skip the building footprint itself (already drawn above)
+              if (dx >= -Math.floor(size.width/2) && dx < size.width - Math.floor(size.width/2) &&
+                  dy >= -Math.floor(size.height/2) && dy < size.height - Math.floor(size.height/2)) {
+                continue;
+              }
+
+              const tx = centerX + dx;
+              const ty = centerY + dy;
+              
+              if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+                const distSquared = dx * dx + dy * dy;
+                const distance = Math.sqrt(distSquared);
+                
+                if (distance <= range) {
+                   // Inside coverage - Gradient from Green (center) to Red (edge)
+                   // Percentage 1.0 at center, 0.0 at edge
+                   const percentage = Math.max(0, 1 - distance / range);
+                   
+                   // Interpolate colors
+                   // Red-500: 239, 68, 68
+                   // Green-500: 34, 197, 94
+                   const r = Math.round(239 + (34 - 239) * percentage);
+                   const g = Math.round(68 + (197 - 68) * percentage);
+                   const b = Math.round(68 + (94 - 68) * percentage);
+                   
+                   const color = `rgba(${r}, ${g}, ${b}, 0.25)`; // Slightly more opacity
+                   const stroke = `rgba(${r}, ${g}, ${b}, 0.0)`;
+                   
+                   const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+                   drawHighlight(screenX, screenY, color, stroke);
+                } else if (distance <= range + 4) {
+                   // Just outside coverage - Full Red
+                   const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+                   drawHighlight(screenX, screenY, 'rgba(239, 68, 68, 0.25)', 'transparent');
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Standard hover highlight for select tool or non-building tools
+        const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+        drawHighlight(screenX, screenY);
+      }
     }
     
     // Draw selected tile highlight (including multi-tile buildings)
@@ -3028,7 +3165,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, offset, zoom, gridSize, grid]);
+  }, [hoveredTile, selectedTile, offset, zoom, gridSize, grid, selectedTool]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
@@ -3424,7 +3561,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   }, [grid, gridSize, visualHour, offset, zoom, canvasSize.width, canvasSize.height, isMobile, isPanning]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    if (e.button === 1 || (e.button === 0 && e.altKey) || (e.button === 0 && isSpacePressed)) {
       setIsPanning(true);
       setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
       panCandidateRef.current = null;
@@ -3488,7 +3625,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
+  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid, isSpacePressed]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
@@ -3894,7 +4031,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       ref={containerRef}
       className="relative w-full h-full overflow-hidden touch-none"
       style={{ 
-        cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
+        cursor: isPanning ? 'grabbing' : isSpacePressed ? 'grab' : isDragging ? 'crosshair' : 'default',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

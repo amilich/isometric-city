@@ -3,6 +3,8 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
+import { SPRITE_PACKS, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
+import { useTranslations } from 'next-intl';
 import {
   BudgetIcon,
   ChartIcon,
@@ -31,6 +33,88 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+const SpritePreview = ({ tool }: { tool: string }) => {
+  const pack = SPRITE_PACKS.find(p => p.id === DEFAULT_SPRITE_PACK_ID) || SPRITE_PACKS[0];
+  let src = pack.src;
+  let cols = pack.cols;
+  let rows = pack.rows;
+  let row = 0;
+  let col = 0;
+  let found = false;
+
+  // Check parks first
+  if (pack.parksBuildings && pack.parksBuildings[tool]) {
+    src = pack.parksSrc || src;
+    cols = pack.parksCols || cols;
+    rows = pack.parksRows || rows;
+    const pos = pack.parksBuildings[tool];
+    row = pos.row;
+    col = pos.col;
+    found = true;
+  }
+  // Check farms
+  else if (pack.farmsVariants && pack.farmsVariants[tool] && pack.farmsVariants[tool].length > 0) {
+     src = pack.farmsSrc || src;
+     cols = pack.farmsCols || cols;
+     rows = pack.farmsRows || rows;
+     row = pack.farmsVariants[tool][0].row;
+     col = pack.farmsVariants[tool][0].col;
+     found = true;
+  }
+   // Check shops
+  else if (pack.shopsVariants && pack.shopsVariants[tool] && pack.shopsVariants[tool].length > 0) {
+     src = pack.shopsSrc || src;
+     cols = pack.shopsCols || cols;
+     rows = pack.shopsRows || rows;
+     row = pack.shopsVariants[tool][0].row;
+     col = pack.shopsVariants[tool][0].col;
+     found = true;
+  }
+   // Check stations
+  else if (pack.stationsVariants && pack.stationsVariants[tool] && pack.stationsVariants[tool].length > 0) {
+     src = pack.stationsSrc || src;
+     cols = pack.stationsCols || cols;
+     rows = pack.stationsRows || rows;
+     row = pack.stationsVariants[tool][0].row;
+     col = pack.stationsVariants[tool][0].col;
+     found = true;
+  }
+  // Default sprite sheet
+  else if (pack.buildingToSprite[tool]) {
+    const spriteKey = pack.buildingToSprite[tool];
+    const index = pack.spriteOrder.indexOf(spriteKey);
+    if (index !== -1) {
+      if (pack.layout === 'column') {
+        col = Math.floor(index / pack.rows);
+        row = index % pack.rows;
+      } else {
+        col = index % pack.cols;
+        row = Math.floor(index / pack.cols);
+      }
+      found = true;
+    }
+  }
+
+  if (!found) return null;
+
+  return (
+    <div className="w-16 h-16 relative overflow-hidden rounded bg-blue-50/10 border border-white/10 flex-shrink-0 shadow-sm">
+      <img 
+        src={src} 
+        alt=""
+        className="max-w-none absolute"
+        style={{
+          width: `${cols * 100}%`,
+          imageRendering: 'pixelated',
+          transform: `translate(-${(col / cols) * 100}%, -${(row / rows) * 100}%)`,
+          top: 0,
+          left: 0
+        }}
+      />
+    </div>
+  );
+};
+
 // Hover Submenu Component for collapsible tool categories
 // Implements triangle-rule safe zone for forgiving cursor navigation
 const HoverSubmenu = React.memo(function HoverSubmenu({
@@ -54,6 +138,7 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
   const submenuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastMousePos = useRef<{ x: number; y: number } | null>(null);
+  const t = useTranslations('Game.Tools');
   
   const hasSelectedTool = tools.includes(selectedTool);
   const SUBMENU_GAP = 12; // Gap between sidebar and submenu
@@ -207,27 +292,33 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
               const canAfford = money >= info.cost;
               const Icon = ToolIcons[tool];
               
-                return (
-                  <Tooltip key={tool}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => onSelectTool(tool)}
-                        disabled={!canAfford && info.cost > 0}
-                        variant={isSelected ? 'game-icon-selected' : 'game-icon'}
-                        className="w-10 h-10 p-0 justify-center items-center"
-                      >
-                        {Icon ? <Icon size={20} /> : <span className="text-xs">{info.name.substring(0, 2)}</span>}
-                      </Button>
-                    </TooltipTrigger>
-                    {/* Use Portal to render tooltip outside of overflow-hidden container */}
-                    <TooltipContent side="right" sideOffset={10} className="z-[99999]">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-bold">{info.name}</span>
-                        <span className="text-xs text-muted-foreground">{info.description}</span>
-                        {info.cost > 0 && <span className="text-xs font-mono text-green-400">₺{info.cost.toLocaleString()}</span>}
+              const name = t(`Items.${tool}.name`);
+              const description = t(`Items.${tool}.description`);
+
+              return (
+                <Tooltip key={tool}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => onSelectTool(tool)}
+                      disabled={!canAfford && info.cost > 0}
+                      variant={isSelected ? 'game-icon-selected' : 'game-icon'}
+                      className="w-10 h-10 p-0 justify-center items-center"
+                    >
+                      {Icon ? <Icon size={20} /> : <span className="text-xs">{name.substring(0, 2)}</span>}
+                    </Button>
+                  </TooltipTrigger>
+                  {/* Use Portal to render tooltip outside of overflow-hidden container */}
+                  <TooltipContent side="right" sideOffset={10} className="z-[99999]">
+                    <div className="flex flex-row gap-3 items-start p-1">
+                      <SpritePreview tool={tool} />
+                      <div className="flex flex-col gap-1 min-w-[140px]">
+                        <span className="font-bold text-base">{name}</span>
+                        <span className="text-xs text-muted-foreground leading-snug">{description}</span>
+                        {info.cost > 0 && <span className="text-sm font-mono text-emerald-400 font-bold mt-1">₺{info.cost.toLocaleString()}</span>}
                       </div>
-                    </TooltipContent>
-                  </Tooltip>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -249,13 +340,14 @@ function ExitDialog({
   onSaveAndExit: () => void;
   onExitWithoutSaving: () => void;
 }) {
+  const t = useTranslations('Game.Dialogs.Exit');
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Ana Menüye Dön</DialogTitle>
+          <DialogTitle>{t('Title')}</DialogTitle>
           <DialogDescription>
-            Çıkmadan önce şehrinizi kaydetmek ister misiniz?
+            {t('Description')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -264,14 +356,14 @@ function ExitDialog({
             onClick={onExitWithoutSaving}
             className="w-full sm:w-auto"
           >
-            Kaydetmeden Çık
+            {t('ExitWithoutSaving')}
           </Button>
           <Button
             onClick={onSaveAndExit}
             variant="game-success"
             className="w-full sm:w-auto"
           >
-            Kaydet ve Çık
+            {t('SaveAndExit')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -284,6 +376,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   const { state, setTool, setActivePanel, saveCity } = useGame();
   const { selectedTool, stats, activePanel } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const t = useTranslations('Game');
   
   const handleSaveAndExit = useCallback(() => {
     saveCity();
@@ -298,58 +391,58 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   
   // Direct tool categories (shown inline)
   const directCategories = useMemo(() => ({
-    'ARAÇLAR': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
-    'BÖLGELER': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
+    'TOOLS': ['select', 'bulldoze', 'road', 'rail', 'subway'] as Tool[],
+    'ZONES': ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'] as Tool[],
   }), []);
   
   // Submenu categories (hover to expand) - includes all new assets from main
   const submenuCategories = useMemo(() => [
     { 
       key: 'services', 
-      label: 'Hizmetler', 
+      label: t('Tools.Categories.services'), 
       tools: ['police_station', 'fire_station', 'hospital', 'school', 'university'] as Tool[]
     },
     { 
       key: 'parks', 
-      label: 'Parklar', 
+      label: t('Tools.Categories.parks'), 
       tools: ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden'] as Tool[]
     },
     { 
       key: 'sports', 
-      label: 'Spor', 
+      label: t('Tools.Categories.sports'), 
       tools: ['basketball_courts', 'soccer_field_small', 'baseball_field_small', 'football_field', 'baseball_stadium', 'swimming_pool', 'skate_park', 'bleachers_field'] as Tool[]
     },
     { 
       key: 'recreation', 
-      label: 'Eğlence', 
+      label: t('Tools.Categories.recreation'), 
       tools: ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[]
     },
     { 
       key: 'waterfront', 
-      label: 'Sahil', 
+      label: t('Tools.Categories.waterfront'), 
       tools: ['marina_docks_small', 'pier_large'] as Tool[]
     },
     { 
       key: 'community', 
-      label: 'Topluluk', 
+      label: t('Tools.Categories.community'), 
       tools: ['community_center', 'animal_pens_farm', 'office_building_small'] as Tool[]
     },
     { 
       key: 'utilities', 
-      label: 'Altyapı', 
+      label: t('Tools.Categories.utilities'), 
       tools: ['power_plant', 'water_tower', 'subway_station', 'rail_station'] as Tool[],
       forceOpenUpward: true
     },
     { 
       key: 'special', 
-      label: 'Özel', 
+      label: t('Tools.Categories.special'), 
       tools: ['stadium', 'museum', 'airport', 'space_program', 'city_hall', 'amusement_park'] as Tool[],
       forceOpenUpward: true
     },
-  ], []);
+  ], [t]);
   
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={0} skipDelayDuration={0} disableHoverableContent>
       <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-40">
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
@@ -365,7 +458,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                   <SearchIcon size={16} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">Ara (⌘K)</TooltipContent>
+              <TooltipContent side="bottom">{t('Tooltips.Search')}</TooltipContent>
             </Tooltip>
             
             {onExit && (
@@ -379,7 +472,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                     <ExitIcon size={16} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Ana Menüye Dön</TooltipContent>
+                <TooltipContent side="bottom">{t('Tooltips.BackToMenu')}</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -391,7 +484,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         {Object.entries(directCategories).map(([category, tools]) => (
           <div key={category} className="mb-1">
             <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground">
-              {category}
+              {t(`Tools.Categories.${category}`)}
             </div>
             <div className="px-4 grid grid-cols-4 gap-1">
               {tools.map(tool => {
@@ -401,6 +494,9 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 const canAfford = stats.money >= info.cost;
                 const Icon = ToolIcons[tool];
                 
+                const name = t(`Tools.Items.${tool}.name`);
+                const description = t(`Tools.Items.${tool}.description`);
+
                 return (
                   <Tooltip key={tool}>
                     <TooltipTrigger asChild>
@@ -410,13 +506,13 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                         variant={isSelected ? 'game-icon-selected' : 'game-icon'}
                         className="w-10 h-10 p-0 justify-center items-center"
                       >
-                        {Icon ? <Icon size={20} /> : <span className="text-xs">{info.name.substring(0, 2)}</span>}
+                        {Icon ? <Icon size={20} /> : <span className="text-xs">{name.substring(0, 2)}</span>}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right" sideOffset={10}>
                       <div className="flex flex-col gap-1">
-                        <span className="font-bold">{info.name}</span>
-                        <span className="text-xs text-muted-foreground">{info.description}</span>
+                        <span className="font-bold">{name}</span>
+                        <span className="text-xs text-muted-foreground">{description}</span>
                         {info.cost > 0 && <span className="text-xs font-mono text-green-400">₺{info.cost.toLocaleString()}</span>}
                       </div>
                     </TooltipContent>
@@ -432,7 +528,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         
         {/* Buildings header */}
         <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground">
-          BİNALAR
+          {t('Tools.Categories.BUILDINGS')}
         </div>
         
         {/* Submenu categories */}
@@ -454,10 +550,10 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
       <div className="border-t border-sidebar-border p-2">
         <div className="grid grid-cols-4 gap-1">
           {[
-            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: 'Bütçe' },
-            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: 'İstatistikler' },
-            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: 'Danışmanlar' },
-            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: 'Ayarlar' },
+            { panel: 'budget' as const, icon: <BudgetIcon size={16} />, label: t('Panels.Budget') },
+            { panel: 'statistics' as const, icon: <ChartIcon size={16} />, label: t('Panels.Statistics') },
+            { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, label: t('Panels.Advisors') },
+            { panel: 'settings' as const, icon: <SettingsIcon size={16} />, label: t('Panels.Settings') },
           ].map(({ panel, icon, label }) => (
             <Tooltip key={panel}>
               <TooltipTrigger asChild>

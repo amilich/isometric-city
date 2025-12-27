@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function StatisticsPanel() {
+  const t = useTranslations('Game.Panels');
   const { state, setActivePanel } = useGame();
   const { history, stats } = state;
   const [activeTab, setActiveTab] = useState<'population' | 'money' | 'happiness'>('population');
@@ -86,7 +88,7 @@ export function StatisticsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Şehir İstatistikleri</DialogTitle>
+          <DialogTitle>{t('CityStatistics')}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">

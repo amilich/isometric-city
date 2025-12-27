@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
@@ -32,6 +33,7 @@ const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 export function AdvisorsPanel() {
+  const t = useTranslations('Game.Panels');
   const { state, setActivePanel } = useGame();
   const { advisorMessages, stats } = state;
   
@@ -39,11 +41,30 @@ export function AdvisorsPanel() {
   const grade = avgRating >= 90 ? 'A+' : avgRating >= 80 ? 'A' : avgRating >= 70 ? 'B' : avgRating >= 60 ? 'C' : avgRating >= 50 ? 'D' : 'F';
   const gradeColor = avgRating >= 70 ? 'text-green-400' : avgRating >= 50 ? 'text-amber-400' : 'text-red-400';
   
+  const resolveMessage = (msg: string) => {
+    try {
+      const parsed = JSON.parse(msg);
+      if (parsed.key) {
+        return t(`AdvisorsContent.${parsed.key}`, parsed.params);
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return msg;
+  };
+
+  const resolveAdvisorName = (name: string) => {
+    if (name.startsWith('Advisors.')) {
+        return t(`AdvisorsContent.${name}`);
+    }
+    return name;
+  };
+
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[500px] max-h-[600px]">
         <DialogHeader>
-          <DialogTitle>Şehir Danışmanları</DialogTitle>
+          <DialogTitle>{t('CityAdvisors')}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -54,8 +75,8 @@ export function AdvisorsPanel() {
               {grade}
             </div>
             <div>
-              <div className="text-foreground font-semibold">Genel Şehir Değerlendirmesi</div>
-              <div className="text-muted-foreground text-sm">Mutluluk, sağlık, eğitim, güvenlik ve çevreye dayalı</div>
+              <div className="text-foreground font-semibold">{t('AdvisorsContent.GeneralEvaluation')}</div>
+              <div className="text-muted-foreground text-sm">{t('AdvisorsContent.GeneralEvaluationDesc')}</div>
             </div>
           </Card>
           
@@ -64,8 +85,8 @@ export function AdvisorsPanel() {
               {advisorMessages.length === 0 ? (
                 <Card className="text-center py-8 text-muted-foreground bg-primary/10 border-primary/30">
                   <AdvisorIcon size={32} className="mx-auto mb-3 opacity-50" />
-                  <div className="text-sm">Bildirilecek acil bir sorun yok!</div>
-                  <div className="text-xs mt-1">Şehriniz sorunsuz işliyor.</div>
+                  <div className="text-sm">{t('AdvisorsContent.NoIssuesTitle')}</div>
+                  <div className="text-xs mt-1">{t('AdvisorsContent.NoIssuesDesc')}</div>
                 </Card>
               ) : (
                 advisorMessages.map((advisor, i) => (
@@ -78,7 +99,7 @@ export function AdvisorsPanel() {
                       <span className="text-lg text-muted-foreground">
                         {ADVISOR_ICON_MAP[advisor.icon] || <InfoIcon size={18} />}
                       </span>
-                      <span className="text-foreground font-medium text-sm">{advisor.name}</span>
+                      <span className="text-foreground font-medium text-sm">{resolveAdvisorName(advisor.name)}</span>
                       <Badge 
                         variant={
                           advisor.priority === 'critical' ? 'destructive' :
@@ -90,7 +111,7 @@ export function AdvisorsPanel() {
                       </Badge>
                     </div>
                     {advisor.messages.map((msg, j) => (
-                      <div key={j} className="text-muted-foreground text-sm leading-relaxed">{msg}</div>
+                      <div key={j} className="text-muted-foreground text-sm leading-relaxed">{resolveMessage(msg)}</div>
                     ))}
                   </Card>
                 ))

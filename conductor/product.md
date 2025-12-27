@@ -29,6 +29,17 @@ IsoCity is an open-source isometric city-building simulation designed to be acce
 - **Persistence:** Implement city state syncing to Firestore or Firebase Storage to enable cloud saves.
 
 ### Phase 3: Simulation Depth (Future)
+
 - **Documentation Foundation (Completed):** Established a comprehensive `PLAYER_GUIDE.md` detailing the core simulation mechanics (Demand, Levels, Economy) to improve transparency for players and developers.
+
 - **Simulation Visualization (Completed):** Implemented a dynamic "Target Level" overlay and improved data visualization shortcuts ('O' to cycle overlays) to help players master city growth mechanics.
+
 - **Deepening Simulation:** Further simulation enhancements (Economy, Utilities, AI) to be defined based on community feedback and project growth.
+
+
+
+### Phase 4: Strategic Depth (Completed)
+
+- **Building Upgrades:** Implemented a modular building upgrade system for core service buildings (Power, Water, Police, Fire, Education, Health).
+
+- **Advanced Simulation:** Integrated upgrade effects (range, efficiency, pollution reduction) into the core simulation engine.

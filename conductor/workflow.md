@@ -134,6 +134,17 @@ All tasks follow a strict lifecycle:
 
 10.  **Announce Completion:** Inform the user that the phase is complete and the checkpoint has been created, with the detailed verification report attached as a git note.
 
+### Track Completion and Cleanup Workflow
+
+**Trigger:** This protocol is executed after all phases and tasks in a track are marked as completed `[x]`.
+
+1.  **Synchronize Project Documentation:** Follow the "SYNCHRONIZE PROJECT DOCUMENTATION" protocol in the system prompt to update `product.md`, `tech-stack.md`, etc.
+2.  **Perform Track Cleanup:** Follow the "TRACK CLEANUP" protocol in the system prompt (Archive, Delete, or Skip).
+3.  **Commit Final Changes:**
+    -   **Action:** Stage all remaining changes, including updated project documentation (`product.md`, etc.), the modified `tracks.md`, and any archived or deleted files.
+    -   **Action:** Commit these changes with a clear message (e.g., `chore(conductor): archive track 'Feature X' and sync project documentation`).
+4.  **Final Announcement:** Inform the user that the track is fully closed, documentation is synchronized, and all changes have been committed.
+
 ### Quality Gates
 
 Before marking any task complete, verify:

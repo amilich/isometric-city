@@ -1179,14 +1179,46 @@ export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityNam
 // Service building configuration - defined once, reused across calls
 // Exported so overlay rendering can access radii
 export const SERVICE_CONFIG = {
-  police_station: { range: 13, rangeSquared: 169, type: 'police' as const },
-  fire_station: { range: 18, rangeSquared: 324, type: 'fire' as const },
-  hospital: { range: 12, rangeSquared: 144, type: 'health' as const },
-  school: { range: 11, rangeSquared: 121, type: 'education' as const },
-  university: { range: 19, rangeSquared: 361, type: 'education' as const },
-  power_plant: { range: 15, rangeSquared: 225 },
-  water_tower: { range: 12, rangeSquared: 144 },
+  police_station: { range: 13, rangeSquared: 169, type: 'police' as const, requiresRoad: true },
+  fire_station: { range: 18, rangeSquared: 324, type: 'fire' as const, requiresRoad: true },
+  hospital: { range: 12, rangeSquared: 144, type: 'health' as const, requiresRoad: true },
+  school: { range: 11, rangeSquared: 121, type: 'education' as const, requiresRoad: true },
+  university: { range: 19, rangeSquared: 361, type: 'education' as const, requiresRoad: true },
+  power_plant: { range: 15, rangeSquared: 225, requiresRoad: false },
+  water_tower: { range: 12, rangeSquared: 144, requiresRoad: false },
 } as const;
+
+export function hasRequiredRoadAccess(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number,
+  buildingType: string
+): boolean {
+  const config = SERVICE_CONFIG[buildingType as keyof typeof SERVICE_CONFIG];
+  
+  if (!config || !config.requiresRoad) {
+    return true;
+  }
+  
+  const directions = [
+    [-1, 0], [1, 0], [0, -1], [0, 1],
+    [-1, -1], [-1, 1], [1, -1], [1, 1]
+  ];
+  
+  for (const [dx, dy] of directions) {
+    const nx = x + dx;
+    const ny = y + dy;
+    
+    if (nx < 0 || ny < 0 || nx >= gridSize || ny >= gridSize) continue;
+    
+    if (grid[ny][nx].building.type === 'road') {
+      return true;
+    }
+  }
+  
+  return false;
+}
 
 // Building types that provide services
 const SERVICE_BUILDING_TYPES = new Set([
@@ -1216,6 +1248,11 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
       
       // Skip abandoned buildings
       if (tile.building.abandoned) {
+        continue;
+      }
+      
+
+      if (!hasRequiredRoadAccess(grid, size, x, y, buildingType)) {
         continue;
       }
       

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CloseIcon } from '@/components/ui/Icons';
+import { SERVICE_CONFIG, hasRequiredRoadAccess } from '@/lib/simulation';
 
 interface TileInfoPanelProps {
   tile: Tile;
@@ -18,6 +19,8 @@ interface TileInfoPanelProps {
     power: boolean[][];
     water: boolean[][];
   };
+  grid: Tile[][];
+  gridSize: number;
   onClose: () => void;
   isMobile?: boolean;
 }
@@ -25,10 +28,17 @@ interface TileInfoPanelProps {
 export function TileInfoPanel({ 
   tile, 
   services, 
+  grid,
+  gridSize,
   onClose,
   isMobile = false
 }: TileInfoPanelProps) {
   const { x, y } = tile;
+  
+  // Check if this building requires road connection
+  const config = SERVICE_CONFIG[tile.building.type as keyof typeof SERVICE_CONFIG];
+  const requiresRoadConnection = config?.requiresRoad === true;
+  const hasRoadConnection = hasRequiredRoadAccess(grid, gridSize, x, y, tile.building.type);
   
   return (
     <Card 
@@ -88,6 +98,14 @@ export function TileInfoPanel({
             {tile.building.watered ? 'Connected' : 'No Water'}
           </Badge>
         </div>
+        {requiresRoadConnection && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Road Access</span>
+            <Badge variant={hasRoadConnection ? 'default' : 'destructive'} className={hasRoadConnection ? 'bg-emerald-500/20 text-emerald-400' : ''}>
+              {hasRoadConnection ? 'Connected' : 'No Road'}
+            </Badge>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Land Value</span>
           <span>${tile.landValue}</span>

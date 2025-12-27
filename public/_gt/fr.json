@@ -6,9 +6,15 @@
   "012b78191d3eef87": "Montagnes russes",
   "01ed738a35998bee": "Sauvegarder et quitter",
   "0246f296a9647801": "Outils",
+  "036be42493f75286": " - Faites glisser pour définir la zone",
   "03e108901c6d428d": "Gare voyageurs et fret",
   "06cf637219c05461": "Aire de camping en plein air",
   "07440458a59d2f55": "Êtes-vous sûr ? Cela réinitialisera toute la progression.",
+  "077acf288fdc5ceb": {
+    "c": "Plus tard",
+    "i": 1,
+    "t": "Button"
+  },
   "083a18f928c6f1d0": "Dézoner",
   "0a75e464d833bca8": "Paramètres",
   "0ad556bd75d20fa9": "Sauvegarde auto",
@@ -21,6 +27,35 @@
   "0df552c71ceffdea": "Terrain de basket extérieur",
   "11e592ce36623118": "Hôtel de ville",
   "16e15fc06c6a007c": "Piscine publique",
+  "196936ae6b19dcdc": {
+    "c": [
+      "Se connecter à ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      " établira une route commerciale, offrant :",
+      {
+        "c": [
+          {
+            "c": "5 000 $ de bonus unique",
+            "i": 4,
+            "t": "li"
+          },
+          {
+            "c": "200 $/mois de revenus supplémentaires",
+            "i": 5,
+            "t": "li"
+          }
+        ],
+        "i": 3,
+        "t": "ul"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "1d322b583a4b0247": "Augmente la demande commerciale (3x3)",
   "1e5fcd19bdbca49e": "Entrée de sentier de randonnée (3x3)",
   "1f30c00e03eeca50": "Route",
@@ -47,12 +82,14 @@
   "38f4bf88be0f7fb8": "Porte du parc",
   "39582dc021bd9785": "Revenus",
   "39ecf0d809cf7519": "Outils pour les développeurs",
+  "3a6eca7252adb9a5": "{toolName} - zone {width}x{height}",
   "3c4c4d97d5e66b21": "Santé",
   "3ce15d2f4c961d10": "Pas encore assez de données. Continuez à jouer pour voir les tendances historiques.",
   "3e3047cbe8ba9923": "Retirez 15 cases sur chaque bord. Les bâtiments sur les bords seront supprimés.",
   "3fed752c6b827eb4": "Parc de skate",
   "40bad8960b093d63": "Basé sur le bonheur, la santé, l’éducation, la sécurité et l’environnement",
   "423be6bbfb254615": "Plantez des arbres pour améliorer l'environnement",
+  "43852fb2c437417a": "{toolName} doit être placé à côté de l'eau",
   "43f8d980f9a0671a": "Transport souterrain",
   "441e4c507e4ad288": "Petit bureau",
   "4552acda39be69ce": "Supprimer le zonage",
@@ -77,6 +114,7 @@
   "5584c3a28c29fea7": "Pack de sprites",
   "55b6968db17e61eb": "Votre ville a été enregistrée avant d’afficher une ville partagée",
   "56e589e66d790077": "Supprimer les bâtiments et les zones",
+  "570f15ad126ec582": "{toolName} à ({x}, {y})",
   "5710fcf3d552b2e4": "Caserne de pompiers",
   "573173896178c5b2": "Parc d'attractions",
   "5842190480e1e770": "Alimenté en eau",
@@ -145,6 +183,11 @@
   "955389bd727d0995": "Stade de football (2x2)",
   "956afb617989348a": "Spécial",
   "961afdfa1ffd458a": "Jeu chargé avec succès&nbsp;!",
+  "973809b714422052": {
+    "c": "Ville découverte !",
+    "i": 1,
+    "t": "DialogTitle"
+  },
   "97513d561bf53e55": "Station de métro",
   "97c7b3a9fd235ee5": "Population",
   "9963ed45f2043cb8": "Jardin de la serre",
@@ -170,6 +213,18 @@
   "b43d25aa91aa1edd": "Forcer l’apparence de l’heure de la journée sans affecter la progression du temps",
   "b453abc6c0aa9847": "Terrain de baseball",
   "b4619e9087ef77c7": "Programme spatial",
+  "b7a2c2e53cd1a902": {
+    "c": [
+      "Se connecter à ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "Button"
+  },
   "b7cc80c6e92b9484": "Enregistrez plusieurs villes et basculez entre elles",
   "b821113430f5f0af": "Rail",
   "b8ffa77d868a668b": "Nom de la ville",
@@ -190,9 +245,11 @@
   "ce17b8c1c26494e0": "Camping",
   "cf5babe756808083": "Marina",
   "d08f67cf675a3159": "Stade de baseball professionnel (3x3)",
+  "d1acbf32e4fd9c19": "Incident",
   "d26290781c575c73": "Musée",
   "d28b856e9e8b8a3d": "Argent",
   "d5120487d8637bd5": "Entrée de parc décorative",
+  "d563172b11e46265": " - Faire glisser pour placer",
   "d5bb9c7d05c9221d": "Exporter la partie",
   "d76336950671d1e2": "Quai pour bateaux (2x2, doit être placé au bord de l’eau)",
   "d7804cf2c098d4c3": "Afficher la superposition",
@@ -204,6 +261,25 @@
   "ded883367c8ddcb0": "Ouvrir la vue de test des sprites",
   "e0a1cc92bd08aa24": "Énergie",
   "e0fa959d80ac0d81": "Sélectionner",
+  "e1e699a197e3581d": {
+    "c": [
+      "Votre route a atteint la frontière de ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      " ! Vous avez découvert ",
+      {
+        "i": 3,
+        "k": "_gt_value_3",
+        "v": "v"
+      },
+      "."
+    ],
+    "i": 1,
+    "t": "DialogDescription"
+  },
   "e23439349cbca510": "Cliquez pour afficher les infos de la case",
   "e4ca1c349676657c": "Nuit",
   "e79d3dd997b03f78": "Pas d'eau",
@@ -218,6 +294,7 @@
   "f06fd72176b8179e": "Zonage",
   "f0cfc502ed112098": "Zone",
   "f2faf4aaea86ae97": "Terrains de basket",
+  "f34a6940381f60d6": "Incident signalé.",
   "f3e6f71a8bc19b40": "Collez un état de partie à charger",
   "f62db7ca5ce71d28": "Activé",
   "f69724f1685d216d": "Enclos à animaux",

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { useMessages } from 'gt-next';
+import { useMessages, T, Var, useGT } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { TOOL_INFO, Tile, Building, BuildingType, AdjacentCity, Tool } from '@/types/game';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency } from '@/lib/simulation';
@@ -156,6 +156,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // PERF: Use latestStateRef for real-time grid access in animation loops
   // This avoids waiting for React state sync which is throttled for performance
   const m = useMessages();
+  const gt = useGT();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
   const carsCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -3076,40 +3077,50 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }}>
             <DialogContent className="max-w-[400px]">
               <DialogHeader>
-                <DialogTitle>City Discovered!</DialogTitle>
-                <DialogDescription>
-                  Your road has reached the {cityConnectionDialog.direction} border! You&apos;ve discovered {city.name}.
-                </DialogDescription>
+                <T>
+                  <DialogTitle>City Discovered!</DialogTitle>
+                </T>
+                <T>
+                  <DialogDescription>
+                    Your road has reached the <Var>{cityConnectionDialog.direction}</Var> border! You&apos;ve discovered <Var>{city.name}</Var>.
+                  </DialogDescription>
+                </T>
               </DialogHeader>
               <div className="flex flex-col gap-4 mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Connecting to {city.name} will establish a trade route, providing:
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>$5,000 one-time bonus</li>
-                    <li>$200/month additional income</li>
-                  </ul>
-                </div>
+                <T>
+                  <div className="text-sm text-muted-foreground">
+                    Connecting to <Var>{city.name}</Var> will establish a trade route, providing:
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>$5,000 one-time bonus</li>
+                      <li>$200/month additional income</li>
+                    </ul>
+                  </div>
+                </T>
                 <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setCityConnectionDialog(null);
-                      setDragStartTile(null);
-                      setDragEndTile(null);
-                    }}
-                  >
-                    Maybe Later
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      connectToCity(city.id);
-                      setCityConnectionDialog(null);
-                      setDragStartTile(null);
-                      setDragEndTile(null);
-                    }}
-                  >
-                    Connect to {city.name}
-                  </Button>
+                  <T>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCityConnectionDialog(null);
+                        setDragStartTile(null);
+                        setDragEndTile(null);
+                      }}
+                    >
+                      Maybe Later
+                    </Button>
+                  </T>
+                  <T>
+                    <Button
+                      onClick={() => {
+                        connectToCity(city.id);
+                        setCityConnectionDialog(null);
+                        setDragStartTile(null);
+                        setDragEndTile(null);
+                      }}
+                    >
+                      Connect to <Var>{city.name}</Var>
+                    </Button>
+                  </T>
                 </div>
               </div>
             </DialogContent>
@@ -3128,28 +3139,39 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           const waterCheck = getWaterAdjacency(grid, hoveredTile.x, hoveredTile.y, size.width, size.height, gridSize);
           isWaterfrontPlacementInvalid = !waterCheck.hasWater;
         }
-        
+
+        const toolName = m(TOOL_INFO[selectedTool].name);
+
         return (
           <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-sm ${
-            isWaterfrontPlacementInvalid 
-              ? 'bg-destructive/90 border border-destructive-foreground/30 text-destructive-foreground' 
+            isWaterfrontPlacementInvalid
+              ? 'bg-destructive/90 border border-destructive-foreground/30 text-destructive-foreground'
               : 'bg-card/90 border border-border'
           }`}>
             {isDragging && dragStartTile && dragEndTile && showsDragGrid ? (
               <>
-                {m(TOOL_INFO[selectedTool].name)} - {Math.abs(dragEndTile.x - dragStartTile.x) + 1}x{Math.abs(dragEndTile.y - dragStartTile.y) + 1} area
-                {TOOL_INFO[selectedTool].cost > 0 && ` - $${TOOL_INFO[selectedTool].cost * (Math.abs(dragEndTile.x - dragStartTile.x) + 1) * (Math.abs(dragEndTile.y - dragStartTile.y) + 1)}`}
+                {(() => {
+                  const areaWidth = Math.abs(dragEndTile.x - dragStartTile.x) + 1;
+                  const areaHeight = Math.abs(dragEndTile.y - dragStartTile.y) + 1;
+                  const totalCost = TOOL_INFO[selectedTool].cost * areaWidth * areaHeight;
+                  return (
+                    <>
+                      {gt('{toolName} - {width}x{height} area', { toolName, width: areaWidth, height: areaHeight })}
+                      {TOOL_INFO[selectedTool].cost > 0 && ` - $${totalCost}`}
+                    </>
+                  );
+                })()}
               </>
             ) : isWaterfrontPlacementInvalid ? (
               <>
-                {m(TOOL_INFO[selectedTool].name)} must be placed next to water
+                {gt('{toolName} must be placed next to water', { toolName })}
               </>
             ) : (
               <>
-                {m(TOOL_INFO[selectedTool].name)} at ({hoveredTile.x}, {hoveredTile.y})
+                {gt('{toolName} at ({x}, {y})', { toolName, x: hoveredTile.x, y: hoveredTile.y })}
                 {TOOL_INFO[selectedTool].cost > 0 && ` - $${TOOL_INFO[selectedTool].cost}`}
-                {showsDragGrid && ' - Drag to zone area'}
-                {supportsDragPlace && !showsDragGrid && ' - Drag to place'}
+                {showsDragGrid && gt(' - Drag to zone area')}
+                {supportsDragPlace && !showsDragGrid && gt(' - Drag to place')}
               </>
             )}
           </div>
@@ -3183,21 +3205,21 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
                   <SafetyIcon size={14} className="text-blue-400" />
                 )}
                 <span className="text-xs font-semibold text-sidebar-foreground">
-                  {hoveredIncident.type === 'fire' 
+                  {hoveredIncident.type === 'fire'
                     ? getFireNameForTile(hoveredIncident.x, hoveredIncident.y)
-                    : hoveredIncident.crimeType 
+                    : hoveredIncident.crimeType
                       ? getCrimeName(hoveredIncident.crimeType)
-                      : 'Incident'}
+                      : gt('Incident')}
                 </span>
               </div>
               
               {/* Description */}
               <p className="text-[11px] text-muted-foreground leading-tight">
-                {hoveredIncident.type === 'fire' 
+                {hoveredIncident.type === 'fire'
                   ? getFireDescriptionForTile(hoveredIncident.x, hoveredIncident.y)
-                  : hoveredIncident.crimeType 
+                  : hoveredIncident.crimeType
                     ? getCrimeDescription(hoveredIncident.crimeType)
-                    : 'Incident reported.'}
+                    : gt('Incident reported.')}
               </p>
               
               {/* Location */}

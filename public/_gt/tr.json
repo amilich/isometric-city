@@ -6,9 +6,15 @@
   "012b78191d3eef87": "Hız Treni",
   "01ed738a35998bee": "Kaydet ve Çık",
   "0246f296a9647801": "Araçlar",
+  "036be42493f75286": " - Alanı bölgelendirmek için sürükle",
   "03e108901c6d428d": "Yolcu ve yük istasyonu",
   "06cf637219c05461": "Açık hava kamp alanı",
   "07440458a59d2f55": "Emin misin? Bu, tüm ilerlemeni sıfırlayacak.",
+  "077acf288fdc5ceb": {
+    "c": "Belki Sonra",
+    "i": 1,
+    "t": "Button"
+  },
   "083a18f928c6f1d0": "Bölgeyi kaldır",
   "0a75e464d833bca8": "Ayarlar",
   "0ad556bd75d20fa9": "Otomatik Kayıt",
@@ -21,6 +27,34 @@
   "0df552c71ceffdea": "Açık hava basketbol sahası",
   "11e592ce36623118": "Belediye Binası",
   "16e15fc06c6a007c": "Halka açık yüzme tesisi",
+  "196936ae6b19dcdc": {
+    "c": [
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      " ile bağlantı kurmak bir ticaret rotası oluşturacak ve şunları sağlayacak:",
+      {
+        "c": [
+          {
+            "c": "Tek seferlik $5.000 bonus",
+            "i": 4,
+            "t": "li"
+          },
+          {
+            "c": "Aylık $200 ek gelir",
+            "i": 5,
+            "t": "li"
+          }
+        ],
+        "i": 3,
+        "t": "ul"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "1d322b583a4b0247": "Ticari talebi artırır (3x3)",
   "1e5fcd19bdbca49e": "Doğa yürüyüşü parkuru girişi (3x3)",
   "1f30c00e03eeca50": "Yol",
@@ -47,12 +81,14 @@
   "38f4bf88be0f7fb8": "Park Kapısı",
   "39582dc021bd9785": "Gelir",
   "39ecf0d809cf7519": "Geliştirici Araçları",
+  "3a6eca7252adb9a5": "{toolName} - {width}x{height} alanı",
   "3c4c4d97d5e66b21": "Sağlık",
   "3ce15d2f4c961d10": "Henüz yeterli veri yok. Tarihsel eğilimleri görmek için oynamaya devam et.",
   "3e3047cbe8ba9923": "Her kenardan 15 karo kaldır. Kenarlardaki binalar silinecek.",
   "3fed752c6b827eb4": "Kaykay parkı",
   "40bad8960b093d63": "Mutluluk, sağlık, eğitim, güvenlik ve çevreye göre",
   "423be6bbfb254615": "Çevreyi iyileştirmek için ağaç dikin",
+  "43852fb2c437417a": "{toolName} suyun yanına yerleştirilmeli",
   "43f8d980f9a0671a": "Yeraltı ulaşımı",
   "441e4c507e4ad288": "Küçük Ofis",
   "4552acda39be69ce": "Bölgelendirmeyi kaldır",
@@ -77,6 +113,7 @@
   "5584c3a28c29fea7": "Sprite Paketi",
   "55b6968db17e61eb": "Paylaşılan bir şehri görüntülemeden önce şehriniz kaydedildi",
   "56e589e66d790077": "Binaları ve bölgeleri kaldır",
+  "570f15ad126ec582": "{toolName} ({x}, {y}) konumunda",
   "5710fcf3d552b2e4": "İtfaiye Merkezi",
   "573173896178c5b2": "Lunapark",
   "5842190480e1e770": "Su var",
@@ -145,6 +182,11 @@
   "955389bd727d0995": "Futbol stadyumu (2x2)",
   "956afb617989348a": "Özel",
   "961afdfa1ffd458a": "Oyun başarıyla yüklendi!",
+  "973809b714422052": {
+    "c": "Şehir Keşfedildi!",
+    "i": 1,
+    "t": "DialogTitle"
+  },
   "97513d561bf53e55": "Metro İstasyonu",
   "97c7b3a9fd235ee5": "Nüfus",
   "9963ed45f2043cb8": "Sera Bahçesi",
@@ -170,6 +212,18 @@
   "b43d25aa91aa1edd": "Zaman ilerleyişini etkilemeden günün saati görünümünü elle ayarla",
   "b453abc6c0aa9847": "Beyzbol Sahası",
   "b4619e9087ef77c7": "Uzay Programı",
+  "b7a2c2e53cd1a902": {
+    "c": [
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      " ile Bağlan"
+    ],
+    "i": 1,
+    "t": "Button"
+  },
   "b7cc80c6e92b9484": "Birden fazla şehri kaydet ve aralarında geçiş yap",
   "b821113430f5f0af": "Demiryolu",
   "b8ffa77d868a668b": "Şehir Adı",
@@ -190,9 +244,11 @@
   "ce17b8c1c26494e0": "Kamp Alanı",
   "cf5babe756808083": "Marina",
   "d08f67cf675a3159": "Profesyonel beyzbol sahası (3x3)",
+  "d1acbf32e4fd9c19": "Olay",
   "d26290781c575c73": "Müze",
   "d28b856e9e8b8a3d": "Para",
   "d5120487d8637bd5": "Dekoratif park girişi",
+  "d563172b11e46265": " - Yerleştirmek için sürükle",
   "d5bb9c7d05c9221d": "Oyunu Dışa Aktar",
   "d76336950671d1e2": "Tekne iskeleleri (2x2, suyun yanına yerleştirilmelidir)",
   "d7804cf2c098d4c3": "Katman Görünümü",
@@ -204,6 +260,25 @@
   "ded883367c8ddcb0": "Sprite Test Görünümünü Aç",
   "e0a1cc92bd08aa24": "Elektrik",
   "e0fa959d80ac0d81": "Seç",
+  "e1e699a197e3581d": {
+    "c": [
+      "Yolunuz ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      " sınırına ulaştı! ",
+      {
+        "i": 3,
+        "k": "_gt_value_3",
+        "v": "v"
+      },
+      " keşfettiniz."
+    ],
+    "i": 1,
+    "t": "DialogDescription"
+  },
   "e23439349cbca510": "Karo bilgisini görmek için tıkla",
   "e4ca1c349676657c": "Gece",
   "e79d3dd997b03f78": "Su yok",
@@ -218,6 +293,7 @@
   "f06fd72176b8179e": "Bölgeleme",
   "f0cfc502ed112098": "Bölge",
   "f2faf4aaea86ae97": "Basketbol Sahaları",
+  "f34a6940381f60d6": "Olay bildirildi.",
   "f3e6f71a8bc19b40": "Yüklemek için bir oyun durumu yapıştırın",
   "f62db7ca5ce71d28": "Etkin",
   "f69724f1685d216d": "Hayvan Ağıl­ları",

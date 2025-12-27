@@ -6,9 +6,15 @@
   "012b78191d3eef87": "Montanha-russa",
   "01ed738a35998bee": "Salvar e Sair",
   "0246f296a9647801": "Ferramentas",
+  "036be42493f75286": " - Arraste para demarcar a área",
   "03e108901c6d428d": "Estação de passageiros e cargas",
   "06cf637219c05461": "Área de acampamento ao ar livre",
   "07440458a59d2f55": "Tem certeza? Isso vai redefinir todo o seu progresso.",
+  "077acf288fdc5ceb": {
+    "c": "Talvez Depois",
+    "i": 1,
+    "t": "Button"
+  },
   "083a18f928c6f1d0": "Deszonear",
   "0a75e464d833bca8": "Configurações",
   "0ad556bd75d20fa9": "Salvamento automático",
@@ -21,6 +27,35 @@
   "0df552c71ceffdea": "Quadra de basquete ao ar livre",
   "11e592ce36623118": "Prefeitura",
   "16e15fc06c6a007c": "Piscina pública",
+  "196936ae6b19dcdc": {
+    "c": [
+      "Conectar a ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      " estabelecerá uma rota comercial, fornecendo:",
+      {
+        "c": [
+          {
+            "c": "Bônus único de $5.000",
+            "i": 4,
+            "t": "li"
+          },
+          {
+            "c": "Renda adicional de $200/mês",
+            "i": 5,
+            "t": "li"
+          }
+        ],
+        "i": 3,
+        "t": "ul"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "1d322b583a4b0247": "Aumenta a demanda comercial (3x3)",
   "1e5fcd19bdbca49e": "Entrada de trilha de caminhada (3x3)",
   "1f30c00e03eeca50": "Rua",
@@ -47,12 +82,14 @@
   "38f4bf88be0f7fb8": "Portão do parque",
   "39582dc021bd9785": "Renda",
   "39ecf0d809cf7519": "Ferramentas de Desenvolvedor",
+  "3a6eca7252adb9a5": "{toolName} - área de {width}x{height}",
   "3c4c4d97d5e66b21": "Saúde",
   "3ce15d2f4c961d10": "Ainda não há dados suficientes. Continue jogando para ver as tendências históricas.",
   "3e3047cbe8ba9923": "Remova 15 blocos de cada borda. Construções nas bordas serão excluídas.",
   "3fed752c6b827eb4": "Parque de skate",
   "40bad8960b093d63": "Com base em felicidade, saúde, educação, segurança e meio ambiente",
   "423be6bbfb254615": "Plante árvores para melhorar o ambiente",
+  "43852fb2c437417a": "{toolName} deve ser colocado próximo à água",
   "43f8d980f9a0671a": "Transporte subterrâneo",
   "441e4c507e4ad288": "Pequeno Escritório",
   "4552acda39be69ce": "Remover zoneamento",
@@ -77,6 +114,7 @@
   "5584c3a28c29fea7": "Pacote de sprites",
   "55b6968db17e61eb": "Sua cidade foi salva antes de visualizar uma cidade compartilhada",
   "56e589e66d790077": "Remover edifícios e zonas",
+  "570f15ad126ec582": "{toolName} em ({x}, {y})",
   "5710fcf3d552b2e4": "Corpo de Bombeiros",
   "573173896178c5b2": "Parque de Diversões",
   "5842190480e1e770": "Tem água",
@@ -145,6 +183,11 @@
   "955389bd727d0995": "Estádio de futebol (2x2)",
   "956afb617989348a": "Especial",
   "961afdfa1ffd458a": "Jogo carregado com sucesso!",
+  "973809b714422052": {
+    "c": "Cidade Descoberta!",
+    "i": 1,
+    "t": "DialogTitle"
+  },
   "97513d561bf53e55": "Estação de Metrô",
   "97c7b3a9fd235ee5": "População",
   "9963ed45f2043cb8": "Jardim Estufa",
@@ -170,6 +213,18 @@
   "b43d25aa91aa1edd": "Alterar a aparência do horário do dia sem afetar a passagem do tempo",
   "b453abc6c0aa9847": "Campo de beisebol",
   "b4619e9087ef77c7": "Programa Espacial",
+  "b7a2c2e53cd1a902": {
+    "c": [
+      "Conectar a ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "Button"
+  },
   "b7cc80c6e92b9484": "Salve várias cidades e alterne entre elas",
   "b821113430f5f0af": "Trilho",
   "b8ffa77d868a668b": "Nome da cidade",
@@ -190,9 +245,11 @@
   "ce17b8c1c26494e0": "Camping",
   "cf5babe756808083": "Marina",
   "d08f67cf675a3159": "Estádio de beisebol profissional (3x3)",
+  "d1acbf32e4fd9c19": "Incidente",
   "d26290781c575c73": "Museu",
   "d28b856e9e8b8a3d": "Dinheiro",
   "d5120487d8637bd5": "Entrada decorativa de parque",
+  "d563172b11e46265": " - Arraste para posicionar",
   "d5bb9c7d05c9221d": "Exportar jogo",
   "d76336950671d1e2": "Docas para barcos (2x2, deve ser colocada ao lado da água)",
   "d7804cf2c098d4c3": "Ver sobreposição",
@@ -204,6 +261,25 @@
   "ded883367c8ddcb0": "Abrir visualização de teste de sprite",
   "e0a1cc92bd08aa24": "Energia",
   "e0fa959d80ac0d81": "Selecionar",
+  "e1e699a197e3581d": {
+    "c": [
+      "Sua rua alcançou a fronteira de ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      "! Você descobriu ",
+      {
+        "i": 3,
+        "k": "_gt_value_3",
+        "v": "v"
+      },
+      "."
+    ],
+    "i": 1,
+    "t": "DialogDescription"
+  },
   "e23439349cbca510": "Clique para ver as informações do bloco",
   "e4ca1c349676657c": "Noite",
   "e79d3dd997b03f78": "Sem água",
@@ -218,6 +294,7 @@
   "f06fd72176b8179e": "Zoneamento",
   "f0cfc502ed112098": "Zona",
   "f2faf4aaea86ae97": "Quadras de basquete",
+  "f34a6940381f60d6": "Incidente relatado.",
   "f3e6f71a8bc19b40": "Cole um estado de jogo para carregá-lo",
   "f62db7ca5ce71d28": "Ativado",
   "f69724f1685d216d": "Cercados de animais",

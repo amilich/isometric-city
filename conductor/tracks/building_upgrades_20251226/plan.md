@@ -43,7 +43,7 @@ Connect the upgraded state to the rendering engine and provide visual feedback t
 ## Phase 5: Final Polish & Compatibility
 Ensure the system is robust and compatible with existing saves.
 
-- [~] Task: Verify backward compatibility by loading a pre-feature save file and ensuring no crashes occur.
+- [x] Task: Verify backward compatibility by loading a pre-feature save file and ensuring no crashes occur. [e80b77b]
 - [ ] Task: Run full project linting and type checking (`npm run check`).
 - [ ] Task: Perform a final manual walkthrough of the upgrade flow for all 4 building types.
 - [ ] Task: Conductor - User Manual Verification 'Final Polish & Compatibility' (Protocol in workflow.md)

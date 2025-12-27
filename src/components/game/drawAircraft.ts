@@ -224,6 +224,28 @@ export function drawAirplanes(
   const planeSprite = getCachedImage(AIRPLANE_SPRITE_CACHE_KEY, false);
 
   for (const plane of airplanes) {
+    // Draw ground trail / tire smoke first (behind plane, on runway)
+    if (plane.groundTrail && plane.groundTrail.length > 0) {
+      ctx.save();
+      for (const particle of plane.groundTrail) {
+        if (
+          particle.x < viewBounds.viewLeft ||
+          particle.x > viewBounds.viewRight ||
+          particle.y < viewBounds.viewTop ||
+          particle.y > viewBounds.viewBottom
+        ) {
+          continue;
+        }
+        const size = 2 + particle.age * 10;
+        const opacity = particle.opacity * 0.22;
+        ctx.fillStyle = `rgba(120, 120, 120, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     // Draw contrails first (behind plane)
     if (plane.contrail.length > 0) {
       ctx.save();
@@ -279,6 +301,30 @@ export function drawAirplanes(
       ctx.ellipse(0, 0, 50, 20, 0, 0, Math.PI * 2);
       ctx.fill();
       
+      ctx.restore();
+    }
+
+    // Subtle runway spray (tire smoke streak) on takeoff roll / rollout
+    if ((plane.state === 'takeoff_roll' || plane.state === 'rollout') && plane.altitude < 0.12 && plane.speed > 40) {
+      const smokeOpacity = Math.min(0.35, plane.speed / 240);
+      ctx.save();
+      ctx.translate(plane.x, plane.y);
+      ctx.rotate(plane.angle);
+      ctx.fillStyle = `rgba(130, 130, 130, ${smokeOpacity})`;
+      const len = 10 + plane.speed * 0.12;
+      const wid = 3 + plane.speed * 0.03;
+      // Left streak
+      ctx.beginPath();
+      ctx.moveTo(-10, 5);
+      ctx.quadraticCurveTo(-len, 10, -len * 1.35, wid + 6);
+      ctx.quadraticCurveTo(-len * 0.8, 4, -10, 5);
+      ctx.fill();
+      // Right streak
+      ctx.beginPath();
+      ctx.moveTo(-10, -5);
+      ctx.quadraticCurveTo(-len, -10, -len * 1.35, -wid - 6);
+      ctx.quadraticCurveTo(-len * 0.8, -4, -10, -5);
+      ctx.fill();
       ctx.restore();
     }
 

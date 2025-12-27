@@ -2050,6 +2050,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               // Buildings should face roads when possible, otherwise fall back to random
               const shouldRoadMirror = (() => {
                 if (isWaterfrontAsset) return false; // Waterfront buildings use water-facing logic
+                if (buildingType === 'airport') return false; // Airports should never be mirrored
                 
                 // PERF: Use pre-computed road adjacency from tile metadata cache
                 const originMetadata = getTileMetadata(tile.x, tile.y);
@@ -2064,8 +2065,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               })();
               
               // Final flip decision: combine default mirror state, explicit flip flag, and road/random mirror
-              const baseFlipped = isDefaultMirrored ? !tile.building.flipped : tile.building.flipped === true;
-              const isFlipped = baseFlipped !== shouldRoadMirror; // XOR: if both true or both false, no flip; if one true, flip
+              const baseFlipped = buildingType === 'airport'
+                ? false
+                : (isDefaultMirrored ? !tile.building.flipped : tile.building.flipped === true);
+              const isFlipped = buildingType === 'airport'
+                ? false
+                : (baseFlipped !== shouldRoadMirror); // XOR: if both true or both false, no flip; if one true, flip
               
               if (isFlipped) {
                 // Apply horizontal flip around the center of the sprite

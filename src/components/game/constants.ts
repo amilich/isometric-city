@@ -71,6 +71,47 @@ export const AIRPLANE_COLORS = ['#ffffff', '#1e40af', '#dc2626', '#059669', '#7c
 export const CONTRAIL_MAX_AGE = 3.0; // seconds
 export const CONTRAIL_SPAWN_INTERVAL = 0.02; // seconds between contrail particles
 
+// Airplane activity tuning
+export const AIRPLANE_SPAWN_INTERVAL_MIN = 0.8;
+export const AIRPLANE_SPAWN_INTERVAL_MAX = 2.5;
+// Bias toward departures so there is more taxiing visible near airports.
+export const AIRPLANE_TAKEOFF_PROBABILITY = 0.75;
+
+// Airplane dynamics (runway-aware takeoff/landing)
+export const AIRPLANE_TAXI_SPEED = 26; // px/sec on ground
+export const AIRPLANE_TAXI_TURN_RATE = 1.6; // rad/sec (snappy but not twitchy)
+export const AIRPLANE_TAKEOFF_ROLL_SPEED_START = 22;
+export const AIRPLANE_TAKEOFF_ROLL_SPEED_TARGET = 150;
+export const AIRPLANE_TAKEOFF_ACCEL = 42; // px/sec^2
+export const AIRPLANE_ROTATE_DISTANCE = 160; // px along runway before liftoff
+export const AIRPLANE_CLIMB_RATE = 0.55; // altitude units/sec during climbout
+export const AIRPLANE_DESCENT_RATE = 0.45; // altitude units/sec on final
+export const AIRPLANE_FLARE_RATE = 1.1; // altitude units/sec during flare
+export const AIRPLANE_CRUISE_SPEED_MIN = 95;
+export const AIRPLANE_CRUISE_SPEED_MAX = 145;
+export const AIRPLANE_LANDING_APPROACH_SPEED = 110;
+export const AIRPLANE_LANDING_ROLLOUT_MIN_SPEED = 14;
+export const AIRPLANE_BRAKE_DECEL = 55; // px/sec^2 on rollout
+
+// Runway geometry (in screen-space, relative to the airport sprite)
+// The runway in the airport sprite is aligned toward the top-right of the screen (NE).
+export const AIRPORT_RUNWAY_BASE_HEADING = -Math.PI / 4; // toward top-right in screen coords
+// Keep runway endpoints inside the airport footprint so taxi doesn't leave the asset.
+export const AIRPORT_RUNWAY_LENGTH = 190; // px (screen space)
+// Runway center offset in screen space, relative to the gate point.
+// Horizontal mirroring swaps the sign of X; Y stays the same.
+export const AIRPORT_RUNWAY_OFFSET_X = 78;
+export const AIRPORT_RUNWAY_OFFSET_Y = 18;
+export const AIRPORT_RUNWAY_APPROACH_DISTANCE = 520; // px back from touchdown
+
+// Clamp how far ground operations can stray from the gate point (screen-space radius).
+// This is intentionally conservative to keep taxiing inside the airport footprint.
+export const AIRPORT_GROUND_MAX_RADIUS = 150;
+
+// Ground roll particles (tire smoke / dust)
+export const GROUND_TRAIL_MAX_AGE = 1.1;
+export const GROUND_TRAIL_SPAWN_INTERVAL = 0.05;
+
 // Airplane sprite sheet configuration
 export const AIRPLANE_SPRITE_SRC = '/assets/sprites_red_water_new_planes.png';
 export const AIRPLANE_SPRITE_COLS = 5; // 5 columns per row

@@ -23,7 +23,17 @@ export type Car = {
 };
 
 // Airplane types for airport animation
-export type AirplaneState = 'flying' | 'landing' | 'taking_off' | 'taxiing';
+// NOTE: Airplanes use a small state machine so they can taxi, take off, and land using the airport runway.
+export type AirplaneState =
+  | 'taxi_to_runway'
+  | 'takeoff_roll'
+  | 'climbout'
+  | 'flying'
+  | 'approach'
+  | 'final'
+  | 'flare'
+  | 'rollout'
+  | 'taxi_to_gate';
 
 // Plane model types from the sprite sheet
 export type PlaneType = '737' | '777' | '747' | 'a380' | 'g650' | 'seaplane';
@@ -42,6 +52,8 @@ export type Airplane = {
   y: number;
   // Flight direction in radians
   angle: number;
+  // Optional target angle for smooth turning (taxi/approach)
+  targetAngle?: number;
   // Current state
   state: AirplaneState;
   // Speed (pixels per second in screen space)
@@ -57,12 +69,27 @@ export type Airplane = {
   stateProgress: number;
   // Contrail particles
   contrail: ContrailParticle[];
+  // Ground roll / tire smoke particles (taxi, takeoff roll, landing rollout)
+  groundTrail?: ContrailParticle[];
   // Time until despawn (for flying planes)
   lifeTime: number;
   // Plane color/style (legacy, for fallback rendering)
   color: string;
   // Plane model type from sprite sheet
   planeType: PlaneType;
+
+  // Optional transient guidance targets (kept on the plane to avoid re-picking every frame)
+  targetX?: number;
+  targetY?: number;
+  // Landing plan points (screen space)
+  approachX?: number;
+  approachY?: number;
+  touchdownX?: number;
+  touchdownY?: number;
+  rolloutEndX?: number;
+  rolloutEndY?: number;
+  runwayDir?: number; // radians, direction of rollout/takeoff along runway
+  taxiStage?: 0 | 1; // ground taxi waypoint stage (0 = turn point, 1 = hold-short/lineup)
 };
 
 // Seaplane types for bay/water operations

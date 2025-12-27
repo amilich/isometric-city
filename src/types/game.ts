@@ -391,6 +391,15 @@ export interface GameState {
   waterBodies: WaterBody[];
   gameVersion: number; // Increments when a new game starts - used to clear transient state like vehicles
   cities: City[]; // Cities in the map (for multi-city support)
+  lastUpgradeEvent?: UpgradeEvent;
+}
+
+export interface UpgradeEvent {
+  x: number;
+  y: number;
+  buildingType: BuildingType;
+  cost: number;
+  timestamp: number;
 }
 
 // Saved city metadata for the multi-save system

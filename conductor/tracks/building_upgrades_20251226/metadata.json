@@ -1,0 +1,8 @@
+{
+  "track_id": "building_upgrades_20251226",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2025-12-26T15:00:00Z",
+  "updated_at": "2025-12-26T15:00:00Z",
+  "description": "Add building upgrades for power plants, water towers, police stations, and fire stations with custom costs, maintenance, and range bonuses using a modular configuration."
+}

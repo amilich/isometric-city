@@ -41,7 +41,7 @@ export function BuildingUpgradeUI({ tile, money, onUpgrade }: BuildingUpgradeUIP
       {!isUpgraded ? (
         <>
           <p className="text-[11px] leading-relaxed text-muted-foreground italic">
-            "{upgradeConfig.description}"
+            &quot;{upgradeConfig.description}&quot;
           </p>
           
           <div className="bg-muted/30 p-2 rounded-md space-y-1">

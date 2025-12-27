@@ -34,16 +34,16 @@ Implement the user interface for upgrading buildings and the logic for processin
 ## Phase 4: Visuals & Feedback
 Connect the upgraded state to the rendering engine and provide visual feedback to the player.
 
-- [ ] Task: Update `src/components/buildings/IsometricBuildings.tsx` (or the main renderer) to use the `sprites_red_water_upgrade_buildings` sprite sheet when `isUpgraded` is true.
-- [ ] Task: Implement visual feedback: floating text for cost deduction and a brief "flash" effect.
-- [ ] Task: Implement the "auto-overlay" trigger that toggles the range overlay for 3 seconds after an upgrade.
-- [ ] Task: Verify that the sprite sheet switch works correctly for all 4 initial buildings.
-- [ ] Task: Conductor - User Manual Verification 'Visuals & Feedback' (Protocol in workflow.md)
+- [x] Task: Update `src/components/buildings/IsometricBuildings.tsx` (or the main renderer) to use the `sprites_red_water_upgrade_buildings` sprite sheet when `isUpgraded` is true.
+- [x] Task: Implement visual feedback: floating text for cost deduction and a brief "flash" effect.
+- [x] Task: Implement the "auto-overlay" trigger that toggles the range overlay for 3 seconds after an upgrade.
+- [x] Task: Verify that the sprite sheet switch works correctly for all 4 initial buildings.
+- [x] Task: Conductor - User Manual Verification 'Visuals & Feedback' (Protocol in workflow.md)
 
 ## Phase 5: Final Polish & Compatibility
 Ensure the system is robust and compatible with existing saves.
 
-- [ ] Task: Verify backward compatibility by loading a pre-feature save file and ensuring no crashes occur.
+- [~] Task: Verify backward compatibility by loading a pre-feature save file and ensuring no crashes occur.
 - [ ] Task: Run full project linting and type checking (`npm run check`).
 - [ ] Task: Perform a final manual walkthrough of the upgrade flow for all 4 building types.
 - [ ] Task: Conductor - User Manual Verification 'Final Polish & Compatibility' (Protocol in workflow.md)

@@ -1027,6 +1027,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
               if (parsed.grid[y][x]?.building && parsed.grid[y][x].building.abandoned === undefined) {
                 parsed.grid[y][x].building.abandoned = false;
               }
+              // Migrate isUpgraded property for existing buildings (default to false)
+              if (parsed.grid[y][x]?.building && parsed.grid[y][x].building.isUpgraded === undefined) {
+                parsed.grid[y][x].building.isUpgraded = false;
+              }
             }
           }
         }
@@ -1213,6 +1217,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           }
           if (cityState.grid[y][x]?.building && cityState.grid[y][x].building.abandoned === undefined) {
             cityState.grid[y][x].building.abandoned = false;
+          }
+          if (cityState.grid[y][x]?.building && cityState.grid[y][x].building.isUpgraded === undefined) {
+            cityState.grid[y][x].building.isUpgraded = false;
           }
         }
       }

@@ -29,6 +29,7 @@ import {
   Pedestrian,
   Firework,
   WorldRenderState,
+  FloatingText,
 } from '@/components/game/types';
 import {
   TRAFFIC_LIGHT_MIN_ZOOM,
@@ -82,7 +83,13 @@ import { useBargeSystem, BargeSystemRefs, BargeSystemState } from '@/components/
 import { useBoatSystem, BoatSystemRefs, BoatSystemState } from '@/components/game/boatSystem';
 import { useSeaplaneSystem, SeaplaneSystemRefs, SeaplaneSystemState } from '@/components/game/seaplaneSystem';
 import { useEffectsSystems, EffectsSystemRefs, EffectsSystemState } from '@/components/game/effectsSystems';
-import {
+import { 
+  getBuildingRange, 
+  getBuildingMaintenance, 
+  getBuildingPollution, 
+  getBuildingEffectMagnitude 
+} from '@/lib/upgradeUtils';
+import { 
   analyzeMergedRoad,
   getTrafficLightState,
   drawTrafficLight,
@@ -126,6 +133,8 @@ import {
   TRAINS_PER_RAIL_TILES,
 } from '@/components/game/trainSystem';
 import { Train } from '@/components/game/types';
+import { useFloatingTextSystem, FloatingTextSystemRefs, FloatingTextSystemState } from '@/components/game/floatingTextSystem';
+import { getUpgradeCost } from '@/lib/upgradeUtils';
 
 // Props interface for CanvasIsometricGrid
 export interface CanvasIsometricGridProps {
@@ -243,6 +252,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
   // Traffic light system timer (cumulative time for cycling through states)
   const trafficLightTimerRef = useRef(0);
+
+  // Floating text system refs
+  const floatingTextsRef = useRef<FloatingText[]>([]);
+  const floatingTextIdRef = useRef(0);
 
   // Performance: Cache expensive grid calculations
   const cachedRoadTileCountRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
@@ -450,6 +463,66 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     updateSmog,
     drawSmog,
   } = useEffectsSystems(effectsSystemRefs, effectsSystemState);
+
+  // Use extracted floating text system
+  const floatingTextSystemRefs: FloatingTextSystemRefs = {
+    floatingTextsRef,
+    floatingTextIdRef,
+  };
+
+  const floatingTextSystemState: FloatingTextSystemState = {
+    worldStateRef,
+    isMobile,
+  };
+
+  const {
+    spawnFloatingText,
+    updateFloatingText,
+    drawFloatingText,
+  } = useFloatingTextSystem(floatingTextSystemRefs, floatingTextSystemState);
+
+  // Handle building upgrade events to show floating text
+  useEffect(() => {
+    if (state.lastUpgradeEvent) {
+      const { x, y, cost } = state.lastUpgradeEvent;
+      // Show floating text for cost
+      spawnFloatingText(x, y, `-$${cost.toLocaleString()}`, '#ef4444');
+      
+      // Also spawn a small firework-like flash effect
+      // We can use the existing firework system to spawn a small explosion
+      if (fireworksRef.current) {
+        const { screenX, screenY } = gridToScreen(x, y, 0, 0);
+        const centerX = screenX + TILE_WIDTH / 2;
+        const centerY = screenY + TILE_HEIGHT / 2;
+        
+        // Spawn a small "flash" firework
+        fireworksRef.current.push({
+          id: fireworkIdRef.current++,
+          x: centerX,
+          y: centerY - 20, // Slightly above building
+          vx: 0,
+          vy: 0,
+          state: 'exploding', // Start directly in exploding state
+          targetY: centerY - 20,
+          color: '#a855f7', // Purple color for upgrades
+          particles: Array.from({ length: 12 }).map((_, i) => ({
+            x: centerX,
+            y: centerY - 20,
+            vx: Math.cos(i * Math.PI / 6) * 60,
+            vy: Math.sin(i * Math.PI / 6) * 60,
+            age: 0,
+            maxAge: 0.8,
+            color: '#d8b4fe', // Light purple
+            size: 2,
+            trail: [],
+          })),
+          age: 0,
+          sourceTileX: x,
+          sourceTileY: y,
+        });
+      }
+    }
+  }, [state.lastUpgradeEvent, spawnFloatingText]);
   
   useEffect(() => {
     worldStateRef.current.grid = grid;
@@ -530,6 +603,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     // Clear factory smog
     factorySmogRef.current = [];
     smogLastGridVersionRef.current = -1;
+    
+    // Clear floating texts
+    floatingTextsRef.current = [];
+    floatingTextIdRef.current = 0;
     
     // Reset traffic light timer
     trafficLightTimerRef.current = 0;
@@ -826,6 +903,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
       if (currentSpritePack.abandonedSrc) {
         loadSpriteImage(currentSpritePack.abandonedSrc, true).catch(console.error);
+      }
+      if (currentSpritePack.upgradeSrc) {
+        loadSpriteImage(currentSpritePack.upgradeSrc, true).catch(console.error);
       }
       if (currentSpritePack.denseSrc) {
         loadSpriteImage(currentSpritePack.denseSrc, true).catch(console.error);
@@ -2278,6 +2358,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             spriteSource = activePack.constructionSrc;
           } else if (isAbandoned && activePack.abandonedSrc) {
             spriteSource = activePack.abandonedSrc;
+          } else if (tile.building.isUpgraded && activePack.upgradeSrc) {
+            // Upgraded building - use upgrade sprite sheet
+            spriteSource = activePack.upgradeSrc;
           } else if (isParksBuilding && activePack.parksSrc) {
             // Check if this building type is from the parks sprite sheet
             useParksBuilding = activePack.parksBuildings![buildingType];
@@ -2721,6 +2804,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               } else if (isAbandoned && activePack.abandonedVerticalOffsets && buildingType in activePack.abandonedVerticalOffsets) {
                 // Abandoned buildings may need different positioning than normal
                 extraOffset = activePack.abandonedVerticalOffsets[buildingType] * h;
+              } else if (tile.building.isUpgraded && activePack.upgradeVerticalOffsets && buildingType in activePack.upgradeVerticalOffsets) {
+                // Upgraded buildings may need different positioning than normal
+                extraOffset = activePack.upgradeVerticalOffsets[buildingType] * h;
               } else if (isParksBuilding && activePack.parksVerticalOffsets && buildingType in activePack.parksVerticalOffsets) {
                 // Parks buildings may need specific positioning
                 extraOffset = activePack.parksVerticalOffsets[buildingType] * h;
@@ -3238,7 +3324,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               const config = SERVICE_CONFIG[tile.building.type as keyof typeof SERVICE_CONFIG];
               if (!config || !('range' in config)) continue;
               
-              const range = config.range;
+              const baseRange = config.range;
+              const range = getBuildingRange(tile.building, baseRange);
               
               // NOTE: For multi-tile service buildings (e.g. 2x2 hospital, 3x3 university),
               // coverage is computed from the building's anchor tile (top-left of footprint)
@@ -3646,6 +3733,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         updateBarges(delta); // Update ocean barges (ocean marinas required)
         updateTrains(delta); // Update trains on rail network
         updateFireworks(delta, visualHour); // Update fireworks (nighttime only)
+        updateFloatingText(delta); // Update floating text animations
         updateSmog(delta); // Update factory smog particles
         navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
         trafficLightTimerRef.current += delta; // Update traffic light cycle timer
@@ -3716,12 +3804,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
         drawAirplanes(airCtx); // Draw airplanes above everything
         drawFireworks(airCtx); // Draw fireworks above everything (nighttime only)
+        drawFloatingText(airCtx); // Draw floating text (costs, notifications)
       }
     };
     
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile, grid, gridSize, speed]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateFloatingText, drawFloatingText, updateSmog, drawSmog, visualHour, isMobile, grid, gridSize, speed]);
   
   // Day/Night cycle lighting rendering - optimized for performance
   useEffect(() => {

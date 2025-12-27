@@ -16,7 +16,7 @@ import { CommandMenu } from '@/components/ui/CommandMenu';
 
 // Import game components
 import { OverlayMode } from '@/components/game/types';
-import { getOverlayForTool } from '@/components/game/overlays';
+import { getOverlayForTool, TOOL_TO_OVERLAY_MAP } from '@/components/game/overlays';
 import { OverlayModeToggle } from '@/components/game/OverlayModeToggle';
 import { Sidebar } from '@/components/game/Sidebar';
 import {
@@ -163,6 +163,44 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         break;
     }
   }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
+  
+  // Handle auto-overlay for upgrades
+  const upgradeOverlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!state.lastUpgradeEvent) return;
+    
+    // Check if event is recent (within 500ms) to avoid handling old events on mount
+    if (Date.now() - state.lastUpgradeEvent.timestamp > 500) return;
+    
+    // Map building type to overlay mode
+    const overlayType = TOOL_TO_OVERLAY_MAP[state.lastUpgradeEvent.buildingType];
+    if (!overlayType || overlayType === 'none') return;
+    
+    // Clear existing timeout if any
+    if (upgradeOverlayTimeoutRef.current) {
+      clearTimeout(upgradeOverlayTimeoutRef.current);
+    }
+    
+    // Set the overlay to match the upgraded building's service
+    // Use setTimeout to avoid "setState in effect" warning
+    setTimeout(() => {
+      setOverlayMode(overlayType);
+    }, 0);
+    
+    // Revert to none after 3 seconds
+    // Note: We only revert if the user hasn't changed it to something else in the meantime
+    // (detected by checking if current matches what we set)
+    upgradeOverlayTimeoutRef.current = setTimeout(() => {
+      setOverlayMode((current) => current === overlayType ? 'none' : current);
+    }, 3000);
+    
+    return () => {
+      if (upgradeOverlayTimeoutRef.current) {
+        clearTimeout(upgradeOverlayTimeoutRef.current);
+      }
+    };
+  }, [state.lastUpgradeEvent]);
   
   // Track barge deliveries to show occasional notifications
   const bargeDeliveryCountRef = useRef(0);

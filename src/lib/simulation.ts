@@ -16,6 +16,7 @@ import {
   WaterBody,
   BridgeType,
   BridgeOrientation,
+  TOOL_INFO,
   BUILDING_STATS,
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
@@ -29,6 +30,7 @@ import {
   getBuildingPollution, 
   getBuildingEffectMagnitude 
 } from './upgradeUtils';
+import { BUILDING_UPGRADES } from '@/config/buildingUpgrades';
 
 // Default grid size for new games
 export const DEFAULT_GRID_SIZE = isMobile ? 50 : 70;
@@ -2896,6 +2898,47 @@ function findAdjacentBridgeTiles(
 }
 
 // Bulldoze a tile (or entire multi-tile building if applicable)
+/**
+ * Upgrade a building at the specified coordinates.
+ * Deducts cost and set isUpgraded flag.
+ */
+export function upgradeBuilding(state: GameState, x: number, y: number): GameState {
+  const tile = state.grid[y]?.[x];
+  if (!tile || tile.building.isUpgraded) return state;
+  
+  const building = tile.building;
+  const upgradeConfig = BUILDING_UPGRADES[building.type];
+  if (!upgradeConfig) return state;
+  
+  const toolInfo = TOOL_INFO[building.type as keyof typeof TOOL_INFO];
+  const baseCost = toolInfo?.cost || 0;
+  const upgradeCost = Math.floor(baseCost * upgradeConfig.costMultiplier);
+  
+  if (state.stats.money < upgradeCost) return state;
+  
+  const newGrid = state.grid.map((row, ry) => 
+    ry === y ? row.map((t, tx) => 
+      tx === x ? { ...t, building: { ...t.building, isUpgraded: true } } : t
+    ) : row
+  );
+  
+  return {
+    ...state,
+    grid: newGrid,
+    stats: {
+      ...state.stats,
+      money: state.stats.money - upgradeCost
+    },
+    lastUpgradeEvent: {
+      x,
+      y,
+      buildingType: building.type,
+      cost: upgradeCost,
+      timestamp: Date.now()
+    }
+  };
+}
+
 export function bulldozeTile(state: GameState, x: number, y: number): GameState {
   const tile = state.grid[y]?.[x];
   if (!tile) return state;

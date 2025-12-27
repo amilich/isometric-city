@@ -540,3 +540,20 @@ export type Train = {
   smokeParticles: TrainSmokeParticle[];
   smokeSpawnTimer: number;
 };
+
+// Floating text for feedback (e.g. money deducted, upgrades)
+export type FloatingText = {
+  id: number;
+  // Grid coordinates
+  tileX: number;
+  tileY: number;
+  text: string;
+  color: string;
+  // Lifecycle
+  age: number;
+  maxAge: number;
+  // Vertical float offset
+  offsetY: number;
+  // Fade out opacity
+  opacity: number;
+};

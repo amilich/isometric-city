@@ -14,6 +14,11 @@ export interface SpritePack {
   src: string;
   // Path to the construction sprite sheet (same layout, but buildings under construction)
   constructionSrc?: string;
+  // Path to the upgraded sprite sheet (same layout, but buildings shown as upgraded)
+  upgradeSrc?: string;
+  // Per-building-type vertical offset adjustments for UPGRADED sprites only
+  // These override verticalOffsets when rendering upgraded buildings
+  upgradeVerticalOffsets?: Record<string, number>;
   // Path to the abandoned sprite sheet (same layout, but buildings shown as abandoned/derelict)
   abandonedSrc?: string;
   // Path to the dense variants sprite sheet (alternative sprites for high-density buildings)
@@ -144,6 +149,7 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
   name: 'Default Theme',
   src: '/assets/sprites_red_water_new.png',
   constructionSrc: '/assets/sprites_red_water_new_construction.png',
+  upgradeSrc: '/assets/sprites_red_water_upgrade_buildings.png',
   abandonedSrc: '/assets/sprites_red_water_new_abandoned.png',
   denseSrc: '/assets/sprites_red_water_new_dense.png',
   denseVariants: {
@@ -282,6 +288,13 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
     office_high: 0.80, // Construction office_high scaled down 20%
     apartment_high: 0.65, // Construction apartment_high scaled down 35%
     apartment_low: 0.80, // Construction apartment_low scaled down 20%
+  },
+  upgradeVerticalOffsets: {
+    // Upgraded service buildings often need specific offsets
+    power_plant: -0.3,
+    water_tower: -0.5,
+    police_station: -0.2,
+    fire_station: -0.3,
   },
   abandonedVerticalOffsets: {
     // Abandoned apartments need different positioning than normal

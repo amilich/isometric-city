@@ -34,8 +34,8 @@ const BUILDING_REVERSE: Record<number, BuildingType> = BUILDING_TYPES.reduce((ac
   return acc;
 }, {} as Record<number, BuildingType>);
 
-// Minified tile representation: [zone, buildingType, level, population, jobs, powered, watered, landValue, hasSubway, constructionProgress, abandoned, flipped, hasRailOverlay]
-type MinTile = [number, number, number, number, number, number, number, number, number, number, number, number, number];
+// Minified tile representation: [zone, buildingType, level, population, jobs, powered, watered, landValue, hasSubway, constructionProgress, abandoned, flipped, hasRailOverlay, isUpgraded]
+type MinTile = [number, number, number, number, number, number, number, number, number, number, number, number, number, number];
 
 // Minified state for sharing
 interface MinState {
@@ -67,6 +67,7 @@ function minifyTile(tile: Tile): MinTile {
     tile.building.abandoned ? 1 : 0,
     tile.building.flipped ? 1 : 0,
     tile.hasRailOverlay ? 1 : 0,
+    tile.building.isUpgraded ? 1 : 0,
   ];
 }
 
@@ -84,6 +85,7 @@ function expandTile(min: MinTile, x: number, y: number): Tile {
     constructionProgress: min[9] ?? 100,
     abandoned: min[10] === 1,
     flipped: min[11] === 1,
+    isUpgraded: min[13] === 1,
   };
 
   return {

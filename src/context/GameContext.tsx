@@ -248,6 +248,10 @@ function loadGameState(): GameState | null {
               if (parsed.grid[y][x]?.building && parsed.grid[y][x].building.abandoned === undefined) {
                 parsed.grid[y][x].building.abandoned = false;
               }
+              // Migrate isUpgraded property for existing buildings (default to false)
+              if (parsed.grid[y][x]?.building && parsed.grid[y][x].building.isUpgraded === undefined) {
+                parsed.grid[y][x].building.isUpgraded = false;
+              }
             }
           }
         }

@@ -9,7 +9,7 @@
 // for procedurally generated assets without changing the rendering logic.
 
 import type { SpritePack } from '@/lib/renderConfig';
-import { getProceduralPrefixRenderer } from '@/lib/proceduralSpriteExtensions';
+import { getProceduralPrefixRenderer, getProceduralSpriteRenderer } from '@/lib/proceduralSpriteExtensions';
 
 export type ProceduralSpriteSheetVariant = 'main' | 'construction' | 'abandoned';
 
@@ -931,7 +931,18 @@ function drawProceduralSpriteTile(
 
   const { prefix, key } = splitProceduralKey(spriteKey);
 
-  // Extension point: allow custom prefix renderers to fully handle a cell.
+  // Extension point (exact key): allow custom renderers to fully handle a specific sprite.
+  // This lets you override built-in procedural sprites without editing `spriteOrder`.
+  const exact = getProceduralSpriteRenderer(spriteKey);
+  if (exact) {
+    const handled = exact({ spriteKey, prefix: prefix ?? '', key, variant, ctx, x, y, w, h, rng });
+    if (handled === true) {
+      ctx.restore();
+      return;
+    }
+  }
+
+  // Extension point (prefix): allow custom prefix renderers to fully handle a cell.
   if (prefix) {
     const ext = getProceduralPrefixRenderer(prefix);
     if (ext) {
@@ -943,6 +954,17 @@ function drawProceduralSpriteTile(
     }
   }
 
+  // If we had a prefix, also allow an override renderer registered for the base key.
+  if (prefix) {
+    const base = getProceduralSpriteRenderer(key);
+    if (base) {
+      const handled = base({ spriteKey, prefix, key, variant, ctx, x, y, w, h, rng });
+      if (handled === true) {
+        ctx.restore();
+        return;
+      }
+    }
+  }
   const style = styleForSpriteKey(spriteKey);
 
   // Common anchor

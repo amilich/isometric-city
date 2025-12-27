@@ -27,6 +27,7 @@ import {
 import { MiniMap } from '@/components/game/MiniMap';
 import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
+import { registerProceduralUserAssets } from '@/lib/proceduralUserAssets';
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = ['containers', 'bulk materials', 'oil'];
@@ -52,6 +53,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const previousSelectedToolRef = useRef<Tool | null>(null);
   const hasCapturedInitialTool = useRef(false);
   const currentSelectedToolRef = useRef<Tool>(state.selectedTool);
+
+  // Register user-defined procedural sprite renderers (no-op by default).
+  // This gives you a stable place to inject code-driven art without shipping image files.
+  useEffect(() => {
+    registerProceduralUserAssets();
+  }, []);
   
   // Keep currentSelectedToolRef in sync with state
   useEffect(() => {

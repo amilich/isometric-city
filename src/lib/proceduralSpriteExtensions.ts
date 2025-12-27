@@ -42,6 +42,13 @@ export type ProceduralPrefixRenderer = (args: ProceduralPrefixRenderArgs) => boo
 
 const prefixRenderers = new Map<string, ProceduralPrefixRenderer>();
 
+// Exact-key overrides (optional)
+// -----------------------------------------------------------------------------
+// In many cases you want to replace an existing sprite (e.g. 'house_small')
+// without changing a SpritePack's spriteOrder to add a prefix. These renderers
+// are looked up by the full spriteKey string and get first priority.
+const spriteKeyRenderers = new Map<string, ProceduralPrefixRenderer>();
+
 export function registerProceduralPrefixRenderer(prefix: string, renderer: ProceduralPrefixRenderer): void {
   prefixRenderers.set(prefix, renderer);
 }
@@ -56,4 +63,34 @@ export function getProceduralPrefixRenderer(prefix: string): ProceduralPrefixRen
 
 export function listProceduralPrefixRenderers(): string[] {
   return Array.from(prefixRenderers.keys());
+}
+
+/**
+ * Register a renderer for a specific sprite key (exact match).
+ *
+ * This is useful when you want to override a built-in procedural sprite without
+ * having to edit a SpritePack's `spriteOrder` to add a prefix.
+ *
+ * The renderer should return `true` when it has fully handled drawing the cell.
+ * Returning `false`/`undefined` will fall back to other extension points and the
+ * built-in generator.
+ */
+export function registerProceduralSpriteRenderer(spriteKey: string, renderer: ProceduralPrefixRenderer): void {
+  spriteKeyRenderers.set(spriteKey, renderer);
+}
+
+export function unregisterProceduralSpriteRenderer(spriteKey: string): void {
+  spriteKeyRenderers.delete(spriteKey);
+}
+
+export function getProceduralSpriteRenderer(spriteKey: string): ProceduralPrefixRenderer | undefined {
+  return spriteKeyRenderers.get(spriteKey);
+}
+
+export function listProceduralSpriteRenderers(): string[] {
+  return Array.from(spriteKeyRenderers.keys());
+}
+
+export function clearProceduralSpriteRenderers(): void {
+  spriteKeyRenderers.clear();
 }

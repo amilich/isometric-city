@@ -75,6 +75,10 @@ If you want to add *your own* procedural sprites without modifying the core gene
 - `src/lib/proceduralSpriteExtensions.ts` → `registerProceduralPrefixRenderer('my', ...)`
 - Then reference sprites as `my:your_sprite_key` from a SpritePack.
 
+- Or override an existing key directly (no prefix required): `registerProceduralSpriteRenderer('house_small', ...)`
+- A convenient place to register project-specific sprites is `src/lib/proceduralUserAssets.ts` (called once from `src/components/Game.tsx`)
+
+
 
 ## Contributing
 

@@ -217,6 +217,23 @@ export function ChartIcon({ size = 18, className }: IconProps) {
   );
 }
 
+export function ChatIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <path {...baseStroke} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+export function MarketIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <path {...baseStroke} d="M3 3v18h18" />
+      <path {...baseStroke} d="M18 9l-5 5-4-4-4 4" />
+    </svg>
+  );
+}
+
 export function TrophyIcon({ size = 18, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
@@ -385,6 +402,17 @@ export function SubwayStationIcon({ size = 18, className }: IconProps) {
       <path {...baseStroke} d="M9 19v-3h2v-2h2v-2h2v7" />
       {/* "M" for Metro */}
       <path {...baseStroke} d="M8 10l2 2 2-2" />
+    </svg>
+  );
+}
+
+export function RegionsIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <circle cx="8" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="1.6" opacity="0.6" />
+      <circle cx="16" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="1.6" opacity="0.6" />
+      <circle cx="12" cy="16" r="4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path {...baseStroke} d="M10 6l2 7M14 6l-2 7" opacity="0.4" />
     </svg>
   );
 }

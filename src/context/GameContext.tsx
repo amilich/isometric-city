@@ -26,6 +26,7 @@ import {
   placeLandTerraform,
   checkForDiscoverableCities,
   generateRandomAdvancedCity,
+  hasCityHallBuilding,
   createBridgesOnPath,
 } from '@/lib/simulation';
 import {
@@ -35,6 +36,18 @@ import {
   setActiveSpritePack,
   SpritePack,
 } from '@/lib/renderConfig';
+import {
+  joinRegion as joinRegionApi,
+  leaveRegion as leaveRegionApi,
+  syncCityToCloud,
+  fetchAdjacentCities,
+  subscribeToRegionUpdates,
+  fetchCityRegionInfo,
+} from '@/lib/regionSync';
+import { sendJoinRegionMessage, sendLeaveRegionMessage } from '@/lib/chat';
+import { isMultiplayerAvailable } from '@/lib/supabase';
+import { processMonthlySharing } from '@/lib/resourceSharing';
+import type { NeighborCity } from '@/types/multiplayer';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITY_STORAGE_KEY = 'isocity-saved-city'; // For restoring after viewing shared city
@@ -42,6 +55,7 @@ const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index'; // Index of all sav
 const SAVED_CITY_PREFIX = 'isocity-city-'; // Prefix for individual saved city states
 const SPRITE_PACK_STORAGE_KEY = 'isocity-sprite-pack';
 const DAY_NIGHT_MODE_STORAGE_KEY = 'isocity-day-night-mode';
+const ZOOM_SENSITIVITY_STORAGE_KEY = 'isocity-zoom-sensitivity';
 
 export type DayNightMode = 'auto' | 'day' | 'night';
 
@@ -51,6 +65,14 @@ export type SavedCityInfo = {
   population: number;
   money: number;
   savedAt: number;
+} | null;
+
+// Region info for multiplayer
+export type RegionInfo = {
+  regionId: string;
+  regionName: string;
+  slotRow: number;
+  slotCol: number;
 } | null;
 
 type GameContextValue = {
@@ -87,6 +109,9 @@ type GameContextValue = {
   dayNightMode: DayNightMode;
   setDayNightMode: (mode: DayNightMode) => void;
   visualHour: number; // The hour to use for rendering (respects day/night mode override)
+  // Zoom sensitivity
+  zoomSensitivity: number;
+  setZoomSensitivity: (sensitivity: number) => void;
   // Save/restore city for shared links
   saveCurrentCityForRestore: () => void;
   restoreSavedCity: () => boolean;
@@ -98,6 +123,12 @@ type GameContextValue = {
   loadSavedCity: (cityId: string) => boolean;
   deleteSavedCity: (cityId: string) => void;
   renameSavedCity: (cityId: string, newName: string) => void;
+  // Multiplayer regions
+  regionInfo: RegionInfo;
+  joinRegion: (regionId: string, slotRow: number, slotCol: number) => Promise<boolean>;
+  leaveRegion: () => Promise<boolean>;
+  syncToCloud: () => Promise<boolean>;
+  hasCityHall: boolean; // Whether the city has a completed City Hall (required for multiplayer regions)
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -449,6 +480,33 @@ function saveDayNightMode(mode: DayNightMode): void {
   }
 }
 
+// Load zoom sensitivity from localStorage
+function loadZoomSensitivity(): number {
+  if (typeof window === 'undefined') return 5;
+  try {
+    const saved = localStorage.getItem(ZOOM_SENSITIVITY_STORAGE_KEY);
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 10) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load zoom sensitivity preference:', e);
+  }
+  return 5;
+}
+
+// Save zoom sensitivity to localStorage
+function saveZoomSensitivity(sensitivity: number): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ZOOM_SENSITIVITY_STORAGE_KEY, sensitivity.toString());
+  } catch (e) {
+    console.error('Failed to save zoom sensitivity preference:', e);
+  }
+}
+
 // Save current city for later restoration (when viewing shared cities)
 function saveCityForRestore(state: GameState): void {
   if (typeof window === 'undefined') return;
@@ -642,7 +700,7 @@ function deleteCityState(cityId: string): void {
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
   // Start with a default state, we'll load from localStorage after mount
-  const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
+  const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'Truncgil MyCity'));
   
   const [hasExistingGame, setHasExistingGame] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -656,8 +714,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Day/night mode state
   const [dayNightMode, setDayNightModeState] = useState<DayNightMode>('auto');
   
+  // Zoom sensitivity state
+  const [zoomSensitivity, setZoomSensitivityState] = useState<number>(5);
+
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+  
+  // Multiplayer region state
+  const [regionInfo, setRegionInfo] = useState<RegionInfo>(null);
   
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
@@ -671,6 +735,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const savedDayNightMode = loadDayNightMode();
     setDayNightModeState(savedDayNightMode);
     
+    // Load zoom sensitivity preference
+    const savedZoomSensitivity = loadZoomSensitivity();
+    setZoomSensitivityState(savedZoomSensitivity);
+
     // Load saved cities index
     const cities = loadSavedCitiesIndex();
     setSavedCities(cities);
@@ -687,6 +755,41 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Mark as loaded immediately - the skipNextSaveRef will handle skipping the first save
     hasLoadedRef.current = true;
   }, []);
+  
+  // Restore region info from cloud on mount
+  useEffect(() => {
+    async function restoreRegionInfo() {
+      if (!isMultiplayerAvailable()) return;
+      if (!state.id) return;
+      
+      const info = await fetchCityRegionInfo(state.id);
+      if (info) {
+        // Fetch adjacent cities
+        const adjacentCities = await fetchAdjacentCities(
+          info.regionId,
+          info.slotRow,
+          info.slotCol,
+          state.id
+        );
+        
+        setRegionInfo({
+          regionId: info.regionId,
+          regionName: info.regionName,
+          slotRow: info.slotRow,
+          slotCol: info.slotCol,
+        });
+        
+        // Update adjacent cities in game state
+        if (adjacentCities.length > 0) {
+          setState(prev => ({ ...prev, adjacentCities }));
+        }
+      }
+    }
+    
+    if (!regionInfo) {
+      restoreRegionInfo();
+    }
+  }, [state.id]);
   
   // Track the state that needs to be saved
   const lastSaveTimeRef = useRef<number>(0);
@@ -820,6 +923,33 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
     };
   }, [state.speed]);
+
+  // Process monthly resource sharing income/costs
+  const lastProcessedMonthRef = useRef<string | null>(null);
+  useEffect(() => {
+    const monthKey = `${state.year}-${state.month}`;
+    
+    // Only process once per month and only if in a region
+    if (lastProcessedMonthRef.current === monthKey || !regionInfo) {
+      return;
+    }
+    
+    // Mark as processed immediately to prevent double processing
+    lastProcessedMonthRef.current = monthKey;
+    
+    // Process sharing asynchronously
+    processMonthlySharing(state.id).then(({ netIncome }) => {
+      if (netIncome !== 0) {
+        setState(prev => ({
+          ...prev,
+          stats: {
+            ...prev.stats,
+            money: prev.stats.money + netIncome,
+          }
+        }));
+      }
+    }).catch(console.error);
+  }, [state.year, state.month, state.id, regionInfo]);
 
   const setTool = useCallback((tool: Tool) => {
     setState((prev) => ({ ...prev, selectedTool: tool, activePanel: 'none' }));
@@ -1065,6 +1195,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     saveDayNightMode(mode);
   }, []);
 
+  const setZoomSensitivity = useCallback((sensitivity: number) => {
+    const clamped = clamp(sensitivity, 1, 10);
+    setZoomSensitivityState(clamped);
+    saveZoomSensitivity(clamped);
+  }, []);
+
   // Compute the visual hour based on the day/night mode override
   // This doesn't affect time progression, just the rendering
   const visualHour = dayNightMode === 'auto' 
@@ -1075,7 +1211,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const newGame = useCallback((name?: string, size?: number) => {
     clearGameState(); // Clear saved state when starting fresh
-    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'IsoCity');
+    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'Truncgil MyCity');
     // Increment gameVersion from current state to ensure vehicles/entities are cleared
     setState((prev) => ({
       ...fresh,
@@ -1576,6 +1712,148 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.id]);
 
+  // Join a multiplayer region
+  const joinRegion = useCallback(async (regionId: string, slotRow: number, slotCol: number): Promise<boolean> => {
+    const success = await joinRegionApi(state, regionId, slotRow, slotCol);
+    
+    if (success) {
+      // Fetch adjacent cities from the region
+      const adjacentCities = await fetchAdjacentCities(regionId, slotRow, slotCol, state.id);
+      
+      // Update region info
+      setRegionInfo({
+        regionId,
+        regionName: '', // Will be fetched separately if needed
+        slotRow,
+        slotCol,
+      });
+      
+      // Update adjacent cities in game state
+      setState((prev) => ({
+        ...prev,
+        adjacentCities: adjacentCities.length > 0 ? adjacentCities : prev.adjacentCities,
+      }));
+      
+      // Send system message to region chat
+      await sendJoinRegionMessage(regionId, state.cityName);
+      
+      return true;
+    }
+    
+    return false;
+  }, [state]);
+
+  // Leave the current multiplayer region
+  const leaveRegion = useCallback(async (): Promise<boolean> => {
+    if (!regionInfo) return false;
+    
+    // Send system message before leaving
+    await sendLeaveRegionMessage(regionInfo.regionId, state.cityName);
+    
+    const success = await leaveRegionApi(state.id);
+    
+    if (success) {
+      setRegionInfo(null);
+      // Optionally regenerate NPC adjacent cities here
+      return true;
+    }
+    
+    return false;
+  }, [state.id, state.cityName, regionInfo]);
+
+  // Sync current city to cloud
+  const syncToCloud = useCallback(async (): Promise<boolean> => {
+    if (!regionInfo) return false;
+    
+    return syncCityToCloud(
+      state,
+      regionInfo.regionId,
+      regionInfo.slotRow,
+      regionInfo.slotCol
+    );
+  }, [state, regionInfo]);
+
+  // Background auto-sync every 30 seconds when in a region
+  const lastSyncRef = useRef<number>(0);
+  useEffect(() => {
+    if (!regionInfo) return;
+    
+    const SYNC_INTERVAL = 30000;
+    
+    const syncIfNeeded = async () => {
+      const now = Date.now();
+      if (now - lastSyncRef.current >= SYNC_INTERVAL) {
+        lastSyncRef.current = now;
+        await syncCityToCloud(
+          state,
+          regionInfo.regionId,
+          regionInfo.slotRow,
+          regionInfo.slotCol
+        );
+      }
+    };
+    
+    // Sync immediately on join
+    if (lastSyncRef.current === 0) {
+      lastSyncRef.current = Date.now();
+    }
+    
+    const interval = setInterval(syncIfNeeded, SYNC_INTERVAL);
+    return () => clearInterval(interval);
+  }, [regionInfo, state]);
+
+  // Subscribe to real-time updates when in a region
+  useEffect(() => {
+    if (!regionInfo) return;
+    
+    const unsubscribe = subscribeToRegionUpdates(
+      regionInfo.regionId,
+      (updatedCity: NeighborCity) => {
+        // Don't update if it's our own city
+        if (updatedCity.id === state.id) return;
+        
+        // Check if this city is adjacent to us
+        let direction: 'north' | 'south' | 'east' | 'west' | null = null;
+        
+        if (updatedCity.slotRow === regionInfo.slotRow - 1 && updatedCity.slotCol === regionInfo.slotCol) {
+          direction = 'north';
+        } else if (updatedCity.slotRow === regionInfo.slotRow + 1 && updatedCity.slotCol === regionInfo.slotCol) {
+          direction = 'south';
+        } else if (updatedCity.slotRow === regionInfo.slotRow && updatedCity.slotCol === regionInfo.slotCol + 1) {
+          direction = 'east';
+        } else if (updatedCity.slotRow === regionInfo.slotRow && updatedCity.slotCol === regionInfo.slotCol - 1) {
+          direction = 'west';
+        }
+        
+        if (direction) {
+          // Update adjacent cities in game state
+          setState(prev => {
+            const existingIdx = prev.adjacentCities.findIndex(c => c.id === updatedCity.id);
+            const newAdjacentCity = {
+              id: updatedCity.id,
+              name: updatedCity.cityName,
+              direction,
+              connected: true,
+              discovered: true,
+            };
+            
+            if (existingIdx >= 0) {
+              const updated = [...prev.adjacentCities];
+              updated[existingIdx] = newAdjacentCity;
+              return { ...prev, adjacentCities: updated };
+            } else {
+              return { ...prev, adjacentCities: [...prev.adjacentCities, newAdjacentCity] };
+            }
+          });
+        }
+      }
+    );
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [regionInfo, state.id]);
+
   const value: GameContextValue = {
     state,
     latestStateRef,
@@ -1608,6 +1886,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dayNightMode,
     setDayNightMode,
     visualHour,
+    // Zoom sensitivity
+    zoomSensitivity,
+    setZoomSensitivity,
     // Save/restore city for shared links
     saveCurrentCityForRestore,
     restoreSavedCity,
@@ -1619,6 +1900,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     loadSavedCity,
     deleteSavedCity,
     renameSavedCity,
+    // Multiplayer regions
+    regionInfo,
+    joinRegion,
+    leaveRegion,
+    syncToCloud,
+    hasCityHall: hasCityHallBuilding(state.grid),
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

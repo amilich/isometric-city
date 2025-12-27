@@ -28,6 +28,7 @@
       ]
     }
   },
+  // Include project files
   "include": [
     "next-env.d.ts",
     "**/*.ts",
@@ -39,19 +40,3 @@
     "node_modules"
   ]
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

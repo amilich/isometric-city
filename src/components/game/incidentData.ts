@@ -101,35 +101,35 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   mugging: {
     name: 'Mugging',
-    description: 'Victim being robbed on the street. Suspect fleeing.',
+    description: 'Victim being robbed on street. Suspect fleeing.',
     severity: 'high',
     duration: 30,
     weight: 5,
   },
   assault: {
     name: 'Assault',
-    description: 'Physical altercation in progress. Multiple individuals.',
+    description: 'Physical altercation ongoing. Multiple people involved.',
     severity: 'high',
     duration: 25,
     weight: 6,
   },
   aggravated_assault: {
     name: 'Aggravated Assault',
-    description: 'Violent attack with potential weapon. Victim injured.',
+    description: 'Potentially armed violent attack. Victim injured.',
     severity: 'critical',
     duration: 40,
     weight: 2,
   },
   carjacking: {
     name: 'Carjacking',
-    description: 'Armed suspect stealing vehicle from driver.',
+    description: 'Armed suspect forcibly taking vehicle from driver.',
     severity: 'critical',
     duration: 35,
     weight: 2,
   },
   kidnapping: {
     name: 'Kidnapping',
-    description: 'Individual being forced into vehicle. Urgent response.',
+    description: 'Person being forced into vehicle. Emergency response required.',
     severity: 'critical',
     duration: 50,
     weight: 1,
@@ -143,21 +143,21 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   gang_violence: {
     name: 'Gang Violence',
-    description: 'Rival groups in confrontation. Multiple suspects.',
+    description: 'Rival groups fighting. Multiple suspects.',
     severity: 'critical',
     duration: 40,
     weight: 2,
   },
   shooting: {
-    name: 'Shots Fired',
-    description: 'Gunshots reported. Possible casualties.',
+    name: 'Shooting',
+    description: 'Gunshots reported. Possible injuries.',
     severity: 'critical',
     duration: 45,
     weight: 1,
   },
   stabbing: {
     name: 'Stabbing',
-    description: 'Knife attack reported. Medical response needed.',
+    description: 'Knife attack reported. Medical attention required.',
     severity: 'critical',
     duration: 40,
     weight: 1.5,
@@ -165,8 +165,8 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
 
   // Property Crimes (medium/high severity)
   burglary: {
-    name: 'Burglary',
-    description: 'Break-in detected. Suspect inside building.',
+    name: 'Burglary (Residential)',
+    description: 'Unauthorized entry detected. Suspect inside building.',
     severity: 'high',
     duration: 30,
     weight: 8,
@@ -180,14 +180,14 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   commercial_burglary: {
     name: 'Commercial Burglary',
-    description: 'Business break-in in progress. Alarm triggered.',
+    description: 'Unauthorized entry to business ongoing. Alarm triggered.',
     severity: 'high',
     duration: 28,
     weight: 6,
   },
   car_theft: {
     name: 'Car Theft',
-    description: 'Vehicle being stolen. Suspect breaking into car.',
+    description: 'Vehicle being stolen. Suspect entering car.',
     severity: 'medium',
     duration: 22,
     weight: 10,
@@ -208,14 +208,14 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   shoplifting: {
     name: 'Shoplifting',
-    description: 'Theft in progress at retail store. Suspect fleeing.',
+    description: 'Theft at retail store. Suspect fleeing.',
     severity: 'low',
     duration: 15,
     weight: 20,
   },
   smash_and_grab: {
-    name: 'Smash & Grab',
-    description: 'Window smashed. Multiple suspects grabbing merchandise.',
+    name: 'Smash and Grab',
+    description: 'Window broken. Multiple suspects grabbing merchandise.',
     severity: 'high',
     duration: 25,
     weight: 4,
@@ -252,14 +252,14 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   credit_card_fraud: {
     name: 'Credit Card Fraud',
-    description: 'Unauthorized card transactions in progress.',
+    description: 'Unauthorized card transactions ongoing.',
     severity: 'medium',
     duration: 25,
     weight: 5,
   },
   insurance_fraud: {
     name: 'Insurance Fraud',
-    description: 'Staged accident or false claim detected.',
+    description: 'Staged accident or false damage claim detected.',
     severity: 'medium',
     duration: 35,
     weight: 2,
@@ -273,7 +273,7 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   counterfeiting: {
     name: 'Counterfeiting',
-    description: 'Fake currency or goods being distributed.',
+    description: 'Fake money or goods being distributed.',
     severity: 'high',
     duration: 35,
     weight: 2,
@@ -281,7 +281,7 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
 
   // Public Order (low/medium severity, short duration)
   disturbance: {
-    name: 'Public Disturbance',
+    name: 'Disturbance',
     description: 'Loud argument escalating. Crowd gathering.',
     severity: 'low',
     duration: 18,
@@ -289,14 +289,14 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   public_intoxication: {
     name: 'Public Intoxication',
-    description: 'Heavily intoxicated individual causing disruption.',
+    description: 'Excessively intoxicated person causing disturbance.',
     severity: 'low',
     duration: 15,
     weight: 18,
   },
   disorderly_conduct: {
     name: 'Disorderly Conduct',
-    description: 'Individual refusing to comply. Causing scene.',
+    description: 'Person refusing to comply. Causing incident.',
     severity: 'low',
     duration: 18,
     weight: 15,
@@ -310,21 +310,21 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   loitering: {
     name: 'Loitering',
-    description: 'Suspicious individuals hanging around property.',
+    description: 'Suspicious persons loitering around property.',
     severity: 'low',
     duration: 10,
     weight: 12,
   },
   trespassing: {
     name: 'Trespassing',
-    description: 'Unauthorized person on private property.',
+    description: 'Unauthorized person detected on private property.',
     severity: 'low',
     duration: 15,
     weight: 14,
   },
   public_urination: {
     name: 'Public Urination',
-    description: 'Indecent act in public area.',
+    description: 'Inappropriate behavior in public area.',
     severity: 'low',
     duration: 8,
     weight: 10,
@@ -346,29 +346,29 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
 
   // Drug Related
   drug_dealing: {
-    name: 'Drug Deal',
-    description: 'Suspected narcotics transaction in progress.',
+    name: 'Drug Dealing',
+    description: 'Suspected narcotics transaction ongoing.',
     severity: 'high',
     duration: 20,
     weight: 8,
   },
   drug_possession: {
     name: 'Drug Possession',
-    description: 'Individual with suspected controlled substances.',
+    description: 'Suspect carrying controlled substance.',
     severity: 'medium',
     duration: 18,
     weight: 10,
   },
   illegal_dispensary: {
     name: 'Illegal Dispensary',
-    description: 'Unlicensed drug operation discovered.',
+    description: 'Unlicensed pharmaceutical operation discovered.',
     severity: 'high',
     duration: 35,
     weight: 2,
   },
   public_drug_use: {
     name: 'Public Drug Use',
-    description: 'Individual using substances openly.',
+    description: 'Person openly using substances.',
     severity: 'low',
     duration: 15,
     weight: 12,
@@ -376,7 +376,7 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
 
   // Traffic & Vehicle
   hit_and_run: {
-    name: 'Hit & Run',
+    name: 'Hit and Run',
     description: 'Driver fled after collision. Possible injuries.',
     severity: 'high',
     duration: 25,
@@ -384,21 +384,21 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   dui: {
     name: 'DUI',
-    description: 'Suspected impaired driver. Erratic behavior.',
+    description: 'Suspected drunk driver. Erratic behavior.',
     severity: 'high',
     duration: 22,
     weight: 7,
   },
   reckless_driving: {
     name: 'Reckless Driving',
-    description: 'Vehicle driving dangerously. Endangering others.',
+    description: 'Vehicle being driven dangerously. Endangering others.',
     severity: 'medium',
     duration: 18,
     weight: 10,
   },
   traffic_violation: {
     name: 'Traffic Violation',
-    description: 'Moving violation observed. Driver being cited.',
+    description: 'Moving violation observed. Citation being issued.',
     severity: 'low',
     duration: 12,
     weight: 25,
@@ -411,7 +411,7 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
     weight: 20,
   },
   illegal_street_vendor: {
-    name: 'Illegal Vendor',
+    name: 'Illegal Street Vendor',
     description: 'Unlicensed vendor operating without permit.',
     severity: 'low',
     duration: 15,
@@ -428,28 +428,28 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   graffiti: {
     name: 'Graffiti',
-    description: 'Individual spray painting building or surface.',
+    description: 'Person spray painting building or surface.',
     severity: 'low',
     duration: 15,
     weight: 15,
   },
   arson_attempt: {
-    name: 'Attempted Arson',
-    description: 'Individual attempting to start fire. Urgent.',
+    name: 'Arson Attempt',
+    description: 'Person attempting to start fire. Emergency.',
     severity: 'critical',
     duration: 30,
     weight: 2,
   },
   property_damage: {
     name: 'Property Damage',
-    description: 'Intentional destruction of property in progress.',
+    description: 'Intentional property destruction ongoing.',
     severity: 'medium',
     duration: 20,
     weight: 8,
   },
   broken_windows: {
     name: 'Broken Windows',
-    description: 'Windows being smashed. Possible burglary.',
+    description: 'Windows being broken. Possible burglary attempt.',
     severity: 'medium',
     duration: 18,
     weight: 10,
@@ -458,14 +458,14 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   // Other
   suspicious_activity: {
     name: 'Suspicious Activity',
-    description: 'Unknown individual acting strangely near building.',
+    description: 'Unknown person acting strangely near building.',
     severity: 'low',
     duration: 15,
     weight: 18,
   },
   prowler: {
     name: 'Prowler',
-    description: 'Individual lurking around property at night.',
+    description: 'Person prowling around property at night.',
     severity: 'medium',
     duration: 18,
     weight: 8,
@@ -479,14 +479,14 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
   },
   domestic_disturbance: {
     name: 'Domestic Disturbance',
-    description: 'Heated argument at residence. Possible violence.',
+    description: 'Heated argument in residence. Possible violence.',
     severity: 'high',
     duration: 25,
     weight: 10,
   },
   animal_cruelty: {
     name: 'Animal Cruelty',
-    description: 'Animal being mistreated or endangered.',
+    description: 'Animal being mistreated or in danger.',
     severity: 'medium',
     duration: 20,
     weight: 3,
@@ -506,8 +506,8 @@ export const CRIME_DATA: Record<CrimeType, CrimeData> = {
     weight: 4,
   },
   solicitation: {
-    name: 'Solicitation',
-    description: 'Aggressive soliciting of passersby.',
+    name: 'Aggressive Solicitation',
+    description: 'Aggressive sales/begging to passersby.',
     severity: 'low',
     duration: 12,
     weight: 8,
@@ -556,53 +556,53 @@ export interface FireData {
 
 export const FIRE_DATA: Record<FireType, FireData> = {
   structural: {
-    name: 'Structure Fire',
+    name: 'Structural Fire',
     description: 'Flames spreading through building. Multiple floors at risk. Evacuate immediately.',
     severity: 'major',
   },
   electrical: {
     name: 'Electrical Fire',
-    description: 'Electrical system overload. Smoke billowing from outlets. Power lines sparking.',
+    description: 'Electrical system overload. Smoke from outlets. Power lines sparking.',
     severity: 'moderate',
   },
   kitchen: {
     name: 'Kitchen Fire',
-    description: 'Cooking fire out of control. Grease flames spreading rapidly. Ventilation compromised.',
+    description: 'Cooking fire out of control. Grease flames spreading rapidly. Ventilation risky.',
     severity: 'moderate',
   },
   industrial: {
     name: 'Industrial Fire',
-    description: 'Factory blaze with heavy smoke. Hazardous materials may be involved. Wide perimeter needed.',
+    description: 'Heavy smoke factory fire. Hazardous materials possible. Wide perimeter safety required.',
     severity: 'catastrophic',
   },
   chemical: {
     name: 'Chemical Fire',
-    description: 'Toxic chemical combustion. Dangerous fumes spreading. Specialized response required.',
+    description: 'Toxic chemical burn. Hazardous fumes spreading. Specialist response required.',
     severity: 'catastrophic',
   },
   vehicle: {
     name: 'Vehicle Fire',
-    description: 'Car engulfed in flames. Risk of fuel tank explosion. Keep clear.',
+    description: 'Car in flames. Fuel tank explosion risk. Stay away.',
     severity: 'minor',
   },
   brush: {
     name: 'Brush Fire',
-    description: 'Vegetation fire spreading with wind. Nearby structures threatened.',
+    description: 'Wind-spreading vegetation fire. Nearby structures threatened.',
     severity: 'moderate',
   },
   explosion: {
     name: 'Explosion',
-    description: 'Building rocked by blast. Structural integrity compromised. Possible casualties.',
+    description: 'Building shaken by explosion. Structural integrity compromised. Possible injuries.',
     severity: 'catastrophic',
   },
   gas_leak: {
     name: 'Gas Fire',
-    description: 'Natural gas ignited. Continuous flame from leak. Shut-off valve needed.',
+    description: 'Natural gas ignited. Continuous flame from leak. Shutoff valve required.',
     severity: 'major',
   },
   arson: {
     name: 'Arson Fire',
-    description: 'Deliberately set fire detected. Accelerant used. Fire spreading rapidly.',
+    description: 'Intentionally set fire detected. Accelerant used. Fire spreading rapidly.',
     severity: 'major',
   },
 };
@@ -658,7 +658,7 @@ export function getFireName(fireType: FireType): string {
 }
 
 export function getFireDescription(fireType: FireType): string {
-  return FIRE_DATA[fireType]?.description || 'Building on fire. Fire trucks responding.';
+  return FIRE_DATA[fireType]?.description || 'Building on fire. Fire crews responding.';
 }
 
 // Get fire description based on tile coordinates (deterministic)

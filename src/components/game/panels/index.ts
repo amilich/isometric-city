@@ -4,3 +4,7 @@ export { SettingsPanel } from './SettingsPanel';
 export { AdvisorsPanel } from './AdvisorsPanel';
 export { SpriteTestPanel } from './SpriteTestPanel';
 export { TileInfoPanel } from './TileInfoPanel';
+export { RegionPanel } from './RegionPanel';
+export { MarketPanel } from './MarketPanel';
+export { GreatWorksPanel } from './GreatWorksPanel';
+export { ChatSidePanel, QuickAccessButtons } from './ChatPanel';

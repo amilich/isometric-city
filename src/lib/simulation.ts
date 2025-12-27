@@ -1,4 +1,4 @@
-// Simulation engine for IsoCity
+// Simulation engine for Truncgil MyCity
 
 import {
   GameState,
@@ -1648,7 +1648,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
 
 // Calculate city stats
 // effectiveTaxRate is the lagged tax rate used for demand calculations
-function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage): Stats {
+function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage, adjacentCities: AdjacentCity[]): Stats {
   let population = 0;
   let jobs = 0;
   let totalPollution = 0;
@@ -1771,15 +1771,21 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   // Amusement Park: Big boost to commercial (tourism, entertainment)
   const amusementParkCommercialBonus = hasAmusementPark ? 18 : 0;
   
+  // Adjacent city bonuses (multiplayer regional trade)
+  const connectedCities = adjacentCities.filter(c => c.connected).length;
+  const adjacentCityResidentialBonus = connectedCities * 5; // Commuter workers
+  const adjacentCityCommercialBonus = connectedCities * 8;  // Trade routes
+  const adjacentCityIndustrialBonus = connectedCities * 6;  // Supply chains
+  
   // Calculate base demands from economic factors
   const baseResidentialDemand = (jobs - population * 0.7) / 18;
   const baseCommercialDemand = (population * 0.3 - jobs * 0.3) / 4 + subwayBonus;
   const baseIndustrialDemand = (population * 0.35 - jobs * 0.3) / 2.0;
   
   // Add special building bonuses to base demands
-  const residentialWithBonuses = baseResidentialDemand + cityHallResidentialBonus + spaceProgramResidentialBonus + museumResidentialBonus;
-  const commercialWithBonuses = baseCommercialDemand + airportCommercialBonus + cityHallCommercialBonus + stadiumCommercialBonus + museumCommercialBonus + amusementParkCommercialBonus + railCommercialBonus;
-  const industrialWithBonuses = baseIndustrialDemand + airportIndustrialBonus + cityHallIndustrialBonus + spaceProgramIndustrialBonus + railIndustrialBonus;
+  const residentialWithBonuses = baseResidentialDemand + cityHallResidentialBonus + spaceProgramResidentialBonus + museumResidentialBonus + adjacentCityResidentialBonus;
+  const commercialWithBonuses = baseCommercialDemand + airportCommercialBonus + cityHallCommercialBonus + stadiumCommercialBonus + museumCommercialBonus + amusementParkCommercialBonus + railCommercialBonus + adjacentCityCommercialBonus;
+  const industrialWithBonuses = baseIndustrialDemand + airportIndustrialBonus + cityHallIndustrialBonus + spaceProgramIndustrialBonus + railIndustrialBonus + adjacentCityIndustrialBonus;
   
   // Apply tax effect: multiply by tax factor, then add small modifier
   // The multiplier ensures high taxes crush demand; the additive fine-tunes at normal rates
@@ -2236,7 +2242,7 @@ export function simulateTick(state: GameState): GameState {
   const newEffectiveTaxRate = state.effectiveTaxRate + taxRateDiff * 0.03;
 
   // Calculate stats (using lagged effectiveTaxRate for demand calculations)
-  const newStats = calculateStats(newGrid, size, newBudget, state.taxRate, newEffectiveTaxRate, services);
+  const newStats = calculateStats(newGrid, size, newBudget, state.taxRate, newEffectiveTaxRate, services, state.adjacentCities);
   newStats.money = state.stats.money;
 
   // Smooth demand to prevent flickering in large cities
@@ -2371,6 +2377,19 @@ const BUILDING_SIZES: Partial<Record<BuildingType, { width: number; height: numb
 // Get the size of a building (how many tiles it spans)
 export function getBuildingSize(buildingType: BuildingType): { width: number; height: number } {
   return BUILDING_SIZES[buildingType] || { width: 1, height: 1 };
+}
+
+// Check if the grid contains a completed city_hall building (required for multiplayer regions)
+export function hasCityHallBuilding(grid: Tile[][]): boolean {
+  for (const row of grid) {
+    for (const tile of row) {
+      if (tile.building.type === 'city_hall' && 
+          (tile.building.constructionProgress === undefined || tile.building.constructionProgress >= 100)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 // Get construction speed for a building type (larger buildings take longer)

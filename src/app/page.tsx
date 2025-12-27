@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
 import Game from '@/components/Game';
@@ -128,7 +129,7 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
   
   // Load and filter sprite sheet
   useEffect(() => {
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => {
       const filtered = filterBackgroundColor(img);
       setFilteredSheet(filtered);
@@ -312,7 +313,7 @@ export default function HomePage() {
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
-          IsoCity
+          Truncgil MyCity
         </h1>
         
         {/* Sprite Gallery - keep visible even when saves exist */}
@@ -324,9 +325,10 @@ export default function HomePage() {
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <Button 
             onClick={() => setShowGame(true)}
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+            variant="game"
+            className="w-full py-6 text-xl"
           >
-            Start
+            Play
           </Button>
           
           <Button 
@@ -336,10 +338,10 @@ export default function HomePage() {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
               setShowGame(true);
             }}
-            variant="outline"
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+            variant="game-success"
+            className="w-full py-6 text-xl"
           >
-            Load Example
+            Example City
           </Button>
           <div className="flex items-center justify-between w-full">
             <a
@@ -382,15 +384,22 @@ export default function HomePage() {
         
         {/* Left - Title and Start Button */}
         <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
-          <h1 className="text-8xl font-light tracking-wider text-white/90">
-            IsoCity
-          </h1>
+          <div className="relative w-full max-w-md h-32 mb-4">
+            <Image
+              src="/truncgil-mycity3.png"
+              alt="Truncgil MyCity"
+              fill
+              className="object-contain object-left"
+              priority
+            />
+          </div>
           <div className="flex flex-col gap-3">
             <Button 
               onClick={() => setShowGame(true)}
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              variant="game"
+              className="w-64 py-8 text-2xl"
             >
-              Start
+              Play
             </Button>
             <Button 
               onClick={async () => {
@@ -399,10 +408,10 @@ export default function HomePage() {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
                 setShowGame(true);
               }}
-              variant="outline"
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              variant="game-success"
+              className="w-64 py-8 text-2xl"
             >
-              Load Example
+              Example City
             </Button>
             <div className="flex items-center justify-between w-64">
               <a

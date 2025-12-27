@@ -26,10 +26,17 @@ import {
   StatisticsPanel,
   SettingsPanel,
   AdvisorsPanel,
+  RegionPanel,
+  MarketPanel,
+  GreatWorksPanel,
+  ChatSidePanel,
+  QuickAccessButtons,
 } from '@/components/game/panels';
 import { MiniMap } from '@/components/game/MiniMap';
 import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
+import { subscribeToMessages } from '@/lib/chat';
+import { isMultiplayerAvailable } from '@/lib/supabase';
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg('containers'), msg('bulk materials'), msg('oil')];
@@ -40,6 +47,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const { state, setTool, setActivePanel, addMoney, addNotification, setSpeed } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [hasChatUnread, setHasChatUnread] = useState(false);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null>(null);
   const isInitialMount = useRef(true);
@@ -197,6 +206,28 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         break;
     }
   }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
+
+  // Background chat subscription for unread notifications
+  const isChatOpenRef = useRef(isChatOpen);
+  useEffect(() => {
+    isChatOpenRef.current = isChatOpen;
+  }, [isChatOpen]);
+
+  useEffect(() => {
+    if (!isMultiplayerAvailable()) return;
+
+    // Subscribe to global chat for unread notifications
+    const unsubscribe = subscribeToMessages('global', null, (message) => {
+      // Only show unread badge if chat is closed and message is from someone else
+      if (!isChatOpenRef.current && message.cityId !== state.id) {
+        setHasChatUnread(true);
+      }
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, [state.id]);
   
   // Track barge deliveries to show occasional notifications
   const bargeDeliveryCountRef = useRef(0);
@@ -253,6 +284,23 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === 'statistics' && <StatisticsPanel />}
           {state.activePanel === 'advisors' && <AdvisorsPanel />}
           {state.activePanel === 'settings' && <SettingsPanel />}
+          {state.activePanel === 'regions' && <RegionPanel />}
+          {state.activePanel === 'market' && <MarketPanel />}
+          {state.activePanel === 'great_works' && <GreatWorksPanel />}
+          
+          {/* Quick Access Buttons & Chat Side Panel */}
+          <QuickAccessButtons 
+            onChatClick={() => { setIsChatOpen(true); setHasChatUnread(false); }} 
+            onMarketClick={() => setActivePanel('market')}
+            hasChatUnread={hasChatUnread}
+            isMobile={true}
+            hidden={isChatOpen || ['regions', 'market', 'great_works'].includes(state.activePanel)}
+          />
+          <ChatSidePanel 
+            isOpen={isChatOpen} 
+            onClose={() => setIsChatOpen(false)}
+            isMobile={true}
+          />
           
           <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
           
@@ -296,6 +344,22 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         {state.activePanel === 'statistics' && <StatisticsPanel />}
         {state.activePanel === 'advisors' && <AdvisorsPanel />}
         {state.activePanel === 'settings' && <SettingsPanel />}
+        {state.activePanel === 'regions' && <RegionPanel />}
+        {state.activePanel === 'market' && <MarketPanel />}
+        {state.activePanel === 'great_works' && <GreatWorksPanel />}
+        
+        {/* Quick Access Buttons & Chat Side Panel */}
+        <QuickAccessButtons 
+          onChatClick={() => { setIsChatOpen(true); setHasChatUnread(false); }} 
+          onMarketClick={() => setActivePanel('market')}
+          hasChatUnread={hasChatUnread}
+          isTilePanelOpen={selectedTile !== null && state.selectedTool === 'select'}
+          hidden={isChatOpen || ['regions', 'market', 'great_works'].includes(state.activePanel)}
+        />
+        <ChatSidePanel 
+          isOpen={isChatOpen} 
+          onClose={() => setIsChatOpen(false)}
+        />
         
         <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
         <CommandMenu />

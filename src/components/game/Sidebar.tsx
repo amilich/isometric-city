@@ -27,12 +27,14 @@ const UI_LABELS = {
   budget: msg('Budget'),
   statistics: msg('Statistics'),
   advisors: msg('Advisors'),
+  regions: msg('Regions'),
   settings: msg('Settings'),
 };
 import {
   BudgetIcon,
   ChartIcon,
   AdvisorIcon,
+  RegionsIcon,
   SettingsIcon,
 } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/button';
@@ -461,7 +463,7 @@ function ExitDialog({
 
 // Memoized Sidebar Component
 export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => void }) {
-  const { state, setTool, setActivePanel, saveCity, expandCity, shrinkCity } = useGame();
+  const { state, setTool, setActivePanel, saveCity, expandCity, shrinkCity, hasCityHall } = useGame();
   const { selectedTool, stats, activePanel } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
   const m = useMessages();
@@ -671,20 +673,21 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
       </ScrollArea>
       
       <div className="border-t border-sidebar-border p-2">
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-5 gap-1">
           {[
             { panel: 'budget' as const, icon: <BudgetIcon size={16} />, labelKey: 'budget' as const },
             { panel: 'statistics' as const, icon: <ChartIcon size={16} />, labelKey: 'statistics' as const },
             { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, labelKey: 'advisors' as const },
+            { panel: 'regions' as const, icon: <RegionsIcon size={16} />, labelKey: 'regions' as const, disabled: !hasCityHall },
             { panel: 'settings' as const, icon: <SettingsIcon size={16} />, labelKey: 'settings' as const },
-          ].map(({ panel, icon, labelKey }) => (
+          ].map(({ panel, icon, labelKey, disabled }) => (
             <Button
               key={panel}
-              onClick={() => setActivePanel(activePanel === panel ? 'none' : panel)}
+              onClick={() => !disabled && setActivePanel(activePanel === panel ? 'none' : panel)}
               variant={activePanel === panel ? 'default' : 'ghost'}
               size="icon-sm"
-              className="w-full"
-              title={String(m(UI_LABELS[labelKey]))}
+              className={`w-full ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+              title={disabled ? 'Build City Hall to unlock Regions' : String(m(UI_LABELS[labelKey]))}
             >
               {icon}
             </Button>

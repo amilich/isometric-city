@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
 import Game from '@/components/Game';
+import CompetitiveGame from '@/components/competitive/CompetitiveGame';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { SavedCityMeta } from '@/types/game';
@@ -251,6 +252,7 @@ const SAVED_CITY_PREFIX = 'isocity-city-';
 
 export default function HomePage() {
   const [showGame, setShowGame] = useState(false);
+  const [showCompetitive, setShowCompetitive] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   const { isMobileDevice, isSmallScreen } = useMobile();
@@ -272,6 +274,7 @@ export default function HomePage() {
   // Handle exit from game - refresh saved cities list
   const handleExitGame = () => {
     setShowGame(false);
+    setShowCompetitive(false);
     setSavedCities(loadSavedCities());
   };
 
@@ -292,6 +295,14 @@ export default function HomePage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-white/60">Loading...</div>
+      </main>
+    );
+  }
+
+  if (showCompetitive) {
+    return (
+      <main className="h-screen w-screen overflow-hidden">
+        <CompetitiveGame onExit={handleExitGame} />
       </main>
     );
   }
@@ -327,6 +338,13 @@ export default function HomePage() {
             className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
           >
             Start
+          </Button>
+          
+          <Button 
+            onClick={() => setShowCompetitive(true)}
+            className="w-full py-6 text-xl font-light tracking-wide bg-gradient-to-r from-red-500/20 to-orange-500/20 hover:from-red-500/30 hover:to-orange-500/30 text-orange-300 hover:text-orange-200 border border-orange-500/30 rounded-none transition-all duration-300"
+          >
+            ⚔️ Start Competitive
           </Button>
           
           <Button 
@@ -391,6 +409,12 @@ export default function HomePage() {
               className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
               Start
+            </Button>
+            <Button 
+              onClick={() => setShowCompetitive(true)}
+              className="w-64 py-8 text-2xl font-light tracking-wide bg-gradient-to-r from-red-500/20 to-orange-500/20 hover:from-red-500/30 hover:to-orange-500/30 text-orange-300 hover:text-orange-200 border border-orange-500/30 rounded-none transition-all duration-300"
+            >
+              ⚔️ Start Competitive
             </Button>
             <Button 
               onClick={async () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
 import { Tile } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,9 @@ export function MobileTopBar({
     onExit?.();
   }, [onExit]);
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const t = useTranslations();
+
+  const monthNames = ['date_time.months.jan','date_time.months.feb','date_time.months.mar','date_time.months.apr','date_time.months.may','date_time.months.jun','date_time.months.jul','date_time.months.aug','date_time.months.sep','date_time.months.oct','date_time.months.nov','date_time.months.dec'];
 
   return (
     <>
@@ -123,20 +126,20 @@ export function MobileTopBar({
                 )}
               </div>
               <span className="text-muted-foreground text-[10px] font-mono">
-                {monthNames[month - 1]} {year}
+                {t(monthNames[month - 1])} {year}
               </span>
             </div>
             <div className="flex flex-col items-start">
               <span className="text-xs font-mono font-semibold text-foreground">
                 {stats.population >= 1000 ? `${(stats.population / 1000).toFixed(1)}k` : stats.population}
               </span>
-              <span className="text-[9px] text-muted-foreground">Pop</span>
+              <span className="text-[9px] text-muted-foreground">{t('statistics.pop')}</span>
             </div>
             <div className="flex flex-col items-start">
               <span className={`text-xs font-mono font-semibold ${stats.money < 0 ? 'text-red-500' : stats.money < 1000 ? 'text-amber-500' : 'text-green-500'}`}>
                 ${stats.money >= 1000000 ? `${(stats.money / 1000000).toFixed(1)}M` : stats.money >= 1000 ? `${(stats.money / 1000).toFixed(0)}k` : stats.money}
               </span>
-              <span className="text-[9px] text-muted-foreground">Funds</span>
+              <span className="text-[9px] text-muted-foreground">{t('app.funds')}</span>
             </div>
           </button>
 
@@ -233,7 +236,7 @@ export function MobileTopBar({
 
           <div className="flex items-center gap-1">
             <span className={`text-[10px] font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {stats.income - stats.expenses >= 0 ? '+' : ''}${(stats.income - stats.expenses).toLocaleString()}/mo
+              {stats.income - stats.expenses >= 0 ? '+' : ''}${(stats.income - stats.expenses).toLocaleString()}/{t('app.mo')}
             </span>
           </div>
         </div>
@@ -241,7 +244,7 @@ export function MobileTopBar({
         {/* Tax Slider Row */}
         {showTaxSlider && !selectedTile && (
           <div className="border-t border-sidebar-border/50 bg-secondary/30 px-3 py-0.5 flex items-center gap-2 text-[10px]">
-            <span className="text-muted-foreground whitespace-nowrap">Tax Rate</span>
+            <span className="text-muted-foreground whitespace-nowrap">{t('app.tax_rate')}</span>
             <Slider
               value={[taxRate]}
               onValueChange={(value) => setTaxRate(value[0])}
@@ -285,7 +288,7 @@ export function MobileTopBar({
               </div>
             )}
             {selectedTile.building.jobs > 0 && (
-              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} jobs</span>
+              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} {t('statistics.jobs')}</span>
             )}
             
             {/* Utilities */}
@@ -379,23 +382,23 @@ export function MobileTopBar({
             {/* Detailed finances */}
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Population</span>
+                <span className="text-sm text-muted-foreground">{t('statistics.population')}</span>
                 <span className="text-sm font-mono text-foreground">{stats.population.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Jobs</span>
+                <span className="text-sm text-muted-foreground">{t('statistics.jobs')}</span>
                 <span className="text-sm font-mono text-foreground">{stats.jobs.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Income</span>
+                <span className="text-sm text-muted-foreground">{t('statistics.monthly_income')}</span>
                 <span className="text-sm font-mono text-green-400">${stats.income.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Expenses</span>
+                <span className="text-sm text-muted-foreground">{t('statistics.monthly_expenses')}</span>
                 <span className="text-sm font-mono text-red-400">${stats.expenses.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Weekly Net</span>
+                <span className="text-sm text-muted-foreground">{t('statistics.weekly_net')}</span>
                 <span className={`text-sm font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   ${Math.floor((stats.income - stats.expenses) / 4).toLocaleString()}
                 </span>
@@ -407,7 +410,7 @@ export function MobileTopBar({
             {/* Tax slider */}
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Tax Rate</span>
+                <span className="text-sm text-muted-foreground">{t('app.tax_rate')}</span>
                 <span className="text-sm font-mono text-foreground">{taxRate}%</span>
               </div>
               <Slider
@@ -431,9 +434,9 @@ export function MobileTopBar({
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Exit to Main Menu</DialogTitle>
+            <DialogTitle>{t('exit_dialog.title')}</DialogTitle>
             <DialogDescription>
-              Would you like to save your city before exiting?
+              {t('exit_dialog.description')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -442,13 +445,13 @@ export function MobileTopBar({
               onClick={handleExitWithoutSaving}
               className="w-full sm:w-auto"
             >
-              Exit Without Saving
+              {t('exit_dialog.exit')}
             </Button>
             <Button
               onClick={handleSaveAndExit}
               className="w-full sm:w-auto"
             >
-              Save & Exit
+              {t('exit_dialog.save')}
             </Button>
           </DialogFooter>
         </DialogContent>

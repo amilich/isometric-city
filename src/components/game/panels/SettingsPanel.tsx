@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useGame, DayNightMode } from '@/context/GameContext';
@@ -55,6 +56,8 @@ export function SettingsPanel() {
   const [importError, setImportError] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
   const [savedCityInfo, setSavedCityInfo] = useState(getSavedCityInfo());
+
+  const t = useTranslations();
   
   // Refresh saved city info when panel opens
   React.useEffect(() => {
@@ -126,17 +129,17 @@ export function SettingsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[400px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>{t('settings.title')}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Game Settings</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('settings.game_settings')}</div>
             
             <div className="flex items-center justify-between py-2 gap-4">
               <div className="flex-1 min-w-0">
-                <Label>Disasters</Label>
-                <p className="text-muted-foreground text-xs">Enable random fires and disasters</p>
+                <Label>{t('settings.disasters.caption')}</Label>
+                <p className="text-muted-foreground text-xs">{t('settings.disasters.description')}</p>
               </div>
               <Switch
                 checked={disastersEnabled}
@@ -145,8 +148,8 @@ export function SettingsPanel() {
             </div>
             
             <div className="py-2">
-              <Label>Sprite Pack</Label>
-              <p className="text-muted-foreground text-xs mb-2">Choose building artwork style</p>
+              <Label>{t('settings.sprite_pack.title')}</Label>
+              <p className="text-muted-foreground text-xs mb-2">{t('settings.sprite_pack.description')}</p>
               <div className="grid grid-cols-1 gap-2">
                 {availableSpritePacks.map((pack) => (
                   <button
@@ -182,19 +185,19 @@ export function SettingsPanel() {
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">City Information</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('settings.city.information')}</div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>City Name</span>
+                <span>{t('settings.city.name')}</span>
                 <span className="text-foreground">{cityName}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Grid Size</span>
+                <span>{t('settings.city.grid_size')}</span>
                 <span className="text-foreground">{gridSize} x {gridSize}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Auto-Save</span>
-                <span className="text-green-400">Enabled</span>
+                <span>{t('settings.city.auto_save')}</span>
+                <span className="text-green-400">{t('app.enabled')}</span>
               </div>
             </div>
           </div>
@@ -203,8 +206,8 @@ export function SettingsPanel() {
           
           {/* Saved Cities Section */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Saved Cities</div>
-            <p className="text-muted-foreground text-xs mb-3">Save multiple cities and switch between them</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('settings.saved_cities.title')}</div>
+            <p className="text-muted-foreground text-xs mb-3">{t('settings.saved_cities.description')}</p>
             
             {/* Save Current City Button */}
             <Button
@@ -264,13 +267,13 @@ export function SettingsPanel() {
                               setRenameValue('');
                             }}
                           >
-                            Save
+                            {t('app.save')}
                           </Button>
                         </div>
                       </div>
                     ) : cityToDelete?.id === city.id ? (
                       <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground text-center">Delete this city?</p>
+                        <p className="text-xs text-muted-foreground text-center">{t('settings.saved_cities.delete')}</p>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -278,7 +281,7 @@ export function SettingsPanel() {
                             className="flex-1 h-7 text-xs"
                             onClick={() => setCityToDelete(null)}
                           >
-                            Cancel
+                            {t('app.cancel')}
                           </Button>
                           <Button
                             variant="destructive"
@@ -289,7 +292,7 @@ export function SettingsPanel() {
                               setCityToDelete(null);
                             }}
                           >
-                            Delete
+                            {t('app.delete')}
                           </Button>
                         </div>
                       </div>
@@ -299,7 +302,7 @@ export function SettingsPanel() {
                           <div className="font-medium text-sm truncate flex-1">
                             {city.cityName}
                             {city.id === currentCityId && (
-                              <span className="ml-2 text-[10px] text-primary">(current)</span>
+                              <span className="ml-2 text-[10px] text-primary">({t('app.current')})</span>
                             )}
                           </div>
                         </div>
@@ -309,7 +312,7 @@ export function SettingsPanel() {
                           <span>{city.gridSize}×{city.gridSize}</span>
                         </div>
                         <div className="text-[10px] text-muted-foreground mb-2">
-                          Saved {formatDate(city.savedAt)}
+                          {t('app.saved')} {formatDate(city.savedAt)}
                         </div>
                         <div className="flex gap-2">
                           {city.id !== currentCityId && (
@@ -322,7 +325,7 @@ export function SettingsPanel() {
                                 setActivePanel('none');
                               }}
                             >
-                              Load
+                              {t('app.load')}
                             </Button>
                           )}
                           <Button
@@ -334,7 +337,7 @@ export function SettingsPanel() {
                               setRenameValue(city.cityName);
                             }}
                           >
-                            Rename
+                            {t('app.rename')}
                           </Button>
                           <Button
                             variant="outline"
@@ -342,7 +345,7 @@ export function SettingsPanel() {
                             className="flex-1 h-7 text-xs hover:bg-destructive hover:text-destructive-foreground"
                             onClick={() => setCityToDelete(city)}
                           >
-                            Delete
+                            {t('app.delete')}
                           </Button>
                         </div>
                       </>
@@ -352,7 +355,7 @@ export function SettingsPanel() {
               </div>
             ) : (
               <p className="text-muted-foreground text-xs text-center py-3 border border-dashed rounded-md">
-                No saved cities yet.
+                {t('settings.saved_cities.no_cities')}
               </p>
             )}
           </div>
@@ -369,10 +372,10 @@ export function SettingsPanel() {
                   setActivePanel('none');
                 }}
               >
-                Restore {savedCityInfo.cityName}
+                {t('app.restore')} {savedCityInfo.cityName}
               </Button>
               <p className="text-muted-foreground text-xs text-center">
-                Your city was saved before viewing a shared city
+                {t('settings.saved_cities.saved_before')}
               </p>
               <Separator />
             </div>
@@ -384,15 +387,15 @@ export function SettingsPanel() {
               className="w-full"
               onClick={() => setShowNewGameConfirm(true)}
             >
-              Start New Game
+              {t('app.start_new')}
             </Button>
           ) : (
             <div className="space-y-3">
-              <p className="text-muted-foreground text-sm text-center">Are you sure? This will reset all progress.</p>
+              <p className="text-muted-foreground text-sm text-center">{t('app.start_new_confirmation')}</p>
               <Input
                 value={newCityName}
                 onChange={(e) => setNewCityName(e.target.value)}
-                placeholder="New city name..."
+                placeholder={t('app.new_city_name')}
               />
               <div className="flex gap-2">
                 <Button
@@ -419,8 +422,8 @@ export function SettingsPanel() {
           <Separator />
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Export Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Copy your game state to share or backup</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('settings.export_import.export.title')}</div>
+            <p className="text-muted-foreground text-xs mb-2">{t('settings.export_import.export.description')}</p>
             <Button
               variant="outline"
               className="w-full"
@@ -431,8 +434,8 @@ export function SettingsPanel() {
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Paste a game state to load it</p>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('settings.export_import.import.title')}</div>
+            <p className="text-muted-foreground text-xs mb-2">{t('settings.export_import.import.description')}</p>
             <textarea
               className="w-full h-20 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
               placeholder="Paste game state here..."
@@ -444,10 +447,10 @@ export function SettingsPanel() {
               }}
             />
             {importError && (
-              <p className="text-red-400 text-xs mt-1">Invalid game state. Please check and try again.</p>
+              <p className="text-red-400 text-xs mt-1">{t('settings.export_import.import.invalid_state')}</p>
             )}
             {importSuccess && (
-              <p className="text-green-400 text-xs mt-1">Game loaded successfully!</p>
+              <p className="text-green-400 text-xs mt-1">{t('settings.export_import.import.loaded')}</p>
             )}
             <Button
               variant="outline"
@@ -455,18 +458,18 @@ export function SettingsPanel() {
               onClick={handleImport}
               disabled={!importValue.trim()}
             >
-              Load Game State
+              {t('settings.export_import.import.load')}
             </Button>
           </div>
           
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Developer Tools</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('settings.dev_tools.title')}</div>
             <Button
               variant="outline"
               className="w-full"
               onClick={() => setShowSpriteTest(true)}
             >
-              Open Sprite Test View
+              {t('settings.dev_tools.open_sprite')}
             </Button>
             <Button
               variant="outline"
@@ -477,7 +480,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State
+              {t('settings.dev_tools.load_state', {num: 1})}
             </Button>
             <Button
               variant="outline"
@@ -488,7 +491,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 2
+              {t('settings.dev_tools.load_state', {num: 2})}
             </Button>
             <Button
               variant="outline"
@@ -499,7 +502,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 3
+              {t('settings.dev_tools.load_state', {num: 3})}
             </Button>
             <Button
               variant="outline"
@@ -510,7 +513,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 4
+              {t('settings.dev_tools.load_state', {num: 4})}
             </Button>
             <Button
               variant="outline"
@@ -521,7 +524,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 5
+              {t('settings.dev_tools.load_state', {num: 5})}
             </Button>
             <Button
               variant="outline"
@@ -532,7 +535,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 6
+              {t('settings.dev_tools.load_state', {num: 6})}
             </Button>
             <Button
               variant="outline"
@@ -543,7 +546,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 7
+              {t('settings.dev_tools.load_state', {num: 7})}
             </Button>
             <Button
               variant="outline"
@@ -554,7 +557,7 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 8
+              {t('settings.dev_tools.load_state', {num: 8})}
             </Button>
             <Button
               variant="outline"
@@ -565,11 +568,11 @@ export function SettingsPanel() {
                 setActivePanel('none');
               }}
             >
-              Load Example State 9
+              {t('settings.dev_tools.load_state', {num: 9})}
             </Button>
             <div className="mt-4 pt-4 border-t border-border">
-              <Label>Day/Night Mode</Label>
-              <p className="text-muted-foreground text-xs mb-2">Override the time-of-day appearance without affecting time progression</p>
+              <Label>{t('settings.day_night.title')}</Label>
+              <p className="text-muted-foreground text-xs mb-2">{t('settings.day_night.description')}</p>
               <div className="flex rounded-md border border-border overflow-hidden">
                 {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
                   <button
@@ -581,9 +584,9 @@ export function SettingsPanel() {
                         : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {mode === 'auto' && 'Auto'}
-                    {mode === 'day' && 'Day'}
-                    {mode === 'night' && 'Night'}
+                    {mode === 'auto' && t('settings.day_night.auto')}
+                    {mode === 'day' && t('settings.day_night.day')}
+                    {mode === 'night' && t('settings.day_night.night')}
                   </button>
                 ))}
               </div>

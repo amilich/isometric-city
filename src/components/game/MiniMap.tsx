@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
 import { Card } from '@/components/ui/card';
 import { TILE_WIDTH, TILE_HEIGHT } from '@/components/game/types';
@@ -42,6 +43,8 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
   // Pre-compute color map for faster lookups
   const serviceBuildings = useMemo(() => SERVICE_BUILDINGS, []);
   const parkBuildings = useMemo(() => PARK_BUILDINGS, []);
+
+  const t = useTranslations();
   
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -188,7 +191,7 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
   return (
     <Card className="absolute bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        Minimap
+        {t('app.minimap')}
       </div>
       <canvas
         ref={canvasRef}

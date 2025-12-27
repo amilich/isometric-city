@@ -161,7 +161,7 @@ export const TopBar = React.memo(function TopBar() {
   const { state, setSpeed, setTaxRate, isSaving, visualHour } = useGame();
   const { stats, year, month, day, speed, taxRate, cityName } = state;
   
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = ['date_time.months.jan','date_time.months.feb','date_time.months.mar','date_time.months.apr','date_time.months.may','date_time.months.jun','date_time.months.jul','date_time.months.aug','date_time.months.sep','date_time.months.oct','date_time.months.nov','date_time.months.dec'];
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
 
   const t = useTranslations();
@@ -179,7 +179,7 @@ export const TopBar = React.memo(function TopBar() {
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono tabular-nums">
             <Tooltip>
               <TooltipTrigger asChild>
-                <span>{monthNames[month - 1]} {year}</span>
+                <span>{t(monthNames[month - 1])} {year}</span>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{formattedDate}</p>

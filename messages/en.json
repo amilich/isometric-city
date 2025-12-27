@@ -292,7 +292,21 @@
     "pause": "Pause",
     "normal": "Normal",
     "fast": "Fast",
-    "very_fast": "Very Fast"
+    "very_fast": "Very Fast",
+    "enabled": "Enabled",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "current": "Current",
+    "saved": "Saved",
+    "load": "Load",
+    "rename": "Rename",
+    "restore": "Restore",
+    "start_new": "Start New Game",
+    "start_new_confirmation": "Are you sure? This will reset all progress.",
+    "new_city_name": "New city name...",
+    "tax_rate": "Tax Rate",
+    "minimap": "Minimap"
   },
   "budget_dialog": {
     "title": "Budget",
@@ -320,7 +334,11 @@
     "happiness": "Happiness",
     "no_data": "Not enough data yet. Keep playing to see historical trends.",
     "safety": "Safety",
-    "environment": "Environment"
+    "environment": "Environment",
+    "pop": "Pop",
+    "monthly_income": "Monthly Income",
+    "monthly_expenses": "Monthly Expenses",
+    "weekly_net": "Weekly Net"
   },
   "view_overlay": {
     "title": "View Overlay",
@@ -406,6 +424,72 @@
       "abandoned_residential": "{abandonedResidential} residential",
       "abandoned_commercial": "{abandonedCommercial} commercial",
       "abandoned_industrial": "{abandonedIndustrial} industrial"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "game_settings": "Game Settings",
+    "disasters": {
+      "caption": "Disasters",
+      "description": "Enable random fires and disasters"
+    },
+    "sprite_pack": {
+      "title": "Sprite Pack",
+      "description": "Choose building artwork style"
+    },
+    "city": {
+      "information": "City Information",
+      "name":"City Name",
+      "grid_size": "Grid Size",
+      "auto_save": "Auto-Save"
+    },
+    "saved_cities": {
+      "title": "Saved Cities",
+      "description": "Save multiple cities and switch between them",
+      "delete": "Delete this city?",
+      "no_cities": "No saved cities yet.",
+      "saved_before": "Your city was saved before viewing a shared city"
+    },
+    "export_import": {
+      "export": {
+        "title": "Export Game",
+        "description": "Copy your game state to share or backup"
+      },
+      "import": {
+        "title": "Import Game",
+        "description": "Paste a game state to load it",
+        "invalid_state": "Invalid game state. Please check and try again.",
+        "loaded": "Game loaded successfully!",
+        "load": "Load Game State"
+      }
+    },
+    "dev_tools": {
+      "title": "Developer Tools",
+      "open_sprite": "Open Sprite Test View",
+      "load_state": "Load Example State {num}"
+    },
+    "day_night": {
+      "title": "Day/Night Mode",
+      "description": "Override the time-of-day appearance without affecting time progression",
+      "auto": "Auto",
+      "day": "Day",
+      "night": "Night"
+    }
+  },
+  "date_time": {
+    "months": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
     }
   }
 }

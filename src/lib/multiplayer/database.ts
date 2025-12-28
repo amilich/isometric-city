@@ -1,7 +1,7 @@
 // Supabase database functions for multiplayer game state persistence
-// 
+//
 // Required Supabase table schema (run this in Supabase SQL editor):
-// 
+//
 // CREATE TABLE game_rooms (
 //   room_code TEXT PRIMARY KEY,
 //   city_name TEXT NOT NULL,
@@ -10,14 +10,14 @@
 //   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 //   player_count INTEGER DEFAULT 1
 // );
-// 
+//
 // -- Enable RLS
 // ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
-// 
+//
 // -- Allow anyone to read/write (for anonymous multiplayer)
 // CREATE POLICY "Allow public access" ON game_rooms
 //   FOR ALL USING (true) WITH CHECK (true);
-// 
+//
 // -- Auto-update updated_at
 // CREATE OR REPLACE FUNCTION update_updated_at()
 // RETURNS TRIGGER AS $$
@@ -26,15 +26,16 @@
 //   RETURN NEW;
 // END;
 // $$ LANGUAGE plpgsql;
-// 
+//
 // CREATE TRIGGER game_rooms_updated_at
 //   BEFORE UPDATE ON game_rooms
 //   FOR EACH ROW
 //   EXECUTE FUNCTION update_updated_at();
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
+import { decompressFromEncodedURIComponent } from 'lz-string';
 import { GameState } from '@/types/game';
+import { serializeAndCompressForDBAsync } from '@/lib/saveWorkerManager';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
@@ -61,6 +62,7 @@ export interface GameRoomRow {
 
 /**
  * Create a new game room in the database
+ * PERF: Uses Web Worker for serialization + compression - no main thread blocking!
  */
 export async function createGameRoom(
   roomCode: string,
@@ -73,7 +75,8 @@ export async function createGameRoom(
   }
 
   try {
-    const compressed = compressToEncodedURIComponent(JSON.stringify(gameState));
+    // PERF: Both JSON.stringify and lz-string compression happen in the worker
+    const compressed = await serializeAndCompressForDBAsync(gameState);
 
     const { error } = await supabase
       .from('game_rooms')
@@ -135,6 +138,7 @@ export async function loadGameRoom(
 
 /**
  * Update game state in a room
+ * PERF: Uses Web Worker for serialization + compression - no main thread blocking!
  */
 export async function updateGameRoom(
   roomCode: string,
@@ -145,7 +149,8 @@ export async function updateGameRoom(
   }
 
   try {
-    const compressed = compressToEncodedURIComponent(JSON.stringify(gameState));
+    // PERF: Both JSON.stringify and lz-string compression happen in the worker
+    const compressed = await serializeAndCompressForDBAsync(gameState);
 
     const { error } = await supabase
       .from('game_rooms')
@@ -205,4 +210,3 @@ export async function updatePlayerCount(
     console.error('[Database] Error updating player count:', e);
   }
 }
-

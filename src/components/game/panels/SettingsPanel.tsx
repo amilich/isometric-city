@@ -351,7 +351,10 @@ export function SettingsPanel() {
             
             {/* Saved Cities List */}
             {savedCities.length > 0 ? (
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              <div 
+                className="space-y-2 max-h-[200px] overflow-y-auto overscroll-y-contain"
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+              >
                 {savedCities.map((city) => (
                   <div
                     key={city.id}

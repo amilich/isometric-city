@@ -279,14 +279,14 @@ function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad
     <div className="relative group">
       <button
         onClick={onLoad}
-        className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200"
+        className="w-full text-left p-3 pr-8 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200"
       >
         <div className="flex items-center gap-2">
           <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm flex-1">
             {city.cityName}
           </h3>
           {city.roomCode && (
-            <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded">
+            <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded shrink-0">
               Co-op
             </span>
           )}
@@ -303,7 +303,7 @@ function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute bottom-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
+          className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
           title="Delete city"
         >
           <X className="w-3.5 h-3.5" />
@@ -540,7 +540,10 @@ export default function HomePage() {
               <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
                 Saved Cities
               </h2>
-              <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+              <div 
+                className="flex flex-col gap-2 max-h-48 overflow-y-auto overscroll-y-contain"
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+              >
                 {savedCities.slice(0, 5).map((city) => (
                   <SavedCityCard
                     key={city.id}
@@ -631,7 +634,10 @@ export default function HomePage() {
                 <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
                   Saved Cities
                 </h2>
-                <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                <div 
+                  className="flex flex-col gap-2 max-h-64 overflow-y-auto overscroll-y-contain"
+                  style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+                >
                   {savedCities.slice(0, 5).map((city) => (
                     <SavedCityCard
                       key={city.id}

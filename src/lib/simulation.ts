@@ -1341,6 +1341,56 @@ function calculateNetworkUtilityCoverage(
     }
   }
   
+  // Helper function to find the anchor tile (top-left) of a multi-tile building
+  // Returns { anchorX, anchorY, buildingType, size } or null if not part of a multi-tile building
+  const findBuildingAnchor = (x: number, y: number): { anchorX: number; anchorY: number; buildingType: BuildingType; size: { width: number; height: number } } | null => {
+    const tile = grid[y]?.[x];
+    if (!tile || !tile.building) return null;
+    
+    const buildingType = tile.building.type;
+    
+    // If this is already the anchor (not 'empty'), check if it's multi-tile
+    if (buildingType !== 'empty') {
+      const size = getBuildingSize(buildingType);
+      if (size.width > 1 || size.height > 1) {
+        return { anchorX: x, anchorY: y, buildingType, size };
+      }
+      // Single-tile building
+      return null;
+    }
+    
+    // This is an 'empty' tile - search backwards to find the anchor
+    // Multi-tile buildings can be up to 4x4, so search up to 3 tiles back
+    for (let dy = 0; dy < 4; dy++) {
+      for (let dx = 0; dx < 4; dx++) {
+        const anchorX = x - dx;
+        const anchorY = y - dy;
+        
+        if (anchorX < 0 || anchorY < 0) continue;
+        
+        const anchorTile = grid[anchorY]?.[anchorX];
+        if (!anchorTile || !anchorTile.building) continue;
+        
+        const anchorType = anchorTile.building.type;
+        if (anchorType === 'empty') continue;
+        
+        const size = getBuildingSize(anchorType);
+        if (size.width > 1 || size.height > 1) {
+          // Check if (x, y) is within this building's footprint
+          if (x >= anchorX && x < anchorX + size.width &&
+              y >= anchorY && y < anchorY + size.height) {
+            return { anchorX, anchorY, buildingType: anchorType, size };
+          }
+        }
+      }
+    }
+    
+    return null;
+  };
+  
+  // Track which buildings we've already processed (by anchor coordinates)
+  const processedBuildings = new Set<string>();
+  
   // Second pass: Power all buildings adjacent to powered roads
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
@@ -1365,20 +1415,100 @@ function calculateNetworkUtilityCoverage(
                          buildingType !== 'empty';
       
       if (isBuilding) {
-        // Check 4 neighbors for powered roads
-        for (let i = 0; i < 4; i++) {
-          const nx = x + DX[i];
-          const ny = y + DY[i];
+        // Check if this is part of a multi-tile building
+        const buildingInfo = findBuildingAnchor(x, y);
+        
+        if (buildingInfo) {
+          // Multi-tile building - check if we've already processed it
+          const anchorKey = `${buildingInfo.anchorX},${buildingInfo.anchorY}`;
+          if (processedBuildings.has(anchorKey)) {
+            continue; // Already processed this building
+          }
+          processedBuildings.add(anchorKey);
           
-          // Bounds check
-          if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) {
-            continue;
+          // Check all edge tiles of the building for road adjacency
+          let hasRoadAccess = false;
+          const { anchorX, anchorY, size } = buildingInfo;
+          
+          // Check all tiles in the building's footprint
+          for (let dy = 0; dy < size.height && !hasRoadAccess; dy++) {
+            for (let dx = 0; dx < size.width && !hasRoadAccess; dx++) {
+              const tileX = anchorX + dx;
+              const tileY = anchorY + dy;
+              
+              // Check 4 neighbors of this tile
+              for (let i = 0; i < 4; i++) {
+                const nx = tileX + DX[i];
+                const ny = tileY + DY[i];
+                
+                // Bounds check
+                if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) {
+                  continue;
+                }
+                
+                // Only power if neighbor is powered AND is actually a road/bridge/subway/source
+                // This prevents power from cascading through chains of buildings
+                if (powered[ny][nx]) {
+                  const neighborTile = grid[ny]?.[nx];
+                  if (neighborTile && neighborTile.building) {
+                    const neighborType = neighborTile.building.type;
+                    const isNeighborRoad = neighborType === 'road' || 
+                                           neighborType === 'bridge' ||
+                                           neighborTile.hasSubway ||
+                                           neighborType === 'power_plant' ||
+                                           neighborType === 'water_tower';
+                    
+                    if (isNeighborRoad) {
+                      hasRoadAccess = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
           }
           
-          // If neighbor is a powered road, this building gets power
-          if (powered[ny][nx]) {
-            powered[y][x] = true;
-            break; // No need to check other neighbors
+          // If any edge tile has road access, power the entire building footprint
+          if (hasRoadAccess) {
+            for (let dy = 0; dy < size.height; dy++) {
+              for (let dx = 0; dx < size.width; dx++) {
+                const tileX = anchorX + dx;
+                const tileY = anchorY + dy;
+                if (tileX >= 0 && tileX < gridSize && tileY >= 0 && tileY < gridSize) {
+                  powered[tileY][tileX] = true;
+                }
+              }
+            }
+          }
+        } else {
+          // Single-tile building - use original logic
+          for (let i = 0; i < 4; i++) {
+            const nx = x + DX[i];
+            const ny = y + DY[i];
+            
+            // Bounds check
+            if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) {
+              continue;
+            }
+            
+            // Only power this building if neighbor is powered AND is actually a road/bridge/subway/source
+            // This prevents power from cascading through chains of buildings
+            if (powered[ny][nx]) {
+              const neighborTile = grid[ny]?.[nx];
+              if (neighborTile && neighborTile.building) {
+                const neighborType = neighborTile.building.type;
+                const isNeighborRoad = neighborType === 'road' || 
+                                       neighborType === 'bridge' ||
+                                       neighborTile.hasSubway ||
+                                       neighborType === 'power_plant' ||
+                                       neighborType === 'water_tower';
+                
+                if (isNeighborRoad) {
+                  powered[y][x] = true;
+                  break; // No need to check other neighbors
+                }
+              }
+            }
           }
         }
       }

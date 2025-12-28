@@ -2229,7 +2229,10 @@ export function simulateTick(state: GameState): GameState {
           const nx = x + dx;
           const ny = y + dy;
           if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
-            const neighbor = newGrid[ny][nx];
+            // Use state.grid (original state) to check for fires, not newGrid
+            // This ensures consistent start-of-tick fire state checking and prevents
+            // asymmetric fire spread where fires cascade south/east in a single tick
+            const neighbor = state.grid[ny][nx];
             if (neighbor.building.onFire) {
               adjacentFireCount++;
             }

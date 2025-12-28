@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 // Language configuration with display names
 const LANGUAGES = [
@@ -76,6 +75,32 @@ interface LanguageSelectorProps {
   useDrawer?: boolean;
 }
 
+function LanguageButtons({
+  locale,
+  onSelect,
+  columnsClassName = 'grid-cols-3',
+}: {
+  locale: string;
+  onSelect: (code: string) => void;
+  columnsClassName?: string;
+}) {
+  return (
+    <div className={`grid ${columnsClassName} gap-2`}>
+      {LANGUAGES.map((language) => (
+        <Button
+          key={language.code}
+          variant={locale === language.code ? 'default' : 'ghost'}
+          size="sm"
+          className="h-11 w-full text-xs justify-center"
+          onClick={() => onSelect(language.code)}
+        >
+          {language.name}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 export function LanguageSelector({ 
   iconOnly = false, 
   className = '',
@@ -94,14 +119,26 @@ export function LanguageSelector({
     setIsOpen(false);
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   // Drawer mode for mobile
   if (useDrawer) {
     return (
       <>
         <button
+          type="button"
           onClick={() => setIsOpen(true)}
-          className={`h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
+          className={`h-6 w-8 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
           title="Change Language"
+          aria-label="Change language"
+          aria-expanded={isOpen}
         >
           <GlobeIcon size={iconSize} />
         </button>
@@ -123,19 +160,7 @@ export function LanguageSelector({
                 <div className="text-sm font-medium text-foreground mb-3">
                   Select Language
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {LANGUAGES.map((language) => (
-                    <Button
-                      key={language.code}
-                      variant={locale === language.code ? 'default' : 'ghost'}
-                      size="sm"
-                      className="h-11 w-full text-xs justify-center"
-                      onClick={() => handleSelectLanguage(language.code)}
-                    >
-                      {language.name}
-                    </Button>
-                  ))}
-                </div>
+                <LanguageButtons locale={locale} onSelect={handleSelectLanguage} />
               </div>
             </div>
           </div>,
@@ -178,6 +203,27 @@ export function LanguageSelector({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+export function LanguageGrid({
+  className = '',
+  columnsClassName = 'grid-cols-2 sm:grid-cols-3',
+}: {
+  className?: string;
+  columnsClassName?: string;
+}) {
+  const locale = useLocale();
+  const setLocale = useSetLocale();
+
+  return (
+    <div className={className}>
+      <LanguageButtons
+        locale={locale}
+        onSelect={(code) => setLocale(code)}
+        columnsClassName={columnsClassName}
+      />
+    </div>
   );
 }
 

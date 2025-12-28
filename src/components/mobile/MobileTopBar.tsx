@@ -228,7 +228,7 @@ export function MobileTopBar({
               {onShare && (
                 <button
                   onClick={onShare}
-                  className="h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  className="h-6 w-8 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
                   title="Invite Players"
                 >
                   <Users className="w-3 h-3" />
@@ -238,7 +238,7 @@ export function MobileTopBar({
               {onExit && (
                 <button
                   onClick={() => setShowExitDialog(true)}
-                  className="h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  className="h-6 w-8 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
                   title="Exit to Main Menu"
                 >
                   <svg 

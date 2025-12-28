@@ -27,7 +27,7 @@ export type CardinalDirection = 'north' | 'east' | 'south' | 'west';
 
 /** Direction metadata for calculating movement vectors */
 export interface DirectionMeta {
-  step: GridPosition;
+  step: { x: number; y: number };
   vec: { dx: number; dy: number };
   angle: number;
   normal: { nx: number; ny: number };

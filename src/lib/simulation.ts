@@ -2229,7 +2229,9 @@ export function simulateTick(state: GameState): GameState {
           const nx = x + dx;
           const ny = y + dy;
           if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
-            const neighbor = newGrid[ny][nx];
+            // IMPORTANT: read from the start-of-tick grid state to avoid
+            // order-dependent cascading within the same tick.
+            const neighbor = state.grid[ny][nx];
             if (neighbor.building.onFire) {
               adjacentFireCount++;
             }

@@ -262,6 +262,7 @@ export function initializeRiseState(gridSize = 48): RiseGameState {
     selectedUnitIds: new Set<string>(),
     localPlayerId: 'player',
     aiEnabled: true,
+    gameStatus: 'playing',
   };
 }
 
@@ -281,6 +282,7 @@ export function payCost(resources: ResourcePool, cost: Partial<ResourcePool>): R
 }
 
 export function spawnUnit(state: RiseGameState, ownerId: string, type: RiseUnitType, at: { x: number; y: number }): RiseGameState {
+  if (state.gameStatus !== 'playing') return state;
   const player = state.players.find(p => p.id === ownerId);
   if (!player) return state;
 
@@ -302,6 +304,7 @@ export function spawnUnit(state: RiseGameState, ownerId: string, type: RiseUnitT
 }
 
 export function placeBuilding(state: RiseGameState, ownerId: string, type: RiseBuildingType, tileX: number, tileY: number): RiseGameState {
+  if (state.gameStatus !== 'playing') return state;
   const player = state.players.find(p => p.id === ownerId);
   if (!player) return state;
 
@@ -343,6 +346,7 @@ export function placeBuilding(state: RiseGameState, ownerId: string, type: RiseB
 }
 
 export function tickState(state: RiseGameState, deltaSeconds: number): RiseGameState {
+  if (state.gameStatus !== 'playing') return state;
   if (state.speed === 0) return state;
   const speedMult = SPEED_MULTIPLIERS[state.speed];
   const scaledDelta = deltaSeconds * speedMult;
@@ -511,6 +515,16 @@ export function tickState(state: RiseGameState, deltaSeconds: number): RiseGameS
     };
   }
 
+  // Victory/defeat detection
+  const playerCities = updatedBuildings.filter(b => b.ownerId === state.localPlayerId && b.type === 'city_center');
+  const aiCities = updatedBuildings.filter(b => b.ownerId === 'ai' && b.type === 'city_center');
+  let gameStatus: 'playing' | 'won' | 'lost' = state.gameStatus;
+  if (playerCities.length === 0 && aiCities.length > 0) {
+    gameStatus = 'lost';
+  } else if (aiCities.length === 0 && playerCities.length > 0) {
+    gameStatus = 'won';
+  }
+
   return {
     ...state,
     units: updatedUnits,
@@ -518,6 +532,7 @@ export function tickState(state: RiseGameState, deltaSeconds: number): RiseGameS
     buildings: updatedBuildings,
     tick: state.tick + 1,
     elapsedSeconds: state.elapsedSeconds + scaledDelta,
+    gameStatus,
   };
 }
 
@@ -555,6 +570,7 @@ export function setSpeed(state: RiseGameState, speed: 0 | 1 | 2 | 3): RiseGameSt
 }
 
 export function ageUp(state: RiseGameState, playerId: string, nextAge: AgeId, cost: Partial<ResourcePool>): RiseGameState {
+  if (state.gameStatus !== 'playing') return state;
   const player = state.players.find(p => p.id === playerId);
   if (!player) return state;
   if (!canAfford(player.resources, cost)) return state;

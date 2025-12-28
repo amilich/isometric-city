@@ -77,13 +77,15 @@ export function RiseGameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const spawnCitizen = useCallback(() => {
+    if (state.gameStatus !== 'playing') return;
     const city = state.buildings.find(b => b.ownerId === state.localPlayerId && b.type === 'city_center');
     if (!city) return;
     setState(prev => spawnUnitUtil(prev, prev.localPlayerId, 'citizen', { x: city.tile.x + 1, y: city.tile.y + 1 }));
-  }, [state.buildings, state.localPlayerId]);
+  }, [state.buildings, state.localPlayerId, state.gameStatus]);
 
   const trainUnit = useCallback(
     (type: 'infantry' | 'ranged' | 'vehicle' | 'siege' | 'air') => {
+      if (state.gameStatus !== 'playing') return;
       setState(prev => {
         const ownerId = prev.localPlayerId;
         const player = prev.players.find(p => p.id === ownerId);
@@ -106,25 +108,28 @@ export function RiseGameProvider({ children }: { children: React.ReactNode }) {
         return spawnUnitUtil(prev, ownerId, type, { x: spawnAt.tile.x + 1, y: spawnAt.tile.y + 1 });
       });
     },
-    []
+    [state.gameStatus]
   );
 
   const issueMove = useCallback((unitIds: string[], target: { x: number; y: number }) => {
+    if (state.gameStatus !== 'playing') return;
     setState(prev => issueOrder(prev, unitIds, { kind: 'move', target }));
-  }, []);
+  }, [state.gameStatus]);
 
   const issueGather = useCallback(
     (unitIds: string[], target: { x: number; y: number }, resource: ResourceNodeType) => {
+      if (state.gameStatus !== 'playing') return;
       setState(prev => issueOrder(prev, unitIds, { kind: 'gather', target, resource }));
     },
-    []
+    [state.gameStatus]
   );
 
   const issueAttack = useCallback(
     (unitIds: string[], target: { x: number; y: number }, unitId?: string, buildingId?: string) => {
+      if (state.gameStatus !== 'playing') return;
       setState(prev => issueOrder(prev, unitIds, { kind: 'attack', target, targetUnitId: unitId, targetBuildingId: buildingId }));
     },
-    []
+    [state.gameStatus]
   );
 
   const selectUnits = useCallback((unitIds: string[]) => {
@@ -132,10 +137,12 @@ export function RiseGameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handlePlaceBuilding = useCallback((type: string, x: number, y: number) => {
+    if (state.gameStatus !== 'playing') return;
     setState(prev => placeBuilding(prev, prev.localPlayerId, type as any, x, y));
-  }, []);
+  }, [state.gameStatus]);
 
   const handleAgeUp = useCallback(() => {
+    if (state.gameStatus !== 'playing') return;
     setState(prev => {
       const player = prev.players.find(p => p.id === prev.localPlayerId);
       if (!player) return prev;
@@ -146,7 +153,7 @@ export function RiseGameProvider({ children }: { children: React.ReactNode }) {
       if (elapsedSinceAge < (next.minDurationSeconds ?? 0)) return prev;
       return ageUp(prev, player.id, next.id, next.nextCost);
     });
-  }, []);
+  }, [state.gameStatus]);
 
   const setAIDifficulty = useCallback((difficulty: 'easy' | 'medium' | 'hard') => {
     setState(prev => {
@@ -170,6 +177,7 @@ export function RiseGameProvider({ children }: { children: React.ReactNode }) {
     const interval = setInterval(() => {
       setState(prev => {
         if (!prev.aiEnabled) return prev;
+        if (prev.gameStatus !== 'playing') return prev;
         const ai = prev.players.find(p => p.id === 'ai');
         if (!ai) return prev;
 

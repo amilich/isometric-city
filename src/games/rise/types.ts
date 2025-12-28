@@ -139,4 +139,5 @@ export interface RiseGameState {
   selectedUnitIds: Set<string>;
   localPlayerId: string;
   aiEnabled: boolean;
+  gameStatus: 'playing' | 'won' | 'lost';
 }

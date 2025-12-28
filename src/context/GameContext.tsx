@@ -5,6 +5,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState, use
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 import { serializeAndCompressAsync } from '@/lib/saveWorkerManager';
 import { simulateTick } from '@/lib/simulation';
+import { useGT } from 'gt-next';
 import {
   Budget,
   BuildingType,
@@ -644,26 +645,28 @@ function deleteCityState(cityId: string): void {
 }
 
 export function GameProvider({ children, startFresh = false }: { children: React.ReactNode; startFresh?: boolean }) {
+  const gt = useGT();
+
   // Start with a default state, we'll load from localStorage after mount (unless startFresh is true)
   const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
-  
+
   const [hasExistingGame, setHasExistingGame] = useState(false);
   const [isStateReady, setIsStateReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextSaveRef = useRef(false);
   const hasLoadedRef = useRef(false);
-  
+
   // Callback for multiplayer action broadcast
   const placeCallbackRef = useRef<((args: { x: number; y: number; tool: Tool }) => void) | null>(null);
   const bridgeCallbackRef = useRef<((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null>(null);
-  
+
   // Sprite pack state
   const [currentSpritePack, setCurrentSpritePack] = useState<SpritePack>(() => getSpritePack(DEFAULT_SPRITE_PACK_ID));
-  
+
   // Day/night mode state
   const [dayNightMode, setDayNightModeState] = useState<DayNightMode>('auto');
-  
+
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   
@@ -710,19 +713,20 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // PERF: Just mark that state has changed - defer expensive deep copy to actual save time
   const stateChangedRef = useRef(false);
   const latestStateRef = useRef(state);
-  latestStateRef.current = state;
-  
+
   useEffect(() => {
+    latestStateRef.current = state;
+
     if (!hasLoadedRef.current) {
       return;
     }
-    
+
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false;
       lastSaveTimeRef.current = Date.now();
       return;
     }
-    
+
     // PERF: Just mark that state changed instead of expensive deep copy every time
     stateChangedRef.current = true;
   }, [state]);
@@ -1007,8 +1011,12 @@ export function GameProvider({ children, startFresh = false }: { children: React
         notifications: [
           {
             id: `city-connect-${Date.now()}`,
-            title: 'City Connected!',
-            description: `Trade route established with ${city.name}. +$${tradeBonus} bonus and +$${tradeIncome}/month income.`,
+            title: gt('City Connected!'),
+            description: gt('Trade route established with {cityName}. +${tradeBonus} bonus and +${tradeIncome}/month income.', {
+              cityName: city.name,
+              tradeBonus,
+              tradeIncome,
+            }),
             icon: 'road',
             timestamp: Date.now(),
           },
@@ -1016,7 +1024,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
         ],
       };
     });
-  }, []);
+  }, [gt]);
 
   const discoverCity = useCallback((cityId: string) => {
     setState((prev) => {
@@ -1034,8 +1042,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
         notifications: [
           {
             id: `city-discover-${Date.now()}`,
-            title: 'City Discovered!',
-            description: `Your road has reached the ${city.direction} border! You can now connect to ${city.name}.`,
+            title: gt('City Discovered!'),
+            description: gt('Your road has reached the {direction} border! You can now connect to {cityName}.', {
+              direction: city.direction,
+              cityName: city.name,
+            }),
             icon: 'road',
             timestamp: Date.now(),
           },
@@ -1043,7 +1054,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
         ],
       };
     });
-  }, []);
+  }, [gt]);
 
   // Check for cities that should be discovered based on roads reaching edges
   // Calls onDiscover callback with city info if a new city was discovered

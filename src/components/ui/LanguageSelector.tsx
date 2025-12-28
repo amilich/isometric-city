@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale, useSetLocale } from 'gt-next/client';
+import { msg, useMessages } from 'gt-next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+
+// Translatable labels
+const UI_LABELS = {
+  selectLanguage: msg('Select Language'),
+  changeLanguage: msg('Change Language'),
+};
 
 // Language configuration with display names
 const LANGUAGES = [
@@ -86,6 +92,7 @@ export function LanguageSelector({
   const locale = useLocale();
   const setLocale = useSetLocale();
   const [isOpen, setIsOpen] = useState(false);
+  const m = useMessages();
   
   const currentLanguage = LANGUAGES.find(l => l.code === locale) || LANGUAGES[0];
 
@@ -100,20 +107,32 @@ export function LanguageSelector({
       <>
         <button
           onClick={() => setIsOpen(true)}
-          className={`h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
-          title="Change Language"
+          className={`h-8 w-8 min-w-[32px] p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground active:text-foreground transition-colors touch-manipulation ${className}`}
+          title={String(m(UI_LABELS.changeLanguage))}
+          aria-label={String(m(UI_LABELS.changeLanguage))}
         >
           <GlobeIcon size={iconSize} />
         </button>
 
         {isOpen && typeof document !== 'undefined' && createPortal(
-          <div className="fixed inset-0 z-[60]" onClick={() => setIsOpen(false)}>
+          <div 
+            className="fixed inset-0 z-[60]" 
+            onClick={() => setIsOpen(false)}
+            onTouchEnd={(e) => {
+              // Prevent touch events from bubbling on backdrop
+              if (e.target === e.currentTarget) {
+                setIsOpen(false);
+              }
+            }}
+          >
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
             {/* Drawer */}
             <div
-              className="absolute bottom-0 left-0 right-0 bg-card border-t border-border rounded-t-xl animate-in slide-in-from-bottom duration-200 pb-24"
+              className="absolute bottom-0 left-0 right-0 bg-card border-t border-border rounded-t-xl animate-in slide-in-from-bottom duration-200 safe-area-bottom"
+              style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 0px))' }}
               onClick={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
             >
               {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1">
@@ -121,7 +140,7 @@ export function LanguageSelector({
               </div>
               <div className="p-4 pt-2">
                 <div className="text-sm font-medium text-foreground mb-3">
-                  Select Language
+                  {m(UI_LABELS.selectLanguage)}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {LANGUAGES.map((language) => (
@@ -129,7 +148,7 @@ export function LanguageSelector({
                       key={language.code}
                       variant={locale === language.code ? 'default' : 'ghost'}
                       size="sm"
-                      className="h-11 w-full text-xs justify-center"
+                      className="h-11 w-full text-sm justify-center touch-manipulation"
                       onClick={() => handleSelectLanguage(language.code)}
                     >
                       {language.name}
@@ -152,7 +171,8 @@ export function LanguageSelector({
         {iconOnly ? (
           <button
             className={`h-6 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
-            title="Change Language"
+            title={String(m(UI_LABELS.changeLanguage))}
+            aria-label={String(m(UI_LABELS.changeLanguage))}
           >
             <GlobeIcon size={iconSize} />
           </button>

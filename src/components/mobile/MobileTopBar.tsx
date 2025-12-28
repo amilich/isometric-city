@@ -222,27 +222,29 @@ export function MobileTopBar({
             </div>
 
             {/* Language selector, Share, and Exit button group */}
-            <div className="flex items-center -space-x-0.5">
-              <LanguageSelector useDrawer iconSize={12} />
+            <div className="flex items-center gap-0.5">
+              <LanguageSelector useDrawer iconSize={14} />
 
               {onShare && (
                 <button
                   onClick={onShare}
-                  className="h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 min-w-[32px] p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground active:text-foreground touch-manipulation"
                   title="Invite Players"
+                  aria-label="Invite Players"
                 >
-                  <Users className="w-3 h-3" />
+                  <Users className="w-4 h-4" />
                 </button>
               )}
 
               {onExit && (
                 <button
                   onClick={() => setShowExitDialog(true)}
-                  className="h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 min-w-[32px] p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground active:text-foreground touch-manipulation"
                   title="Exit to Main Menu"
+                  aria-label="Exit to Main Menu"
                 >
                   <svg 
-                    className="w-3 h-3 -scale-x-100" 
+                    className="w-4 h-4 -scale-x-100" 
                     fill="none" 
                     viewBox="0 0 24 24" 
                     stroke="currentColor"

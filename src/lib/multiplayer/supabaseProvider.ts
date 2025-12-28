@@ -11,10 +11,14 @@ import {
   generatePlayerName,
 } from './types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Only create Supabase client if environment variables are provided
+// This allows the app to run without Supabase for single-player mode
+const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 export interface MultiplayerProviderOptions {
   roomCode: string;
@@ -31,7 +35,7 @@ export class MultiplayerProvider {
   public readonly roomCode: string;
   public readonly peerId: string;
 
-  private channel: RealtimeChannel;
+  private channel: RealtimeChannel | null = null;
   private player: Player;
   private options: MultiplayerProviderOptions;
   private players: Map<string, Player> = new Map();
@@ -58,7 +62,12 @@ export class MultiplayerProvider {
     // Add self to players
     this.players.set(this.peerId, this.player);
 
-    // Create Supabase Realtime channel
+    // Create Supabase Realtime channel (only if Supabase is configured)
+    if (!supabase) {
+      console.warn('[Multiplayer] Supabase not configured. Multiplayer features will be disabled.');
+      return;
+    }
+    
     this.channel = supabase.channel(`room-${options.roomCode}`, {
       config: {
         presence: { key: this.peerId },
@@ -68,11 +77,14 @@ export class MultiplayerProvider {
   }
 
   async connect(): Promise<void> {
-    if (this.destroyed) return;
+    if (this.destroyed || !this.channel) return;
 
     // Set up presence (track who's in the room)
+    if (!this.channel) return;
+    
     this.channel
       .on('presence', { event: 'sync' }, () => {
+        if (!this.channel) return;
         const state = this.channel.presenceState();
         this.players.clear();
         this.players.set(this.peerId, this.player);
@@ -101,7 +113,7 @@ export class MultiplayerProvider {
             if (this.gameState) {
               // Small delay to avoid race conditions with multiple senders
               setTimeout(() => {
-                if (!this.destroyed && this.gameState) {
+                if (!this.destroyed && this.gameState && this.channel) {
                   // Compress state for bandwidth efficiency (~70-80% reduction)
                   const compressed = compressToEncodedURIComponent(JSON.stringify(this.gameState));
                   this.channel.send({
@@ -155,7 +167,7 @@ export class MultiplayerProvider {
         if (this.gameState && from !== this.peerId) {
           // Random delay to avoid multiple simultaneous responses
           setTimeout(() => {
-            if (!this.destroyed && this.gameState) {
+            if (!this.destroyed && this.gameState && this.channel) {
               // Compress state for bandwidth efficiency (~70-80% reduction)
               const compressed = compressToEncodedURIComponent(JSON.stringify(this.gameState));
               this.channel.send({
@@ -169,8 +181,10 @@ export class MultiplayerProvider {
       });
 
     // Subscribe and track presence
+    if (!this.channel) return;
+    
     await this.channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
+      if (status === 'SUBSCRIBED' && this.channel) {
         await this.channel.track({ player: this.player });
         
         // Notify connected
@@ -180,7 +194,7 @@ export class MultiplayerProvider {
         this.notifyPlayersChange();
 
         // If we don't have state, request it from anyone in the room
-        if (!this.gameState) {
+        if (!this.gameState && this.channel) {
           this.channel.send({
             type: 'broadcast',
             event: 'state-request',
@@ -193,6 +207,12 @@ export class MultiplayerProvider {
 
   dispatchAction(action: GameActionInput): void {
     if (this.destroyed) return;
+    
+    // Check if channel exists and is connected
+    if (!this.channel) {
+      console.warn('[Multiplayer] Cannot dispatch action: channel not initialized. Supabase may not be configured.');
+      return;
+    }
 
     const fullAction: GameAction = {
       ...action,
@@ -228,8 +248,12 @@ export class MultiplayerProvider {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.channel.unsubscribe();
-    supabase.removeChannel(this.channel);
+    if (this.channel) {
+      this.channel.unsubscribe();
+      if (supabase) {
+        supabase.removeChannel(this.channel);
+      }
+    }
   }
 }
 

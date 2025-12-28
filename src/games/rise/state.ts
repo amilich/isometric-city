@@ -1,4 +1,5 @@
 import { BASE_RESOURCES, BUILDING_COSTS, BUILDING_HP, DIFFICULTY_GATHER_MULT, GATHER_RATES, POP_COST, SPEED_MULTIPLIERS, UNIT_COSTS } from './constants';
+import { GridPosition } from '@/core/types';
 import {
   AgeId,
   AGE_ORDER,
@@ -26,6 +27,47 @@ function newId() {
 
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
+}
+
+function isPassable(state: RiseGameState, x: number, y: number, ownerId: string): boolean {
+  if (x < 0 || y < 0 || x >= state.gridSize || y >= state.gridSize) return false;
+  const tile = state.tiles[y][x];
+  if (tile.terrain === 'water') return false;
+  if (tile.buildingId) {
+    const b = state.buildings.find(bb => bb.id === tile.buildingId);
+    if (!b) return false;
+    if (b.ownerId !== ownerId) return false;
+  }
+  return true;
+}
+
+function findPath(state: RiseGameState, start: GridPosition, target: GridPosition, ownerId: string): GridPosition[] | null {
+  const size = state.gridSize;
+  const visited = new Set<number>();
+  const queue: { x: number; y: number; path: GridPosition[] }[] = [{ x: start.x, y: start.y, path: [start] }];
+  const dirs = [
+    { dx: 1, dy: 0 },
+    { dx: -1, dy: 0 },
+    { dx: 0, dy: 1 },
+    { dx: 0, dy: -1 },
+  ];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    if (cur.x === target.x && cur.y === target.y) {
+      return cur.path;
+    }
+    for (const { dx, dy } of dirs) {
+      const nx = cur.x + dx;
+      const ny = cur.y + dy;
+      if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+      const key = ny * size + nx;
+      if (visited.has(key)) continue;
+      if (!isPassable(state, nx, ny, ownerId)) continue;
+      visited.add(key);
+      queue.push({ x: nx, y: ny, path: [...cur.path, { x: nx, y: ny }] });
+    }
+  }
+  return null;
 }
 
 export function createEmptyGrid(size: number): RiseTile[][] {
@@ -290,35 +332,47 @@ export function tickState(state: RiseGameState, deltaSeconds: number): RiseGameS
 
     // Move
     if (newUnit.order.kind === 'move' || newUnit.order.kind === 'gather' || newUnit.order.kind === 'attack') {
+      const path = newUnit.order.path;
       const target = newUnit.order.target;
-      const dx = target.x - newUnit.position.x;
-      const dy = target.y - newUnit.position.y;
+      let targetPos = target;
+
+      if (path && newUnit.pathIndex !== undefined && newUnit.pathIndex < path.length) {
+        targetPos = path[newUnit.pathIndex];
+      }
+
+      const dx = targetPos.x - newUnit.position.x;
+      const dy = targetPos.y - newUnit.position.y;
       const dist = Math.hypot(dx, dy);
       if (dist > 0.01) {
         const step = newUnit.speed * scaledDelta;
         const ratio = Math.min(1, step / dist);
         newUnit.position = { x: newUnit.position.x + dx * ratio, y: newUnit.position.y + dy * ratio };
       } else {
-        // Arrived
-        if (newUnit.order.kind === 'move') {
-          newUnit.order = { kind: 'idle' };
-        } else if (newUnit.order.kind === 'gather') {
-          const tx = Math.round(target.x);
-          const ty = Math.round(target.y);
-          const node = grid[ty]?.[tx]?.node;
-          if (node) {
-            const owner = updatedPlayers.find(p => p.id === newUnit.ownerId);
-            const ownerAgeIndex = owner ? AGE_ORDER.indexOf(owner.age) : 0;
-            const oilAllowed = ownerAgeIndex >= AGE_ORDER.indexOf('industrial');
-            if (node.type !== 'oil' || oilAllowed) {
-              const rate = GATHER_RATES.citizen[node.type] ?? 0;
-              if (rate > 0) {
-                const resourceKey =
-                  node.type === 'forest' ? 'wood' :
-                  node.type === 'mine' ? 'metal' :
-                  node.type === 'oil' ? 'oil' :
-                  node.type === 'fertile' ? 'food' : 'wealth';
-                addResource(newUnit.ownerId, resourceKey as keyof ResourcePool, rate);
+        // arrived at waypoint
+        if (path && newUnit.pathIndex !== undefined && newUnit.pathIndex < path.length - 1) {
+          newUnit.pathIndex = (newUnit.pathIndex ?? 0) + 1;
+        } else {
+          // Final arrival
+          if (newUnit.order.kind === 'move') {
+            newUnit.order = { kind: 'idle' };
+          } else if (newUnit.order.kind === 'gather') {
+            const tx = Math.round(target.x);
+            const ty = Math.round(target.y);
+            const node = grid[ty]?.[tx]?.node;
+            if (node) {
+              const owner = updatedPlayers.find(p => p.id === newUnit.ownerId);
+              const ownerAgeIndex = owner ? AGE_ORDER.indexOf(owner.age) : 0;
+              const oilAllowed = ownerAgeIndex >= AGE_ORDER.indexOf('industrial');
+              if (node.type !== 'oil' || oilAllowed) {
+                const rate = GATHER_RATES.citizen[node.type] ?? 0;
+                if (rate > 0) {
+                  const resourceKey =
+                    node.type === 'forest' ? 'wood' :
+                    node.type === 'mine' ? 'metal' :
+                    node.type === 'oil' ? 'oil' :
+                    node.type === 'fertile' ? 'food' : 'wealth';
+                  addResource(newUnit.ownerId, resourceKey as keyof ResourcePool, rate);
+                }
               }
             }
           }
@@ -414,7 +468,18 @@ export function tickState(state: RiseGameState, deltaSeconds: number): RiseGameS
 
 export function issueOrder(state: RiseGameState, unitIds: string[], order: UnitOrder): RiseGameState {
   const ids = new Set(unitIds);
-  const units = state.units.map(u => (ids.has(u.id) ? { ...u, order } : u));
+  const units = state.units.map(u => {
+    if (!ids.has(u.id)) return u;
+    let nextOrder = order;
+    // compute path for move/gather/attack
+    if (order.kind === 'move' || order.kind === 'gather' || order.kind === 'attack') {
+      const path = findPath(state, { x: Math.round(u.position.x), y: Math.round(u.position.y) }, order.target, u.ownerId);
+      if (path && path.length > 0) {
+        nextOrder = { ...order, path };
+      }
+    }
+    return { ...u, order: nextOrder, pathIndex: 0 };
+  });
   return { ...state, units };
 }
 

@@ -72,9 +72,9 @@ export type RiseUnitType =
 
 export type UnitOrder =
   | { kind: 'idle' }
-  | { kind: 'move'; target: GridPosition }
-  | { kind: 'gather'; target: GridPosition; resource: ResourceNodeType }
-  | { kind: 'attack'; targetUnitId?: string; targetBuildingId?: string; target: GridPosition };
+  | { kind: 'move'; target: GridPosition; path?: GridPosition[] }
+  | { kind: 'gather'; target: GridPosition; resource: ResourceNodeType; path?: GridPosition[] }
+  | { kind: 'attack'; targetUnitId?: string; targetBuildingId?: string; target: GridPosition; path?: GridPosition[] };
 
 export interface RiseUnit {
   id: string;
@@ -84,6 +84,7 @@ export interface RiseUnit {
   hp: number;
   maxHp: number;
   order: UnitOrder;
+  pathIndex?: number;
   selected?: boolean;
   speed: number;
   attack?: {

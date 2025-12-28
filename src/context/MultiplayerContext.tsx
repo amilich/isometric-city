@@ -20,6 +20,7 @@ import {
   RoomData,
 } from '@/lib/multiplayer/types';
 import { GameState } from '@/types/game';
+import { useGT, useMessages } from 'gt-next';
 
 // Generate a random 5-character room code
 function generateRoomCode(): string {
@@ -70,19 +71,24 @@ export function MultiplayerContextProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const gt = useGT();
+  const m = useMessages();
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [initialState, setInitialState] = useState<GameState | null>(null);
-  
+  const [provider, setProvider] = useState<MultiplayerProvider | null>(null);
+  const [onRemoteAction, setOnRemoteAction] = useState<((action: GameAction) => void) | null>(null);
+
   const providerRef = useRef<MultiplayerProvider | null>(null);
   const onRemoteActionRef = useRef<((action: GameAction) => void) | null>(null);
 
   // Set up remote action callback
-  const setOnRemoteAction = useCallback(
+  const setOnRemoteActionWrapper = useCallback(
     (callback: ((action: GameAction) => void) | null) => {
       onRemoteActionRef.current = callback;
+      setOnRemoteAction(() => callback);
     },
     []
   );
@@ -115,23 +121,24 @@ export function MultiplayerContextProvider({
             }
           },
           onError: (errorMsg) => {
-            setError(errorMsg);
+            setError(m(errorMsg));
             setConnectionState('error');
           },
         });
 
         providerRef.current = provider;
+        setProvider(provider);
         setRoomCode(newRoomCode);
         setConnectionState('connected');
 
         return newRoomCode;
       } catch (err) {
         setConnectionState('error');
-        setError(err instanceof Error ? err.message : 'Failed to create room');
+        setError(err instanceof Error ? m(err.message) : gt('Failed to create room'));
         throw err;
       }
     },
-    []
+    [gt, m]
   );
 
   // Join an existing room
@@ -142,11 +149,11 @@ export function MultiplayerContextProvider({
 
       try {
         const normalizedCode = code.toUpperCase();
-        
+
         // Create multiplayer provider - state will be loaded from Supabase database
         const provider = await createMultiplayerProvider({
           roomCode: normalizedCode,
-          cityName: 'Co-op City',
+          cityName: gt('Co-op City'),
           // No initialGameState - we'll load from database
           onConnectionChange: (connected) => {
             setConnectionState(connected ? 'connected' : 'disconnected');
@@ -164,12 +171,13 @@ export function MultiplayerContextProvider({
             setInitialState(state);
           },
           onError: (errorMsg) => {
-            setError(errorMsg);
+            setError(m(errorMsg));
             setConnectionState('error');
           },
         });
 
         providerRef.current = provider;
+        setProvider(provider);
         setRoomCode(normalizedCode);
         setConnectionState('connected');
 
@@ -177,7 +185,7 @@ export function MultiplayerContextProvider({
         const room: RoomData = {
           code: normalizedCode,
           hostId: '',
-          cityName: 'Co-op City',
+          cityName: gt('Co-op City'),
           createdAt: Date.now(),
           playerCount: 1,
         };
@@ -185,11 +193,11 @@ export function MultiplayerContextProvider({
         return room;
       } catch (err) {
         setConnectionState('error');
-        setError(err instanceof Error ? err.message : 'Failed to join room');
+        setError(err instanceof Error ? m(err.message) : gt('Failed to join room'));
         throw err;
       }
     },
-    []
+    [gt, m]
   );
 
   // Leave the current room
@@ -199,6 +207,7 @@ export function MultiplayerContextProvider({
       providerRef.current = null;
     }
 
+    setProvider(null);
     setConnectionState('disconnected');
     setRoomCode(null);
     setPlayers([]);
@@ -245,10 +254,10 @@ export function MultiplayerContextProvider({
     leaveRoom,
     dispatchAction,
     initialState,
-    onRemoteAction: onRemoteActionRef.current,
-    setOnRemoteAction,
+    onRemoteAction,
+    setOnRemoteAction: setOnRemoteActionWrapper,
     updateGameState,
-    provider: providerRef.current,
+    provider,
     isHost: false, // No longer meaningful - kept for compatibility
   };
 
@@ -261,8 +270,9 @@ export function MultiplayerContextProvider({
 
 export function useMultiplayer() {
   const context = useContext(MultiplayerContext);
+  const gt = useGT();
   if (!context) {
-    throw new Error('useMultiplayer must be used within a MultiplayerContextProvider');
+    throw new Error(gt('useMultiplayer must be used within a MultiplayerContextProvider'));
   }
   return context;
 }

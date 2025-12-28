@@ -15,8 +15,9 @@ import { Label } from '@/components/ui/label';
 import { useMultiplayer } from '@/context/MultiplayerContext';
 import { GameState } from '@/types/game';
 import { createInitialGameState, DEFAULT_GRID_SIZE } from '@/lib/simulation';
-import { Copy, Check, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Copy, Check, Loader2, AlertCircle, ArrowLeft, Database } from 'lucide-react';
 import { T, useGT, Plural, Var } from 'gt-next';
+import { isSupabaseConfigured } from '@/lib/multiplayer/supabaseProvider';
 
 interface CoopModalProps {
   open: boolean;
@@ -192,6 +193,57 @@ export function CoopModal({
     window.history.replaceState({}, '', '/');
     setMode('select');
   };
+
+  // If Supabase is not configured, show setup instructions
+  if (!isSupabaseConfigured) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-light text-white flex items-center gap-2">
+              <Database className="w-6 h-6 text-slate-400" />
+              <T>Multiplayer Not Configured</T>
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              <T>Supabase credentials required for multiplayer</T>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4 mt-4">
+            <div className="bg-slate-800/50 rounded-lg p-4 space-y-2">
+              <p className="text-slate-300 text-sm">
+                <T>To enable co-op multiplayer, configure your Supabase credentials:</T>
+              </p>
+              <ol className="text-slate-400 text-sm space-y-1 list-decimal list-inside ml-2">
+                <li><T>Create a free account at supabase.com</T></li>
+                <li><T>Set up the database schema</T></li>
+                <li><T>Add environment variables</T></li>
+              </ol>
+            </div>
+
+            <Button
+              onClick={() => window.open('https://github.com/amilich/isometric-city/blob/main/SUPABASE.md', '_blank')}
+              className="w-full py-4 text-base font-light bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
+            >
+              <T>View Setup Guide</T>
+            </Button>
+
+            <Button
+              onClick={() => onOpenChange(false)}
+              variant="outline"
+              className="w-full py-4 text-base font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-none"
+            >
+              <T>Close</T>
+            </Button>
+          </div>
+
+          <p className="text-xs text-slate-600 text-center mt-2">
+            <T>See SUPABASE.md in the repository for detailed instructions</T>
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // If auto-join failed, show error screen
   if (autoJoinError) {

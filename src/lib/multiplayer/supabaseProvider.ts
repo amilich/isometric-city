@@ -1,6 +1,6 @@
 // Supabase Realtime multiplayer provider with database-backed state persistence
 
-import { createClient, RealtimeChannel } from '@supabase/supabase-js';
+import { createClient, RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import {
   GameAction,
   GameActionInput,
@@ -14,14 +14,22 @@ import {
   loadGameRoom,
   updateGameRoom,
   updatePlayerCount,
+  isSupabaseConfigured,
 } from './database';
 import { GameState } from '@/types/game';
 import { msg } from 'gt-next';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Export the configuration status
+export { isSupabaseConfigured };
+
+// Only create client if configured
+let supabase: SupabaseClient | null = null;
+if (isSupabaseConfigured) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 // Throttle state saves to avoid excessive database writes
 const STATE_SAVE_INTERVAL = 3000; // Save state every 3 seconds max
@@ -57,6 +65,10 @@ export class MultiplayerProvider {
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: MultiplayerProviderOptions) {
+    if (!supabase) {
+      throw new Error('Supabase not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variables.');
+    }
+
     this.options = options;
     this.roomCode = options.roomCode;
     this.peerId = generatePlayerId();
@@ -282,21 +294,23 @@ export class MultiplayerProvider {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
-    
+
     // Save any pending state before disconnecting
     if (this.pendingStateSave) {
       this.saveStateToDatabase(this.pendingStateSave);
       this.pendingStateSave = null;
     }
-    
+
     // Clear save timeout
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
-    
+
     this.channel.unsubscribe();
-    supabase.removeChannel(this.channel);
+    if (supabase) {
+      supabase.removeChannel(this.channel);
+    }
   }
 }
 

@@ -32,14 +32,23 @@
 //   FOR EACH ROW
 //   EXECUTE FUNCTION update_updated_at();
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { GameState } from '@/types/game';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Check if Supabase is properly configured
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
+
+// Only create client if configured
+let supabase: SupabaseClient | null = null;
+if (isSupabaseConfigured) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
+  console.warn('[Multiplayer] Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable multiplayer. See SUPABASE.md for setup instructions.');
+}
 
 export interface GameRoomRow {
   room_code: string;
@@ -58,9 +67,14 @@ export async function createGameRoom(
   cityName: string,
   gameState: GameState
 ): Promise<boolean> {
+  if (!supabase) {
+    console.error('[Database] Supabase not configured');
+    return false;
+  }
+
   try {
     const compressed = compressToEncodedURIComponent(JSON.stringify(gameState));
-    
+
     const { error } = await supabase
       .from('game_rooms')
       .insert({
@@ -88,6 +102,11 @@ export async function createGameRoom(
 export async function loadGameRoom(
   roomCode: string
 ): Promise<{ gameState: GameState; cityName: string } | null> {
+  if (!supabase) {
+    console.error('[Database] Supabase not configured');
+    return null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('game_rooms')
@@ -121,9 +140,13 @@ export async function updateGameRoom(
   roomCode: string,
   gameState: GameState
 ): Promise<boolean> {
+  if (!supabase) {
+    return false;
+  }
+
   try {
     const compressed = compressToEncodedURIComponent(JSON.stringify(gameState));
-    
+
     const { error } = await supabase
       .from('game_rooms')
       .update({ game_state: compressed })
@@ -145,6 +168,10 @@ export async function updateGameRoom(
  * Check if a room exists
  */
 export async function roomExists(roomCode: string): Promise<boolean> {
+  if (!supabase) {
+    return false;
+  }
+
   try {
     const { data, error } = await supabase
       .from('game_rooms')
@@ -165,6 +192,10 @@ export async function updatePlayerCount(
   roomCode: string,
   count: number
 ): Promise<void> {
+  if (!supabase) {
+    return;
+  }
+
   try {
     await supabase
       .from('game_rooms')

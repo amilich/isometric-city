@@ -1315,7 +1315,11 @@ function calculateNetworkUtilityCoverage(
         continue;
       }
       
-      const neighborTile = grid[ny][nx];
+      const neighborTile = grid[ny]?.[nx];
+      if (!neighborTile || !neighborTile.building) {
+        continue;
+      }
+      
       const isRoad = neighborTile.building.type === 'road' || 
                      neighborTile.building.type === 'bridge' ||
                      neighborTile.hasSubway;
@@ -1346,6 +1350,10 @@ function calculateNetworkUtilityCoverage(
       }
       
       const tile = grid[y][x];
+      if (!tile || !tile.building) {
+        continue;
+      }
+      
       const buildingType = tile.building.type;
       
       // Check if this is a building (exclude terrain, roads, empty tiles)

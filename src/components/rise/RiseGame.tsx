@@ -137,10 +137,14 @@ export default function RiseGame() {
       if (e.key.toLowerCase() === 'b') setActiveBuild('barracks');
       if (e.key.toLowerCase() === 'f') setActiveBuild('farm');
       if (e.key.toLowerCase() === 'i') selectNextIdleCitizen();
+      if (e.key === 'Escape') {
+        setActiveBuild(null);
+        selectUnits([]);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setSpeed, restart, spawnCitizen, ageUp, selectNextIdleCitizen]);
+  }, [setSpeed, restart, spawnCitizen, ageUp, selectNextIdleCitizen, selectUnits]);
 
   if (!player) return null;
 
@@ -224,6 +228,16 @@ export default function RiseGame() {
               onClick={restart}
             >
               Restart
+            </button>
+            <button
+              className="px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200"
+              onClick={() => {
+                setActiveBuild(null);
+                selectUnits([]);
+              }}
+              title="Clear selection / cancel build (hotkey: Esc)"
+            >
+              Clear (Esc)
             </button>
           </div>
           <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-1">

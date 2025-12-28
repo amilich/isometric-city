@@ -30,9 +30,19 @@
   "0cc2c983267b6a33": "Bord de l’eau",
   "0df552c71ceffdea": "Terrain de basket extérieur",
   "11e592ce36623118": "Hôtel de ville",
+  "13b2402c6c023ebc": "Aller à la page d'accueil",
   "13fcc02124829d6c": "Impossible de créer la salle",
   "146b7a76457cbdc5": "Créer une ville coopérative",
+  "1681a6233ff22e03": [
+    "Code de salle : ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "16e15fc06c6a007c": "Piscine municipale",
+  "1838df54b0bb4797": "Impossible de se connecter au salon. Cela peut être dû à des problèmes de réseau ou aux limites du serveur.",
   "196936ae6b19dcdc": {
     "c": [
       "Se connecter à ",
@@ -80,6 +90,7 @@
       "t": "ArrowRight"
     }
   ],
+  "265faf7d02352750": "Cette salle n'existe pas ou a peut-être expiré.",
   "26c08edf08a8fd43": "Agrandir la ville (+30x30)",
   "277949eda13391e5": "Commercial",
   "27b33d5e7ca06b25": "Stade",
@@ -331,6 +342,7 @@
   "b821113430f5f0af": "Voie ferrée",
   "b8ffa77d868a668b": "Nom de la ville",
   "bad59346a21883a3": "Aéroport",
+  "bc1312ca9875c6db": "Rejoindre une autre salle",
   "bc57a3573b2d731a": "Conseillers de la ville",
   "bcfcdb828fb6febe": "Industriel",
   "bd81be63d5902150": "Rejoindre une ville coopérative",
@@ -350,6 +362,7 @@
   "c7d1e9c9bd97d52d": "Mensuel",
   "c94455ba1a9942b7": "Réduire la ville",
   "c96a3fd1bbe8f38a": "Augmente la demande industrielle et résidentielle (3x3)",
+  "caf697c48a419488": "Créer une nouvelle ville",
   "cb91c05c442d6da0": "Jetée de bord de mer (doit être placée à côté de l'eau)",
   "cba582095df8e4d9": "Mini-golf",
   "cd69d8784e9ce625": "Catastrophes",
@@ -363,6 +376,7 @@
   "d5120487d8637bd5": "Entrée de parc décorative",
   "d563172b11e46265": " - Faire glisser pour placer",
   "d5bb9c7d05c9221d": "Exporter la partie",
+  "d5cfefaf7011c288": "Réessayer",
   "d76336950671d1e2": "Quais pour bateaux (2x2, doit être placé au bord de l’eau)",
   "d7804cf2c098d4c3": "Afficher la superposition",
   "d84684d9e8bbd3d5": {
@@ -407,6 +421,7 @@
     "Ignorer tous les conseils"
   ],
   "e23439349cbca510": "Cliquez pour afficher les infos de la case",
+  "e41b7f26a2f7453b": "Impossible de rejoindre le salon",
   "e4ca1c349676657c": "Nuit",
   "e4f07cb539c8b592": "Ma ville en coop",
   "e78b04c25599cd81": {

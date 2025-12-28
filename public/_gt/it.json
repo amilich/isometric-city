@@ -30,9 +30,19 @@
   "0cc2c983267b6a33": "Lungomare",
   "0df552c71ceffdea": "Campo da basket all'aperto",
   "11e592ce36623118": "Municipio",
+  "13b2402c6c023ebc": "Vai alla Homepage",
   "13fcc02124829d6c": "Impossibile creare la stanza",
   "146b7a76457cbdc5": "Crea città cooperativa",
+  "1681a6233ff22e03": [
+    "Codice stanza: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "16e15fc06c6a007c": "Piscina pubblica",
+  "1838df54b0bb4797": "Si è verificato un problema durante la connessione alla stanza. Potrebbe essere dovuto a problemi di rete o limiti del server.",
   "196936ae6b19dcdc": {
     "c": [
       "Collegandoti a ",
@@ -80,6 +90,7 @@
       "t": "ArrowRight"
     }
   ],
+  "265faf7d02352750": "Questa stanza non esiste o potrebbe essere scaduta.",
   "26c08edf08a8fd43": "Espandi città (+30x30)",
   "277949eda13391e5": "Commerciale",
   "27b33d5e7ca06b25": "Stadio",
@@ -331,6 +342,7 @@
   "b821113430f5f0af": "Ferrovia",
   "b8ffa77d868a668b": "Nome città",
   "bad59346a21883a3": "Aeroporto",
+  "bc1312ca9875c6db": "Entra in un'altra stanza",
   "bc57a3573b2d731a": "Consulenti della città",
   "bcfcdb828fb6febe": "Industriale",
   "bd81be63d5902150": "Unirsi a Co-op City",
@@ -350,6 +362,7 @@
   "c7d1e9c9bd97d52d": "Mensile",
   "c94455ba1a9942b7": "Riduci città",
   "c96a3fd1bbe8f38a": "Aumenta la domanda industriale e residenziale (3x3)",
+  "caf697c48a419488": "Crea Nuova Città",
   "cb91c05c442d6da0": "Molo sul lungomare (da posizionare accanto all'acqua)",
   "cba582095df8e4d9": "Minigolf",
   "cd69d8784e9ce625": "Disastri",
@@ -363,6 +376,7 @@
   "d5120487d8637bd5": "Ingresso decorativo del parco",
   "d563172b11e46265": " - Trascina per posizionare",
   "d5bb9c7d05c9221d": "Esporta partita",
+  "d5cfefaf7011c288": "Riprova",
   "d76336950671d1e2": "Pontili per barche (2x2, da posizionare accanto all'acqua)",
   "d7804cf2c098d4c3": "Visualizza sovrapposizione",
   "d84684d9e8bbd3d5": {
@@ -407,6 +421,7 @@
     "Salta tutti i suggerimenti"
   ],
   "e23439349cbca510": "Fai clic per visualizzare le informazioni sulla tessera",
+  "e41b7f26a2f7453b": "Impossibile unirsi alla stanza",
   "e4ca1c349676657c": "Notte",
   "e4f07cb539c8b592": "La mia città cooperativa",
   "e78b04c25599cd81": {

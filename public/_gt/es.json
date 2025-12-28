@@ -30,9 +30,19 @@
   "0cc2c983267b6a33": "Ribera",
   "0df552c71ceffdea": "Cancha de baloncesto al aire libre",
   "11e592ce36623118": "Ayuntamiento",
+  "13b2402c6c023ebc": "Ir a la página principal",
   "13fcc02124829d6c": "No se pudo crear la sala",
   "146b7a76457cbdc5": "Crear ciudad cooperativa",
+  "1681a6233ff22e03": [
+    "Código de sala: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "16e15fc06c6a007c": "Piscina pública",
+  "1838df54b0bb4797": "Hubo un problema al conectar con la sala. Esto puede deberse a problemas de red o límites del servidor.",
   "196936ae6b19dcdc": {
     "c": [
       "Conectar con ",
@@ -80,6 +90,7 @@
       "t": "ArrowRight"
     }
   ],
+  "265faf7d02352750": "Esta sala no existe o puede haber expirado.",
   "26c08edf08a8fd43": "Expandir ciudad (+30x30)",
   "277949eda13391e5": "Comercial",
   "27b33d5e7ca06b25": "Estadio",
@@ -331,6 +342,7 @@
   "b821113430f5f0af": "Ferrocarril",
   "b8ffa77d868a668b": "Nombre de la ciudad",
   "bad59346a21883a3": "Aeropuerto",
+  "bc1312ca9875c6db": "Unirse a otra sala",
   "bc57a3573b2d731a": "Asesores de la ciudad",
   "bcfcdb828fb6febe": "Industrial",
   "bd81be63d5902150": "Unirse a ciudad cooperativa",
@@ -350,6 +362,7 @@
   "c7d1e9c9bd97d52d": "Mensual",
   "c94455ba1a9942b7": "Reducir ciudad",
   "c96a3fd1bbe8f38a": "Aumenta la demanda industrial y residencial (3x3)",
+  "caf697c48a419488": "Crear nueva ciudad",
   "cb91c05c442d6da0": "Muelle costero (debe colocarse junto al agua)",
   "cba582095df8e4d9": "Minigolf",
   "cd69d8784e9ce625": "Desastres",
@@ -363,6 +376,7 @@
   "d5120487d8637bd5": "Entrada de parque decorativa",
   "d563172b11e46265": " - Arrastra para colocar",
   "d5bb9c7d05c9221d": "Exportar partida",
+  "d5cfefaf7011c288": "Reintentar",
   "d76336950671d1e2": "Muelles para barcos (2x2, debe colocarse junto al agua)",
   "d7804cf2c098d4c3": "Mostrar superposición",
   "d84684d9e8bbd3d5": {
@@ -407,6 +421,7 @@
     "Saltar todos los consejos"
   ],
   "e23439349cbca510": "Haz clic para ver la información de la casilla",
+  "e41b7f26a2f7453b": "No se pudo unir a la sala",
   "e4ca1c349676657c": "Noche",
   "e4f07cb539c8b592": "Mi ciudad cooperativa",
   "e78b04c25599cd81": {

@@ -30,9 +30,19 @@
   "0cc2c983267b6a33": "Sahil Şeridi",
   "0df552c71ceffdea": "Açık hava basketbol sahası",
   "11e592ce36623118": "Belediye Binası",
+  "13b2402c6c023ebc": "Ana Sayfaya Git",
   "13fcc02124829d6c": "Oda oluşturulamadı",
   "146b7a76457cbdc5": "Co-op Şehri Oluştur",
+  "1681a6233ff22e03": [
+    "Oda kodu: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "16e15fc06c6a007c": "Halka açık yüzme tesisi",
+  "1838df54b0bb4797": "Odaya bağlanırken bir sorun oluştu. Bu durum ağ sorunlarından veya sunucu sınırlamalarından kaynaklanıyor olabilir.",
   "196936ae6b19dcdc": {
     "c": [
       {
@@ -79,6 +89,7 @@
       "t": "ArrowRight"
     }
   ],
+  "265faf7d02352750": "Bu oda mevcut değil veya süresi dolmuş olabilir.",
   "26c08edf08a8fd43": "Şehri genişlet (+30x30)",
   "277949eda13391e5": "Ticari",
   "27b33d5e7ca06b25": "Stadyum",
@@ -330,6 +341,7 @@
   "b821113430f5f0af": "Demiryolu",
   "b8ffa77d868a668b": "Şehir Adı",
   "bad59346a21883a3": "Havalimanı",
+  "bc1312ca9875c6db": "Farklı Odaya Katıl",
   "bc57a3573b2d731a": "Şehir Danışmanları",
   "bcfcdb828fb6febe": "Sanayi",
   "bd81be63d5902150": "Co-op City'ye Katılma",
@@ -349,6 +361,7 @@
   "c7d1e9c9bd97d52d": "Aylık",
   "c94455ba1a9942b7": "Şehri Küçült",
   "c96a3fd1bbe8f38a": "Sanayi ve konut talebini artırır (3x3)",
+  "caf697c48a419488": "Yeni Şehir Oluştur",
   "cb91c05c442d6da0": "Sahil iskelesi (su kenarına yerleştirilmelidir)",
   "cba582095df8e4d9": "Mini Golf",
   "cd69d8784e9ce625": "Felaketler",
@@ -362,6 +375,7 @@
   "d5120487d8637bd5": "Dekoratif park girişi",
   "d563172b11e46265": " - Yerleştirmek için sürükle",
   "d5bb9c7d05c9221d": "Oyunu Dışa Aktar",
+  "d5cfefaf7011c288": "Tekrar Dene",
   "d76336950671d1e2": "Tekne iskeleleri (2x2, suyun yanına yerleştirilmelidir)",
   "d7804cf2c098d4c3": "Katman Görünümü",
   "d84684d9e8bbd3d5": {
@@ -406,6 +420,7 @@
     "Tüm İpuçlarını Atla"
   ],
   "e23439349cbca510": "Karo bilgisini görmek için tıkla",
+  "e41b7f26a2f7453b": "Odaya Katılınamadı",
   "e4ca1c349676657c": "Gece",
   "e4f07cb539c8b592": "Benim Co-op Şehrim",
   "e78b04c25599cd81": {

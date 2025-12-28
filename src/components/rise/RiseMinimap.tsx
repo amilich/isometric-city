@@ -10,7 +10,15 @@ const TILE_COLORS: Record<string, string> = {
   water: '#0ea5e9',
 };
 
-export function RiseMinimap({ state, onNavigate }: { state: RiseGameState; onNavigate?: (x: number, y: number) => void }) {
+export function RiseMinimap({
+  state,
+  onNavigate,
+  viewport,
+}: {
+  state: RiseGameState;
+  onNavigate?: (x: number, y: number) => void;
+  viewport?: { x1: number; y1: number; x2: number; y2: number };
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = 200;
 
@@ -36,6 +44,16 @@ export function RiseMinimap({ state, onNavigate }: { state: RiseGameState; onNav
       }
     }
 
+    // viewport box
+    if (viewport) {
+      const { x1, y1, x2, y2 } = viewport;
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.strokeRect(x1 * scale, y1 * scale, (x2 - x1 + 1) * scale, (y2 - y1 + 1) * scale);
+      ctx.setLineDash([]);
+    }
+
     // buildings
     for (const b of state.buildings) {
       const color = b.ownerId === state.localPlayerId ? '#22d3ee' : '#f97316';
@@ -51,7 +69,7 @@ export function RiseMinimap({ state, onNavigate }: { state: RiseGameState; onNav
       ctx.arc(u.position.x * scale, u.position.y * scale, Math.max(1.5, scale * 0.6), 0, Math.PI * 2);
       ctx.fill();
     }
-  }, [state, size]);
+  }, [state, size, viewport]);
 
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2 shadow-lg">

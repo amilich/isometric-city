@@ -67,6 +67,34 @@ export default function RiseGame() {
     }
   };
 
+  const viewport = React.useMemo(() => {
+    const canvasW = 1400;
+    const canvasH = 900;
+    const corners = [
+      { sx: 0, sy: 0 },
+      { sx: canvasW, sy: 0 },
+      { sx: 0, sy: canvasH },
+      { sx: canvasW, sy: canvasH },
+    ];
+    const toGrid = (sx: number, sy: number) => {
+      const adjustedX = sx - offset.x - TILE_WIDTH / 2;
+      const adjustedY = sy - offset.y - TILE_HEIGHT / 2;
+      const gx = (adjustedX / (TILE_WIDTH / 2) + adjustedY / (TILE_HEIGHT / 2)) / 2;
+      const gy = (adjustedY / (TILE_HEIGHT / 2) - adjustedX / (TILE_WIDTH / 2)) / 2;
+      return { x: Math.round(gx), y: Math.round(gy) };
+    };
+    const points = corners.map(c => toGrid(c.sx, c.sy));
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+    const xs = points.map(p => clamp(p.x, 0, state.gridSize - 1));
+    const ys = points.map(p => clamp(p.y, 0, state.gridSize - 1));
+    return {
+      x1: Math.min(...xs),
+      y1: Math.min(...ys),
+      x2: Math.max(...xs),
+      y2: Math.max(...ys),
+    };
+  }, [offset, state.gridSize]);
+
   const ageUpInfo = React.useMemo(() => {
     if (!player) return { can: false, reason: 'No player' };
     const currentIndex = AGE_CONFIGS.findIndex(a => a.id === player.age);
@@ -275,7 +303,7 @@ export default function RiseGame() {
         </div>
 
         <div className="w-64 space-y-3">
-          <RiseMinimap state={state} onNavigate={centerOnTile} />
+          <RiseMinimap state={state} onNavigate={centerOnTile} viewport={viewport} />
           <AgeProgress age={player.age} elapsedSinceAge={state.elapsedSeconds - (player.ageStartSeconds ?? 0)} />
         </div>
       </div>

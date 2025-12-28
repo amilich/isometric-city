@@ -2,13 +2,13 @@
 
 import React, { useMemo } from 'react';
 import { useRiseGame } from '@/context/RiseGameContext';
-import { ResourceBar } from './ResourceBar';
 import { RiseCanvas } from './RiseCanvas';
 import { AGE_CONFIGS } from '@/games/rise/constants';
 import { BUILDING_COSTS, UNIT_COSTS, POP_COST } from '@/games/rise/constants';
 import { ResourcePool } from '@/games/rise/types';
 import { RiseMinimap } from './RiseMinimap';
 import { TILE_HEIGHT, TILE_WIDTH } from '@/components/game/types';
+import { TopStats } from './TopStats';
 
 const SPEED_LABELS: Record<0 | 1 | 2 | 3, string> = {
   0: 'Pause',
@@ -49,13 +49,7 @@ export default function RiseGame() {
   return (
     <div className="w-full h-full min-h-screen bg-slate-950 text-slate-100 flex flex-col gap-3 p-3">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-2 rounded-lg bg-slate-900/80 border border-slate-800 shadow">
-            <div className="text-xs uppercase text-slate-400">Age</div>
-            <div className="font-semibold">{ageLabel}</div>
-          </div>
-          <ResourceBar resources={player.resources} />
-        </div>
+        <TopStats resources={player.resources} ageId={player.age} />
         <div className="flex items-center gap-2">
           <button
             className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-md text-sm font-semibold"

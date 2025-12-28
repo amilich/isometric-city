@@ -149,6 +149,7 @@ export function useBargeSystem(
     const updatedBarges: Barge[] = [];
     
     for (const barge of bargesRef.current) {
+      // eslint-disable-next-line react-hooks/immutability -- mutable ref-backed simulation state (perf)
       barge.age += delta;
       
       // Update wake particles

@@ -5,8 +5,7 @@
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 
 type PendingRequest = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  resolve: (value: any) => void;
+  resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   timeoutId: ReturnType<typeof setTimeout>;
 };

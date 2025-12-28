@@ -29,25 +29,29 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
   // IMPORTANT: Wait for isStateReady to ensure we have the loaded state, not the default empty state
   useEffect(() => {
     if (open && !roomCode && !isCreating && isStateReady) {
-      setIsCreating(true);
-      createRoom(state.cityName, state)
-        .then((code) => {
-          // Update URL to show room code
-          window.history.replaceState({}, '', `/coop/${code}`);
-        })
-        .catch((err) => {
-          console.error('[ShareModal] Failed to create room:', err);
-        })
-        .finally(() => {
-          setIsCreating(false);
-        });
+      const t = setTimeout(() => {
+        setIsCreating(true);
+        createRoom(state.cityName, state)
+          .then((code) => {
+            // Update URL to show room code
+            window.history.replaceState({}, '', `/coop/${code}`);
+          })
+          .catch((err) => {
+            console.error('[ShareModal] Failed to create room:', err);
+          })
+          .finally(() => {
+            setIsCreating(false);
+          });
+      }, 0);
+      return () => clearTimeout(t);
     }
   }, [open, roomCode, isCreating, isStateReady, createRoom, state]);
 
   // Reset copied state when modal closes
   useEffect(() => {
     if (!open) {
-      setCopied(false);
+      const t = setTimeout(() => setCopied(false), 0);
+      return () => clearTimeout(t);
     }
   }, [open]);
 

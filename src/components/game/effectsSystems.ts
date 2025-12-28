@@ -194,6 +194,7 @@ export function useEffectsSystems(
     const updatedFireworks: Firework[] = [];
     
     for (const firework of fireworksRef.current) {
+      // eslint-disable-next-line react-hooks/immutability -- mutable ref-backed simulation state (perf)
       firework.age += delta;
       
       switch (firework.state) {
@@ -466,6 +467,7 @@ export function useEffectsSystems(
         : SMOG_SPAWN_INTERVAL_MEDIUM;
       const spawnInterval = baseSpawnInterval * spawnMultiplier;
       
+      // eslint-disable-next-line react-hooks/immutability -- mutable ref-backed simulation state (perf)
       smog.spawnTimer += adjustedDelta;
       
       // Spawn new particles (only if below particle limit)

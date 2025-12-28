@@ -21,23 +21,39 @@ function TipToastContent({ message, isVisible, onContinue, onSkipAll }: TipToast
   const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
+    let openTimeout: ReturnType<typeof setTimeout> | null = null;
+    let closeTimeout: ReturnType<typeof setTimeout> | null = null;
+    let frame1 = 0;
+    let frame2 = 0;
+
     if (isVisible) {
-      setShouldRender(true);
-      // Small delay to trigger animation
-      const frame = requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsAnimating(true);
+      // Defer state updates to avoid synchronous setState in effects
+      openTimeout = setTimeout(() => {
+        setShouldRender(true);
+        // Small delay to trigger animation (after mount)
+        frame1 = requestAnimationFrame(() => {
+          frame2 = requestAnimationFrame(() => {
+            setIsAnimating(true);
+          });
         });
-      });
-      return () => cancelAnimationFrame(frame);
+      }, 0);
     } else {
-      setIsAnimating(false);
+      // Defer updates to avoid synchronous setState in effects
+      openTimeout = setTimeout(() => {
+        setIsAnimating(false);
+      }, 0);
       // Wait for exit animation before unmounting
-      const timer = setTimeout(() => {
+      closeTimeout = setTimeout(() => {
         setShouldRender(false);
       }, 300);
-      return () => clearTimeout(timer);
     }
+
+    return () => {
+      if (openTimeout) clearTimeout(openTimeout);
+      if (closeTimeout) clearTimeout(closeTimeout);
+      if (frame1) cancelAnimationFrame(frame1);
+      if (frame2) cancelAnimationFrame(frame2);
+    };
   }, [isVisible]);
 
   if (!shouldRender) return null;
@@ -123,7 +139,8 @@ export function TipToast(props: TipToastProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const t = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   // Use portal to render at document body level to avoid z-index/overflow issues

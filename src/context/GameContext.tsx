@@ -669,37 +669,41 @@ export function GameProvider({ children, startFresh = false }: { children: React
   
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
-    // Load sprite pack preference
-    const savedPackId = loadSpritePackId();
-    const pack = getSpritePack(savedPackId);
-    setCurrentSpritePack(pack);
-    setActiveSpritePack(pack);
-    
-    // Load day/night mode preference
-    const savedDayNightMode = loadDayNightMode();
-    setDayNightModeState(savedDayNightMode);
-    
-    // Load saved cities index
-    const cities = loadSavedCitiesIndex();
-    setSavedCities(cities);
-    
-    // Load game state (unless startFresh is true - used for co-op to start with a new city)
-    if (!startFresh) {
-      const saved = loadGameState();
-      if (saved) {
-        skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
-        setState(saved);
-        setHasExistingGame(true);
+    const t = setTimeout(() => {
+      // Load sprite pack preference
+      const savedPackId = loadSpritePackId();
+      const pack = getSpritePack(savedPackId);
+      setCurrentSpritePack(pack);
+      setActiveSpritePack(pack);
+      
+      // Load day/night mode preference
+      const savedDayNightMode = loadDayNightMode();
+      setDayNightModeState(savedDayNightMode);
+      
+      // Load saved cities index
+      const cities = loadSavedCitiesIndex();
+      setSavedCities(cities);
+      
+      // Load game state (unless startFresh is true - used for co-op to start with a new city)
+      if (!startFresh) {
+        const saved = loadGameState();
+        if (saved) {
+          skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
+          setState(saved);
+          setHasExistingGame(true);
+        } else {
+          setHasExistingGame(false);
+        }
       } else {
         setHasExistingGame(false);
       }
-    } else {
-      setHasExistingGame(false);
-    }
-    // Mark as loaded immediately - the skipNextSaveRef will handle skipping the first save
-    hasLoadedRef.current = true;
-    // Mark state as ready - consumers should wait for this before using state
-    setIsStateReady(true);
+      // Mark as loaded immediately - the skipNextSaveRef will handle skipping the first save
+      hasLoadedRef.current = true;
+      // Mark state as ready - consumers should wait for this before using state
+      setIsStateReady(true);
+    }, 0);
+    
+    return () => clearTimeout(t);
   }, [startFresh]);
   
   // Track the state that needs to be saved
@@ -710,7 +714,10 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // PERF: Just mark that state has changed - defer expensive deep copy to actual save time
   const stateChangedRef = useRef(false);
   const latestStateRef = useRef(state);
-  latestStateRef.current = state;
+  useEffect(() => {
+    // Keep ref in sync without updating during render
+    latestStateRef.current = state;
+  }, [state]);
   
   useEffect(() => {
     if (!hasLoadedRef.current) {

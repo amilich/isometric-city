@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale, useSetLocale } from 'gt-next/client';
 import {
@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 // Language configuration with display names
 const LANGUAGES = [
@@ -94,14 +93,26 @@ export function LanguageSelector({
     setIsOpen(false);
   };
 
+  // Close drawer on Escape (helps mobile + accessibility)
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen]);
+
   // Drawer mode for mobile
   if (useDrawer) {
     return (
       <>
         <button
+          type="button"
           onClick={() => setIsOpen(true)}
-          className={`h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
-          title="Change Language"
+          aria-label="Change language"
+          title="Change language"
+          className={`h-6 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
         >
           <GlobeIcon size={iconSize} />
         </button>
@@ -112,6 +123,9 @@ export function LanguageSelector({
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
             {/* Drawer */}
             <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Language selection"
               className="absolute bottom-0 left-0 right-0 bg-card border-t border-border rounded-t-xl animate-in slide-in-from-bottom duration-200 pb-24"
               onClick={(e) => e.stopPropagation()}
             >
@@ -121,9 +135,9 @@ export function LanguageSelector({
               </div>
               <div className="p-4 pt-2">
                 <div className="text-sm font-medium text-foreground mb-3">
-                  Select Language
+                  Language ({currentLanguage.code})
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {LANGUAGES.map((language) => (
                     <Button
                       key={language.code}
@@ -151,15 +165,17 @@ export function LanguageSelector({
       <DropdownMenuTrigger asChild>
         {iconOnly ? (
           <button
+            type="button"
             className={`h-6 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
-            title="Change Language"
+            aria-label="Change language"
+            title="Change language"
           >
             <GlobeIcon size={iconSize} />
           </button>
         ) : (
           <Button variant={variant} size="sm" className={`gap-2 ${className}`}>
             <GlobeIcon size={iconSize} />
-            <span className="text-xs hidden xl:inline">{currentLanguage.name}</span>
+            <span className="text-xs hidden sm:inline">{currentLanguage.name}</span>
           </Button>
         )}
       </DropdownMenuTrigger>

@@ -530,7 +530,13 @@ export default function HomePage() {
               >
                 Open GitHub
               </a>
-              <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
+              <LanguageSelector
+                useDrawer
+                iconOnly
+                iconSize={16}
+                variant="ghost"
+                className="text-white/40 hover:text-white/70 hover:bg-white/10"
+              />
             </div>
           </div>
           

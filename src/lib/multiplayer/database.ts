@@ -1,7 +1,7 @@
 // Supabase database functions for multiplayer game state persistence
-// 
+//
 // Required Supabase table schema (run this in Supabase SQL editor):
-// 
+//
 // CREATE TABLE game_rooms (
 //   room_code TEXT PRIMARY KEY,
 //   city_name TEXT NOT NULL,
@@ -10,14 +10,14 @@
 //   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 //   player_count INTEGER DEFAULT 1
 // );
-// 
+//
 // -- Enable RLS
 // ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
-// 
+//
 // -- Allow anyone to read/write (for anonymous multiplayer)
 // CREATE POLICY "Allow public access" ON game_rooms
 //   FOR ALL USING (true) WITH CHECK (true);
-// 
+//
 // -- Auto-update updated_at
 // CREATE OR REPLACE FUNCTION update_updated_at()
 // RETURNS TRIGGER AS $$
@@ -26,21 +26,30 @@
 //   RETURN NEW;
 // END;
 // $$ LANGUAGE plpgsql;
-// 
+//
 // CREATE TRIGGER game_rooms_updated_at
 //   BEFORE UPDATE ON game_rooms
 //   FOR EACH ROW
 //   EXECUTE FUNCTION update_updated_at();
 
-import { createClient } from '@supabase/supabase-js';
-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { decompressFromEncodedURIComponent } from 'lz-string';
 import { GameState } from '@/types/game';
 import { serializeAndCompressForDBAsync } from '@/lib/saveWorkerManager';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Check if Supabase is properly configured
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
+
+// Only create client if configured
+let supabase: SupabaseClient | null = null;
+if (isSupabaseConfigured) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
+  console.warn('[Multiplayer] Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable multiplayer. See SUPABASE.md for setup instructions.');
+}
 
 export interface GameRoomRow {
   room_code: string;
@@ -60,10 +69,15 @@ export async function createGameRoom(
   cityName: string,
   gameState: GameState
 ): Promise<boolean> {
+  if (!supabase) {
+    console.error('[Database] Supabase not configured');
+    return false;
+  }
+
   try {
     // PERF: Both JSON.stringify and lz-string compression happen in the worker
     const compressed = await serializeAndCompressForDBAsync(gameState);
-    
+
     const { error } = await supabase
       .from('game_rooms')
       .insert({
@@ -91,6 +105,11 @@ export async function createGameRoom(
 export async function loadGameRoom(
   roomCode: string
 ): Promise<{ gameState: GameState; cityName: string } | null> {
+  if (!supabase) {
+    console.error('[Database] Supabase not configured');
+    return null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('game_rooms')
@@ -125,10 +144,14 @@ export async function updateGameRoom(
   roomCode: string,
   gameState: GameState
 ): Promise<boolean> {
+  if (!supabase) {
+    return false;
+  }
+
   try {
     // PERF: Both JSON.stringify and lz-string compression happen in the worker
     const compressed = await serializeAndCompressForDBAsync(gameState);
-    
+
     const { error } = await supabase
       .from('game_rooms')
       .update({ game_state: compressed })
@@ -150,6 +173,10 @@ export async function updateGameRoom(
  * Check if a room exists
  */
 export async function roomExists(roomCode: string): Promise<boolean> {
+  if (!supabase) {
+    return false;
+  }
+
   try {
     const { data, error } = await supabase
       .from('game_rooms')
@@ -170,6 +197,10 @@ export async function updatePlayerCount(
   roomCode: string,
   count: number
 ): Promise<void> {
+  if (!supabase) {
+    return;
+  }
+
   try {
     await supabase
       .from('game_rooms')
@@ -179,4 +210,3 @@ export async function updatePlayerCount(
     console.error('[Database] Error updating player count:', e);
   }
 }
-

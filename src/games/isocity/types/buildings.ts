@@ -29,6 +29,7 @@ export type BuildingType =
   | 'factory_medium'
   | 'factory_large'
   | 'warehouse'
+  | 'industrial_complex'
   // Services
   | 'police_station'
   | 'fire_station'
@@ -119,7 +120,7 @@ export interface Building extends BaseBuilding {
 // Building evolution paths based on zone and level
 export const RESIDENTIAL_BUILDINGS: BuildingType[] = ['house_small', 'house_medium', 'mansion', 'apartment_low', 'apartment_high'];
 export const COMMERCIAL_BUILDINGS: BuildingType[] = ['shop_small', 'shop_medium', 'office_low', 'office_high', 'mall'];
-export const INDUSTRIAL_BUILDINGS: BuildingType[] = ['factory_small', 'factory_medium', 'warehouse', 'factory_large', 'factory_large'];
+export const INDUSTRIAL_BUILDINGS: BuildingType[] = ['factory_small', 'factory_medium', 'warehouse', 'factory_large', 'industrial_complex'];
 
 export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: number; pollution: number; landValue: number }> = {
   empty: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
@@ -143,6 +144,7 @@ export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: num
   factory_medium: { maxPop: 0, maxJobs: 90, pollution: 28, landValue: -10 },
   factory_large: { maxPop: 0, maxJobs: 180, pollution: 55, landValue: -18 },
   warehouse: { maxPop: 0, maxJobs: 60, pollution: 18, landValue: -6 },
+  industrial_complex: { maxPop: 0, maxJobs: 300, pollution: 75, landValue: -25 },
   police_station: { maxPop: 0, maxJobs: 20, pollution: 0, landValue: 15 },
   fire_station: { maxPop: 0, maxJobs: 20, pollution: 0, landValue: 10 },
   hospital: { maxPop: 0, maxJobs: 80, pollution: 0, landValue: 25 },

@@ -236,6 +236,11 @@ export function placeBuilding(state: RiseGameState, ownerId: string, type: RiseB
   if (tileX < 0 || tileY < 0 || tileX >= grid.length || tileY >= grid.length) return state;
   if (grid[tileY][tileX].buildingId) return state;
 
+  // placement rules
+  if (type === 'farm') {
+    const node = grid[tileY][tileX].node;
+    if (!node || node.type !== 'fertile') return state;
+  }
   // oil rig gating
   if (type === 'oil_rig') {
     const node = grid[tileY][tileX].node;

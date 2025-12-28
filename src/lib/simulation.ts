@@ -1253,13 +1253,15 @@ function findUtilitySources(
 }
 
 // Calculate network-based utility coverage using BFS along road network
-function calculateNetworkUtilityCoverage(
-  grid: Tile[][],
-  gridSize: number,
-  sources: Array<{ x: number; y: number }>,
-  maxDistance: number,
-  utilityType: 'power' | 'water'
-): boolean[][] {
+function calculateNetworkUtilityCoverage(options: {
+  grid: Tile[][];
+  gridSize: number;
+  sources: Array<{ x: number; y: number }>;
+  maxDistance: number;
+  utilityType: 'power' | 'water';
+}): boolean[][] {
+  const { grid, gridSize, sources, maxDistance } = options;
+  
   // Initialize 2D boolean array (all false)
   const powered = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
   
@@ -1524,15 +1526,23 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
   
   // Network-based power coverage (50 tile limit along roads)
   const powerPlants = findUtilitySources(grid, size, 'power_plant');
-  services.power = calculateNetworkUtilityCoverage(
-    grid, size, powerPlants, 50, 'power'
-  );
+  services.power = calculateNetworkUtilityCoverage({
+    grid,
+    gridSize: size,
+    sources: powerPlants,
+    maxDistance: 50,
+    utilityType: 'power',
+  });
   
   // Network-based water coverage (25 tile limit along roads)
   const waterTowers = findUtilitySources(grid, size, 'water_tower');
-  services.water = calculateNetworkUtilityCoverage(
-    grid, size, waterTowers, 25, 'water'
-  );
+  services.water = calculateNetworkUtilityCoverage({
+    grid,
+    gridSize: size,
+    sources: waterTowers,
+    maxDistance: 25,
+    utilityType: 'water',
+  });
   
   // First pass: collect all service building positions (much faster than checking every tile)
   // Note: power_plant and water_tower are now handled above, but we still collect them

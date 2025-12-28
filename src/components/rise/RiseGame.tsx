@@ -83,6 +83,7 @@ export default function RiseGame() {
           <button
             className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-md text-sm font-semibold"
             onClick={spawnCitizen}
+            disabled={state.gameStatus !== 'playing'}
           >
             Spawn Citizen
           </button>
@@ -188,8 +189,24 @@ export default function RiseGame() {
           <Tips />
         </div>
 
-        <div className="flex-1 min-h-[720px] rounded-lg overflow-hidden border border-slate-800 bg-slate-900/60">
+        <div className="relative flex-1 min-h-[720px] rounded-lg overflow-hidden border border-slate-800 bg-slate-900/60">
           <RiseCanvas activeBuild={activeBuild} onBuildPlaced={() => setActiveBuild(null)} offset={offset} />
+          {state.gameStatus !== 'playing' && (
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center">
+              <div className="bg-slate-900/90 border border-slate-700 rounded-xl px-6 py-4 text-center shadow-xl space-y-3">
+                <div className="text-xl font-bold text-slate-100">
+                  {state.gameStatus === 'won' ? 'Victory!' : 'Defeat'}
+                </div>
+                <div className="text-sm text-slate-300">City center {state.gameStatus === 'won' ? 'captured' : 'lost'}.</div>
+                <button
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-md text-sm font-semibold text-white"
+                  onClick={() => window.location.reload()}
+                >
+                  Restart
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="w-64">

@@ -471,22 +471,25 @@ export default function HomePage() {
   if (isMobile) {
     return (
       <MultiplayerContextProvider>
-        <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
-          {/* Title */}
-          <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
+        <main className="h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
+          {/* Spacer to push content down slightly from top */}
+          <div className="flex-shrink-0 h-4 sm:h-8" />
+          
+          {/* Title - smaller on very small screens */}
+          <h1 className="text-4xl sm:text-5xl font-light tracking-wider text-white/90 mb-4 sm:mb-6 flex-shrink-0">
             IsoCity
           </h1>
           
-          {/* Sprite Gallery - keep visible even when saves exist */}
-          <div className="mb-6">
-            <SpriteGallery count={9} cols={3} cellSize={72} />
+          {/* Sprite Gallery - smaller on mobile, contained */}
+          <div className="mb-4 sm:mb-6 flex-shrink-0">
+            <SpriteGallery count={9} cols={3} cellSize={56} />
           </div>
           
-          {/* Buttons */}
-          <div className="flex flex-col gap-3 w-full max-w-xs">
+          {/* Buttons - more compact */}
+          <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-xs flex-shrink-0">
             <Button 
               onClick={() => setShowGame(true)}
-              className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
               {hasSaved ? 'Continue' : 'New Game'}
             </Button>
@@ -494,7 +497,7 @@ export default function HomePage() {
             <Button 
               onClick={() => setShowCoopModal(true)}
               variant="outline"
-              className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
             >
               Co-op
             </Button>
@@ -517,7 +520,7 @@ export default function HomePage() {
                 setShowGame(true);
               }}
               variant="outline"
-              className="w-full py-6 text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
             >
               Load Example
             </Button>
@@ -534,14 +537,14 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Saved Cities */}
+          {/* Saved Cities - scrollable area takes remaining space */}
           {savedCities.length > 0 && (
-            <div className="w-full max-w-xs mt-4">
-              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+            <div className="w-full max-w-xs mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col">
+              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 flex-shrink-0">
                 Saved Cities
               </h2>
               <div 
-                className="flex flex-col gap-2 max-h-48 overflow-y-auto overscroll-y-contain"
+                className="flex flex-col gap-2 flex-1 overflow-y-auto overscroll-y-contain"
                 style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
               >
                 {savedCities.slice(0, 5).map((city) => (
@@ -555,6 +558,9 @@ export default function HomePage() {
               </div>
             </div>
           )}
+          
+          {/* Bottom spacer */}
+          <div className="flex-shrink-0 h-2" />
           
           {/* Co-op Modal */}
           <CoopModal

@@ -26,21 +26,25 @@ import {
   loadSpriteImage,
   getCachedImage,
   onImageLoaded,
-  drawGroundTile,
-  drawWaterTile,
   drawTileHighlight,
   drawSelectionBox,
   drawHealthBar,
-  drawSkyBackground,
   setupCanvas,
   calculateViewBounds,
   isTileVisible,
   WATER_ASSET_PATH,
-  drawBeachOnWater,
   drawFireEffect,
 } from '@/components/game/shared';
 import { drawRoNUnit } from '../lib/drawUnits';
 import { getTerritoryOwner, extractCityCenters } from '../lib/simulation';
+
+// RoN-specific enhanced (realistic) terrain + water rendering
+import {
+  drawEnhancedGrassTile,
+  drawEnhancedWaterTile,
+  drawEnhancedBeachOnWater,
+  drawEnhancedSky,
+} from '../lib/enhancedGraphics';
 
 /**
  * Find the origin tile of a multi-tile building by searching backwards from a clicked position.
@@ -616,6 +620,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [cursor, setCursor] = useState<'default' | 'grabbing' | 'crosshair'>('default');
   
   // Camera state
   const [offset, setOffset] = useState({ x: 400, y: 200 });
@@ -638,7 +643,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   
   // Fire animation time
   const fireAnimTimeRef = useRef(0);
-  const lastFrameTimeRef = useRef(performance.now());
+  const lastFrameTimeRef = useRef(0);
   const [roadDrawDirection, setRoadDrawDirection] = useState<'h' | 'v' | null>(null);
   const placedRoadTilesRef = useRef<Set<string>>(new Set());
   const [roadDragEnd, setRoadDragEnd] = useState<{ x: number; y: number } | null>(null);
@@ -658,6 +663,11 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
+
+  // Initialize frame timer after mount (keeps render pure for lint rules)
+  useEffect(() => {
+    lastFrameTimeRef.current = performance.now();
+  }, []);
   
   // Report viewport changes to parent (for minimap)
   useEffect(() => {
@@ -872,6 +882,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
     if (e.button === 1 || e.altKey) {
       // Middle-click or alt: start panning
       isPanningRef.current = true;
+      setCursor('grabbing');
       panStartRef.current = { 
         x: e.clientX, 
         y: e.clientY,
@@ -913,11 +924,12 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       } else {
         // Default mode (no building tool) - start selection box
         isSelectingRef.current = true;
+        setCursor('crosshair');
         selectionStartScreenRef.current = { x: screenX, y: screenY };
         setSelectionBox({ startX: screenX, startY: screenY, endX: screenX, endY: screenY });
       }
     }
-  }, [state.selectedTool, state.selectedUnitIds, placeBuilding, moveSelectedUnits, attackTarget, latestStateRef]);
+  }, [state.selectedTool, state.selectedUnitIds, placeBuilding, moveSelectedUnits, attackTarget, assignTask, latestStateRef]);
   
   // Handle mouse move
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -1024,6 +1036,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
     if (isPanningRef.current) {
       isPanningRef.current = false;
       panStartRef.current = null;
+      setCursor('default');
     }
     
     // End road dragging
@@ -1105,6 +1118,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       isSelectingRef.current = false;
       selectionStartScreenRef.current = null;
       setSelectionBox(null);
+      setCursor('default');
     }
   }, [selectionBox, selectUnits, selectUnitsInArea, selectBuilding, latestStateRef]);
   
@@ -1199,10 +1213,12 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       const cityCenters = extractCityCenters(gameState.grid, gameState.gridSize);
       
       // Disable image smoothing for crisp pixel art
-      ctx.imageSmoothingEnabled = false;
+      // RoN aims for a more realistic look; enable high-quality smoothing.
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       
       // Draw sky background
-      drawSkyBackground(ctx, canvas, 'day');
+      drawEnhancedSky(ctx, canvas, now / 1000);
       
       // Get sprite sheet for current player's age
       const playerAge = currentPlayer?.age || 'classical';
@@ -1248,7 +1264,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               south: x < gameState.gridSize - 1 && gameState.grid[y]?.[x + 1]?.terrain === 'water',
               west: y < gameState.gridSize - 1 && gameState.grid[y + 1]?.[x]?.terrain === 'water',
             };
-            drawWaterTile(ctx, screenX, screenY, x, y, adjacentWater);
+            drawEnhancedWaterTile(ctx, screenX, screenY, x, y, adjacentWater, now / 1000, currentZoom);
             
             // Draw fishing spot indicator
             if (tile.hasFishingSpot) {
@@ -1306,7 +1322,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               south: x < gameState.gridSize - 1 && (gameState.grid[y]?.[x + 1]?.terrain === 'water' || hasDock(gameState.grid, x + 1, y, gameState.gridSize)),
               west: y < gameState.gridSize - 1 && (gameState.grid[y + 1]?.[x]?.terrain === 'water' || hasDock(gameState.grid, x, y + 1, gameState.gridSize)),
             };
-            drawWaterTile(ctx, screenX, screenY, x, y, adjacentWater);
+            drawEnhancedWaterTile(ctx, screenX, screenY, x, y, adjacentWater, now / 1000, currentZoom);
           } else {
             // Determine zone color based on ownership/deposits
             let zoneType: 'none' | 'residential' | 'commercial' | 'industrial' = 'none';
@@ -1476,8 +1492,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 ctx.fill();
               }
             } else if (tile.hasOilDeposit) {
-              // Draw grass base first
-              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
+              // Draw realistic grass base first
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom);
               
               // Only show oil in industrial+ ages
               const isIndustrial = AGE_ORDER.indexOf(playerAge) >= AGE_ORDER.indexOf('industrial');
@@ -1555,8 +1571,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 }
               }
             } else if (tile.forestDensity > 0) {
-              // Draw base grass tile for forest
-              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
+              // Darker “forest floor” grass under trees
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { forestFloor: true });
               
               // Draw trees on forest tiles using IsoCity's tree sprite
               const isoCitySprite = getCachedImage(ISOCITY_SPRITE_PATH, true);
@@ -1617,10 +1633,10 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               }
             } else if (tile.building?.type === 'road') {
               // Draw grass base under roads (roads are drawn on top in second pass)
-              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom);
             } else {
               // Regular grass tile
-              drawGroundTile(ctx, screenX, screenY, zoneType, currentZoom, false);
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom);
             }
             
             // Ownership tint overlay (skip for roads)
@@ -1715,7 +1731,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
 
           // Draw beach if any adjacent tile is land (and not a dock)
           if (adjacentLand.north || adjacentLand.east || adjacentLand.south || adjacentLand.west) {
-            drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
+            drawEnhancedBeachOnWater(ctx, screenX, screenY, adjacentLand, now / 1000, currentZoom);
           }
         }
       }
@@ -2342,11 +2358,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
     <div 
       ref={containerRef} 
       className="relative w-full h-full overflow-hidden touch-none"
-      style={{ 
-        cursor: isPanningRef.current ? 'grabbing' : 
-                isSelectingRef.current ? 'crosshair' : 
-                'default' 
-      }}
+      style={{ cursor }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

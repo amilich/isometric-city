@@ -4158,7 +4158,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
         
         return (
-          <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-sm ${
+          <div className={`absolute top-5 -translate-y-1 /2 left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-sm ${
             isWaterfrontPlacementInvalid 
               ? 'bg-destructive/90 border border-destructive-foreground/30 text-destructive-foreground' 
               : 'bg-card/90 border border-border'

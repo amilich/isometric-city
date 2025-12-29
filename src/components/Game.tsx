@@ -273,13 +273,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             />
         </div>
 
-        <BottomHUD onExit={onExit}>
-             <MiniMap 
-                embedded 
-                onNavigate={(x, y) => setNavigationTarget({ x, y })} 
-                viewport={viewport} 
-             />
-        </BottomHUD>
+        <BottomHUD onExit={onExit} />
+        
+        <MiniMap 
+          onNavigate={(x, y) => setNavigationTarget({ x, y })} 
+          viewport={viewport} 
+        />
         
         {state.activePanel === 'budget' && <BudgetPanel />}
         {state.activePanel === 'statistics' && <StatisticsPanel />}

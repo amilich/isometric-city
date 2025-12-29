@@ -17,6 +17,7 @@ import {
   PlayIcon,
   FastForwardIcon
 } from '@/components/ui/Icons';
+import { Home, Briefcase, Factory } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openCommandMenu } from '@/components/ui/CommandMenu';
 import {
@@ -132,14 +133,21 @@ const PopupMenu = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // When selected tool changes, close menu if it's not one of ours
+  useEffect(() => {
+    if (!tools.includes(selectedTool)) {
+        setIsOpen(false);
+    }
+  }, [selectedTool, tools]);
+
   return (
     <div className="relative" ref={containerRef}>
       {isOpen && (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-lg p-2 shadow-2xl z-50 min-w-[200px] animate-in slide-in-from-bottom-2 fade-in duration-200">
-           <div className="px-2 py-1 mb-2 border-b border-white/10 text-[10px] font-bold tracking-widest text-slate-400 uppercase text-center">
+        <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-[#1a1d26]/95 backdrop-blur-md border border-slate-600 rounded-xl p-3 shadow-2xl z-50 min-w-[320px] max-w-[400px] animate-in slide-in-from-bottom-4 fade-in duration-200">
+           <div className="px-2 py-1.5 mb-3 border-b border-white/10 text-[11px] font-bold tracking-[0.2em] text-emerald-400 uppercase text-center">
             {label}
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-5 gap-2">
             {tools.map(tool => {
               const info = TOOL_INFO[tool];
               if (!info) return null;
@@ -159,17 +167,17 @@ const PopupMenu = ({
                       }}
                       disabled={!canAfford && info.cost > 0}
                       variant={isSelected ? 'game-icon-selected' : 'game-icon'}
-                      className="w-10 h-10 p-0 justify-center items-center hover:scale-110 transition-transform"
+                      className="w-12 h-12 p-0 justify-center items-center hover:scale-110 transition-transform active:scale-95"
                     >
-                      {Icon ? <Icon size={20} /> : <span className="text-xs">{name.substring(0, 2)}</span>}
+                      {Icon ? <Icon size={22} /> : <span className="text-[10px] font-bold">{name.substring(0, 2)}</span>}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={10}>
-                    <div className="flex flex-row gap-3 items-start p-1">
+                  <TooltipContent side="top" sideOffset={10} className="bg-slate-900 border-slate-700">
+                    <div className="flex flex-row gap-3 items-start p-1 max-w-[200px]">
                       <SpritePreview tool={tool} />
-                      <div className="flex flex-col gap-1 min-w-[140px]">
-                        <span className="font-bold text-base">{name}</span>
-                        <span className="text-xs text-muted-foreground leading-snug">{description}</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-bold text-base text-white">{name}</span>
+                        <span className="text-xs text-slate-300 leading-snug">{description}</span>
                         {info.cost > 0 && <span className="text-sm font-mono text-emerald-400 font-bold mt-1">₺{info.cost.toLocaleString()}</span>}
                       </div>
                     </div>
@@ -178,14 +186,16 @@ const PopupMenu = ({
               );
             })}
           </div>
+           {/* Triangle pointer */}
+           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#1a1d26]/95 border-b border-r border-slate-600 rotate-45"></div>
         </div>
       )}
       <Button
         variant={hasSelectedTool ? 'game-tool-selected' : 'game-tool'}
-        className={`h-12 px-3 flex flex-col items-center justify-center gap-1 min-w-[70px] ${isOpen ? 'bg-slate-700 text-white' : ''}`}
+        className={`h-14 px-3 flex flex-col items-center justify-center gap-1 min-w-[70px] transition-all ${isOpen ? 'bg-slate-700 text-white ring-2 ring-emerald-500/50' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="font-bold text-xs">{label}</span>
+        <span className="font-bold text-[10px] uppercase tracking-wider">{label}</span>
         <div className={`transition-transform duration-200 ${isOpen ? '-rotate-90' : 'rotate-90'}`}>
           <ChevronRightIcon size={12} />
         </div>
@@ -208,10 +218,10 @@ function ExitDialog({
   const t = useTranslations('Game.Dialogs.Exit');
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
         <DialogHeader>
-          <DialogTitle>{t('Title')}</DialogTitle>
-          <DialogDescription>{t('Description')}</DialogDescription>
+          <DialogTitle className="text-xl">{t('Title')}</DialogTitle>
+          <DialogDescription className="text-slate-400">{t('Description')}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="game-danger" onClick={onExitWithoutSaving}>{t('ExitWithoutSaving')}</Button>
@@ -229,10 +239,10 @@ const formatNumber = (num: number) => {
 
 export const BottomHUD = React.memo(function BottomHUD({ 
   onExit,
-  children // For MiniMap injection
+  // children prop is removed because MiniMap is moved to top right
 }: { 
   onExit?: () => void;
-  children?: React.ReactNode;
+  children?: React.ReactNode; 
 }) {
   const { state, setTool, setActivePanel, saveCity, setSpeed } = useGame();
   const { selectedTool, stats, activePanel, speed, date } = state;
@@ -282,106 +292,86 @@ export const BottomHUD = React.memo(function BottomHUD({
     },
   ], [t]);
 
-  // RCI Bars Component
-  const RCI = () => (
-    <div className="flex flex-col gap-0.5 w-8 mx-2 bg-black/40 p-1 rounded border border-white/10">
-      {/* Residential */}
-      <Tooltip>
-        <TooltipTrigger>
-          <div className="w-full h-8 bg-slate-800 relative flex items-end">
-            <div className="w-full bg-green-500 transition-all duration-500" style={{ height: `${Math.min(100, Math.max(5, stats.demand.residential))}%` }} />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right"><p className="text-green-400 font-bold">R: {Math.round(stats.demand.residential)}</p></TooltipContent>
-      </Tooltip>
-      {/* Commercial */}
-      <Tooltip>
-        <TooltipTrigger>
-           <div className="w-full h-8 bg-slate-800 relative flex items-end">
-            <div className="w-full bg-blue-500 transition-all duration-500" style={{ height: `${Math.min(100, Math.max(5, stats.demand.commercial))}%` }} />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right"><p className="text-blue-400 font-bold">C: {Math.round(stats.demand.commercial)}</p></TooltipContent>
-      </Tooltip>
-      {/* Industrial */}
-      <Tooltip>
-        <TooltipTrigger>
-           <div className="w-full h-8 bg-slate-800 relative flex items-end">
-            <div className="w-full bg-yellow-500 transition-all duration-500" style={{ height: `${Math.min(100, Math.max(5, stats.demand.industrial))}%` }} />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right"><p className="text-yellow-400 font-bold">I: {Math.round(stats.demand.industrial)}</p></TooltipContent>
-      </Tooltip>
-    </div>
-  );
-
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="fixed bottom-0 left-0 right-0 h-32 bg-[#1a1d26] border-t-4 border-slate-600 flex shadow-2xl z-[50]">
+      <div className="fixed bottom-0 left-0 right-0 h-[80px] bg-[#1a1d26] border-t border-slate-700 flex shadow-2xl z-[50] select-none">
         
-        {/* LEFT: MiniMap & RCI */}
-        <div className="flex items-center h-full bg-[#13161c] px-2 border-r border-white/10 relative">
-           <div className="relative w-32 h-28 bg-black rounded border border-white/20 overflow-hidden mr-2">
-             {children}
-           </div>
-           <RCI />
+        {/* LEFT: Spacer or Logo could go here */}
+        <div className="flex items-center h-full bg-[#15171e] px-3 border-r border-white/5 relative z-10 shadow-xl min-w-[60px] justify-center">
+            {/* Can add a small game logo here if desired */}
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                <Home size={14} className="text-emerald-400" />
+            </div>
         </div>
 
         {/* CENTER: Toolbar */}
-        <div className="flex-1 flex items-center justify-center px-4 overflow-x-auto gap-4">
+        <div className="flex-1 flex items-center justify-center px-4 gap-6 overflow-visible relative">
           
-          {/* Main Tools Group */}
-          <div className="flex gap-1 bg-black/20 p-2 rounded-lg border border-white/5">
-             {mainTools.map(tool => {
-                const Icon = ToolIcons[tool];
-                const isSelected = selectedTool === tool;
-                return (
-                  <Tooltip key={tool}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setTool(tool)}
-                        variant={isSelected ? 'game-icon-selected' : 'game-icon'}
-                        className="w-12 h-12"
-                      >
-                         {Icon && <Icon size={24} />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t(`Tools.Items.${tool}.name`)}</TooltipContent>
-                  </Tooltip>
-                );
-             })}
-          </div>
+          <div className="flex items-center gap-2">
+            {/* Main Tools Group */}
+            <div className="flex gap-1 bg-black/20 p-1.5 rounded-xl border border-white/5 shadow-inner">
+              {mainTools.map(tool => {
+                  const Icon = ToolIcons[tool];
+                  const isSelected = selectedTool === tool;
+                  return (
+                    <Tooltip key={tool}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setTool(tool)}
+                          variant={isSelected ? 'game-icon-selected' : 'game-icon'}
+                          className="w-10 h-10 rounded-lg"
+                        >
+                          {Icon && <Icon size={20} />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={10}>{t(`Tools.Items.${tool}.name`)}</TooltipContent>
+                    </Tooltip>
+                  );
+              })}
+            </div>
 
-          {/* Zones Group */}
-          <div className="flex gap-1 bg-black/20 p-2 rounded-lg border border-white/5">
-             {zoneTools.map(tool => {
-                const isSelected = selectedTool === tool;
-                // Custom colors for zones
-                let colorClass = "text-slate-400";
-                if (tool === 'zone_residential') colorClass = "text-green-400";
-                if (tool === 'zone_commercial') colorClass = "text-blue-400";
-                if (tool === 'zone_industrial') colorClass = "text-yellow-400";
-                if (isSelected) colorClass = "text-white";
+            {/* Zones Group */}
+            <div className="flex gap-1 bg-black/20 p-1.5 rounded-xl border border-white/5 shadow-inner">
+              {zoneTools.map(tool => {
+                  const isSelected = selectedTool === tool;
+                  // Custom colors for zones
+                  let colorClass = "text-slate-400 hover:text-white";
+                  let Icon = null;
+                  
+                  if (tool === 'zone_residential') {
+                      colorClass = isSelected ? "text-white bg-green-600 hover:bg-green-500" : "text-green-500 hover:text-green-400 hover:bg-green-500/20";
+                      Icon = Home;
+                  }
+                  if (tool === 'zone_commercial') {
+                      colorClass = isSelected ? "text-white bg-blue-600 hover:bg-blue-500" : "text-blue-500 hover:text-blue-400 hover:bg-blue-500/20";
+                      Icon = Briefcase;
+                  }
+                  if (tool === 'zone_industrial') {
+                      colorClass = isSelected ? "text-white bg-yellow-600 hover:bg-yellow-500" : "text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/20";
+                      Icon = Factory;
+                  }
+                  if (isSelected && tool === 'zone_dezone') colorClass = "text-white";
 
-                return (
-                  <Tooltip key={tool}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setTool(tool)}
-                        variant={isSelected ? 'game-icon-selected' : 'game-icon'}
-                        className={`w-12 h-12 ${colorClass}`}
-                      >
-                         <span className="font-black text-lg">{tool === 'zone_dezone' ? 'X' : tool.split('_')[1][0].toUpperCase()}</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t(`Tools.Items.${tool}.name`)}</TooltipContent>
-                  </Tooltip>
-                );
-             })}
+                  return (
+                    <Tooltip key={tool}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setTool(tool)}
+                          variant="ghost"
+                          className={`w-10 h-10 rounded-lg transition-all duration-200 ${colorClass} justify-center items-center p-0 border border-transparent ${isSelected ? 'shadow-[0_0_10px_rgba(255,255,255,0.2)] scale-110' : ''}`}
+                        >
+                          {Icon ? <Icon size={20} strokeWidth={2.5} /> : <span className="font-black text-base">X</span>}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={10}>{t(`Tools.Items.${tool}.name`)}</TooltipContent>
+                    </Tooltip>
+                  );
+              })}
+            </div>
           </div>
 
           {/* Categories Popups */}
-          <div className="flex gap-1">
+          <div className="flex gap-1.5 overflow-visible">
              {categoryGroups.map(group => (
                <PopupMenu 
                   key={group.key}
@@ -397,28 +387,28 @@ export const BottomHUD = React.memo(function BottomHUD({
         </div>
 
         {/* RIGHT: Status & Systems */}
-        <div className="flex flex-col w-72 bg-[#13161c] border-l border-white/10 p-2">
+        <div className="flex flex-col w-[280px] bg-[#15171e] border-l border-white/5 p-3 relative z-10 shadow-xl">
           
           {/* Money & Pop */}
-          <div className="flex-1 flex flex-col justify-center gap-1 mb-2">
-            <div className="text-emerald-400 font-mono text-2xl font-bold text-right drop-shadow-md">
+          <div className="flex-1 flex flex-col justify-center gap-1 mb-1">
+            <div className="text-emerald-400 font-mono text-2xl font-bold text-right drop-shadow-md tracking-tight">
               ₺{formatNumber(stats.money)}
             </div>
-            <div className="flex justify-between items-center text-slate-400 text-sm border-t border-white/10 pt-1">
-               <span>POPULATION</span>
-               <span className="text-white font-bold">{formatNumber(stats.population)}</span>
+            <div className="flex justify-between items-center text-slate-400 text-[10px] uppercase font-bold tracking-wider border-t border-white/5 pt-1">
+               <span>Population</span>
+               <span className="text-white text-sm">{formatNumber(stats.population)}</span>
             </div>
-            <div className="flex justify-between items-center text-slate-400 text-xs">
-               <span>{date.toLocaleDateString()}</span>
-               <span>{speed === 0 ? 'PAUSED' : speed === 1 ? 'NORMAL' : 'FAST'}</span>
+             <div className="flex justify-between items-center text-slate-500 text-[10px] font-mono">
+               <span>{date?.toLocaleDateString ? date.toLocaleDateString() : 'Loading...'}</span>
+               <span className={speed === 0 ? 'text-amber-500' : 'text-slate-400'}>{speed === 0 ? 'PAUSED' : speed === 1 ? 'NORMAL' : 'FAST'}</span>
             </div>
           </div>
 
           {/* Game Controls */}
-          <div className="grid grid-cols-5 gap-1 mt-auto">
+          <div className="flex gap-1 justify-end items-center mt-1">
              <Tooltip>
                <TooltipTrigger asChild>
-                 <Button variant={activePanel === 'budget' ? 'game-icon-selected' : 'game-icon'} onClick={() => setActivePanel(activePanel === 'budget' ? 'none' : 'budget')} className="h-8">
+                 <Button variant={activePanel === 'budget' ? 'game-icon-selected' : 'game-icon'} onClick={() => setActivePanel(activePanel === 'budget' ? 'none' : 'budget')} className="h-7 w-7 p-0 rounded-md">
                    <BudgetIcon size={14} />
                  </Button>
                </TooltipTrigger>
@@ -427,18 +417,18 @@ export const BottomHUD = React.memo(function BottomHUD({
 
              <Tooltip>
                <TooltipTrigger asChild>
-                 <Button variant={activePanel === 'statistics' ? 'game-icon-selected' : 'game-icon'} onClick={() => setActivePanel(activePanel === 'statistics' ? 'none' : 'statistics')} className="h-8">
+                 <Button variant={activePanel === 'statistics' ? 'game-icon-selected' : 'game-icon'} onClick={() => setActivePanel(activePanel === 'statistics' ? 'none' : 'statistics')} className="h-7 w-7 p-0 rounded-md">
                    <ChartIcon size={14} />
                  </Button>
                </TooltipTrigger>
                <TooltipContent>{t('Panels.Statistics')}</TooltipContent>
              </Tooltip>
 
-             <div className="w-px bg-white/10 mx-auto" />
+             <div className="w-px h-4 bg-white/10 mx-1" />
 
              <Tooltip>
                <TooltipTrigger asChild>
-                 <Button variant={speed === 0 ? 'game-danger' : 'game-icon'} onClick={() => setSpeed(speed === 0 ? 1 : 0)} className="h-8">
+                 <Button variant={speed === 0 ? 'game-danger' : 'game-icon'} onClick={() => setSpeed(speed === 0 ? 1 : 0)} className="h-7 w-7 p-0 rounded-md">
                    {speed === 0 ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
                  </Button>
                </TooltipTrigger>
@@ -447,19 +437,24 @@ export const BottomHUD = React.memo(function BottomHUD({
 
              <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant={speed > 1 ? 'game-icon-selected' : 'game-icon'} onClick={() => setSpeed(speed > 1 ? 1 : 3)} className="h-8">
+                  <Button variant={speed > 1 ? 'game-icon-selected' : 'game-icon'} onClick={() => setSpeed(speed > 1 ? 1 : 3)} className="h-7 w-7 p-0 rounded-md">
                     <FastForwardIcon size={14} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Fast Forward</TooltipContent>
              </Tooltip>
+
+             <div className="w-px h-4 bg-white/10 mx-1" />
+
+             <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" onClick={() => setShowExitDialog(true)} className="h-7 w-7 p-0 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                    <ExitIcon size={14} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('Dialogs.Exit.Title')}</TooltipContent>
+             </Tooltip>
           </div>
-          
-           <div className="flex justify-end gap-1 mt-2">
-             <Button variant="ghost" size="sm" onClick={() => setShowExitDialog(true)} className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-6 text-[10px] uppercase">
-                Exit City
-             </Button>
-           </div>
 
         </div>
 
@@ -476,4 +471,3 @@ export const BottomHUD = React.memo(function BottomHUD({
     </TooltipProvider>
   );
 });
-

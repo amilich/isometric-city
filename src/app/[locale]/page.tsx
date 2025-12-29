@@ -505,7 +505,7 @@ function HomePageContent() {
         </div>
 
         {/* Decorative Elements */}
-        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 z-20 select-none pointer-events-none">
+        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 z-1 select-none pointer-events-none">
           <Image
             src="/truncgil-mycity3.png"
             alt="Truncgil MyCity Logo"

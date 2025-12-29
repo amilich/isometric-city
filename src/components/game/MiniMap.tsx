@@ -4,6 +4,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { useGame } from '@/context/GameContext';
 import { Card } from '@/components/ui/card';
 import { TILE_WIDTH, TILE_HEIGHT } from '@/components/game/types';
+import { Home, Briefcase, Factory } from 'lucide-react';
 
 // Service buildings for minimap color mapping
 const SERVICE_BUILDINGS = new Set([
@@ -34,7 +35,7 @@ interface MiniMapProps {
 // Canvas-based Minimap - Memoized with throttled grid rendering
 export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport, embedded = false }: MiniMapProps) {
   const { state } = useGame();
-  const { grid, gridSize, tick } = state;
+  const { grid, gridSize, tick, stats } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gridImageRef = useRef<ImageData | null>(null);
   const lastGridRenderTickRef = useRef(-1);
@@ -201,8 +202,38 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport, embed
     );
   }
 
+  // RCI Bars Component (Integrated into MiniMap)
+  const RCIBars = () => (
+    <div className="flex flex-col gap-1.5 mt-2">
+      {/* Residential */}
+      <div className="flex items-center gap-2">
+        <Home size={12} className="text-green-400" />
+        <div className="flex-1 h-2 bg-slate-800/50 rounded-sm relative overflow-hidden">
+            <div className="absolute inset-0 bg-green-500/20"></div>
+            <div className="h-full bg-green-500 transition-all duration-500 rounded-sm" style={{ width: `${Math.min(100, Math.max(5, stats.demand.residential))}%` }} />
+        </div>
+      </div>
+      {/* Commercial */}
+      <div className="flex items-center gap-2">
+        <Briefcase size={12} className="text-blue-400" />
+        <div className="flex-1 h-2 bg-slate-800/50 rounded-sm relative overflow-hidden">
+            <div className="absolute inset-0 bg-blue-500/20"></div>
+            <div className="h-full bg-blue-500 transition-all duration-500 rounded-sm" style={{ width: `${Math.min(100, Math.max(5, stats.demand.commercial))}%` }} />
+        </div>
+      </div>
+      {/* Industrial */}
+      <div className="flex items-center gap-2">
+        <Factory size={12} className="text-yellow-400" />
+        <div className="flex-1 h-2 bg-slate-800/50 rounded-sm relative overflow-hidden">
+            <div className="absolute inset-0 bg-yellow-500/20"></div>
+            <div className="h-full bg-yellow-500 transition-all duration-500 rounded-sm" style={{ width: `${Math.min(100, Math.max(5, stats.demand.industrial))}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <Card className="absolute bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70">
+    <Card className="absolute top-4 right-4 p-3 shadow-lg bg-card/90 border-border/70 z-[60]">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
         Minimap
       </div>
@@ -216,24 +247,7 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport, embed
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
       />
-      <div className="mt-2 grid grid-cols-4 gap-1 text-[8px]">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-green-500 rounded-sm" />
-          <span className="text-muted-foreground">R</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-blue-500 rounded-sm" />
-          <span className="text-muted-foreground">C</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-amber-500 rounded-sm" />
-          <span className="text-muted-foreground">I</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-pink-500 rounded-sm" />
-          <span className="text-muted-foreground">S</span>
-        </div>
-      </div>
+      <RCIBars />
     </Card>
   );
 });

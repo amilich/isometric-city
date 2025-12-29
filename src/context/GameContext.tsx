@@ -311,7 +311,7 @@ function saveSpritePackId(packId: string): void {
 
 // Load day/night mode from localStorage
 function loadDayNightMode(): DayNightMode {
-  if (typeof window === 'undefined') return 'auto';
+  if (typeof window === 'undefined') return 'day';
   try {
     const saved = localStorage.getItem(DAY_NIGHT_MODE_STORAGE_KEY);
     if (saved === 'auto' || saved === 'day' || saved === 'night') {
@@ -320,7 +320,7 @@ function loadDayNightMode(): DayNightMode {
   } catch (e) {
     console.error('Failed to load day/night mode preference:', e);
   }
-  return 'auto';
+  return 'day';
 }
 
 // Save day/night mode to localStorage
@@ -524,7 +524,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [currentSpritePack, setCurrentSpritePack] = useState<SpritePack>(() => getSpritePack(DEFAULT_SPRITE_PACK_ID));
   
   // Day/night mode state
-  const [dayNightMode, setDayNightModeState] = useState<DayNightMode>('auto');
+  const [dayNightMode, setDayNightModeState] = useState<DayNightMode>('day');
   
   // Zoom sensitivity state
   const [zoomSensitivity, setZoomSensitivityState] = useState<number>(5);

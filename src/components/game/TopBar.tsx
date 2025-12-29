@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { msg, useMessages } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/Icons';
 import { copyShareUrl } from '@/lib/shareState';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { Input } from '@/components/ui/input';
 
 // Translatable UI labels
 const UI_LABELS = {
@@ -175,10 +176,26 @@ export const TopBar = React.memo(function TopBar() {
   const { state, setSpeed, setTaxRate, visualHour } = useGame();
   const { stats, year, month, day, speed, taxRate, cityName } = state;
   const m = useMessages();
-  
+  const [taxInput, setTaxInput] = useState(String(taxRate));
+  useEffect(() => { setTaxInput(String(taxRate)); }, [taxRate]);
+
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
-  
+
+  const commitTaxInput = () => {
+    const raw = taxInput.trim().replace('%','');
+    if (raw === '') { setTaxInput(String(taxRate)); return; }
+    const n = Number(raw);
+    if (Number.isNaN(n)) { setTaxInput(String(taxRate)); return; }
+    const clamped = Math.min(100, Math.max(0, Math.round(n)));
+    if (clamped !== taxRate) setTaxRate(clamped);
+    setTaxInput(String(clamped));
+  };
+
+  const handleTaxKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') { commitTaxInput(); (e.target as HTMLInputElement).blur(); }
+  };
+
   return (
     <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
       <div className="flex items-center gap-6">
@@ -263,6 +280,14 @@ export const TopBar = React.memo(function TopBar() {
             max={100}
             step={1}
             className="w-14"
+          />
+          <Input
+            value={taxInput}
+            onChange={(e) => setTaxInput(e.target.value)}
+            onBlur={commitTaxInput}
+            onKeyDown={handleTaxKeyDown}
+            className="w-14 ml-2 text-xs font-mono text-right"
+            aria-label={String(m(UI_LABELS.tax))}
           />
           <span className="text-foreground text-xs font-mono tabular-nums w-7">{taxRate}%</span>
         </div>

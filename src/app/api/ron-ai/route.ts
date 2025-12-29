@@ -46,15 +46,28 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
   {
     type: 'function',
     name: 'build',
-    description: 'Build a building at specified coordinates. Buildings: farm (50 wood), woodcutters_camp (30 wood), mine (80 wood + 50 gold), barracks (100 wood), small_city (400 wood + 100 metal - increases pop cap!).',
+    description: 'Build a building. Costs: farm(50w), woodcutters_camp(30w), mine(80w+50g), barracks(100w), library(80w+50g), market(60w+30g), university(150w+100g), stable(150w+50m), small_city(400w+200g+100m,pop+20), large_city(600w+400g+200m,pop+35). Use tiles from game state!',
     strict: true,
     parameters: {
       type: 'object',
       properties: {
         building_type: {
           type: 'string',
-          enum: ['farm', 'woodcutters_camp', 'mine', 'barracks', 'small_city', 'tower', 'university', 'temple', 'market'],
-          description: 'Type of building to construct',
+          enum: [
+            // Economy
+            'farm', 'woodcutters_camp', 'mine', 'market', 'granary', 'lumber_mill', 'smelter',
+            // Oil (industrial+)
+            'oil_well', 'refinery',
+            // Knowledge
+            'library', 'university', 'temple', 'senate',
+            // Military
+            'barracks', 'stable', 'siege_factory', 'dock', 'factory', 'airbase',
+            // Defense
+            'tower', 'fort', 'fortress', 'castle',
+            // Cities
+            'small_city', 'large_city', 'major_city'
+          ],
+          description: 'Type of building to construct. Economic: farm, woodcutters_camp, mine, market (gold), library (knowledge), oil_well (oil). Military: barracks, stable, siege_factory, dock. Cities: small_city (pop+20), large_city (pop+35).',
         },
         x: { type: 'number', description: 'X coordinate (must be from buildable tiles in game state)' },
         y: { type: 'number', description: 'Y coordinate (must be from buildable tiles in game state)' },
@@ -130,9 +143,10 @@ const SYSTEM_PROMPT = `You are an AGGRESSIVE AI in Rise of Nations. Goal: DEFEAT
 
 ## KEY RULES:
 **POP CAP IS #1 PRIORITY!**
-- If population >= populationCap, you MUST save for small_city (400 wood, 100 metal)
-- DON'T waste wood on more woodcutters when pop-capped - SAVE IT!
-- Build small_city the MOMENT you have 400 wood + 100 metal
+- If population >= populationCap, you MUST save for small_city (400 wood + 200 gold + 100 metal)
+- DON'T waste resources when pop-capped - SAVE THEM!
+- Build small_city the MOMENT you have 400 wood + 200 gold + 100 metal
+- If you don't have enough gold, build a market or mine to generate gold!
 
 **BALANCED ECONOMY:**
 - Need 3-4 farms (not just 1!)
@@ -143,6 +157,16 @@ const SYSTEM_PROMPT = `You are an AGGRESSIVE AI in Rise of Nations. Goal: DEFEAT
 **MILITARY:**
 - Build barracks early (costs 100 wood)
 - Train militia (40 food, 20 wood each)
+
+**KNOWLEDGE & AGES:**
+- Build LIBRARY to generate knowledge and advance ages!
+- Build UNIVERSITY for faster research
+- Knowledge is required to advance to next age (more buildings unlock!)
+- Industrial age unlocks oil_well, factory, airbase
+
+**GOLD:**
+- Build MARKET to generate gold income!
+- Gold is needed for small_city, mines, and advanced buildings
 - Attack enemy when you have 5+ military units
 - Target: enemy city_center first!
 
@@ -166,8 +190,15 @@ const SYSTEM_PROMPT = `You are an AGGRESSIVE AI in Rise of Nations. Goal: DEFEAT
 ## CRITICAL ECONOMY RULES:
 - You CANNOT save for small_city if wood rate is 0! You must have income!
 - Always ensure at least 1 of each: farm (food), woodcutters_camp (wood)
-- Train more citizens when you have idle buildings and food
 - Build multiple small_city to expand population - don't stop at just one!
+
+## AGGRESSIVE EXPANSION (VERY IMPORTANT):
+- ALWAYS train citizens! Queue 2-3 citizens EVERY turn until you have 15+ workers
+- ALWAYS build! Every turn should have at least 1-2 builds
+- Target: 4+ farms, 3+ woodcutters, 2+ mines MINIMUM
+- Build MULTIPLE barracks (2-3) for faster military production
+- Train militia at EVERY barracks EVERY turn
+- Never stop expanding! If resources > 200, BUILD SOMETHING!
 
 ## DEFENDING:
 If you see "🚨 THREATS" or "⚠️ UNDER ATTACK":
@@ -258,7 +289,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<AIRespons
     // Initial prompt to the agent
     const turnPrompt = `New turn! Tick: ${gameState.tick}. Analyze the game state and take strategic actions. Remember: call get_game_state first, then assign_workers, then build/train as needed.`;
 
+    // Log what we're sending to the agent
+    console.log('\n' + '-'.repeat(60));
+    console.log('[AGENT INPUT] Turn prompt:', turnPrompt);
+    console.log('[AGENT INPUT] System prompt length:', SYSTEM_PROMPT.length, 'chars');
+    console.log('[AGENT INPUT] Available tools:', AI_TOOLS.map(t => t.name).join(', '));
+    console.log('-'.repeat(60));
+
     // Create initial response - always provide input, optionally use previous_response_id for context
+    const startTime = Date.now();
     let response = await client.responses.create({
       model: 'gpt-5-mini-2025-08-07',
       instructions: SYSTEM_PROMPT,
@@ -266,8 +305,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<AIRespons
       tools: AI_TOOLS,
       tool_choice: 'auto',
     });
+    const responseTime = Date.now() - startTime;
 
-    console.log(`[AGENT] Initial response, ${response.output?.length || 0} outputs`);
+    console.log(`[AGENT OUTPUT] Initial response in ${responseTime}ms, ${response.output?.length || 0} outputs`);
+    console.log(`[AGENT OUTPUT] Response ID: ${response.id}`);
 
     // Process tool calls in a loop
     let iterations = 0;
@@ -314,7 +355,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<AIRespons
           args = {};
         }
 
-        console.log(`[AGENT] Tool: ${toolCall.name}`, Object.keys(args).length > 0 ? args : '');
+        console.log(`\n[TOOL CALL] ${toolCall.name}`);
+        if (Object.keys(args).length > 0) {
+          console.log(`[TOOL INPUT] ${JSON.stringify(args, null, 2)}`);
+        }
 
         let result: { success: boolean; message: string; data?: unknown };
 
@@ -331,7 +375,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<AIRespons
 Food: ${Math.round(p.resources.food)} (rate: ${p.resourceRates.food.toFixed(1)}/s)
 Wood: ${Math.round(p.resources.wood)} (rate: ${p.resourceRates.wood.toFixed(1)}/s)${p.resourceRates.wood === 0 ? ' ⚠️ ZERO!' : ''}
 Metal: ${Math.round(p.resources.metal)} (rate: ${p.resourceRates.metal.toFixed(1)}/s)
-Gold: ${Math.round(p.resources.gold)}
+Gold: ${Math.round(p.resources.gold)} (rate: ${(p.resourceRates.gold || 0).toFixed(1)}/s)
+Knowledge: ${Math.round(p.resources.knowledge || 0)} (rate: ${(p.resourceRates.knowledge || 0).toFixed(1)}/s) ${(p.resources.knowledge || 0) > 0 ? '📚' : '- need library!'}
+Oil: ${Math.round(p.resources.oil || 0)} (rate: ${(p.resourceRates.oil || 0).toFixed(1)}/s) ${(p.resources.oil || 0) > 0 ? '🛢️' : '- need oil_well (industrial age)!'}
 
 ## POPULATION: ${p.population}/${p.populationCap}${p.population >= p.populationCap ? ' ⚠️ CAPPED!' : ''}
 
@@ -399,13 +445,19 @@ ${(() => {
   }
 
   // #1 PRIORITY: Pop cap - must expand!
+  // small_city costs: wood 400, gold 200, metal 100
   if (popCapped) {
-    if (p.resources.wood >= 400 && p.resources.metal >= 100 && cityTile) {
+    const hasEnoughForCity = p.resources.wood >= 400 && p.resources.metal >= 100 && p.resources.gold >= 200;
+    if (hasEnoughForCity && cityTile) {
       suggestions.push(`🚨 URGENT: BUILD small_city at (${cityTile.x},${cityTile.y}) NOW! You have resources!`);
-    } else if (p.resourceRates.wood > 0) {
+    } else {
       const needWood = Math.max(0, 400 - p.resources.wood);
       const needMetal = Math.max(0, 100 - p.resources.metal);
-      suggestions.push(`⏳ Saving for small_city - need ${needWood} more wood, ${needMetal} more metal.`);
+      const needGold = Math.max(0, 200 - p.resources.gold);
+      suggestions.push(`⏳ POP CAPPED! Saving for small_city - need ${needWood} more wood, ${needMetal} more metal, ${needGold} more gold.`);
+      if (needGold > 0 && cityTile) {
+        suggestions.push(`💰 BUILD market at (${cityTile.x},${cityTile.y}) for gold income!`);
+      }
     }
   }
 
@@ -418,6 +470,16 @@ ${(() => {
   }
   if (p.resourceRates.metal === 0 && metalTile) {
     suggestions.push(`⛏️ NO METAL! BUILD mine at (${metalTile.x},${metalTile.y})`);
+  }
+  
+  // Knowledge and gold suggestions
+  const hasLibrary = condensed.myBuildings.some(b => b.type === 'library');
+  const hasMarket = condensed.myBuildings.some(b => b.type === 'market');
+  if (!hasLibrary && cityTile && p.resources.wood >= 80) {
+    suggestions.push(`📚 BUILD library at (${cityTile.x},${cityTile.y}) for knowledge income and age advancement!`);
+  }
+  if (!hasMarket && cityTile && p.resources.wood >= 60 && (p.resourceRates.gold || 0) === 0) {
+    suggestions.push(`💰 BUILD market at (${cityTile.x},${cityTile.y}) for gold income!`);
   }
 
   // Only suggest other builds if NOT pop-capped or already have enough for small_city
@@ -433,11 +495,21 @@ ${(() => {
     }
   }
   
-  // Citizen training - need workers for economy!
+  // Citizen training - need workers for economy! BE AGGRESSIVE!
   const citizenCount = condensed.myUnits.filter(u => u.type === 'citizen').length;
   const cityCenter = condensed.myBuildings.find(b => b.type === 'city_center' || b.type === 'small_city');
-  if (!popCapped && cityCenter && citizenCount < 15 && p.resources.food >= 50) {
-    suggestions.push(`👷 TRAIN citizen at (${cityCenter.x},${cityCenter.y}) - need more workers!`);
+  const allCityCenters = condensed.myBuildings.filter(b => b.type === 'city_center' || b.type === 'small_city');
+  if (!popCapped && cityCenter && citizenCount < 20 && p.resources.food >= 50) {
+    suggestions.push(`👷 TRAIN 2-3 citizens NOW! You only have ${citizenCount} workers - need 15+!`);
+    for (const cc of allCityCenters.slice(0, 2)) {
+      suggestions.push(`  → Train citizen at (${cc.x},${cc.y})`);
+    }
+  }
+
+  // Multiple barracks for faster military
+  const barracksCount = condensed.myBuildings.filter(b => b.type === 'barracks').length;
+  if (barracksCount < 2 && p.resources.wood >= 100 && cityTile) {
+    suggestions.push(`🏰 BUILD 2nd barracks at (${cityTile.x},${cityTile.y}) for faster military!`);
   }
 
   // Military actions
@@ -454,11 +526,31 @@ ${(() => {
     suggestions.push(`🏙️ Build another small_city at (${cityTile.x},${cityTile.y}) to expand population cap!`);
   }
 
-  return suggestions.length > 0 ? suggestions.join('\n') : 'Economy stable - build small_city to expand!';
+  // Always build something if resources are high!
+  if (p.resources.wood >= 150 && suggestions.length < 3) {
+    if (farmCount < 5 && cityTile) suggestions.push(`🌾 Build more farms! (have ${farmCount}, want 5+)`);
+    if (woodCount < 4 && forestTile) suggestions.push(`🪵 Build more woodcutters! (have ${woodCount}, want 4+)`);
+    if (mineCount < 3 && metalTile) suggestions.push(`⛏️ Build more mines! (have ${mineCount}, want 3+)`);
+  }
+
+  // ALWAYS remind to be aggressive
+  suggestions.push(`⚡ EVERY TURN: Train citizens, train militia, build buildings! Never idle!`);
+
+  return suggestions.join('\n');
 })()}`;
 
             result = { success: true, message: stateStr };
-            console.log(`  → Game state retrieved`);
+            // Detailed logging
+            console.log(`[TOOL OUTPUT] Game state retrieved (${stateStr.length} chars)`);
+            console.log(`  [STATE] Tick: ${condensed.tick} | Pop: ${p.population}/${p.populationCap} | Military: ${condensed.myUnits.filter(u => u.type !== 'citizen').length}`);
+            console.log(`  [STATE] Resources: Food ${Math.round(p.resources.food)} (${p.resourceRates.food}/s) | Wood ${Math.round(p.resources.wood)} (${p.resourceRates.wood}/s) | Metal ${Math.round(p.resources.metal)} (${p.resourceRates.metal}/s) | Gold ${Math.round(p.resources.gold)}`);
+            console.log(`  [STATE] Buildings: ${condensed.myBuildings.map(b => b.type).join(', ')}`);
+            console.log(`  [STATE] Citizens: ${condensed.myUnits.filter(u => u.type === 'citizen').length} | Idle: ${condensed.myUnits.filter(u => u.type === 'citizen' && (u.task === 'idle' || u.task === 'move')).length}`);
+            // Log the full prompt going to AI (first 2000 chars)
+            console.log(`\n[FULL PROMPT TO AI] (showing first 2500 chars):\n${'-'.repeat(50)}`);
+            console.log(stateStr.substring(0, 2500));
+            if (stateStr.length > 2500) console.log(`\n... (${stateStr.length - 2500} more chars)`);
+            console.log('-'.repeat(50));
             break;
           }
 
@@ -554,14 +646,19 @@ ${(() => {
             result = { success: false, message: `Unknown tool: ${toolCall.name}` };
         }
 
+        const outputStr = JSON.stringify(result);
+        console.log(`[TOOL RESULT] ${toolCall.name}: ${result.success ? '✓' : '✗'} ${result.message.substring(0, 100)}${result.message.length > 100 ? '...' : ''}`);
+        
         toolResults.push({
           call_id: toolCall.call_id,
-          output: JSON.stringify(result),
+          output: outputStr,
         });
       }
 
       // Continue the conversation with tool results
+      console.log(`\n[AGENT CONTINUE] Sending ${toolResults.length} tool results back to agent...`);
       try {
+        const continueStart = Date.now();
         response = await client.responses.create({
           model: 'gpt-5-mini-2025-08-07',
           instructions: SYSTEM_PROMPT,
@@ -574,6 +671,8 @@ ${(() => {
           tools: AI_TOOLS,
           tool_choice: 'auto',
         });
+        const continueTime = Date.now() - continueStart;
+        console.log(`[AGENT OUTPUT] Continuation response in ${continueTime}ms, ${response.output?.length || 0} outputs`);
       } catch (err) {
         if (err instanceof Error && (err.message.includes('429') || err.message.includes('rate'))) {
           console.log('[AGENT] Rate limited, stopping turn');
@@ -583,9 +682,14 @@ ${(() => {
       }
     }
 
-    console.log(`[AGENT] Turn complete after ${iterations} iterations, ${actions.length} actions`);
+    const totalTurnTime = Date.now() - startTime;
+    console.log('\n' + '='.repeat(60));
+    console.log(`[TURN SUMMARY] Completed in ${(totalTurnTime / 1000).toFixed(1)}s | ${iterations} iterations | ${actions.length} actions`);
     if (actions.length > 0) {
-      console.log(`[AGENT] Actions to sync:`, actions.map(a => `${a.type}:${JSON.stringify(a.data).slice(0, 50)}`).join(', '));
+      console.log(`[TURN ACTIONS]:`);
+      for (const action of actions) {
+        console.log(`  - ${action.type}: ${JSON.stringify(action.data).slice(0, 80)}${JSON.stringify(action.data).length > 80 ? '...' : ''}`);
+      }
     }
     console.log('='.repeat(60) + '\n');
 

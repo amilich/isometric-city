@@ -51,6 +51,52 @@ export function useAgenticAI(
     latestStateRef.current = gameState;
   }, [gameState]);
 
+  // Log AI resources every ~10 ticks
+  const lastLogTickRef = useRef(0);
+  useEffect(() => {
+    if (!config.enabled) return;
+    const tick = gameState.tick;
+    if (tick - lastLogTickRef.current >= 10) {
+      const isDetailedLog = tick - lastLogTickRef.current >= 50 || lastLogTickRef.current === 0;
+      lastLogTickRef.current = tick;
+      const aiPlayer = gameState.players.find(p => p.id === config.aiPlayerId);
+      if (aiPlayer) {
+        const aiUnits = gameState.units.filter(u => u.ownerId === config.aiPlayerId);
+        const citizens = aiUnits.filter(u => u.type === 'citizen').length;
+        const military = aiUnits.filter(u => u.type !== 'citizen').length;
+        
+        // Count buildings
+        const buildingCounts: Record<string, number> = {};
+        for (let y = 0; y < gameState.gridSize; y++) {
+          for (let x = 0; x < gameState.gridSize; x++) {
+            const tile = gameState.grid[y]?.[x];
+            if (tile?.building && tile.ownerId === config.aiPlayerId) {
+              const type = tile.building.type;
+              buildingCounts[type] = (buildingCounts[type] || 0) + 1;
+            }
+          }
+        }
+        
+        console.log(
+          `%c[AI] Tick ${tick}%c | Pop: ${aiPlayer.population}/${aiPlayer.populationCap} | ` +
+          `👷${citizens} ⚔️${military} | ` +
+          `🍖${Math.round(aiPlayer.resources.food)}(${aiPlayer.resourceRates.food}/s) ` +
+          `🪵${Math.round(aiPlayer.resources.wood)}(${aiPlayer.resourceRates.wood}/s) ` +
+          `⛏️${Math.round(aiPlayer.resources.metal)}(${aiPlayer.resourceRates.metal}/s)`,
+          'color: #4CAF50; font-weight: bold',
+          'color: inherit'
+        );
+        
+        if (isDetailedLog) {
+          const buildingSummary = Object.entries(buildingCounts)
+            .map(([type, count]) => `${type}:${count}`)
+            .join(', ');
+          console.log(`  [AI Buildings] ${buildingSummary || 'none'}`);
+        }
+      }
+    }
+  }, [gameState.tick, config.enabled, config.aiPlayerId, gameState.players, gameState.units, gameState.grid, gameState.gridSize]);
+
   const processAITurn = useCallback(async () => {
     if (isProcessingRef.current || !config.enabled) return;
     

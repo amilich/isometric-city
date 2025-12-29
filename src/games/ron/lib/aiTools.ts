@@ -746,9 +746,18 @@ export function executeSendUnits(
     return { newState: state, result: { success: false, message: `Invalid task: ${task}` } };
   }
 
-  // Find units owned by AI
-  const unitsToMove = state.units.filter(u => unitIds.includes(u.id) && u.ownerId === aiPlayerId);
+  // Find units owned by AI (handle various ID formats the AI might use)
+  // AI sometimes sends "militia[unit-xxx]" instead of just "unit-xxx"
+  const normalizedIds = unitIds.map(id => {
+    // Extract unit ID from formats like "militia[unit-xxx]" or "unit-xxx"
+    const match = id.match(/unit-[a-z0-9-]+/i);
+    return match ? match[0] : id;
+  });
+  console.log(`[send_units] Normalized IDs: ${normalizedIds.join(', ')}`);
+  
+  const unitsToMove = state.units.filter(u => normalizedIds.includes(u.id) && u.ownerId === aiPlayerId);
   if (unitsToMove.length === 0) {
+    console.log(`[send_units] No matching units. AI units: ${state.units.filter(u => u.ownerId === aiPlayerId).map(u => u.id).join(', ')}`);
     return { newState: state, result: { success: false, message: 'No valid units found with those IDs' } };
   }
 

@@ -1112,7 +1112,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     // Use smaller base delta and scale by current zoom for consistent feel
-    const baseZoomDelta = 0.05;
+    const baseZoomDelta = 0.02;
     const scaledDelta = baseZoomDelta * Math.max(0.5, zoomRef.current);
     const zoomDelta = e.deltaY > 0 ? -scaledDelta : scaledDelta;
     setZoom(prev => Math.max(0.3, Math.min(3, prev + zoomDelta)));

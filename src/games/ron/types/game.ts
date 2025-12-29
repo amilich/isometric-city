@@ -190,7 +190,7 @@ export function createInitialRoNGameState(
       age: 'classical' as Age,
       resources: { food: 200, wood: 500, metal: 0, gold: 150, knowledge: 0, oil: 0 },
       resourceRates: { food: 0, wood: 0, metal: 0, gold: 0, knowledge: 0, oil: 0 },
-      storageLimits: { food: 2000, wood: 1500, metal: 1500, gold: 2500, knowledge: 1500, oil: 1000 },
+      storageLimits: { food: 20000, wood: 15000, metal: 15000, gold: 25000, knowledge: 15000, oil: 10000 },
       population: 0,
       populationCap: 10,
       isDefeated: false,

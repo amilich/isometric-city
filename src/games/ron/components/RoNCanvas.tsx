@@ -1260,7 +1260,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               west: y < gameState.gridSize - 1 && gameState.grid[y + 1]?.[x]?.terrain === 'water',
             };
             // Use enhanced realistic water rendering
-            drawRealisticWaterTile(ctx, screenX, screenY, x, y, animTime, currentZoom, adjacentWater);
+            drawRealisticWaterTile(ctx, { screenX, screenY, gridX: x, gridY: y, animTime, zoom: currentZoom, adjacentWater });
             
             // Draw fishing spot indicator
             if (tile.hasFishingSpot) {
@@ -1319,7 +1319,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               west: y < gameState.gridSize - 1 && (gameState.grid[y + 1]?.[x]?.terrain === 'water' || hasDock(gameState.grid, x, y + 1, gameState.gridSize)),
             };
             // Use enhanced realistic water rendering
-            drawRealisticWaterTile(ctx, screenX, screenY, x, y, animTime, currentZoom, adjacentWater);
+            drawRealisticWaterTile(ctx, { screenX, screenY, gridX: x, gridY: y, animTime, zoom: currentZoom, adjacentWater });
           } else {
             // Draw terrain with enhanced realistic graphics
             if (tile.hasMetalDeposit) {
@@ -1327,7 +1327,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               drawRealisticMountain(ctx, screenX, screenY, x, y, true, currentZoom);
             } else if (tile.hasOilDeposit) {
               // Draw enhanced grass base first
-              drawRealisticGrassTile(ctx, screenX, screenY, x, y, currentZoom);
+              drawRealisticGrassTile(ctx, { screenX, screenY, gridX: x, gridY: y, zoom: currentZoom });
               
               // Only show oil in industrial+ ages
               const isIndustrial = AGE_ORDER.indexOf(playerAge) >= AGE_ORDER.indexOf('industrial');
@@ -1370,13 +1370,13 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               }
             } else if (tile.forestDensity > 0) {
               // Use enhanced realistic procedural forest rendering
-              drawRealisticForest(ctx, screenX, screenY, x, y, tile.forestDensity, currentZoom, animTime);
+              drawRealisticForest(ctx, { screenX, screenY, gridX: x, gridY: y, forestDensity: tile.forestDensity, zoom: currentZoom, animTime });
             } else if (tile.building?.type === 'road') {
               // Draw enhanced grass base under roads
-              drawRealisticGrassTile(ctx, screenX, screenY, x, y, currentZoom);
+              drawRealisticGrassTile(ctx, { screenX, screenY, gridX: x, gridY: y, zoom: currentZoom });
             } else {
               // Regular grass tile with enhanced realistic rendering
-              drawRealisticGrassTile(ctx, screenX, screenY, x, y, currentZoom);
+              drawRealisticGrassTile(ctx, { screenX, screenY, gridX: x, gridY: y, zoom: currentZoom });
             }
             
             // Ownership tint overlay (skip for roads)

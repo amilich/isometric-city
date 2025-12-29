@@ -214,18 +214,18 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
  */
 export function drawRealisticGrassTile(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
-  zoom: number,
   options: {
+    screenX: number;
+    screenY: number;
+    gridX: number;
+    gridY: number;
+    zoom: number;
     ambient?: number;
     highlight?: boolean;
     selected?: boolean;
-  } = {}
+  }
 ): void {
-  const { ambient = 1.0, highlight = false, selected = false } = options;
+  const { screenX, screenY, gridX, gridY, zoom, ambient = 1.0, highlight = false, selected = false } = options;
   const noise = getTerrainNoise();
   const detailNoise = getGrassDetailNoise();
 
@@ -389,14 +389,17 @@ export function drawRealisticGrassTile(
  */
 export function drawRealisticWaterTile(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
-  animTime: number,
-  zoom: number,
-  adjacentWater: { north: boolean; east: boolean; south: boolean; west: boolean }
+  options: {
+    screenX: number;
+    screenY: number;
+    gridX: number;
+    gridY: number;
+    animTime: number;
+    zoom: number;
+    adjacentWater: { north: boolean; east: boolean; south: boolean; west: boolean };
+  }
 ): void {
+  const { screenX, screenY, gridX, gridY, animTime, zoom, adjacentWater } = options;
   const waterNoiseFn = getWaterNoise();
   const waveNoiseFn = getWaveNoise();
 
@@ -653,6 +656,7 @@ export function drawRealisticBeach(
     const foamDist = beachWidth * (0.6 + Math.sin(animTime * 0.8) * 0.15);
     
     const foamColor = REALISTIC_BEACH_COLORS.foam;
+    ctx.save();
     ctx.strokeStyle = rgb(foamColor.r, foamColor.g, foamColor.b, 0.35 + Math.sin(animTime * 1.5) * 0.1);
     ctx.lineWidth = foamWidth;
     ctx.lineCap = 'round';
@@ -682,6 +686,7 @@ export function drawRealisticBeach(
       end.y + inward.dy * foam2Dist
     );
     ctx.stroke();
+    ctx.restore();
   };
 
   // Draw beach edges
@@ -928,20 +933,23 @@ export function drawRealisticMountain(
  */
 export function drawRealisticForest(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
-  forestDensity: number,
-  zoom: number,
-  animTime: number
+  options: {
+    screenX: number;
+    screenY: number;
+    gridX: number;
+    gridY: number;
+    forestDensity: number;
+    zoom: number;
+    animTime: number;
+  }
 ): void {
+  const { screenX, screenY, gridX, gridY, forestDensity, zoom, animTime } = options;
   const noise = getTerrainNoise();
   const w = TILE_WIDTH;
   const h = TILE_HEIGHT;
 
   // First draw grass base
-  drawRealisticGrassTile(ctx, screenX, screenY, gridX, gridY, zoom);
+  drawRealisticGrassTile(ctx, { screenX, screenY, gridX, gridY, zoom });
 
   // Number of trees based on density
   const numTrees = Math.floor(5 + (forestDensity / 100) * 5);

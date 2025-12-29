@@ -16,7 +16,7 @@ import { CommandMenu } from '@/components/ui/CommandMenu';
 // Import game components
 import { OverlayMode } from '@/components/game/types';
 import { getOverlayForTool } from '@/components/game/overlays';
-import { OverlayModeToggle } from '@/components/game/OverlayModeToggle';
+import { TopLeftMenu } from '@/components/game/TopLeftMenu';
 import { LoadingScreen } from '@/components/game/LoadingScreen';
 import { BottomHUD } from '@/components/game/BottomHUD';
 import {
@@ -266,10 +266,11 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               onViewportChange={setViewport}
               onBargeDelivery={handleBargeDelivery}
             />
-            <OverlayModeToggle 
-              overlayMode={overlayMode} 
-              setOverlayMode={setOverlayMode} 
-              style={{ bottom: '20px', right: '20px' }}
+            <TopLeftMenu 
+              activePanel={state.activePanel}
+              setActivePanel={setActivePanel}
+              overlayMode={overlayMode}
+              setOverlayMode={setOverlayMode}
             />
         </div>
 

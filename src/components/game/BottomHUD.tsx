@@ -406,24 +406,6 @@ export const BottomHUD = React.memo(function BottomHUD({
 
           {/* Game Controls */}
           <div className="flex gap-1 justify-end items-center mt-1">
-             <Tooltip>
-               <TooltipTrigger asChild>
-                 <Button variant={activePanel === 'budget' ? 'game-icon-selected' : 'game-icon'} onClick={() => setActivePanel(activePanel === 'budget' ? 'none' : 'budget')} className="h-7 w-7 p-0 rounded-md">
-                   <BudgetIcon size={14} />
-                 </Button>
-               </TooltipTrigger>
-               <TooltipContent>{t('Panels.Budget')}</TooltipContent>
-             </Tooltip>
-
-             <Tooltip>
-               <TooltipTrigger asChild>
-                 <Button variant={activePanel === 'statistics' ? 'game-icon-selected' : 'game-icon'} onClick={() => setActivePanel(activePanel === 'statistics' ? 'none' : 'statistics')} className="h-7 w-7 p-0 rounded-md">
-                   <ChartIcon size={14} />
-                 </Button>
-               </TooltipTrigger>
-               <TooltipContent>{t('Panels.Statistics')}</TooltipContent>
-             </Tooltip>
-
              <div className="w-px h-4 bg-white/10 mx-1" />
 
              <Tooltip>

@@ -57,6 +57,7 @@ export function SubwayStationIcon(props: IconProps) { return <MaterialIcon name=
 export function SearchIcon(props: IconProps) { return <MaterialIcon name="search" {...props} />; }
 export function ExitIcon(props: IconProps) { return <MaterialIcon name="logout" {...props} />; }
 export function ChevronRightIcon(props: IconProps) { return <MaterialIcon name="chevron_right" {...props} />; }
+export function LayersIcon(props: IconProps) { return <MaterialIcon name="layers" {...props} />; }
 
 // Sports & Recreation
 export function ParkIcon(props: IconProps) { return <MaterialIcon name="park" {...props} />; }

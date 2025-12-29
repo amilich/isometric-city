@@ -155,6 +155,33 @@ const FARM_SPRITE_COLS = 5;
 const FARM_SPRITE_ROWS = 6;
 const FARM_VARIANTS = 5; // Only use first row (5 variants)
 
+// Check if a tile has a dock or is part of a dock's footprint (for beach exclusion)
+function hasDock(grid: import('../types/game').RoNTile[][], gridX: number, gridY: number, gridSize: number): boolean {
+  if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+  
+  const tile = grid[gridY]?.[gridX];
+  if (tile?.building?.type === 'dock') return true;
+  
+  // Check if this is an empty/grass tile that's part of a 2x2 dock
+  // Docks are 2x2, so check up to 1 tile away for the origin
+  for (let dy = 0; dy <= 1; dy++) {
+    for (let dx = 0; dx <= 1; dx++) {
+      const checkX = gridX - dx;
+      const checkY = gridY - dy;
+      if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
+        const checkTile = grid[checkY]?.[checkX];
+        if (checkTile?.building?.type === 'dock') {
+          // Verify this tile is within the 2x2 footprint
+          if (gridX >= checkX && gridX < checkX + 2 && gridY >= checkY && gridY < checkY + 2) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 // Check if a tile is adjacent to water (for dock placement)
 function isAdjacentToWater(grid: import('../types/game').RoNTile[][], x: number, y: number, width: number, height: number): boolean {
   const directions = [
@@ -1305,23 +1332,32 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete }: RoNCanvasP
       }
       
       // Beach pass: Draw beaches on water tiles adjacent to land (like IsoCity)
+      // Exclude beaches next to docks (like IsoCity does for marina/pier)
       for (let y = 0; y < gameState.gridSize; y++) {
         for (let x = 0; x < gameState.gridSize; x++) {
           const tile = gameState.grid[y]?.[x];
           if (!tile || tile.terrain !== 'water') continue;
-          
+
           const { screenX, screenY } = gridToScreen(x, y, 0, 0);
           if (!isTileVisible(screenX, screenY, viewBounds)) continue;
-          
-          // Check which adjacent tiles are land (not water)
+
+          // Check which adjacent tiles are land (not water) AND not part of a dock
           const adjacentLand = {
-            north: x > 0 && gameState.grid[y]?.[x - 1]?.terrain !== 'water',
-            east: y > 0 && gameState.grid[y - 1]?.[x]?.terrain !== 'water',
-            south: x < gameState.gridSize - 1 && gameState.grid[y]?.[x + 1]?.terrain !== 'water',
-            west: y < gameState.gridSize - 1 && gameState.grid[y + 1]?.[x]?.terrain !== 'water',
+            north: x > 0 && 
+                   gameState.grid[y]?.[x - 1]?.terrain !== 'water' && 
+                   !hasDock(gameState.grid, x - 1, y, gameState.gridSize),
+            east: y > 0 && 
+                  gameState.grid[y - 1]?.[x]?.terrain !== 'water' && 
+                  !hasDock(gameState.grid, x, y - 1, gameState.gridSize),
+            south: x < gameState.gridSize - 1 && 
+                   gameState.grid[y]?.[x + 1]?.terrain !== 'water' && 
+                   !hasDock(gameState.grid, x + 1, y, gameState.gridSize),
+            west: y < gameState.gridSize - 1 && 
+                  gameState.grid[y + 1]?.[x]?.terrain !== 'water' && 
+                  !hasDock(gameState.grid, x, y + 1, gameState.gridSize),
           };
-          
-          // Draw beach if any adjacent tile is land
+
+          // Draw beach if any adjacent tile is land (and not a dock)
           if (adjacentLand.north || adjacentLand.east || adjacentLand.south || adjacentLand.west) {
             drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
           }
@@ -1354,79 +1390,80 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete }: RoNCanvasP
           // Draw building sprite
           const buildingType = tile.building.type as RoNBuildingType;
           
-          // Special handling for dock - use IsoCity pier sprite from parks sheet
+          // Special handling for dock - use IsoCity marina sprite from parks sheet (2x2)
           if (buildingType === 'dock') {
             const parksSprite = getCachedImage(ISOCITY_PARKS_PATH, true);
             if (parksSprite) {
-              // Pier is at row 4, col 1 in the 5x6 parks grid
+              // Marina is at row 4, col 0 in the 5x6 parks grid (2x2 building)
               const parksCols = 5;
               const parksRows = 6;
               const parksTileWidth = parksSprite.width / parksCols;
               const parksTileHeight = parksSprite.height / parksRows;
-              
-              const pierRow = 4;
-              const pierCol = 1;
-              const sx = pierCol * parksTileWidth;
-              // Crop top slightly to avoid bleeding from adjacent row
-              const sy = pierRow * parksTileHeight + parksTileHeight * 0.2;
-              const sh = parksTileHeight * 0.8;
-              
-              // Draw water tile underneath the dock
+
+              const marinaRow = 4;
+              const marinaCol = 0;
+              const sx = marinaCol * parksTileWidth;
+              const sy = marinaRow * parksTileHeight;
+
+              // Get building size (2x2)
+              const buildingStats = BUILDING_STATS[buildingType];
+              const buildingSize = buildingStats?.size || { width: 2, height: 2 };
+
+              // Draw water tiles underneath the dock (for each tile in footprint)
               const waterTexture = getCachedImage(WATER_ASSET_PATH);
               if (waterTexture) {
                 const imgW = waterTexture.naturalWidth || waterTexture.width;
                 const imgH = waterTexture.naturalHeight || waterTexture.height;
-                const tileCenterX = screenX + TILE_WIDTH / 2;
-                const tileCenterY = screenY + TILE_HEIGHT / 2;
                 const cropScale = 0.35;
                 const cropW = imgW * cropScale;
                 const cropH = imgH * cropScale;
                 const aspectRatio = cropH / cropW;
                 const destWidth = TILE_WIDTH * 1.15;
                 const destHeight = destWidth * aspectRatio;
-                
-                ctx.globalAlpha = 0.9;
-                ctx.drawImage(
-                  waterTexture,
-                  0, 0, cropW, cropH,
-                  Math.round(tileCenterX - destWidth / 2),
-                  Math.round(tileCenterY - destHeight / 2),
-                  Math.round(destWidth),
-                  Math.round(destHeight)
-                );
+
+                for (let dx = 0; dx < buildingSize.width; dx++) {
+                  for (let dy = 0; dy < buildingSize.height; dy++) {
+                    const tileScreenPos = gridToScreen(x + dx, y + dy, 0, 0);
+                    const tileCenterX = tileScreenPos.screenX + TILE_WIDTH / 2;
+                    const tileCenterY = tileScreenPos.screenY + TILE_HEIGHT / 2;
+
+                    ctx.globalAlpha = 0.9;
+                    ctx.drawImage(
+                      waterTexture,
+                      0, 0, cropW, cropH,
+                      Math.round(tileCenterX - destWidth / 2),
+                      Math.round(tileCenterY - destHeight / 2),
+                      Math.round(destWidth),
+                      Math.round(destHeight)
+                    );
+                  }
+                }
                 ctx.globalAlpha = 1;
               }
+
+              // Calculate draw position for 2x2 building (like IsoCity)
+              const frontmostOffsetX = buildingSize.width - 1;
+              const frontmostOffsetY = buildingSize.height - 1;
+              const screenOffsetX = (frontmostOffsetX - frontmostOffsetY) * (TILE_WIDTH / 2);
+              const screenOffsetY = (frontmostOffsetX + frontmostOffsetY) * (TILE_HEIGHT / 2);
+              const drawPosX = screenX + screenOffsetX;
+              const drawPosY = screenY + screenOffsetY;
+
+              // Draw marina sprite (no construction phase - instant placement)
+              const scale = 1.1;
+              const destWidth = TILE_WIDTH * scale * 2; // 2x2 building
+              const destHeight = destWidth * (parksTileHeight / parksTileWidth);
+              const verticalPush = (buildingSize.width + buildingSize.height - 2) * TILE_HEIGHT * 0.5;
+              const buildingOffset = -0.45 * TILE_HEIGHT;
               
-              // Draw pier sprite
-              const scale = 1.2;
-              const destWidth = TILE_WIDTH * scale;
-              const destHeight = destWidth * (sh / parksTileWidth);
-              const drawX = screenX + TILE_WIDTH / 2 - destWidth / 2;
-              const drawY = screenY + TILE_HEIGHT - destHeight + (-0.1 * TILE_HEIGHT);
-              
-              // Use construction sprite for dock under construction
-              const isUnderConstruction = tile.building.constructionProgress < 100;
-              const constructionSprite = getCachedImage(ISOCITY_CONSTRUCTION_PATH, true);
-              
-              if (isUnderConstruction && constructionSprite) {
-                // Use a generic construction sprite from the construction sheet
-                const constrCols = 5;
-                const constrRows = 6;
-                const constrTileWidth = constructionSprite.width / constrCols;
-                const constrTileHeight = constructionSprite.height / constrRows;
-                // Use row 0, col 0 as a generic construction placeholder
-                ctx.drawImage(
-                  constructionSprite,
-                  0, 0, constrTileWidth, constrTileHeight,
-                  drawX, drawY, destWidth, destHeight
-                );
-              } else {
-                ctx.drawImage(
-                  parksSprite,
-                  sx, sy, parksTileWidth, sh,
-                  drawX, drawY, destWidth, destHeight
-                );
-              }
+              const drawX = drawPosX + TILE_WIDTH / 2 - destWidth / 2;
+              const drawY = drawPosY + TILE_HEIGHT - destHeight + verticalPush + buildingOffset;
+
+              ctx.drawImage(
+                parksSprite,
+                sx, sy, parksTileWidth, parksTileHeight,
+                drawX, drawY, destWidth, destHeight
+              );
             }
             continue; // Skip regular sprite drawing for dock
           }

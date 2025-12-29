@@ -22,6 +22,150 @@ const ATTACK_COOLDOWN = 10; // Ticks between attacks
 const RESOURCE_GATHER_RATE = 0.5; // Base gathering per tick per worker
 
 /**
+ * Check if a tile is passable for unit movement
+ */
+function isTilePassable(grid: RoNTile[][], gridX: number, gridY: number, gridSize: number): boolean {
+  if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+  
+  const tile = grid[gridY]?.[gridX];
+  if (!tile) return false;
+  
+  // Water is impassable
+  if (tile.terrain === 'water') return false;
+  
+  // Forest (trees) is impassable
+  if (tile.forestDensity > 0) return false;
+  
+  // Metal deposits (mines) are impassable
+  if (tile.hasMetalDeposit) return false;
+  
+  // Oil deposits are impassable
+  if (tile.hasOilDeposit) return false;
+  
+  return true;
+}
+
+/**
+ * Simple A* pathfinding to find a path avoiding obstacles
+ * Returns the next step position or null if no path exists
+ */
+function findNextStep(
+  grid: RoNTile[][],
+  gridSize: number,
+  startX: number,
+  startY: number,
+  targetX: number,
+  targetY: number
+): { x: number; y: number } | null {
+  // If we're already very close, just return target
+  const directDist = Math.sqrt((targetX - startX) ** 2 + (targetY - startY) ** 2);
+  if (directDist < 0.5) return { x: targetX, y: targetY };
+  
+  // Check if direct path is clear (simple raycast)
+  const steps = Math.ceil(directDist / 0.5);
+  let directPathClear = true;
+  
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const checkX = Math.floor(startX + (targetX - startX) * t);
+    const checkY = Math.floor(startY + (targetY - startY) * t);
+    
+    if (!isTilePassable(grid, checkX, checkY, gridSize)) {
+      directPathClear = false;
+      break;
+    }
+  }
+  
+  // If direct path is clear, move directly
+  if (directPathClear) {
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const stepSize = UNIT_MOVE_SPEED;
+    return {
+      x: startX + (dx / dist) * stepSize,
+      y: startY + (dy / dist) * stepSize,
+    };
+  }
+  
+  // Use A* to find path around obstacles
+  const startTileX = Math.floor(startX);
+  const startTileY = Math.floor(startY);
+  const targetTileX = Math.floor(targetX);
+  const targetTileY = Math.floor(targetY);
+  
+  // Simple BFS for finding next tile to move to (limited search)
+  const visited = new Set<string>();
+  const queue: Array<{ x: number; y: number; path: Array<{ x: number; y: number }> }> = [];
+  
+  queue.push({ x: startTileX, y: startTileY, path: [] });
+  visited.add(`${startTileX},${startTileY}`);
+  
+  const directions = [
+    { dx: 0, dy: -1 }, // North
+    { dx: 1, dy: 0 },  // East
+    { dx: 0, dy: 1 },  // South
+    { dx: -1, dy: 0 }, // West
+    { dx: 1, dy: -1 }, // NE
+    { dx: 1, dy: 1 },  // SE
+    { dx: -1, dy: 1 }, // SW
+    { dx: -1, dy: -1 }, // NW
+  ];
+  
+  let iterations = 0;
+  const maxIterations = 200; // Limit search to prevent lag
+  
+  while (queue.length > 0 && iterations < maxIterations) {
+    iterations++;
+    
+    // Sort by distance to target (greedy best-first)
+    queue.sort((a, b) => {
+      const distA = Math.abs(a.x - targetTileX) + Math.abs(a.y - targetTileY);
+      const distB = Math.abs(b.x - targetTileX) + Math.abs(b.y - targetTileY);
+      return distA - distB;
+    });
+    
+    const current = queue.shift()!;
+    
+    // Check if we reached target tile
+    if (current.x === targetTileX && current.y === targetTileY) {
+      if (current.path.length > 0) {
+        // Return first step of the path
+        const nextTile = current.path[0];
+        return {
+          x: nextTile.x + 0.5,
+          y: nextTile.y + 0.5,
+        };
+      }
+      return { x: targetX, y: targetY };
+    }
+    
+    // Explore neighbors
+    for (const dir of directions) {
+      const nx = current.x + dir.dx;
+      const ny = current.y + dir.dy;
+      const key = `${nx},${ny}`;
+      
+      if (visited.has(key)) continue;
+      
+      // Check if this tile is passable (or is the target tile - we can move toward it)
+      const isTarget = nx === targetTileX && ny === targetTileY;
+      if (!isTarget && !isTilePassable(grid, nx, ny, gridSize)) continue;
+      
+      visited.add(key);
+      queue.push({
+        x: nx,
+        y: ny,
+        path: [...current.path, { x: nx, y: ny }],
+      });
+    }
+  }
+  
+  // No path found - stay in place or try to move to nearest passable tile
+  return null;
+}
+
+/**
  * Main simulation tick
  */
 export function simulateRoNTick(state: RoNGameState): RoNGameState {
@@ -262,18 +406,18 @@ function updateUnits(state: RoNGameState): RoNGameState {
   for (const unit of state.units) {
     let updatedUnit = { ...unit };
     
-    // Movement
+    // Movement with pathfinding
     if (updatedUnit.isMoving && updatedUnit.targetX !== undefined && updatedUnit.targetY !== undefined) {
       const dx = updatedUnit.targetX - updatedUnit.x;
       const dy = updatedUnit.targetY - updatedUnit.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      
+
       const unitStats = UNIT_STATS[unit.type];
       const speed = (unitStats?.speed || 1) * UNIT_MOVE_SPEED;
-      
+
       // For gathering tasks, stop when close to the building (not exactly on it)
       const arrivalDist = updatedUnit.task?.startsWith('gather_') ? 1.5 : speed;
-      
+
       if (dist < arrivalDist) {
         // Arrived - spread out around the target for gather tasks
         if (updatedUnit.task?.startsWith('gather_') && updatedUnit.taskTarget && typeof updatedUnit.taskTarget === 'object') {
@@ -292,9 +436,32 @@ function updateUnits(state: RoNGameState): RoNGameState {
         updatedUnit.targetX = undefined;
         updatedUnit.targetY = undefined;
       } else {
-        // Move toward target
-        updatedUnit.x += (dx / dist) * speed;
-        updatedUnit.y += (dy / dist) * speed;
+        // Use pathfinding to avoid obstacles
+        const nextStep = findNextStep(
+          state.grid,
+          state.gridSize,
+          updatedUnit.x,
+          updatedUnit.y,
+          updatedUnit.targetX,
+          updatedUnit.targetY
+        );
+        
+        if (nextStep) {
+          // Move toward the next step
+          const stepDx = nextStep.x - updatedUnit.x;
+          const stepDy = nextStep.y - updatedUnit.y;
+          const stepDist = Math.sqrt(stepDx * stepDx + stepDy * stepDy);
+          
+          if (stepDist > 0.01) {
+            updatedUnit.x += (stepDx / stepDist) * speed;
+            updatedUnit.y += (stepDy / stepDist) * speed;
+          }
+        } else {
+          // No path found - stop trying to move
+          updatedUnit.isMoving = false;
+          updatedUnit.targetX = undefined;
+          updatedUnit.targetY = undefined;
+        }
       }
     }
     

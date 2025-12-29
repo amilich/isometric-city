@@ -526,13 +526,15 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Create building
+      // Docks are instant placement (no construction), other buildings start at 0
+      const isInstantBuilding = buildingType === 'dock';
       const newBuilding: RoNBuilding = {
         type: buildingType,
         level: 1,
         ownerId: currentPlayer.id,
         health: stats.maxHealth,
         maxHealth: stats.maxHealth,
-        constructionProgress: 0, // Starts at 0, needs to be built
+        constructionProgress: isInstantBuilding ? 100 : 0, // Docks are instant, others need to be built
         queuedUnits: [],
         productionProgress: 0,
         garrisonedUnits: [],

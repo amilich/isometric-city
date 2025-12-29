@@ -188,17 +188,18 @@
       "NoResults": "Sonuç bulunamadı."
     },
     "Stats": {
-      "Population": "Nüfus",
-      "Jobs": "İşler",
-      "Funds": "Fonlar",
-      "Monthly": "Aylık",
-      "Tax": "Vergi",
-      "Happiness": "Mutluluk",
-      "Health": "Sağlık",
-      "Education": "Eğitim",
-      "Safety": "Güvenlik",
-      "Environment": "Çevre",
-      "Saving": "Kaydediliyor..."
+      "title": "Şehir Metrikleri",
+      "population": "Nüfus",
+      "jobs": "İşler",
+      "funds": "Fonlar",
+      "monthly": "Aylık",
+      "tax": "Vergi",
+      "happiness": "Mutluluk",
+      "health": "Sağlık",
+      "education": "Eğitim",
+      "safety": "Güvenlik",
+      "environment": "Çevre",
+      "saving": "Kaydediliyor..."
     },
     "Dialogs": {
       "Exit": {

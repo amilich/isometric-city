@@ -188,17 +188,18 @@
       "NoResults": "No results found."
     },
     "Stats": {
-      "Population": "Pop",
-      "Jobs": "Jobs",
-      "Funds": "Funds",
-      "Monthly": "Monthly",
-      "Tax": "Tax",
-      "Happiness": "Happiness",
-      "Health": "Health",
-      "Education": "Education",
-      "Safety": "Safety",
-      "Environment": "Environment",
-      "Saving": "Saving..."
+      "title": "City Metrics",
+      "population": "Pop",
+      "jobs": "Jobs",
+      "funds": "Funds",
+      "monthly": "Monthly",
+      "tax": "Tax",
+      "happiness": "Happiness",
+      "health": "Health",
+      "education": "Education",
+      "safety": "Safety",
+      "environment": "Environment",
+      "saving": "Saving..."
     },
     "Dialogs": {
       "Exit": {

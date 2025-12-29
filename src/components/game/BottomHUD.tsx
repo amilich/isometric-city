@@ -26,7 +26,12 @@ import {
   Trophy, 
   Tent, 
   Zap, 
-  Star 
+  Star,
+  Heart,
+  GraduationCap,
+  Smile,
+  Leaf,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openCommandMenu } from '@/components/ui/CommandMenu';
@@ -268,7 +273,22 @@ export const BottomHUD = React.memo(function BottomHUD({
   const { selectedTool, stats, activePanel, speed, year, month, day } = state;
   const date = useMemo(() => new Date(year, month - 1, day), [year, month, day]);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const t = useTranslations('Game');
+  
+  // Close stats on outside click
+  const statsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (statsRef.current && !statsRef.current.contains(event.target as Node)) {
+        setShowStats(false);
+      }
+    };
+    if (showStats) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showStats]);
   
   const handleSaveAndExit = useCallback(() => {
     saveCity();
@@ -323,17 +343,120 @@ export const BottomHUD = React.memo(function BottomHUD({
     <TooltipProvider delayDuration={0}>
       <div className="fixed bottom-4 left-0 right-0 flex justify-between items-end px-6 z-[50] pointer-events-none select-none">
         
-        {/* LEFT: Home Button */}
-        <div className="pointer-events-auto">
+        {/* LEFT: Home Button & Stats Drawer */}
+        <div className="pointer-events-auto relative" ref={statsRef}>
+             {/* Stats Drawer */}
+             {showStats && (
+               <div className="absolute bottom-16 left-0 w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200 z-50">
+                 <div className="flex flex-col gap-3">
+                   <div className="px-2 py-1 border-b border-white/10 text-[11px] font-bold tracking-[0.2em] text-emerald-400 uppercase text-center mb-1">
+                     {t('Stats.title')}
+                   </div>
+                   
+                   <div className="space-y-3">
+                     {/* Happiness */}
+                     <div className="space-y-1">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                         <div className="flex items-center gap-1.5">
+                           <Smile size={14} className="text-yellow-400" />
+                           <span>{t('Stats.happiness')}</span>
+                         </div>
+                         <span>{Math.round(stats.happiness)}%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                         <div 
+                           className="h-full bg-yellow-400 transition-all duration-500" 
+                           style={{ width: `${Math.min(100, Math.max(0, stats.happiness))}%` }}
+                         />
+                       </div>
+                     </div>
+
+                     {/* Health */}
+                     <div className="space-y-1">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                         <div className="flex items-center gap-1.5">
+                           <Heart size={14} className="text-red-400" />
+                           <span>{t('Stats.health')}</span>
+                         </div>
+                         <span>{Math.round(stats.health)}%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                         <div 
+                           className="h-full bg-red-400 transition-all duration-500" 
+                           style={{ width: `${Math.min(100, Math.max(0, stats.health))}%` }}
+                         />
+                       </div>
+                     </div>
+
+                     {/* Education */}
+                     <div className="space-y-1">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                         <div className="flex items-center gap-1.5">
+                           <GraduationCap size={14} className="text-blue-400" />
+                           <span>{t('Stats.education')}</span>
+                         </div>
+                         <span>{Math.round(stats.education)}%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                         <div 
+                           className="h-full bg-blue-400 transition-all duration-500" 
+                           style={{ width: `${Math.min(100, Math.max(0, stats.education))}%` }}
+                         />
+                       </div>
+                     </div>
+
+                     {/* Safety */}
+                     <div className="space-y-1">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                         <div className="flex items-center gap-1.5">
+                           <Shield size={14} className="text-indigo-400" />
+                           <span>{t('Stats.safety')}</span>
+                         </div>
+                         <span>{Math.round(stats.safety)}%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                         <div 
+                           className="h-full bg-indigo-400 transition-all duration-500" 
+                           style={{ width: `${Math.min(100, Math.max(0, stats.safety))}%` }}
+                         />
+                       </div>
+                     </div>
+
+                     {/* Environment */}
+                     <div className="space-y-1">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                         <div className="flex items-center gap-1.5">
+                           <Leaf size={14} className="text-green-400" />
+                           <span>{t('Stats.environment')}</span>
+                         </div>
+                         <span>{Math.round(stats.environment)}%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                         <div 
+                           className="h-full bg-green-400 transition-all duration-500" 
+                           style={{ width: `${Math.min(100, Math.max(0, stats.environment))}%` }}
+                         />
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* Triangle pointer */}
+                 <div className="absolute -bottom-2 left-6 w-4 h-4 bg-[#1a1d26]/95 border-b border-r border-slate-600 rotate-45"></div>
+               </div>
+             )}
+
              <Button
                 variant="secondary"
                 size="icon"
-                className="w-12 h-12 rounded-full shadow-lg border-2 border-slate-700 bg-slate-900/90 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 transition-all"
-                onClick={() => {
-                   // Optional: Reset view or open main menu
-                }}
+                className={`w-12 h-12 rounded-full shadow-lg border-2 transition-all ${
+                  showStats 
+                    ? 'bg-emerald-600 border-emerald-400 text-white hover:bg-emerald-500' 
+                    : 'bg-slate-900/90 border-slate-700 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300'
+                }`}
+                onClick={() => setShowStats(!showStats)}
              >
-                <Home size={24} />
+                <Building2 size={24} />
              </Button>
         </div>
 

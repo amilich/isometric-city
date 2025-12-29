@@ -2,6 +2,8 @@
   "HomePage": {
     "title": "Truncgil MyCity",
     "play": "Play",
+    "continue": "Continue",
+    "newGame": "New Game",
     "build": "Build",
     "quests": "Quests",
     "shop": "Shop",
@@ -34,7 +36,8 @@
         "waterfront": "Waterfront",
         "community": "Community",
         "utilities": "Utilities",
-        "special": "Special"
+        "special": "Special",
+        "panels": "Panels"
       },
       "Items": {
         "select": { "name": "Select", "description": "Click for info" },
@@ -104,6 +107,7 @@
       "GameSettings": "Game Settings",
       "CityInfo": "City Information",
       "SavedCities": "Saved Cities",
+      "Population": "Population",
       "ExportGame": "Export Game",
       "ImportGame": "Import Game",
       "DevTools": "Developer Tools",

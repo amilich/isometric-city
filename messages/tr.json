@@ -2,6 +2,8 @@
   "HomePage": {
     "title": "Truncgil MyCity",
     "play": "Oyna",
+    "continue": "Devam Et",
+    "newGame": "Yeni Oyun",
     "build": "İnşa Et",
     "quests": "Görevler",
     "shop": "Mağaza",
@@ -34,7 +36,8 @@
         "waterfront": "Sahil",
         "community": "Topluluk",
         "utilities": "Altyapı",
-        "special": "Özel"
+        "special": "Özel",
+        "panels": "Paneller"
       },
       "Items": {
         "select": { "name": "Seç", "description": "Bilgi almak için tıklayın" },
@@ -104,6 +107,7 @@
       "GameSettings": "Oyun Ayarları",
       "CityInfo": "Şehir Bilgileri",
       "SavedCities": "Kayıtlı Şehirler",
+      "Population": "Nüfus",
       "ExportGame": "Oyunu Dışa Aktar",
       "ImportGame": "Oyunu İçe Aktar",
       "DevTools": "Geliştirici Araçları",

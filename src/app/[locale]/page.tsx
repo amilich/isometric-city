@@ -355,21 +355,32 @@ export default function HomePage() {
   const [showGame, setShowGame] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+  const [hasCurrentGame, setHasCurrentGame] = useState(false);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
 
-  // Check for saved game after mount (client-side only)
+  // Check for saved game after mount (client-side only) - always show homescreen first
   useEffect(() => {
     const checkSavedGame = () => {
       setIsChecking(false);
       setSavedCities(loadSavedCities());
-      if (hasSavedGame()) {
-        setShowGame(true);
-      }
+      setHasCurrentGame(hasSavedGame());
+      // Don't auto-navigate to game, always show homescreen first
     };
     // Use requestAnimationFrame to avoid synchronous setState in effect
     requestAnimationFrame(checkSavedGame);
   }, []);
+
+  // Start a new game (clear current game from localStorage)
+  const startNewGame = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setShowGame(true);
+  };
+
+  // Continue current game
+  const continueGame = () => {
+    setShowGame(true);
+  };
 
   // Handle exit from game - refresh saved cities list
   const handleExitGame = () => {
@@ -448,14 +459,22 @@ export default function HomePage() {
         
         {/* Main Buttons */}
         <div className="space-y-3 mb-4">
-          <MenuButton 
-            icon={Play} 
-            label={t('play')} 
-            onClick={() => setShowGame(true)}
-            variant="primary"
-          />
+          {hasCurrentGame ? (
+            <MenuButton 
+              icon={Play} 
+              label={t('continue')} 
+              onClick={continueGame}
+              variant="primary"
+            />
+          ) : null}
           <MenuButton 
             icon={Sparkles} 
+            label={t('newGame')} 
+            onClick={startNewGame}
+            variant={hasCurrentGame ? undefined : "primary"}
+          />
+          <MenuButton 
+            icon={Trophy} 
             label={t('exampleCity')} 
             onClick={loadExampleCity}
           />
@@ -497,17 +516,27 @@ export default function HomePage() {
         
         {/* Menu Items */}
         <nav className="space-y-2 flex-1">
+          {hasCurrentGame ? (
+            <MenuButton 
+              icon={Play} 
+              label={t('continue')} 
+              onClick={continueGame}
+              variant="primary"
+            />
+          ) : null}
           <MenuButton 
-            icon={Play} 
-            label={t('play')} 
-            onClick={() => setShowGame(true)}
-            variant="primary"
+            icon={Sparkles} 
+            label={t('newGame')} 
+            onClick={startNewGame}
+            variant={hasCurrentGame ? undefined : "primary"}
           />
-          <MenuButton 
-            icon={Hammer} 
-            label={t('build')} 
-            onClick={() => setShowGame(true)}
-          />
+          {hasCurrentGame && (
+            <MenuButton 
+              icon={Hammer} 
+              label={t('build')} 
+              onClick={continueGame}
+            />
+          )}
           <MenuButton 
             icon={Target} 
             label={t('quests')} 
@@ -544,34 +573,15 @@ export default function HomePage() {
       {/* Center - City View */}
       <div className="flex-1 relative flex items-center justify-center">
         {/* Decorative Elements */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center select-none pointer-events-none" style={{minWidth:180}}>
-          <span
-            className="font-extrabold"
-            style={{
-              color: '#FFB92C', // Gear/yellow color in logo
-              fontSize: '1rem',
-              letterSpacing: '0.13em',
-              textTransform: 'lowercase',
-              lineHeight: 1,
-              textShadow: '0 1px 8px #f3c86088'
-            }}
-          >
-            truncgil
-          </span>
-          <span
-            className="font-black uppercase"
-            style={{
-              fontSize: '2.3rem',
-              color: '#37D66D', // Main green bg
-              letterSpacing: '0.055em',
-              marginTop: '0.2em',
-              lineHeight: 1,
-              textShadow:
-                '0 3px 18px #25A04A55, 0 1px 0px #fff, 0 0 8px #fff5'
-            }}
-          >
-            MyCity
-          </span>
+        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 z-20 select-none pointer-events-none">
+          <Image
+            src="/truncgil-mycity3.png"
+            alt="Truncgil MyCity Logo"
+            width={512}
+            height={100}
+            className="object-contain drop-shadow-lg"
+            priority
+          />
         </div>
        
         

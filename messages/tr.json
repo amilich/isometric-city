@@ -2,12 +2,24 @@
   "HomePage": {
     "title": "Truncgil MyCity",
     "play": "Oyna",
+    "build": "İnşa Et",
+    "quests": "Görevler",
+    "shop": "Mağaza",
+    "settings": "Ayarlar",
     "exampleCity": "Örnek Şehir",
     "savedCities": "Kayıtlı Şehirler",
     "population": "Pop",
     "loading": "Yükleniyor...",
     "welcome_title": "Truncgil MyCity — Kendi Şehrini Oluştur",
-    "welcome_desc": "Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet."
+    "welcome_desc": "Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet.",
+    "dailyMissions": "Günlük Görevler",
+    "collectMoney": "₺{amount} Topla",
+    "buildPark": "Bir Park İnşa Et",
+    "upgradeCityHall": "Belediye Binasını Geliştir",
+    "newsEvents": "Haberler & Etkinlikler",
+    "summerFestival": "Yaz Festivali",
+    "chat": "Sohbet",
+    "level": "Seviye"
   },
   "Game": {
     "Tools": {

@@ -2,12 +2,24 @@
   "HomePage": {
     "title": "Truncgil MyCity",
     "play": "Play",
+    "build": "Build",
+    "quests": "Quests",
+    "shop": "Shop",
+    "settings": "Settings",
     "exampleCity": "Example City",
     "savedCities": "Saved Cities",
     "population": "Pop",
     "loading": "Loading...",
     "welcome_title": "Truncgil MyCity — Build Your Own City",
-    "welcome_desc": "Detailed isometric city building game. Build your metropolis and manage resources with cars, planes, helicopters, ships, trains, citizens and more."
+    "welcome_desc": "Detailed isometric city building game. Build your metropolis and manage resources with cars, planes, helicopters, ships, trains, citizens and more.",
+    "dailyMissions": "Daily Missions",
+    "collectMoney": "Collect ₺{amount}",
+    "buildPark": "Build a Park",
+    "upgradeCityHall": "Upgrade City Hall",
+    "newsEvents": "News & Events",
+    "summerFestival": "Summer Festival",
+    "chat": "Chat",
+    "level": "Level"
   },
   "Game": {
     "Tools": {

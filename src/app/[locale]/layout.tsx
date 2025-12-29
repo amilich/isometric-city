@@ -37,6 +37,7 @@ export const metadata: Metadata = {
   ),
   title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
   description: 'Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet.',
+  manifest: '/manifest.json',
   openGraph: {
     title: 'Truncgil MyCity — Kendi Şehrini Oluştur',
     description: 'Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları arabalar, uçaklar, helikopterler, gemiler, trenler, vatandaşlar ve daha fazlası ile yönet.',
@@ -68,9 +69,26 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Truncgil MyCity',
+    startupImage: [
+      {
+        url: '/icons/icon-512x512.png',
+      },
+    ],
   },
   formatDetection: {
     telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: '/icons/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      { rel: 'mask-icon', url: '/icons/icon-512x512.png' },
+    ],
   },
 };
 
@@ -104,8 +122,30 @@ export default async function RootLayout({
     <html lang={locale} className={`dark ${playfair.variable} ${dmSans.variable} ${quicksand.variable}`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/assets/buildings/residential.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="application-name" content="MyCity" />
+        <meta name="msapplication-TileColor" content="#0f1219" />
+        <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(function(err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="bg-background text-foreground antialiased font-sans overflow-hidden">
         <NextIntlClientProvider messages={messages}>

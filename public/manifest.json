@@ -1,0 +1,91 @@
+{
+  "name": "Truncgil MyCity — Kendi Şehrini Oluştur",
+  "short_name": "MyCity",
+  "description": "Detaylı izometrik bir şehir kurma oyunu. Metropolünü inşa et ve kaynakları yönet.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1219",
+  "theme_color": "#0f1219",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "tr",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/games/IMG_6902.PNG",
+      "sizes": "1179x1406",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "MyCity Oyun Ekranı"
+    },
+    {
+      "src": "/games/IMG_6903.PNG",
+      "sizes": "1179x1406",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Şehir Görünümü"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Yeni Oyun",
+      "short_name": "Yeni",
+      "description": "Yeni bir şehir oluştur",
+      "url": "/?new=true",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
+

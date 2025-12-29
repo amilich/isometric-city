@@ -140,6 +140,11 @@
   50% { transform: translateY(-15px); }
 }
 
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @keyframes sunburst {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -176,6 +181,15 @@
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+/* Radial gradient utility */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
 }
 
 /* Art Deco Typography */

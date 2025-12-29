@@ -124,13 +124,13 @@ export const BUILDING_STATS: Record<RoNBuildingType, BuildingStats> = {
   water: { cost: {}, maxHealth: 0, buildTime: 0, minAge: 'ancient', size: { width: 1, height: 1 } },
   road: { cost: { wood: 10 }, maxHealth: 100, buildTime: 10, minAge: 'ancient', size: { width: 1, height: 1 } },
   
-  // City centers
+  // City centers - 3x3 buildings like IsoCity city hall
   city_center: { 
     cost: { wood: 200, gold: 100 }, 
     maxHealth: 2000, 
     buildTime: 100, 
     minAge: 'ancient', 
-    size: { width: 2, height: 2 },
+    size: { width: 3, height: 3 },
     providesHousing: 10,
     visionRange: 8,
   },
@@ -139,7 +139,7 @@ export const BUILDING_STATS: Record<RoNBuildingType, BuildingStats> = {
     maxHealth: 3000, 
     buildTime: 150, 
     minAge: 'classical', 
-    size: { width: 2, height: 2 },
+    size: { width: 3, height: 3 },
     providesHousing: 20,
     visionRange: 10,
   },

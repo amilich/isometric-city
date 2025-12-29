@@ -636,11 +636,14 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete }: RoNCanvasP
     }
   }, [selectionBox, selectUnits, selectUnitsInArea, selectBuilding, latestStateRef]);
   
-  // Handle wheel zoom
+  // Handle wheel zoom (matching IsoCity's smoother zoom)
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(prev => Math.max(0.3, Math.min(3, prev * delta)));
+    // Use smaller base delta and scale by current zoom for consistent feel
+    const baseZoomDelta = 0.05;
+    const scaledDelta = baseZoomDelta * Math.max(0.5, zoomRef.current);
+    const zoomDelta = e.deltaY > 0 ? -scaledDelta : scaledDelta;
+    setZoom(prev => Math.max(0.3, Math.min(3, prev + zoomDelta)));
   }, []);
   
   // Handle context menu (prevent default)
@@ -768,7 +771,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete }: RoNCanvasP
             
             // Apply slight tinting for special tiles
             if (tile.hasMetalDeposit) {
-              // Draw complex mountainous terrain for metal deposits
+              // Draw mountainous terrain for metal deposits
               // Base rocky ground with gradient
               const gradient = ctx.createLinearGradient(
                 screenX, screenY,
@@ -789,145 +792,110 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete }: RoNCanvasP
               // Deterministic seed for this tile
               const seed = x * 1000 + y;
               
-              // Draw multiple layered mountain peaks (6-10 mountains per tile)
-              const numMountains = 6 + (seed % 5);
+              // Draw clustered, rounded mountain peaks (5-7 per tile, tightly packed)
+              const numMountains = 5 + (seed % 3);
               
-              // Mountain positions spread across the tile
+              // Tighter cluster positions near center
               const mountainPositions = [
-                { dx: 0.5, dy: 0.25, sizeMult: 1.4, heightMult: 1.5 },   // Back center - tallest
-                { dx: 0.3, dy: 0.3, sizeMult: 1.2, heightMult: 1.3 },   // Back left
-                { dx: 0.7, dy: 0.3, sizeMult: 1.1, heightMult: 1.2 },   // Back right
-                { dx: 0.2, dy: 0.45, sizeMult: 1.0, heightMult: 1.0 },  // Mid left
-                { dx: 0.5, dy: 0.45, sizeMult: 1.3, heightMult: 1.4 },  // Mid center
-                { dx: 0.8, dy: 0.45, sizeMult: 0.9, heightMult: 1.1 },  // Mid right
-                { dx: 0.35, dy: 0.6, sizeMult: 0.8, heightMult: 0.9 },  // Front left
-                { dx: 0.65, dy: 0.6, sizeMult: 0.85, heightMult: 0.95 }, // Front right
-                { dx: 0.5, dy: 0.7, sizeMult: 0.7, heightMult: 0.8 },   // Front center
-                { dx: 0.15, dy: 0.55, sizeMult: 0.6, heightMult: 0.7 }, // Far left
+                { dx: 0.5, dy: 0.30, sizeMult: 1.6, heightMult: 1.0 },   // Back center - widest
+                { dx: 0.38, dy: 0.35, sizeMult: 1.3, heightMult: 0.85 }, // Back left
+                { dx: 0.62, dy: 0.35, sizeMult: 1.3, heightMult: 0.9 },  // Back right
+                { dx: 0.45, dy: 0.48, sizeMult: 1.1, heightMult: 0.75 }, // Mid left
+                { dx: 0.55, dy: 0.48, sizeMult: 1.2, heightMult: 0.8 },  // Mid right
+                { dx: 0.5, dy: 0.55, sizeMult: 1.0, heightMult: 0.7 },   // Front center
+                { dx: 0.35, dy: 0.52, sizeMult: 0.8, heightMult: 0.6 },  // Front left edge
               ];
               
-              // Draw mountains from back to front for proper layering
+              // Draw mountains (no internal ridge lines)
               for (let m = 0; m < Math.min(numMountains, mountainPositions.length); m++) {
                 const pos = mountainPositions[m];
                 const mSeed = seed * 7 + m * 13;
                 
-                // Base position with slight randomization
-                const baseX = screenX + TILE_WIDTH * pos.dx + ((mSeed % 20) - 10) * 0.5;
-                const baseY = screenY + TILE_HEIGHT * pos.dy + ((mSeed * 3 % 10) - 5) * 0.3;
+                // Tight clustering with minimal randomization
+                const baseX = screenX + TILE_WIDTH * pos.dx + ((mSeed % 6) - 3) * 0.3;
+                const baseY = screenY + TILE_HEIGHT * pos.dy + ((mSeed * 3 % 4) - 2) * 0.2;
                 
-                // Mountain dimensions
-                const baseWidth = (12 + (mSeed % 8)) * pos.sizeMult;
-                const peakHeight = (18 + (mSeed * 2 % 12)) * pos.heightMult;
-                const peakX = baseX + ((mSeed * 5 % 10) - 5) * 0.3;
+                // Wider, shorter mountains (less pointy)
+                const baseWidth = (16 + (mSeed % 6)) * pos.sizeMult;
+                const peakHeight = (10 + (mSeed * 2 % 6)) * pos.heightMult;
+                const peakX = baseX;
                 const peakY = baseY - peakHeight;
                 
-                // Left face (shadow)
-                ctx.fillStyle = '#3f3f46';
+                // Left face (shadow) - wider angle
+                ctx.fillStyle = '#52525b';
                 ctx.beginPath();
                 ctx.moveTo(peakX, peakY);
-                ctx.lineTo(baseX - baseWidth * 0.5, baseY);
+                ctx.lineTo(baseX - baseWidth * 0.55, baseY);
                 ctx.lineTo(baseX, baseY);
                 ctx.closePath();
                 ctx.fill();
                 
-                // Right face (lit)
-                ctx.fillStyle = '#a1a1aa';
+                // Right face (lit) - wider angle
+                ctx.fillStyle = '#9ca3af';
                 ctx.beginPath();
                 ctx.moveTo(peakX, peakY);
-                ctx.lineTo(baseX + baseWidth * 0.5, baseY);
+                ctx.lineTo(baseX + baseWidth * 0.55, baseY);
                 ctx.lineTo(baseX, baseY);
                 ctx.closePath();
                 ctx.fill();
                 
-                // Snow cap on taller mountains
-                if (pos.heightMult > 1.2) {
-                  const snowHeight = peakHeight * 0.25;
+                // Snow cap only on the tallest
+                if (pos.heightMult >= 1.0 && m === 0) {
+                  const snowHeight = peakHeight * 0.3;
                   ctx.fillStyle = '#e5e5e5';
                   ctx.beginPath();
                   ctx.moveTo(peakX, peakY);
-                  ctx.lineTo(peakX - baseWidth * 0.15, peakY + snowHeight);
-                  ctx.lineTo(peakX + baseWidth * 0.15, peakY + snowHeight);
+                  ctx.lineTo(peakX - baseWidth * 0.12, peakY + snowHeight);
+                  ctx.lineTo(peakX + baseWidth * 0.12, peakY + snowHeight);
                   ctx.closePath();
                   ctx.fill();
                 }
-                
-                // Ridge lines for texture
-                ctx.strokeStyle = '#52525b';
-                ctx.lineWidth = 0.5;
-                ctx.beginPath();
-                ctx.moveTo(peakX, peakY);
-                ctx.lineTo(baseX - baseWidth * 0.25, baseY);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(peakX, peakY);
-                ctx.lineTo(baseX + baseWidth * 0.2, baseY);
-                ctx.stroke();
               }
               
-              // Draw ore deposits (black/dark diamonds at base of mountains)
-              const numOreDeposits = 3 + (seed % 3);
+              // More ore deposits (black squares) at base - 5-7 deposits
+              const numOreDeposits = 5 + (seed % 3);
               const orePositions = [
-                { dx: 0.3, dy: 0.65 },
-                { dx: 0.5, dy: 0.72 },
+                { dx: 0.25, dy: 0.68 },
+                { dx: 0.4, dy: 0.72 },
+                { dx: 0.55, dy: 0.70 },
                 { dx: 0.7, dy: 0.68 },
-                { dx: 0.4, dy: 0.58 },
-                { dx: 0.6, dy: 0.55 },
+                { dx: 0.35, dy: 0.62 },
+                { dx: 0.6, dy: 0.65 },
+                { dx: 0.5, dy: 0.75 },
               ];
               
               for (let o = 0; o < Math.min(numOreDeposits, orePositions.length); o++) {
                 const oPos = orePositions[o];
                 const oSeed = seed * 11 + o * 17;
-                const oreX = screenX + TILE_WIDTH * oPos.dx + ((oSeed % 10) - 5) * 0.5;
-                const oreY = screenY + TILE_HEIGHT * oPos.dy + ((oSeed * 2 % 6) - 3) * 0.3;
-                const oreSize = 4 + (oSeed % 4);
+                const oreX = screenX + TILE_WIDTH * oPos.dx + ((oSeed % 6) - 3) * 0.4;
+                const oreY = screenY + TILE_HEIGHT * oPos.dy + ((oSeed * 2 % 4) - 2) * 0.3;
+                const oreSize = 3 + (oSeed % 3);
                 
-                // Dark ore diamond shape
+                // Black ore square
                 ctx.fillStyle = '#1c1917';
-                ctx.beginPath();
-                ctx.moveTo(oreX, oreY - oreSize * 0.6);
-                ctx.lineTo(oreX + oreSize * 0.5, oreY);
-                ctx.lineTo(oreX, oreY + oreSize * 0.4);
-                ctx.lineTo(oreX - oreSize * 0.5, oreY);
-                ctx.closePath();
-                ctx.fill();
-                
-                // Metallic glint
-                ctx.fillStyle = '#71717a';
-                ctx.beginPath();
-                ctx.arc(oreX - oreSize * 0.15, oreY - oreSize * 0.2, oreSize * 0.15, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillRect(oreX - oreSize / 2, oreY - oreSize / 2, oreSize, oreSize);
               }
               
-              // Add scattered smaller rocks/boulders
-              const numBoulders = 4 + (seed % 3);
+              // More grey boulders/circles at bottom - 7-10 boulders
+              const numBoulders = 7 + (seed % 4);
               for (let b = 0; b < numBoulders; b++) {
                 const bSeed = seed * 19 + b * 23;
-                const bx = screenX + TILE_WIDTH * 0.15 + ((bSeed % 100) / 100) * TILE_WIDTH * 0.7;
-                const by = screenY + TILE_HEIGHT * 0.5 + ((bSeed * 3 % 60) / 100) * TILE_HEIGHT * 0.4;
+                const bx = screenX + TILE_WIDTH * 0.2 + ((bSeed % 100) / 100) * TILE_WIDTH * 0.6;
+                const by = screenY + TILE_HEIGHT * 0.58 + ((bSeed * 3 % 50) / 100) * TILE_HEIGHT * 0.35;
                 const bSize = 2 + (bSeed % 3);
                 
-                ctx.fillStyle = '#52525b';
+                // Grey boulder
+                ctx.fillStyle = '#6b7280';
                 ctx.beginPath();
                 ctx.arc(bx, by, bSize, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Highlight
+                // Light highlight
                 ctx.fillStyle = '#a1a1aa';
                 ctx.beginPath();
-                ctx.arc(bx - bSize * 0.3, by - bSize * 0.3, bSize * 0.4, 0, Math.PI * 2);
+                ctx.arc(bx - bSize * 0.25, by - bSize * 0.25, bSize * 0.35, 0, Math.PI * 2);
                 ctx.fill();
               }
-              
-              // Subtle border
-              ctx.strokeStyle = '#44403c';
-              ctx.lineWidth = 0.5;
-              ctx.beginPath();
-              ctx.moveTo(screenX + TILE_WIDTH / 2, screenY);
-              ctx.lineTo(screenX + TILE_WIDTH, screenY + TILE_HEIGHT / 2);
-              ctx.lineTo(screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT);
-              ctx.lineTo(screenX, screenY + TILE_HEIGHT / 2);
-              ctx.closePath();
-              ctx.stroke();
             } else if (tile.hasOilDeposit && AGE_ORDER.indexOf(playerAge) >= AGE_ORDER.indexOf('industrial')) {
               // Dark tint for oil (only visible in industrial+)
               ctx.fillStyle = '#1f2937';

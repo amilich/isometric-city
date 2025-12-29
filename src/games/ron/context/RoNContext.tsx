@@ -195,43 +195,94 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
   
-  // Unit movement
+  // Unit movement - offset units in a formation so they don't stack
   const moveSelectedUnits = useCallback((x: number, y: number) => {
     setState(prev => {
+      // Get all selected units
+      const selectedUnits = prev.units.filter(u => u.isSelected);
+      const numSelected = selectedUnits.length;
+      
+      let unitIndex = 0;
       const updatedUnits = prev.units.map(u => {
         if (!u.isSelected) return u;
+
+        // Calculate offset for formation (spiral pattern around target)
+        let offsetX = 0;
+        let offsetY = 0;
         
+        if (numSelected > 1) {
+          // Spread units in a rough grid/circle formation
+          const spreadRadius = 0.6; // How far apart units spread
+          if (unitIndex === 0) {
+            // First unit goes to exact target
+            offsetX = 0;
+            offsetY = 0;
+          } else {
+            // Other units spread in a circle around the target
+            const angle = (unitIndex - 1) * (Math.PI * 2 / Math.max(1, numSelected - 1));
+            const ring = Math.floor((unitIndex - 1) / 6) + 1; // Which ring (6 units per ring)
+            offsetX = Math.cos(angle) * spreadRadius * ring;
+            offsetY = Math.sin(angle) * spreadRadius * ring;
+          }
+        }
+        
+        unitIndex++;
+
         return {
           ...u,
           isMoving: true,
-          targetX: x,
-          targetY: y,
+          targetX: x + offsetX,
+          targetY: y + offsetY,
           task: 'move' as UnitTask,
         };
       });
-      
+
       return { ...prev, units: updatedUnits };
     });
   }, []);
   
-  // Task assignment
+  // Task assignment - spread units around target
   const assignTask = useCallback((task: UnitTask, target?: { x: number; y: number } | string) => {
     setState(prev => {
+      // Get all selected units for formation calculation
+      const selectedUnits = prev.units.filter(u => u.isSelected);
+      const numSelected = selectedUnits.length;
+      
+      let unitIndex = 0;
       const updatedUnits = prev.units.map(u => {
         if (!u.isSelected) return u;
-        
+
         const newUnit = { ...u, task, taskTarget: target };
-        
+
         // If task requires movement to target position
         if (target && typeof target === 'object' && 'x' in target) {
-          newUnit.targetX = target.x;
-          newUnit.targetY = target.y;
+          // Calculate offset for formation
+          let offsetX = 0;
+          let offsetY = 0;
+          
+          if (numSelected > 1) {
+            const spreadRadius = 0.6;
+            if (unitIndex === 0) {
+              offsetX = 0;
+              offsetY = 0;
+            } else {
+              const angle = (unitIndex - 1) * (Math.PI * 2 / Math.max(1, numSelected - 1));
+              const ring = Math.floor((unitIndex - 1) / 6) + 1;
+              offsetX = Math.cos(angle) * spreadRadius * ring;
+              offsetY = Math.sin(angle) * spreadRadius * ring;
+            }
+          }
+          
+          newUnit.targetX = target.x + offsetX;
+          newUnit.targetY = target.y + offsetY;
           newUnit.isMoving = true;
         }
         
+        unitIndex++;
+
         return newUnit;
       });
-      
+
       return { ...prev, units: updatedUnits };
     });
   }, []);

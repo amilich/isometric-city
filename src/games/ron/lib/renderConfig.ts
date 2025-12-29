@@ -176,11 +176,12 @@ export const BUILDING_SPRITE_MAP: Partial<Record<RoNBuildingType, { row: number;
 };
 
 // Vertical offset adjustments per building type (multiplied by tile height)
+// 3x3 buildings need larger offsets (like IsoCity mall at -1.5)
 export const BUILDING_VERTICAL_OFFSETS: Partial<Record<RoNBuildingType, number>> = {
-  city_center: -0.6,
-  small_city: -0.6,
-  large_city: -0.6,
-  major_city: -0.6,
+  city_center: -1.2,
+  small_city: -1.2,
+  large_city: -1.3,
+  major_city: -1.4,
   farm: -0.4,
   barracks: -0.4,
   library: -0.35,

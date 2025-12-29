@@ -7,6 +7,7 @@ const tips = [
   'Farms must be placed on fertile tiles; oil rigs on oil.',
   'Barracks enable infantry/ranged; factories for vehicles/siege; airbase for air (modern).',
   'Use minimap or Center buttons to jump quickly across the map.',
+  'WASD / Arrow keys pan camera; Esc clears selection/build.',
   'Age Up unlocks after the minimum time and resource cost are met.',
   'Spread your army with shift-right-click; health bars show damage.',
 ];

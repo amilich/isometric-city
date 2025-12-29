@@ -34,6 +34,10 @@ export default function RiseGame() {
   const idleCycleRef = React.useRef(0);
   const selectArmyRef = React.useRef(0);
 
+  const panCamera = React.useCallback((dx: number, dy: number) => {
+    setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+  }, []);
+
   const canAfford = React.useCallback(
     (cost: Partial<ResourcePool>) => {
       if (!player) return false;
@@ -150,6 +154,22 @@ export default function RiseGame() {
       if (e.key.toLowerCase() === 'f') setActiveBuild('farm');
       if (e.key.toLowerCase() === 'i') selectNextIdleCitizen();
       if (e.key.toLowerCase() === 'm') selectNextArmyGroup();
+      if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        panCamera(0, -40);
+      }
+      if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        panCamera(0, 40);
+      }
+      if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        panCamera(-60, 0);
+      }
+      if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        panCamera(60, 0);
+      }
       if (e.key === 'Escape') {
         setActiveBuild(null);
         selectUnits([]);
@@ -157,7 +177,7 @@ export default function RiseGame() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setSpeed, restart, spawnCitizen, ageUp, selectNextIdleCitizen, selectNextArmyGroup, selectUnits]);
+  }, [setSpeed, restart, spawnCitizen, ageUp, selectNextIdleCitizen, selectNextArmyGroup, selectUnits, panCamera]);
 
   if (!player) return null;
 

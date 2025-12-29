@@ -14,6 +14,7 @@ import {
   loadGameRoom,
   updateGameRoom,
   updatePlayerCount,
+  CitySizeLimitError,
 } from './database';
 import { GameState } from '@/types/game';
 import { msg } from 'gt-next';
@@ -91,14 +92,22 @@ export class MultiplayerProvider {
     if (this.isCreator && this.gameState) {
       // Creator has the canonical state - mark as already received
       this.hasReceivedInitialState = true;
-      const success = await createGameRoom(
-        this.roomCode,
-        this.options.cityName,
-        this.gameState
-      );
-      if (!success) {
-        this.options.onError?.(msg('Failed to create room in database'));
-        throw new Error(msg('Failed to create room in database'));
+      try {
+        const success = await createGameRoom(
+          this.roomCode,
+          this.options.cityName,
+          this.gameState
+        );
+        if (!success) {
+          this.options.onError?.(msg('Failed to create room in database'));
+          throw new Error(msg('Failed to create room in database'));
+        }
+      } catch (e) {
+        if (e instanceof CitySizeLimitError) {
+          this.options.onError?.(e.message);
+          throw e;
+        }
+        throw e;
       }
     } else {
       // Joining an existing room - load state from database
@@ -263,7 +272,12 @@ export class MultiplayerProvider {
   private saveStateToDatabase(state: GameState): void {
     this.lastStateSave = Date.now();
     updateGameRoom(this.roomCode, state).catch((e) => {
-      console.error('[Multiplayer] Failed to save state to database:', e);
+      if (e instanceof CitySizeLimitError) {
+        console.warn('[Multiplayer] City size limit exceeded:', e.message);
+        this.options.onError?.(e.message);
+      } else {
+        console.error('[Multiplayer] Failed to save state to database:', e);
+      }
     });
   }
 

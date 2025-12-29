@@ -546,7 +546,7 @@ export const BottomHUD = React.memo(function BottomHUD({
           </div>
 
           {/* Categories Popups */}
-          <div className="flex gap-2 pl-2 border-l border-white/10 ml-2 bg-slate-900/90 backdrop-blur-md p-2 rounded-2xl border border-slate-700 shadow-2xl mb-1 flex-nowrap overflow-x-auto max-w-[calc(100vw-100px)] lg:max-w-none scrollbar-hide">
+          <div className="flex gap-2 pl-2 border-l border-white/10 ml-2 bg-slate-900/90 backdrop-blur-md p-2 rounded-2xl border border-slate-700 shadow-2xl mb-1 flex-nowrap overflow-x-auto max-w-[calc(100vw-100px)] lg:max-w-none scrollbar-hide" style={{ overflow: 'visible' }}>
              {categoryGroups.map(group => (
                <PopupMenu 
                   key={group.key}

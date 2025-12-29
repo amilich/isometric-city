@@ -20,20 +20,32 @@ interface TileInfoPanelProps {
   };
   onClose: () => void;
   isMobile?: boolean;
+  position?: { x: number; y: number };
 }
 
 export function TileInfoPanel({ 
   tile, 
   services, 
   onClose,
-  isMobile = false
+  isMobile = false,
+  position
 }: TileInfoPanelProps) {
   const { x, y } = tile;
   
+  const desktopStyle = position 
+    ? { 
+        top: position.y, 
+        left: position.x,
+        transform: 'translate(-50%, -100%)',
+        marginTop: '-20px',
+        zIndex: 40
+      } 
+    : undefined;
+  
   return (
     <Card 
-      className={`${isMobile ? 'fixed left-0 right-0 w-full rounded-none border-x-0 border-t border-b z-30' : 'absolute top-4 right-4 w-72'}`} 
-      style={isMobile ? { top: 'calc(72px + env(safe-area-inset-top, 0px))' } : undefined}
+      className={`${isMobile ? 'fixed left-0 right-0 w-full rounded-none border-x-0 border-t border-b z-30' : position ? 'absolute w-72' : 'absolute top-4 right-4 w-72'}`} 
+      style={isMobile ? { top: 'calc(72px + env(safe-area-inset-top, 0px))' } : desktopStyle}
     >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-sans">Karo ({x}, {y})</CardTitle>

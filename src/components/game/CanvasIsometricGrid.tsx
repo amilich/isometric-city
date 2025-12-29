@@ -4082,13 +4082,21 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         style={{ mixBlendMode: 'multiply' }}
       />
       
-      {selectedTile && selectedTool === 'select' && !isMobile && (
-        <TileInfoPanel
-          tile={grid[selectedTile.y][selectedTile.x]}
-          services={state.services}
-          onClose={() => setSelectedTile(null)}
-        />
-      )}
+      {selectedTile && selectedTool === 'select' && !isMobile && (() => {
+        // Calculate screen position for tile info panel
+        const local = gridToScreen(selectedTile.x, selectedTile.y, 0, 0);
+        const screenX = local.screenX * zoom + offset.x;
+        const screenY = local.screenY * zoom + offset.y;
+        
+        return (
+          <TileInfoPanel
+            tile={grid[selectedTile.y][selectedTile.x]}
+            services={state.services}
+            onClose={() => setSelectedTile(null)}
+            position={{ x: screenX, y: screenY }}
+          />
+        );
+      })()}
       
       {/* City Connection Dialog */}
       {cityConnectionDialog && (() => {

@@ -265,7 +265,8 @@ export const BottomHUD = React.memo(function BottomHUD({
   children?: React.ReactNode; 
 }) {
   const { state, setTool, setActivePanel, saveCity, setSpeed } = useGame();
-  const { selectedTool, stats, activePanel, speed, date } = state;
+  const { selectedTool, stats, activePanel, speed, year, month, day } = state;
+  const date = useMemo(() => new Date(year, month - 1, day), [year, month, day]);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const t = useTranslations('Game');
   

@@ -15,6 +15,7 @@ import {
   HealthIcon,
   EducationIcon,
   SubwayIcon,
+  BudgetIcon,
 } from '@/components/ui/Icons';
 import { OverlayMode } from './types';
 import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
@@ -139,6 +140,29 @@ export const TopLeftMenu = React.memo(function TopLeftMenu({
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white">
               <p>{t('Settings')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Budget - Bütçe Butonu Eklendi */}
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activePanel === 'budget' ? "default" : "secondary"}
+                size="icon"
+                className={`w-12 h-12 rounded-full shadow-lg border-2 transition-all ${
+                  activePanel === 'budget'
+                    ? 'bg-emerald-600 border-emerald-400 text-white hover:bg-emerald-500' 
+                    : 'bg-slate-900/90 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+                onClick={() => setActivePanel(activePanel === 'budget' ? 'none' : 'budget')}
+              >
+                <BudgetIcon size={24} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white">
+              <p>{t('Budget')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

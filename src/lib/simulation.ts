@@ -1293,10 +1293,10 @@ function calculateNetworkUtilityCoverage(options: {
     const [x, y, distance] = queue.shift()!;
     
     // Early termination if we've exceeded max distance
-    // maxDistance = 50 means we want exactly 50 tiles total
-    // Source at distance 0 + roads at distance 1-49 = 50 tiles
-    // So we stop processing when distance >= maxDistance
-    if (distance >= maxDistance) {
+    // maxDistance = 50 means we want coverage up to 50 tiles away
+    // Source at distance 0 + roads at distance 1-50 = 51 tiles total
+    // So we stop processing when distance > maxDistance
+    if (distance > maxDistance) {
       continue;
     }
     
@@ -1329,12 +1329,12 @@ function calculateNetworkUtilityCoverage(options: {
       // Only propagate along roads, bridges, and subways
       if (isRoad) {
         const nextDistance = distance + 1;
-        // Only add if next distance is strictly less than maxDistance
-        // This ensures we get exactly maxDistance tiles:
+        // Add if next distance is less than or equal to maxDistance
+        // This ensures we get coverage up to maxDistance tiles away:
         // - Source at distance 0 (1 tile)
-        // - Roads at distance 1 to maxDistance-1 (maxDistance-1 tiles)
-        // - Total: maxDistance tiles
-        if (nextDistance < maxDistance) {
+        // - Roads at distance 1 to maxDistance (maxDistance tiles)
+        // - Total: maxDistance + 1 tiles, covering up to maxDistance tiles away
+        if (nextDistance <= maxDistance) {
           visited.add(neighborKey);
           powered[ny][nx] = true;
           queue.push([nx, ny, nextDistance]);

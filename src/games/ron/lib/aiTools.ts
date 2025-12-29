@@ -552,6 +552,43 @@ export function executeBuildBuilding(
     return { newState: state, result: { success: false, message: 'Can only build within your territory' } };
   }
 
+  // CRITICAL: Validate resource adjacency for economic buildings
+  if (bType === 'woodcutters_camp') {
+    let nearForest = false;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const adj = state.grid[y + dy]?.[x + dx];
+        if (adj && (adj.forestDensity > 0 || adj.terrain === 'forest')) {
+          nearForest = true;
+          break;
+        }
+      }
+      if (nearForest) break;
+    }
+    if (!nearForest) {
+      return { newState: state, result: { success: false, message: `woodcutters_camp at (${x},${y}) is NOT near forest! Use tiles from "🌲 For woodcutters_camp" list!` } };
+    }
+  }
+  
+  if (bType === 'mine') {
+    let nearMetal = false;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const adj = state.grid[y + dy]?.[x + dx];
+        if (adj && adj.hasMetalDeposit) {
+          nearMetal = true;
+          break;
+        }
+      }
+      if (nearMetal) break;
+    }
+    if (!nearMetal) {
+      return { newState: state, result: { success: false, message: `mine at (${x},${y}) is NOT near metal! Use tiles from "⛏️ For mine" list!` } };
+    }
+  }
+
   // Deduct resources
   const newResources = { ...player.resources };
   for (const [resource, amount] of Object.entries(stats.cost)) {
@@ -591,6 +628,10 @@ export function executeBuildBuilding(
   const newPlayers = state.players.map(p =>
     p.id === aiPlayerId ? { ...p, resources: newResources } : p
   );
+
+  // Verify the building was placed
+  const verifyTile = newGrid[y]?.[x];
+  console.log(`[BUILD] Placed ${buildingType} at (${x},${y}), verified: ${verifyTile?.building?.type === bType}, ownerId: ${verifyTile?.ownerId}`);
 
   return {
     newState: { ...state, grid: newGrid, players: newPlayers },
@@ -1021,10 +1062,18 @@ export function executeAssignIdleWorkers(
     .map(b => `${b.task.replace('gather_', '')}@${b.x},${b.y}`)
     .join(', ');
 
+  // Log unit task changes for debugging
+  if (assigned > 0) {
+    console.log(`[assign_workers] Updated ${assigned} units with new tasks:`);
+    newUnits.filter(u => u.task?.startsWith('gather_')).slice(0, 5).forEach(u => {
+      console.log(`  - Unit ${u.id.slice(0,8)}: task=${u.task}, isMoving=${u.isMoving}, target=(${u.targetX?.toFixed(1)},${u.targetY?.toFixed(1)})`);
+    });
+  }
+
   return {
     newState: { ...state, units: newUnits },
-    result: { 
-      success: true, 
+    result: {
+      success: true,
       message: `Assigned ${assigned} workers. Tasks: ${tasksSummary || 'none'}`,
       data: { assigned, buildings: economicBuildings.length },
     },

@@ -119,39 +119,62 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
   },
 ];
 
-const SYSTEM_PROMPT = `You are an expert AI opponent in a Rise of Nations-style RTS game. You must play strategically to defeat the human player.
+const SYSTEM_PROMPT = `You are an AGGRESSIVE AI opponent in a Rise of Nations RTS game. Your goal: RAPID EXPANSION and OVERWHELMING FORCE.
 
-## YOUR STRATEGY PROCESS:
-1. First, call get_game_state to see the current situation
-2. Analyze your resources, rates, and buildings
-3. Call assign_workers to keep economy running
-4. Build buildings and train units as needed
-5. Attack when you have military strength
+## YOUR TURN PROCESS (DO ALL OF THESE EVERY TURN!):
+1. get_game_state → See current situation
+2. assign_workers → Keep ALL workers productive
+3. BUILD 2-3 BUILDINGS every turn! Economy first, then military
+4. TRAIN 2-3 UNITS every turn! Citizens early, military later
+5. ATTACK when you have 5+ military units
 
-## CRITICAL EARLY GAME RULES:
-1. **WOOD IS ESSENTIAL** - You need wood to build EVERYTHING. If wood rate is 0, prioritize woodcutters_camp!
-2. **Balance resources** - Don't just build farms. You need wood production too!
-3. **Population cap** - If pop = popCap, you MUST build small_city to expand (costs 400 wood, 100 metal)
-4. **Train citizens** - More workers = faster economy = bigger army
+## AGGRESSIVE EXPANSION STRATEGY:
+**EARLY (pop < 15):**
+- Build 3-4 farms (food powers everything)
+- Build 2-3 woodcutters_camp on 🌲 tiles
+- Build 1-2 mines on ⛏️ tiles
+- Train citizens constantly until 10+ workers
+- Build barracks
 
-## BUILDING PRIORITIES:
-- Early game: 1-2 woodcutters_camp (use tiles marked "near forest"!), 2-3 farms, then barracks
-- If pop capped: mine (use tiles marked "near metal"!) → small_city
-- Military: barracks → train militia
+**MID GAME (pop 15-30):**
+- Build small_city when pop capped (400 wood, 100 metal)
+- Build 1-2 more farms and woodcutters
+- Build library for research
+- Train militia constantly (3-5 at a time)
+- Build stable for cavalry
 
-## IMPORTANT: BUILD LOCATIONS
-- woodcutters_camp MUST be built on tiles "near forest" to produce wood!
-- mine MUST be built on tiles "near metal" to produce metal!
-- Other buildings can go on any general buildable tile
+**LATE GAME (pop 30+):**
+- Build large_city, major_city
+- Build university, siege_workshop
+- Overwhelm with mixed army
+
+## BUILD LOCATIONS (CRITICAL!)
+⚠️ woodcutters_camp: ONLY on "🌲 For woodcutters_camp" tiles
+⚠️ mine: ONLY on "⛏️ For mine" tiles
+Other buildings: Use any "General" buildable tile
+
+## ALWAYS DO THIS:
+- NEVER end a turn without building something!
+- NEVER end a turn without training something!
+- Call assign_workers after every build to staff new buildings
+- Build more farms if food < 100 or food rate < 3
+- Build more woodcutters if wood rate < 2
+- Build barracks ASAP, then train militia constantly
 
 ## COMMUNICATION:
-Send taunting messages to intimidate your opponent! Be creative and aggressive.
+Send taunting messages! Mock the opponent's slow economy or weak military.
 
-Think step by step. Call tools to take actions. Keep playing until you've made several moves per turn.`;
+BE AGGRESSIVE! Build constantly! Train constantly! Expand relentlessly!`;
+
+interface AIAction {
+  type: 'build' | 'unit_task' | 'train' | 'resource_update';
+  data: Record<string, unknown>;
+}
 
 interface AIResponseBody {
   newState: RoNGameState;
   messages: string[];
+  actions?: AIAction[];
   error?: string;
   responseId?: string;
 }
@@ -178,6 +201,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<AIRespons
     let currentState = gameState;
     const messages: string[] = [];
     
+    // Track explicit actions for frontend to apply directly
+    const actions: Array<{
+      type: 'build' | 'unit_task' | 'train' | 'resource_update';
+      data: Record<string, unknown>;
+    }> = [];
+
     console.log('\n' + '='.repeat(60));
     console.log(`[AGENT] Starting turn at tick ${gameState.tick}`);
     console.log('='.repeat(60));
@@ -248,6 +277,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<AIRespons
         switch (toolCall.name) {
           case 'get_game_state': {
             const condensed = generateCondensedGameState(currentState, aiPlayerId);
+            // Debug: log what tiles are near forest/metal
+            console.log('[AI DEBUG] tilesNearForest:', condensed.tilesNearForest?.map(t => `(${t.x},${t.y})`).join(', ') || 'EMPTY');
+            console.log('[AI DEBUG] tilesNearMetal:', condensed.tilesNearMetal?.map(t => `(${t.x},${t.y})`).join(', ') || 'EMPTY');
             const p = condensed.myPlayer;
             
             // Format a readable game state
@@ -276,7 +308,62 @@ ${condensed.enemyBuildings.slice(0, 5).map(b => `- ${b.type} at (${b.x},${b.y})`
 
 ## TRAINING LOCATIONS:
 - Citizens: city_center at ${condensed.myBuildings.find(b => b.type === 'city_center' || b.type === 'small_city') ? `(${condensed.myBuildings.find(b => b.type === 'city_center' || b.type === 'small_city')!.x},${condensed.myBuildings.find(b => b.type === 'city_center' || b.type === 'small_city')!.y})` : '(none!)'}
-- Military: barracks at ${condensed.myBuildings.find(b => b.type === 'barracks') ? `(${condensed.myBuildings.find(b => b.type === 'barracks')!.x},${condensed.myBuildings.find(b => b.type === 'barracks')!.y})` : '(build one first!)'}`;
+- Military: barracks at ${condensed.myBuildings.find(b => b.type === 'barracks') ? `(${condensed.myBuildings.find(b => b.type === 'barracks')!.x},${condensed.myBuildings.find(b => b.type === 'barracks')!.y})` : '(build one first!)'}
+
+## ⚡ RECOMMENDED ACTIONS NOW:
+${(() => {
+  const actions: string[] = [];
+  const farmCount = condensed.myBuildings.filter(b => b.type === 'farm').length;
+  const woodCount = condensed.myBuildings.filter(b => b.type === 'woodcutters_camp').length;
+  const mineCount = condensed.myBuildings.filter(b => b.type === 'mine').length;
+  const barracksExists = condensed.myBuildings.some(b => b.type === 'barracks');
+  const libraryExists = condensed.myBuildings.some(b => b.type === 'library');
+  const militaryCount = condensed.myUnits.filter(u => u.type !== 'citizen').length;
+  const citizenCount = condensed.myUnits.filter(u => u.type === 'citizen').length;
+  const cityTile = condensed.emptyTerritoryTiles?.[0];
+  const forestTile = condensed.tilesNearForest?.[0];
+  const metalTile = condensed.tilesNearMetal?.[0];
+  
+  // Food rate problems
+  if (p.resourceRates.food < 2 && farmCount < 4 && cityTile) {
+    actions.push(`🌾 BUILD farm at (${cityTile.x},${cityTile.y}) - need more food!`);
+  }
+  // Wood rate problems
+  if (p.resourceRates.wood < 2 && forestTile) {
+    actions.push(`🪵 BUILD woodcutters_camp at (${forestTile.x},${forestTile.y}) - need wood!`);
+  }
+  // Metal needed
+  if (p.resourceRates.metal === 0 && metalTile) {
+    actions.push(`⛏️ BUILD mine at (${metalTile.x},${metalTile.y}) - need metal for expansion!`);
+  }
+  // Need barracks
+  if (!barracksExists && p.resources.wood >= 100 && cityTile) {
+    actions.push(`⚔️ BUILD barracks at (${cityTile.x},${cityTile.y}) - need military!`);
+  }
+  // Need library
+  if (!libraryExists && p.resources.wood >= 150 && cityTile) {
+    actions.push(`📚 BUILD library at (${cityTile.x},${cityTile.y}) - for research!`);
+  }
+  // Pop capped
+  if (p.population >= p.populationCap && p.resources.wood >= 400 && p.resources.metal >= 100 && cityTile) {
+    actions.push(`🏰 BUILD small_city at (${cityTile.x},${cityTile.y}) - pop capped!`);
+  }
+  // Need more citizens
+  if (citizenCount < 10) {
+    actions.push(`👷 TRAIN citizen - need more workers!`);
+  }
+  // Need military
+  if (barracksExists && militaryCount < 5) {
+    actions.push(`🗡️ TRAIN militia - build up army!`);
+  }
+  // Attack if strong
+  if (militaryCount >= 5 && condensed.enemyBuildings.length > 0) {
+    const enemy = condensed.enemyBuildings[0];
+    actions.push(`⚔️ ATTACK enemy at (${enemy.x},${enemy.y}) with your ${militaryCount} units!`);
+  }
+  
+  return actions.length > 0 ? actions.join('\n') : 'Economy is stable - keep expanding!';
+})()}`;
 
             result = { success: true, message: stateStr };
             console.log(`  → Game state retrieved`);
@@ -288,6 +375,26 @@ ${condensed.enemyBuildings.slice(0, 5).map(b => `- ${b.type} at (${b.x},${b.y})`
             currentState = res.newState;
             result = res.result;
             console.log(`  → ${result.message}`);
+            // Track unit task updates for frontend
+            if (res.result.success && (res.result.data as { assigned?: number })?.assigned && (res.result.data as { assigned: number }).assigned > 0) {
+              // Get all AI units with gather tasks
+              const aiUnits = currentState.units.filter((u: { ownerId: string; task?: string }) => 
+                u.ownerId === aiPlayerId && u.task?.startsWith('gather_')
+              );
+              aiUnits.forEach((u: { id: string; task: string; taskTarget?: unknown; targetX?: number; targetY?: number; isMoving?: boolean }) => {
+                actions.push({
+                  type: 'unit_task',
+                  data: { 
+                    unitId: u.id, 
+                    task: u.task, 
+                    taskTarget: u.taskTarget,
+                    targetX: u.targetX,
+                    targetY: u.targetY,
+                    isMoving: u.isMoving
+                  }
+                });
+              });
+            }
             break;
           }
 
@@ -297,6 +404,16 @@ ${condensed.enemyBuildings.slice(0, 5).map(b => `- ${b.type} at (${b.x},${b.y})`
             currentState = res.newState;
             result = res.result;
             console.log(`  → ${result.message}`);
+            // Track action for frontend
+            if (res.result.success) {
+              const tile = currentState.grid[y]?.[x];
+              if (tile?.building) {
+                actions.push({
+                  type: 'build',
+                  data: { building: tile.building, x, y, ownerId: aiPlayerId }
+                });
+              }
+            }
             break;
           }
 
@@ -306,6 +423,13 @@ ${condensed.enemyBuildings.slice(0, 5).map(b => `- ${b.type} at (${b.x},${b.y})`
             currentState = res.newState;
             result = res.result;
             console.log(`  → ${result.message}`);
+            // Track action for frontend
+            if (res.result.success) {
+              actions.push({
+                type: 'train',
+                data: { unitType: unit_type, buildingX: building_x, buildingY: building_y }
+              });
+            }
             break;
           }
 
@@ -367,12 +491,13 @@ ${condensed.enemyBuildings.slice(0, 5).map(b => `- ${b.type} at (${b.x},${b.y})`
       }
     }
 
-    console.log(`[AGENT] Turn complete after ${iterations} iterations`);
+    console.log(`[AGENT] Turn complete after ${iterations} iterations, ${actions.length} actions`);
     console.log('='.repeat(60) + '\n');
 
     return NextResponse.json({
       newState: currentState,
       messages,
+      actions, // Explicit actions for frontend to apply
       responseId: response.id,
     });
 

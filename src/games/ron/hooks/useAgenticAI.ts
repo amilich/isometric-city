@@ -103,84 +103,107 @@ export function useAgenticAI(
           ]);
         }
 
-        // Apply AI changes to CURRENT state (not replace with old state)
-        // The AI modifies units, buildings, resources - we need to merge those changes
-        if (result.newState?.tick) {
+        // Apply AI actions directly to current state
+        const actions = result.actions as Array<{
+          type: 'build' | 'unit_task' | 'train' | 'resource_update';
+          data: Record<string, unknown>;
+        }> | undefined;
+        
+        if (actions && actions.length > 0) {
+          console.log(`[AI SYNC] Applying ${actions.length} actions from AI`);
+          
           setGameState((currentState) => {
-            // Don't apply if the response is too old (more than 500 ticks behind)
-            if (currentState.tick - result.newState.tick > 500) {
-              console.log('[AI] Discarding stale response from tick', result.newState.tick, 'current:', currentState.tick);
-              return currentState;
-            }
+            let newGrid = currentState.grid.map(row => [...row]);
+            let newUnits = [...currentState.units];
+            let newPlayers = [...currentState.players];
             
-            // Merge AI changes into current state
-            // Key changes: units (positions, tasks, new units), buildings, player resources
-            const aiState = result.newState;
-            
-            // Find new units added by AI (queued units that don't exist in current state)
-            const currentUnitIds = new Set(currentState.units.map((u: Unit) => u.id));
-            const newUnits = aiState.units.filter((u: Unit) => !currentUnitIds.has(u.id));
-            
-            // Apply AI's unit task changes to current units
-            const updatedUnits = currentState.units.map(unit => {
-              const aiUnit = aiState.units.find((u: Unit) => u.id === unit.id);
-              if (aiUnit && aiUnit.ownerId === aiState.players.find((p: RoNPlayer) => p.type === 'ai')?.id) {
-                // Only update AI-owned units' tasks/targets
-                return {
-                  ...unit,
-                  task: aiUnit.task,
-                  taskTarget: aiUnit.taskTarget,
-                  targetX: aiUnit.targetX,
-                  targetY: aiUnit.targetY,
+            for (const action of actions) {
+              if (action.type === 'build') {
+                const { building, x, y, ownerId } = action.data as { 
+                  building: unknown; x: number; y: number; ownerId: string 
                 };
-              }
-              return unit;
-            });
-            
-            // Merge new buildings from AI state
-            const mergedGrid = currentState.grid.map((row, y) =>
-              row.map((tile, x) => {
-                const aiTile = aiState.grid[y]?.[x];
-                // If AI added a building that doesn't exist in current state, add it
-                if (aiTile?.building && !tile.building) {
-                  return { ...tile, building: aiTile.building, ownerId: aiTile.ownerId };
+                console.log(`[AI SYNC] Building ${(building as {type: string}).type} at (${x},${y})`);
+                
+                // Apply building to grid
+                if (newGrid[y] && newGrid[y][x]) {
+                  newGrid[y][x] = {
+                    ...newGrid[y][x],
+                    building: building as typeof newGrid[0][0]['building'],
+                    ownerId,
+                  };
                 }
-                // If AI queued units at a building, update the queue
-                if (tile.building && aiTile?.building && tile.building.type === aiTile.building.type) {
-                  return {
+              } else if (action.type === 'unit_task') {
+                const { unitId, task, taskTarget, targetX, targetY, isMoving } = action.data as {
+                  unitId: string; task: string; taskTarget?: unknown; 
+                  targetX?: number; targetY?: number; isMoving?: boolean;
+                };
+                
+                const unitIdx = newUnits.findIndex(u => u.id === unitId);
+                if (unitIdx >= 0) {
+                  console.log(`[AI SYNC] Unit ${unitId.slice(0,15)}: task=${task}, target=(${targetX?.toFixed(1)},${targetY?.toFixed(1)})`);
+                  newUnits[unitIdx] = {
+                    ...newUnits[unitIdx],
+                    task: task as Unit['task'],
+                    taskTarget: taskTarget as Unit['taskTarget'],
+                    targetX,
+                    targetY,
+                    isMoving: isMoving ?? true,
+                  };
+                }
+              } else if (action.type === 'train') {
+                const { unitType, buildingX, buildingY } = action.data as {
+                  unitType: string; buildingX: number; buildingY: number;
+                };
+                console.log(`[AI SYNC] Queued ${unitType} at (${buildingX},${buildingY})`);
+                
+                // Add to building queue
+                if (newGrid[buildingY] && newGrid[buildingY][buildingX]?.building) {
+                  const tile = newGrid[buildingY][buildingX];
+                  newGrid[buildingY][buildingX] = {
                     ...tile,
                     building: {
-                      ...tile.building,
-                      queuedUnits: aiTile.building.queuedUnits,
+                      ...tile.building!,
+                      queuedUnits: [...(tile.building!.queuedUnits || []), unitType],
                     },
                   };
                 }
-                return tile;
-              })
-            );
-            
-            // Update AI player resources (they may have spent resources)
-            const mergedPlayers = currentState.players.map(player => {
-              const aiPlayer = aiState.players.find((p: RoNPlayer) => p.id === player.id);
-              if (aiPlayer && player.type === 'ai') {
-                return {
-                  ...player,
-                  resources: aiPlayer.resources,
-                  age: aiPlayer.age,
-                };
               }
-              return player;
-            });
+            }
+            
+            // Also sync AI player resources from newState
+            if (result.newState?.players) {
+              const aiPlayer = result.newState.players.find((p: RoNPlayer) => p.id === config.aiPlayerId);
+              if (aiPlayer) {
+                newPlayers = newPlayers.map(p => 
+                  p.id === config.aiPlayerId ? { ...p, resources: aiPlayer.resources, age: aiPlayer.age } : p
+                );
+              }
+            }
+            
+            console.log(`[AI SYNC] Applied ${actions.length} actions successfully`);
             
             const merged = {
               ...currentState,
-              units: [...updatedUnits, ...newUnits],
-              grid: mergedGrid,
-              players: mergedPlayers,
+              grid: newGrid,
+              units: newUnits,
+              players: newPlayers,
             };
-            
             latestStateRef.current = merged;
             return merged;
+          });
+        } else if (result.newState?.tick) {
+          // Fallback: sync resources at minimum
+          setGameState((currentState) => {
+            if (result.newState?.players) {
+              const aiPlayer = result.newState.players.find((p: RoNPlayer) => p.id === config.aiPlayerId);
+              if (aiPlayer) {
+                const newPlayers = currentState.players.map(p => 
+                  p.id === config.aiPlayerId ? { ...p, resources: aiPlayer.resources, age: aiPlayer.age } : p
+                );
+                return { ...currentState, players: newPlayers };
+              }
+            }
+            return currentState;
           });
         }
       }

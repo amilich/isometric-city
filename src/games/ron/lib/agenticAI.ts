@@ -272,7 +272,7 @@ It's your turn. Analyze the situation and take actions. Remember to:
 
     // Create the response using OpenAI Responses API
     let response = await client.responses.create({
-      model: 'gpt-4o-mini', // Using gpt-4o-mini as gpt-5-mini doesn't exist
+      model: 'gpt-5-mini-2025-08-07', // Using gpt-4o-mini as gpt-5-mini doesn't exist
       instructions: SYSTEM_PROMPT,
       input: userMessage,
       tools: AI_TOOLS,

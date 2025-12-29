@@ -1,4 +1,5 @@
 // Rendering configuration
+import { msg } from 'gt-next';
 // ============================================================================
 // SPRITE PACK TYPE DEFINITION
 // ============================================================================
@@ -174,7 +175,7 @@ const RISE_BUILDING_TO_SPRITE: Record<string, string> = {
 // ============================================================================
 const SPRITE_PACK_SPRITES4: SpritePack = {
   id: 'sprites4',
-  name: 'Default Theme',
+  name: msg('Default Theme'),
   src: '/assets/sprites_red_water_new.png',
   constructionSrc: '/assets/sprites_red_water_new_construction.png',
   abandonedSrc: '/assets/sprites_red_water_new_abandoned.png',
@@ -613,7 +614,7 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
 const SPRITE_PACK_SPRITES4_HARRY: SpritePack = {
   ...SPRITE_PACK_SPRITES4,
   id: 'sprites4-harry',
-  name: 'Harry Potter Theme',
+  name: msg('Harry Potter Theme'),
   src: '/assets/sprites_red_water_new_harry.png',
   denseSrc: '/assets/sprites_red_water_new_harry_dense.png',
   modernSrc: '/assets/sprites_red_water_new_harry_dense.png',
@@ -632,7 +633,7 @@ const SPRITE_PACK_SPRITES4_HARRY: SpritePack = {
 const SPRITE_PACK_SPRITES4_CHINA: SpritePack = {
   ...SPRITE_PACK_SPRITES4,
   id: 'sprites4-china',
-  name: 'Chinese Theme',
+  name: msg('Chinese Theme'),
   src: '/assets/sprites_red_water_new_china.png',
   // Note: Uses same construction, abandoned, dense, and parks sheets as the default
   // If you have Chinese themed variants for those, update these paths:
@@ -667,35 +668,35 @@ const SPRITE_PACK_RISE_CLASSICS = withRiseBuildingMap(
   SPRITE_PACK_SPRITES4,
   '/assets/ages/classics.png',
   'rise-age-classics',
-  'Rise Age - Classics'
+  msg('Rise Age - Classics')
 );
 
 const SPRITE_PACK_RISE_MEDEIVAL = withRiseBuildingMap(
   SPRITE_PACK_SPRITES4,
   '/assets/ages/medeival.png',
   'rise-age-medeival',
-  'Rise Age - Medieval'
+  msg('Rise Age - Medieval')
 );
 
 const SPRITE_PACK_RISE_ENLIGHTENMENT = withRiseBuildingMap(
   SPRITE_PACK_SPRITES4,
   '/assets/ages/enlightenment.png',
   'rise-age-enlightenment',
-  'Rise Age - Enlightenment'
+  msg('Rise Age - Enlightenment')
 );
 
 const SPRITE_PACK_RISE_INDUSTRIAL = withRiseBuildingMap(
   SPRITE_PACK_SPRITES4,
   '/assets/ages/industrial.png',
   'rise-age-industrial',
-  'Rise Age - Industrial'
+  msg('Rise Age - Industrial')
 );
 
 const SPRITE_PACK_RISE_MODERN = withRiseBuildingMap(
   SPRITE_PACK_SPRITES4,
   '/assets/ages/modern.png',
   'rise-age-modern',
-  'Rise Age - Modern'
+  msg('Rise Age - Modern')
 );
 
 // ============================================================================

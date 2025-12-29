@@ -1,3 +1,4 @@
+import { msg } from 'gt-next';
 import { AgeConfig, AgeId, ResourcePool } from './types';
 
 export const BASE_RESOURCES: ResourcePool = {
@@ -14,31 +15,31 @@ export const BASE_RESOURCES: ResourcePool = {
 export const AGE_CONFIGS: AgeConfig[] = [
   {
     id: 'classics',
-    label: 'Classical Age',
+    label: msg('Classical Age'),
     nextCost: { food: 200, wealth: 200, knowledge: 80 },
     minDurationSeconds: 240, // ~4 minutes
   },
   {
     id: 'medeival',
-    label: 'Medieval Age',
+    label: msg('Medieval Age'),
     nextCost: { food: 350, wealth: 350, knowledge: 160, metal: 120 },
     minDurationSeconds: 300, // ~5 minutes
   },
   {
     id: 'enlightenment',
-    label: 'Enlightenment Age',
+    label: msg('Enlightenment Age'),
     nextCost: { food: 500, wealth: 500, knowledge: 260, metal: 220 },
     minDurationSeconds: 360, // ~6 minutes
   },
   {
     id: 'industrial',
-    label: 'Industrial Age',
+    label: msg('Industrial Age'),
     nextCost: { food: 700, wealth: 750, knowledge: 380, metal: 380, oil: 60 },
     minDurationSeconds: 420, // ~7 minutes
   },
   {
     id: 'modern',
-    label: 'Modern Age',
+    label: msg('Modern Age'),
     nextCost: {},
     minDurationSeconds: 0,
   },

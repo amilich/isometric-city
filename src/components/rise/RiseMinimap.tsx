@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { T } from 'gt-next';
 import { RiseGameState } from '@/games/rise/types';
 
 const TILE_COLORS: Record<string, string> = {
@@ -91,10 +92,10 @@ export function RiseMinimap({
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-lg p-2 shadow-lg">
       <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-        <span>Minimap</span>
+        <T><span>Minimap</span></T>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1"><span className="w-3 h-3 inline-block bg-[#22d3ee]" />You</div>
-          <div className="flex items-center gap-1"><span className="w-3 h-3 inline-block bg-[#f97316]" />AI</div>
+          <T><div className="flex items-center gap-1"><span className="w-3 h-3 inline-block bg-[#22d3ee]" />You</div></T>
+          <T><div className="flex items-center gap-1"><span className="w-3 h-3 inline-block bg-[#f97316]" />AI</div></T>
         </div>
       </div>
       <canvas

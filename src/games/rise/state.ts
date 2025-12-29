@@ -16,6 +16,7 @@ import {
   UnitOrder,
 } from './types';
 import { BUILDING_POP_BONUS } from './constants';
+import { msg } from 'gt-next';
 
 function newId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -196,7 +197,7 @@ function addInitialPlayers(): PlayerState[] {
   return [
     {
       id: 'player',
-      name: 'You',
+      name: msg('You'),
       color: '#38bdf8',
       age: 'classics',
       ageStartSeconds: 0,
@@ -205,7 +206,7 @@ function addInitialPlayers(): PlayerState[] {
     },
     {
       id: 'ai',
-      name: 'AI',
+      name: msg('AI'),
       color: '#f97316',
       age: 'classics',
       ageStartSeconds: 0,

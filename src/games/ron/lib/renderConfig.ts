@@ -565,12 +565,12 @@ export const TILE_HEIGHT = 38.4; // 64 * 0.6
 
 // Unit sprite colors by player
 export const PLAYER_COLORS = [
-  '#2f6fd3', // Blue (slightly muted)
-  '#c9443f', // Red (deeper, less neon)
-  '#2f8a55', // Green (more natural)
-  '#c9802b', // Orange (earthier)
-  '#6c5bd6', // Purple (less saturated)
-  '#1e91a8', // Cyan (darker)
-  '#b04877', // Pink (muted)
-  '#6aa329', // Lime (olive)
+  '#3b82f6', // Blue
+  '#ef4444', // Red
+  '#22c55e', // Green
+  '#f59e0b', // Orange
+  '#8b5cf6', // Purple
+  '#06b6d4', // Cyan
+  '#ec4899', // Pink
+  '#84cc16', // Lime
 ];

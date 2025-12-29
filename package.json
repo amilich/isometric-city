@@ -36,7 +36,6 @@
     "react": "^19.2.1",
     "react-device-detect": "^2.2.3",
     "react-dom": "^19.2.1",
-    "simplex-noise": "^4.0.3",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7"
   },

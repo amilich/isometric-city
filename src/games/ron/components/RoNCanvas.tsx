@@ -27,7 +27,6 @@ import {
   getCachedImage,
   onImageLoaded,
   drawGroundTile,
-  drawNaturalGroundTile,
   drawWaterTile,
   drawTileHighlight,
   drawSelectionBox,
@@ -37,11 +36,11 @@ import {
   calculateViewBounds,
   isTileVisible,
   WATER_ASSET_PATH,
+  drawBeachOnWater,
   drawFireEffect,
 } from '@/components/game/shared';
 import { drawRoNUnit } from '../lib/drawUnits';
 import { getTerritoryOwner, extractCityCenters } from '../lib/simulation';
-import { drawRoNShorelineOnWater } from '../lib/drawTerrain';
 
 /**
  * Find the origin tile of a multi-tile building by searching backwards from a clicked position.
@@ -639,7 +638,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   
   // Fire animation time
   const fireAnimTimeRef = useRef(0);
-  const lastFrameTimeRef = useRef<number>(0);
+  const lastFrameTimeRef = useRef(performance.now());
   const [roadDrawDirection, setRoadDrawDirection] = useState<'h' | 'v' | null>(null);
   const placedRoadTilesRef = useRef<Set<string>>(new Set());
   const [roadDragEnd, setRoadDragEnd] = useState<{ x: number; y: number } | null>(null);
@@ -1192,8 +1191,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       
       // Calculate delta time for animations
       const now = performance.now();
-      const last = lastFrameTimeRef.current || now;
-      const delta = (now - last) / 1000;
+      const delta = (now - lastFrameTimeRef.current) / 1000;
       lastFrameTimeRef.current = now;
       fireAnimTimeRef.current += delta;
       
@@ -1201,11 +1199,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       const cityCenters = extractCityCenters(gameState.grid, gameState.gridSize);
       
       // Disable image smoothing for crisp pixel art
-      // We render terrain with smoothing for a less “pixelly” look, then disable
-      // smoothing before drawing sprite-sheet assets (which should stay crisp).
-      ctx.imageSmoothingEnabled = true;
-      // imageSmoothingQuality is supported in modern browsers; older ones will just ignore.
-      (ctx as unknown as { imageSmoothingQuality?: 'low' | 'medium' | 'high' }).imageSmoothingQuality = 'high';
+      ctx.imageSmoothingEnabled = false;
       
       // Draw sky background
       drawSkyBackground(ctx, canvas, 'day');
@@ -1482,8 +1476,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 ctx.fill();
               }
             } else if (tile.hasOilDeposit) {
-              // Draw grass base first (more realistic terrain)
-              drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
+              // Draw grass base first
+              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
               
               // Only show oil in industrial+ ages
               const isIndustrial = AGE_ORDER.indexOf(playerAge) >= AGE_ORDER.indexOf('industrial');
@@ -1561,8 +1555,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 }
               }
             } else if (tile.forestDensity > 0) {
-              // Draw base grass tile for forest (more realistic terrain)
-              drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
+              // Draw base grass tile for forest
+              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
               
               // Draw trees on forest tiles using IsoCity's tree sprite
               const isoCitySprite = getCachedImage(ISOCITY_SPRITE_PATH, true);
@@ -1623,28 +1617,17 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               }
             } else if (tile.building?.type === 'road') {
               // Draw grass base under roads (roads are drawn on top in second pass)
-              drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
+              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
             } else {
               // Regular grass tile
-              // RoN terrain: keep zones for future use, but render with realistic ground shading.
-              // (RoN currently uses 'none' almost always.)
-              if (zoneType === 'none') {
-                drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
-              } else {
-                // Fall back to shared zoned rendering if zones are ever enabled.
-                drawGroundTile(ctx, screenX, screenY, zoneType, currentZoom, false);
-              }
+              drawGroundTile(ctx, screenX, screenY, zoneType, currentZoom, false);
             }
             
             // Ownership tint overlay (skip for roads)
             if (tile.ownerId && tile.building?.type !== 'road') {
               const playerIndex = gameState.players.findIndex(p => p.id === tile.ownerId);
               if (playerIndex >= 0) {
-                ctx.save();
-                // Use multiply tinting to avoid neon overlays on realistic terrain
-                ctx.globalCompositeOperation = 'multiply';
-                ctx.globalAlpha = 0.10;
-                ctx.fillStyle = PLAYER_COLORS[playerIndex];
+                ctx.fillStyle = PLAYER_COLORS[playerIndex] + '33';
                 ctx.beginPath();
                 ctx.moveTo(screenX + TILE_WIDTH / 2, screenY);
                 ctx.lineTo(screenX + TILE_WIDTH, screenY + TILE_HEIGHT / 2);
@@ -1652,7 +1635,6 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 ctx.lineTo(screenX, screenY + TILE_HEIGHT / 2);
                 ctx.closePath();
                 ctx.fill();
-                ctx.restore();
               }
             }
           }
@@ -1733,8 +1715,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
 
           // Draw beach if any adjacent tile is land (and not a dock)
           if (adjacentLand.north || adjacentLand.east || adjacentLand.south || adjacentLand.west) {
-            // RoN shoreline: sand shallows + foam (more realistic than sidewalk-style strips)
-            drawRoNShorelineOnWater(ctx, screenX, screenY, x, y, adjacentLand);
+            drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
           }
         }
       }
@@ -1769,8 +1750,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
           const playerIndex = gameState.players.findIndex(p => p.id === owner);
           const baseColor = PLAYER_COLORS[playerIndex] || '#ffffff';
           
-          // Subtle territory fill (keep it tasteful on realistic terrain)
-          ctx.fillStyle = `${baseColor}08`;
+          // Subtle territory fill
+          ctx.fillStyle = `${baseColor}10`;
           ctx.beginPath();
           ctx.moveTo(screenX + TILE_WIDTH / 2, screenY);
           ctx.lineTo(screenX + TILE_WIDTH, screenY + TILE_HEIGHT / 2);
@@ -1789,8 +1770,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
           // West neighbor (x, y+1)
           const westOwner = getTileOwner(x, y + 1);
           
-          ctx.lineWidth = 1.75;
-          ctx.strokeStyle = `${baseColor}99`;
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = `${baseColor}CC`;
           
           // Draw border line on edges where territory changes
           // North edge (top-left edge of diamond)
@@ -1830,9 +1811,6 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       ctx.restore();
       
       // Second pass: Draw roads (need special handling for corners/turns)
-      // Switch to crisp sprites/lines for roads/buildings/units
-      ctx.imageSmoothingEnabled = false;
-
       for (let y = 0; y < gameState.gridSize; y++) {
         for (let x = 0; x < gameState.gridSize; x++) {
           const tile = gameState.grid[y]?.[x];

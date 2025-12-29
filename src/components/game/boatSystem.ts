@@ -5,7 +5,9 @@ import {
   BOAT_MIN_ZOOM,
   WAKE_MIN_ZOOM_MOBILE,
   BOATS_PER_DOCK,
+  BOATS_PER_DOCK_MOBILE,
   MAX_BOATS,
+  MAX_BOATS_MOBILE,
   WAKE_MAX_AGE,
   WAKE_SPAWN_INTERVAL,
   BOAT_MIN_ZOOM_FAR,
@@ -80,8 +82,10 @@ export function useBoatSystem(
       return;
     }
 
-    // Calculate max boats based on number of docks
-    const maxBoats = Math.min(MAX_BOATS, Math.floor(docks.length * BOATS_PER_DOCK));
+    // Calculate max boats based on number of docks - lower on mobile for performance
+    const boatsPerDock = isMobile ? BOATS_PER_DOCK_MOBILE : BOATS_PER_DOCK;
+    const maxBoatsLimit = isMobile ? MAX_BOATS_MOBILE : MAX_BOATS;
+    const maxBoats = Math.min(maxBoatsLimit, Math.floor(docks.length * boatsPerDock));
     
     // Speed multiplier based on game speed
     const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 1.5 : 2;

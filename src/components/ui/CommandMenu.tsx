@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { msg, useMessages } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 import { useMobile } from '@/hooks/useMobile';
@@ -18,30 +19,31 @@ export function openCommandMenu() {
 }
 
 // Define all menu items with categories
+// Note: name and description store raw message objects for translation
 interface MenuItem {
   id: string;
   type: 'tool' | 'panel';
   tool?: Tool;
   panel?: 'budget' | 'statistics' | 'advisors' | 'settings';
-  name: string;
-  description: string;
+  name: unknown; // Raw message object from msg()
+  description: unknown; // Raw message object from msg()
   cost?: number;
   category: string;
   keywords: string[];
 }
 
 const MENU_CATEGORIES = [
-  { key: 'tools', label: 'Tools' },
-  { key: 'zones', label: 'Zones' },
-  { key: 'zoning', label: 'Zoning' },
-  { key: 'services', label: 'Services' },
-  { key: 'parks', label: 'Parks' },
-  { key: 'sports', label: 'Sports' },
-  { key: 'waterfront', label: 'Waterfront' },
-  { key: 'community', label: 'Community' },
-  { key: 'utilities', label: 'Utilities' },
-  { key: 'special', label: 'Special' },
-  { key: 'panels', label: 'Panels' },
+  { key: 'tools', label: msg('Tools') },
+  { key: 'zones', label: msg('Zones') },
+  { key: 'zoning', label: msg('Zoning') },
+  { key: 'services', label: msg('Services') },
+  { key: 'parks', label: msg('Parks') },
+  { key: 'sports', label: msg('Sports') },
+  { key: 'waterfront', label: msg('Waterfront') },
+  { key: 'community', label: msg('Community') },
+  { key: 'utilities', label: msg('Utilities') },
+  { key: 'special', label: msg('Special') },
+  { key: 'panels', label: msg('Panels') },
 ] as const;
 
 // Build menu items from tools
@@ -121,7 +123,7 @@ function buildMenuItems(): MenuItem[] {
   });
 
   // Parks (includes former recreation items)
-  const parksCategory: Tool[] = ['park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden', 'mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'];
+  const parksCategory: Tool[] = ['tree', 'park', 'park_large', 'tennis', 'playground_small', 'playground_large', 'community_garden', 'pond_park', 'park_gate', 'greenhouse_garden', 'mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'];
   parksCategory.forEach(tool => {
     const info = TOOL_INFO[tool];
     items.push({
@@ -245,6 +247,7 @@ export function CommandMenu() {
   const { isMobileDevice } = useMobile();
   const { state, setTool, setActivePanel } = useGame();
   const { stats } = state;
+  const m = useMessages();
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -282,17 +285,19 @@ export function CommandMenu() {
 
     const searchLower = search.toLowerCase().trim();
     return ALL_MENU_ITEMS.filter(item => {
-      // Check name
-      if (item.name.toLowerCase().includes(searchLower)) return true;
-      // Check description
-      if (item.description.toLowerCase().includes(searchLower)) return true;
+      // Check name (decode translation for search)
+      const name = String(m(item.name as Parameters<typeof m>[0]));
+      if (name.toLowerCase().includes(searchLower)) return true;
+      // Check description (decode translation for search)
+      const description = String(m(item.description as Parameters<typeof m>[0]));
+      if (description.toLowerCase().includes(searchLower)) return true;
       // Check keywords
       if (item.keywords.some(kw => kw.includes(searchLower))) return true;
       // Check category
       if (item.category.includes(searchLower)) return true;
       return false;
     });
-  }, [search]);
+  }, [search, m]);
 
   // Group filtered items by category
   const groupedItems = useMemo(() => {
@@ -428,7 +433,7 @@ export function CommandMenu() {
                 return (
                   <div key={category.key} className="mb-2">
                     <div className="px-2 py-1.5 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                      {category.label}
+                      {m(category.label as Parameters<typeof m>[0])}
                     </div>
                     <div className="flex flex-col gap-0.5">
                       {items.map((item) => {
@@ -451,12 +456,12 @@ export function CommandMenu() {
                             )}
                           >
                             <div className="flex flex-col gap-0.5 min-w-0">
-                              <span className="font-medium truncate">{item.name}</span>
+                              <span className="font-medium truncate">{m(item.name as Parameters<typeof m>[0])}</span>
                               <span className={cn(
                                 'text-xs truncate',
                                 isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'
                               )}>
-                                {item.description}
+                                {m(item.description as Parameters<typeof m>[0])}
                               </span>
                             </div>
                             {item.cost !== undefined && item.cost > 0 && (

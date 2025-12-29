@@ -14,6 +14,8 @@ import {
   Notification,
   AdjacentCity,
   WaterBody,
+  BridgeType,
+  BridgeOrientation,
   BUILDING_STATS,
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
@@ -423,25 +425,29 @@ export function hasRoadAtEdge(grid: Tile[][], gridSize: number, direction: 'nort
     case 'north':
       // Check top edge (y = 0)
       for (let x = 0; x < gridSize; x++) {
-        if (grid[0][x].building.type === 'road') return true;
+        const type = grid[0][x].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
     case 'south':
       // Check bottom edge (y = gridSize - 1)
       for (let x = 0; x < gridSize; x++) {
-        if (grid[gridSize - 1][x].building.type === 'road') return true;
+        const type = grid[gridSize - 1][x].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
     case 'east':
       // Check right edge (x = gridSize - 1)
       for (let y = 0; y < gridSize; y++) {
-        if (grid[y][gridSize - 1].building.type === 'road') return true;
+        const type = grid[y][gridSize - 1].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
     case 'west':
       // Check left edge (x = 0)
       for (let y = 0; y < gridSize; y++) {
-        if (grid[y][0].building.type === 'road') return true;
+        const type = grid[y][0].building.type;
+        if (type === 'road' || type === 'bridge') return true;
       }
       return false;
   }
@@ -649,7 +655,8 @@ export function getRoadAdjacency(
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
     const checkY = y + height;
-    if (checkY < gridSize && grid[checkY]?.[checkX]?.building.type === 'road') {
+    const checkType = grid[checkY]?.[checkX]?.building.type;
+    if (checkY < gridSize && (checkType === 'road' || checkType === 'bridge')) {
       roadOnSouthOrEast = true;
       break;
     }
@@ -660,7 +667,8 @@ export function getRoadAdjacency(
     for (let dy = 0; dy < height; dy++) {
       const checkX = x + width;
       const checkY = y + dy;
-      if (checkX < gridSize && grid[checkY]?.[checkX]?.building.type === 'road') {
+      const checkType = grid[checkY]?.[checkX]?.building.type;
+      if (checkX < gridSize && (checkType === 'road' || checkType === 'bridge')) {
         roadOnSouthOrEast = true;
         break;
       }
@@ -671,7 +679,8 @@ export function getRoadAdjacency(
   for (let dx = 0; dx < width; dx++) {
     const checkX = x + dx;
     const checkY = y - 1;
-    if (checkY >= 0 && grid[checkY]?.[checkX]?.building.type === 'road') {
+    const checkType = grid[checkY]?.[checkX]?.building.type;
+    if (checkY >= 0 && (checkType === 'road' || checkType === 'bridge')) {
       roadOnNorthOrWest = true;
       break;
     }
@@ -682,7 +691,8 @@ export function getRoadAdjacency(
     for (let dy = 0; dy < height; dy++) {
       const checkX = x - 1;
       const checkY = y + dy;
-      if (checkX >= 0 && grid[checkY]?.[checkX]?.building.type === 'road') {
+      const checkType = grid[checkY]?.[checkX]?.building.type;
+      if (checkX >= 0 && (checkType === 'road' || checkType === 'bridge')) {
         roadOnNorthOrWest = true;
         break;
       }
@@ -711,7 +721,7 @@ function createTile(x: number, y: number, buildingType: BuildingType = 'grass'):
 }
 
 // Building types that don't require construction (already complete when placed)
-const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'tree'];
+const NO_CONSTRUCTION_TYPES: BuildingType[] = ['grass', 'empty', 'water', 'road', 'bridge', 'tree'];
 
 function createBuilding(type: BuildingType): Building {
   // Buildings that don't require construction start at 100% complete
@@ -730,6 +740,309 @@ function createBuilding(type: BuildingType): Building {
     constructionProgress,
     abandoned: false,
   };
+}
+
+// ============================================================================
+// Bridge Detection and Creation
+// ============================================================================
+
+/** Maximum width of water a bridge can span */
+const MAX_BRIDGE_SPAN = 10;
+
+/** Bridge type thresholds based on span width */
+const BRIDGE_TYPE_THRESHOLDS = {
+  large: 5,    // 1-5 tiles = truss bridge
+  suspension: 10, // 6-10 tiles = suspension bridge
+} as const;
+
+/** Get the appropriate bridge type for a given span */
+function getBridgeTypeForSpan(span: number): BridgeType {
+  // 1-tile bridges are simple bridges without trusses
+  if (span === 1) return 'small';
+  if (span <= BRIDGE_TYPE_THRESHOLDS.large) return 'large';
+  return 'suspension';
+}
+
+/** Number of variants per bridge type */
+const BRIDGE_VARIANTS: Record<BridgeType, number> = {
+  small: 3,
+  medium: 3,
+  large: 2,
+  suspension: 2,
+};
+
+/** Generate a deterministic variant based on position */
+function getBridgeVariant(x: number, y: number, bridgeType: BridgeType): number {
+  const seed = (x * 31 + y * 17) % 100;
+  return seed % BRIDGE_VARIANTS[bridgeType];
+}
+
+/** Create a bridge building with all metadata */
+function createBridgeBuilding(
+  bridgeType: BridgeType,
+  orientation: BridgeOrientation,
+  variant: number,
+  position: 'start' | 'middle' | 'end',
+  index: number,
+  span: number,
+  trackType: 'road' | 'rail' = 'road'
+): Building {
+  return {
+    type: 'bridge',
+    level: 0,
+    population: 0,
+    jobs: 0,
+    powered: true,
+    watered: true,
+    onFire: false,
+    fireProgress: 0,
+    age: 0,
+    constructionProgress: 100,
+    abandoned: false,
+    bridgeType,
+    bridgeOrientation: orientation,
+    bridgeVariant: variant,
+    bridgePosition: position,
+    bridgeIndex: index,
+    bridgeSpan: span,
+    bridgeTrackType: trackType,
+  };
+}
+
+/** Check if a tile at position is water */
+function isWaterTile(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  return grid[y][x].building.type === 'water';
+}
+
+/** Check if a tile at position is a road or bridge */
+function isRoadOrBridgeTile(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  const type = grid[y][x].building.type;
+  return type === 'road' || type === 'bridge';
+}
+
+/** Bridge opportunity data */
+interface BridgeOpportunity {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  orientation: BridgeOrientation;
+  span: number;
+  bridgeType: BridgeType;
+  waterTiles: { x: number; y: number }[];
+  trackType: 'road' | 'rail'; // What the bridge carries
+}
+
+/** Scan for a bridge opportunity in a specific direction */
+function scanForBridgeInDirection(
+  grid: Tile[][],
+  gridSize: number,
+  startX: number,
+  startY: number,
+  dx: number,
+  dy: number,
+  orientation: BridgeOrientation,
+  trackType: 'road' | 'rail'
+): BridgeOpportunity | null {
+  const waterTiles: { x: number; y: number }[] = [];
+  let x = startX + dx;
+  let y = startY + dy;
+  
+  // Count consecutive water tiles
+  while (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+    const tile = grid[y][x];
+    
+    if (tile.building.type === 'water') {
+      waterTiles.push({ x, y });
+      
+      // Check if we've exceeded max bridge span
+      if (waterTiles.length > MAX_BRIDGE_SPAN) {
+        return null; // Too wide to bridge
+      }
+    } else if (tile.building.type === trackType) {
+      // Found the same track type on the other side - valid bridge opportunity!
+      // Note: We only connect to the same track type, NOT to bridges
+      // This prevents creating spurious bridges when placing tracks near existing bridges
+      if (waterTiles.length > 0) {
+        const span = waterTiles.length;
+        const bridgeType = getBridgeTypeForSpan(span);
+        
+        return {
+          startX,
+          startY,
+          endX: x,
+          endY: y,
+          orientation,
+          span,
+          bridgeType,
+          waterTiles,
+          trackType,
+        };
+      }
+      return null;
+    } else if (tile.building.type === 'bridge') {
+      // Found a bridge - don't create another bridge connecting to it
+      return null;
+    } else {
+      // Found land that's not the same track type - no bridge possible in this direction
+      break;
+    }
+    
+    x += dx;
+    y += dy;
+  }
+  
+  return null;
+}
+
+/** Detect if placing a road or rail creates a bridge opportunity from this tile */
+function detectBridgeOpportunity(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number,
+  trackType: 'road' | 'rail'
+): BridgeOpportunity | null {
+  const tile = grid[y]?.[x];
+  if (!tile) return null;
+  
+  // Only check from the specified track type tiles, not bridges
+  // Bridges should only be created when dragging across water to another tile of the same type
+  if (tile.building.type !== trackType) {
+    return null;
+  }
+  
+  // Check each direction for water followed by same track type
+  // North (x-1, y stays same in grid coords)
+  const northOpp = scanForBridgeInDirection(grid, gridSize, x, y, -1, 0, 'ns', trackType);
+  if (northOpp) return northOpp;
+  
+  // South (x+1, y stays same)
+  const southOpp = scanForBridgeInDirection(grid, gridSize, x, y, 1, 0, 'ns', trackType);
+  if (southOpp) return southOpp;
+  
+  // East (x stays, y-1)
+  const eastOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, -1, 'ew', trackType);
+  if (eastOpp) return eastOpp;
+  
+  // West (x stays, y+1)
+  const westOpp = scanForBridgeInDirection(grid, gridSize, x, y, 0, 1, 'ew', trackType);
+  if (westOpp) return westOpp;
+  
+  return null;
+}
+
+/** Build bridges by converting water tiles to bridge tiles */
+function buildBridges(
+  grid: Tile[][],
+  opportunity: BridgeOpportunity
+): void {
+  const variant = getBridgeVariant(
+    opportunity.waterTiles[0].x,
+    opportunity.waterTiles[0].y,
+    opportunity.bridgeType
+  );
+  
+  // Sort waterTiles consistently to ensure same result regardless of scan direction
+  // For NS orientation (bridges going NW-SE on screen): sort by x first (grid row), then by y
+  // For EW orientation (bridges going NE-SW on screen): sort by y first (grid column), then by x
+  // This ensures 'start' is always at the NW/NE end and 'end' at the SE/SW end
+  const sortedTiles = [...opportunity.waterTiles].sort((a, b) => {
+    if (opportunity.orientation === 'ns') {
+      // NS bridges: sort by x first (lower x = more NW on screen)
+      return a.x !== b.x ? a.x - b.x : a.y - b.y;
+    } else {
+      // EW bridges: sort by y first (lower y = more NE on screen)
+      return a.y !== b.y ? a.y - b.y : a.x - b.x;
+    }
+  });
+  
+  const span = sortedTiles.length;
+  sortedTiles.forEach((pos, index) => {
+    let position: 'start' | 'middle' | 'end';
+    if (index === 0) {
+      position = 'start';
+    } else if (index === sortedTiles.length - 1) {
+      position = 'end';
+    } else {
+      position = 'middle';
+    }
+    
+    grid[pos.y][pos.x].building = createBridgeBuilding(
+      opportunity.bridgeType,
+      opportunity.orientation,
+      variant,
+      position,
+      index,
+      span,
+      opportunity.trackType
+    );
+    // Keep the tile as having no zone
+    grid[pos.y][pos.x].zone = 'none';
+  });
+}
+
+/** Check and create bridges after road or rail placement */
+function checkAndCreateBridges(
+  grid: Tile[][],
+  gridSize: number,
+  placedX: number,
+  placedY: number,
+  trackType: 'road' | 'rail'
+): void {
+  // Check for bridge opportunities from the placed tile
+  const opportunity = detectBridgeOpportunity(grid, gridSize, placedX, placedY, trackType);
+  if (opportunity) {
+    buildBridges(grid, opportunity);
+  }
+}
+
+/**
+ * Create bridges along a road or rail drag path.
+ * This is called after a road/rail drag operation completes to create bridges
+ * for any valid water crossings in the path.
+ * 
+ * IMPORTANT: Bridges are only created if the drag path actually crosses water.
+ * This prevents auto-creating bridges when placing individual tiles on
+ * opposite sides of water.
+ * 
+ * @param state - Current game state
+ * @param pathTiles - Array of {x, y} coordinates that were part of the drag
+ * @param trackType - Whether this is a 'road' or 'rail' bridge
+ * @returns Updated game state with bridges created
+ */
+export function createBridgesOnPath(
+  state: GameState,
+  pathTiles: { x: number; y: number }[],
+  trackType: 'road' | 'rail' = 'road'
+): GameState {
+  if (pathTiles.length === 0) return state;
+  
+  // Check if the drag path includes any water tiles
+  // This ensures bridges are only created when actually dragging ACROSS water
+  const hasWaterInPath = pathTiles.some(tile => {
+    const t = state.grid[tile.y]?.[tile.x];
+    return t && t.building.type === 'water';
+  });
+  
+  // If no water tiles were crossed, don't create any bridges
+  if (!hasWaterInPath) {
+    return state;
+  }
+  
+  const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+  
+  // Check each tile of the specified track type in the path for bridge opportunities
+  for (const tile of pathTiles) {
+    // Only check from actual track type tiles (not water or other types)
+    if (newGrid[tile.y]?.[tile.x]?.building.type === trackType) {
+      checkAndCreateBridges(newGrid, state.gridSize, tile.x, tile.y, trackType);
+    }
+  }
+  
+  return { ...state, grid: newGrid };
 }
 
 function createInitialBudget(): Budget {
@@ -865,14 +1178,23 @@ export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityNam
 
 // Service building configuration - defined once, reused across calls
 // Exported so overlay rendering can access radii
+const withRange = <R extends number, T extends Record<string, unknown>>(
+  range: R,
+  extra: T
+): { range: R; rangeSquared: number } & T => ({
+  range,
+  rangeSquared: range * range,
+  ...extra,
+});
+
 export const SERVICE_CONFIG = {
-  police_station: { range: 13, rangeSquared: 169, type: 'police' as const },
-  fire_station: { range: 18, rangeSquared: 324, type: 'fire' as const },
-  hospital: { range: 12, rangeSquared: 144, type: 'health' as const },
-  school: { range: 11, rangeSquared: 121, type: 'education' as const },
-  university: { range: 19, rangeSquared: 361, type: 'education' as const },
-  power_plant: { range: 15, rangeSquared: 225 },
-  water_tower: { range: 12, rangeSquared: 144 },
+  police_station: withRange(13, { type: 'police' as const }),
+  fire_station: withRange(18, { type: 'fire' as const }),
+  hospital: withRange(24, { type: 'health' as const }),
+  school: withRange(11, { type: 'education' as const }),
+  university: withRange(19, { type: 'education' as const }),
+  power_plant: withRange(15, {}),
+  water_tower: withRange(12, {}),
 } as const;
 
 // Building types that provide services
@@ -1069,7 +1391,7 @@ function hasRoadAccess(
 
       const neighbor = grid[ny][nx];
 
-      if (neighbor.building.type === 'road') {
+      if (neighbor.building.type === 'road' || neighbor.building.type === 'bridge') {
         return true;
       }
 
@@ -1093,7 +1415,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   const zone = tile.zone;
 
   // Only evolve zoned tiles with real buildings
-  if (zone === 'none' || building.type === 'grass' || building.type === 'water' || building.type === 'road') {
+  if (zone === 'none' || building.type === 'grass' || building.type === 'water' || building.type === 'road' || building.type === 'bridge') {
     return building;
   }
 
@@ -1765,8 +2087,8 @@ export function simulateTick(state: GameState): GameState {
       const needsPowerWaterUpdate = originalBuilding.powered !== newPowered ||
                                     originalBuilding.watered !== newWatered;
       
-      // PERF: Roads are static unless bulldozed - skip if no utility update needed
-      if (originalBuilding.type === 'road' && !needsPowerWaterUpdate) {
+      // PERF: Roads and bridges are static unless bulldozed - skip if no utility update needed
+      if ((originalBuilding.type === 'road' || originalBuilding.type === 'bridge') && !needsPowerWaterUpdate) {
         continue;
       }
       
@@ -1892,6 +2214,43 @@ export function simulateTick(state: GameState): GameState {
         }
       }
 
+      // Fire spread to adjacent buildings
+      // Check if any neighboring tile is on fire and spread with a chance reduced by fire coverage
+      if (state.disastersEnabled && !tile.building.onFire &&
+          tile.building.type !== 'grass' && tile.building.type !== 'water' &&
+          tile.building.type !== 'road' && tile.building.type !== 'tree' &&
+          tile.building.type !== 'empty' && tile.building.type !== 'bridge' &&
+          tile.building.type !== 'rail') {
+        // Check 4 adjacent tiles for fires
+        const adjacentOffsets = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        let adjacentFireCount = 0;
+        
+        for (const [dx, dy] of adjacentOffsets) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+            const neighbor = newGrid[ny][nx];
+            if (neighbor.building.onFire) {
+              adjacentFireCount++;
+            }
+          }
+        }
+        
+        if (adjacentFireCount > 0) {
+          // Base spread chance per adjacent fire: 0.5% per tick (reduced from 1.5%)
+          // Fire coverage significantly reduces spread chance
+          const fireCoverage = services.fire[y][x];
+          const coverageReduction = fireCoverage / 100; // 0-1 based on coverage (100% coverage = 1)
+          const baseSpreadChance = 0.005 * adjacentFireCount;
+          const spreadChance = baseSpreadChance * (1 - coverageReduction * 0.95); // Fire coverage can reduce spread by up to 95%
+          
+          if (Math.random() < spreadChance) {
+            tile.building.onFire = true;
+            tile.building.fireProgress = 0;
+          }
+        }
+      }
+
       // Random fire start
       if (state.disastersEnabled && !tile.building.onFire && 
           tile.building.type !== 'grass' && tile.building.type !== 'water' && 
@@ -1916,6 +2275,17 @@ export function simulateTick(state: GameState): GameState {
   // Calculate stats (using lagged effectiveTaxRate for demand calculations)
   const newStats = calculateStats(newGrid, size, newBudget, state.taxRate, newEffectiveTaxRate, services);
   newStats.money = state.stats.money;
+
+  // Smooth demand to prevent flickering in large cities
+  // Rate of change: 12% of difference per tick, so changes stabilize in ~20-30 ticks (~1 game day)
+  // This is faster than tax rate smoothing (3%) to stay responsive, but slow enough to eliminate flicker
+  const prevDemand = state.stats.demand;
+  if (prevDemand) {
+    const smoothingFactor = 0.12;
+    newStats.demand.residential = prevDemand.residential + (newStats.demand.residential - prevDemand.residential) * smoothingFactor;
+    newStats.demand.commercial = prevDemand.commercial + (newStats.demand.commercial - prevDemand.commercial) * smoothingFactor;
+    newStats.demand.industrial = prevDemand.industrial + (newStats.demand.industrial - prevDemand.industrial) * smoothingFactor;
+  }
 
   // Update money on month change
   let newYear = state.year;
@@ -2116,7 +2486,7 @@ function isMergeableZoneTile(
   
   if (tile.zone !== zone) return false;
   if (tile.building.onFire) return false;
-  if (tile.building.type === 'water' || tile.building.type === 'road') return false;
+  if (tile.building.type === 'water' || tile.building.type === 'road' || tile.building.type === 'bridge') return false;
   
   // Always allow merging grass and trees - truly unoccupied tiles
   if (MERGEABLE_TILE_TYPES.has(tile.building.type)) {
@@ -2177,7 +2547,8 @@ function scoreFootprint(grid: Tile[][], originX: number, originY: number, width:
         const nx = gx + ox;
         const ny = gy + oy;
         if (nx >= 0 && ny >= 0 && nx < gridSize && ny < gridSize) {
-          if (grid[ny][nx].building.type === 'road') {
+          const adjacentType = grid[ny][nx].building.type;
+          if (adjacentType === 'road' || adjacentType === 'bridge') {
             roadScore++;
           }
         }
@@ -2284,8 +2655,8 @@ export function placeBuilding(
     }
   }
 
-  // Roads and rail can be combined, but other buildings require clearing first
-  if (buildingType && buildingType !== 'road' && buildingType !== 'rail' && tile.building.type === 'road') {
+  // Roads, bridges, and rail can be combined, but other buildings require clearing first
+  if (buildingType && buildingType !== 'road' && buildingType !== 'rail' && (tile.building.type === 'road' || tile.building.type === 'bridge')) {
     return state;
   }
   if (buildingType && buildingType !== 'road' && buildingType !== 'rail' && tile.building.type === 'rail') {
@@ -2394,6 +2765,10 @@ export function placeBuilding(
         newGrid[y][x].building.flipped = true;
       }
     }
+    
+    // NOTE: Bridge creation is handled separately during drag operations across water
+    // We do NOT auto-create bridges here because placing individual road tiles on opposite
+    // sides of water should not automatically create a bridge - only explicit dragging should
   }
 
   return { ...state, grid: newGrid };
@@ -2413,7 +2788,7 @@ function findBuildingOrigin(
   // If this tile has an actual building (not empty), check if it's multi-tile
   if (tile.building.type !== 'empty' && tile.building.type !== 'grass' && 
       tile.building.type !== 'water' && tile.building.type !== 'road' && 
-      tile.building.type !== 'rail' && tile.building.type !== 'tree') {
+      tile.building.type !== 'bridge' && tile.building.type !== 'rail' && tile.building.type !== 'tree') {
     const size = getBuildingSize(tile.building.type);
     if (size.width > 1 || size.height > 1) {
       return { originX: x, originY: y, buildingType: tile.building.type };
@@ -2436,6 +2811,7 @@ function findBuildingOrigin(
               checkTile.building.type !== 'grass' &&
               checkTile.building.type !== 'water' &&
               checkTile.building.type !== 'road' &&
+              checkTile.building.type !== 'bridge' &&
               checkTile.building.type !== 'rail' &&
               checkTile.building.type !== 'tree') {
             const size = getBuildingSize(checkTile.building.type);
@@ -2453,6 +2829,94 @@ function findBuildingOrigin(
   return null;
 }
 
+/**
+ * Find all bridge tiles that are part of the same bridge as the tile at (x, y).
+ * Bridges are connected along their orientation axis (ns or ew).
+ */
+function findConnectedBridgeTiles(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number
+): { x: number; y: number }[] {
+  const tile = grid[y]?.[x];
+  if (!tile || tile.building.type !== 'bridge') return [];
+  
+  const orientation = tile.building.bridgeOrientation || 'ns';
+  const bridgeTiles: { x: number; y: number }[] = [{ x, y }];
+  
+  // Direction vectors based on orientation
+  // NS bridges run along the x-axis (grid rows)
+  // EW bridges run along the y-axis (grid columns)
+  const dx = orientation === 'ns' ? 1 : 0;
+  const dy = orientation === 'ns' ? 0 : 1;
+  
+  // Scan in positive direction
+  let cx = x + dx;
+  let cy = y + dy;
+  while (cx >= 0 && cx < gridSize && cy >= 0 && cy < gridSize) {
+    const t = grid[cy][cx];
+    if (t.building.type === 'bridge' && t.building.bridgeOrientation === orientation) {
+      bridgeTiles.push({ x: cx, y: cy });
+      cx += dx;
+      cy += dy;
+    } else {
+      break;
+    }
+  }
+  
+  // Scan in negative direction
+  cx = x - dx;
+  cy = y - dy;
+  while (cx >= 0 && cx < gridSize && cy >= 0 && cy < gridSize) {
+    const t = grid[cy][cx];
+    if (t.building.type === 'bridge' && t.building.bridgeOrientation === orientation) {
+      bridgeTiles.push({ x: cx, y: cy });
+      cx -= dx;
+      cy -= dy;
+    } else {
+      break;
+    }
+  }
+  
+  return bridgeTiles;
+}
+
+/**
+ * Check if a road tile at (x, y) is adjacent to a bridge start/end tile.
+ * If so, return all the bridge tiles that should be deleted.
+ */
+function findAdjacentBridgeTiles(
+  grid: Tile[][],
+  gridSize: number,
+  x: number,
+  y: number
+): { x: number; y: number }[] {
+  const directions = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+  ];
+  
+  for (const { dx, dy } of directions) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize) {
+      const neighbor = grid[ny][nx];
+      if (neighbor.building.type === 'bridge') {
+        const position = neighbor.building.bridgePosition;
+        // Check if this bridge tile is a start or end connected to our road
+        if (position === 'start' || position === 'end') {
+          return findConnectedBridgeTiles(grid, gridSize, nx, ny);
+        }
+      }
+    }
+  }
+  
+  return [];
+}
+
 // Bulldoze a tile (or entire multi-tile building if applicable)
 export function bulldozeTile(state: GameState, x: number, y: number): GameState {
   const tile = state.grid[y]?.[x];
@@ -2460,6 +2924,35 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
   if (tile.building.type === 'water') return state;
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+  
+  // Special handling for bridges - delete the entire bridge and restore water
+  if (tile.building.type === 'bridge') {
+    const bridgeTiles = findConnectedBridgeTiles(newGrid, state.gridSize, x, y);
+    for (const bt of bridgeTiles) {
+      newGrid[bt.y][bt.x].building = createBuilding('water');
+      newGrid[bt.y][bt.x].zone = 'none';
+      newGrid[bt.y][bt.x].hasRailOverlay = false;
+    }
+    return { ...state, grid: newGrid };
+  }
+  
+  // Special handling for roads - check if adjacent to a bridge start/end
+  if (tile.building.type === 'road') {
+    const adjacentBridgeTiles = findAdjacentBridgeTiles(newGrid, state.gridSize, x, y);
+    if (adjacentBridgeTiles.length > 0) {
+      // Delete the road first
+      newGrid[y][x].building = createBuilding('grass');
+      newGrid[y][x].zone = 'none';
+      newGrid[y][x].hasRailOverlay = false;
+      // Then delete all connected bridge tiles
+      for (const bt of adjacentBridgeTiles) {
+        newGrid[bt.y][bt.x].building = createBuilding('water');
+        newGrid[bt.y][bt.x].zone = 'none';
+        newGrid[bt.y][bt.x].hasRailOverlay = false;
+      }
+      return { ...state, grid: newGrid };
+    }
+  }
   
   // Check if this tile is part of a multi-tile building
   const origin = findBuildingOrigin(newGrid, x, y, state.gridSize);
@@ -2526,8 +3019,11 @@ export function placeWaterTerraform(state: GameState, x: number, y: number): Gam
   const tile = state.grid[y]?.[x];
   if (!tile) return state;
   
-  // Already water
+  // Already water - do nothing
   if (tile.building.type === 'water') return state;
+  
+  // Don't allow terraforming bridges - would break them
+  if (tile.building.type === 'bridge') return state;
 
   const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
   
@@ -2604,7 +3100,7 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
   function createAdvancedBuilding(type: BuildingType): Building {
     return {
       type,
-      level: type === 'grass' || type === 'empty' || type === 'water' || type === 'road' ? 0 : Math.floor(Math.random() * 3) + 3,
+      level: type === 'grass' || type === 'empty' || type === 'water' || type === 'road' || type === 'bridge' ? 0 : Math.floor(Math.random() * 3) + 3,
       population: 0,
       jobs: 0,
       powered: true,
@@ -2641,7 +3137,8 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
     // Check for roads in the way
     for (let dy = 0; dy < buildingSize.height; dy++) {
       for (let dx = 0; dx < buildingSize.width; dx++) {
-        if (grid[y + dy][x + dx].building.type === 'road') return false;
+        const tileType = grid[y + dy][x + dx].building.type;
+        if (tileType === 'road' || tileType === 'bridge') return false;
       }
     }
     
@@ -2772,7 +3269,8 @@ export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cit
       for (let dy = -2; dy <= 2 && !nearRoad; dy++) {
         for (let dx = -2; dx <= 2 && !nearRoad; dx++) {
           const checkTile = grid[y + dy]?.[x + dx];
-          if (checkTile?.building.type === 'road') nearRoad = true;
+          const tileType = checkTile?.building.type;
+          if (tileType === 'road' || tileType === 'bridge') nearRoad = true;
         }
       }
       if (!nearRoad) continue;
@@ -3044,4 +3542,657 @@ export function getDevelopmentBlockers(
   }
   
   return blockers;
+}
+
+/**
+ * Expand the grid by adding tiles on all sides.
+ * The expansion is intelligent:
+ * - Land edges extend as land (not forced to water)
+ * - Water/ocean edges extend as water
+ * - Water bodies extend naturally based on proximity
+ * - New land areas get grass with scattered trees
+ * 
+ * @param currentGrid The existing grid
+ * @param currentSize The current grid size
+ * @param expansion How many tiles to add on EACH side (total new size = currentSize + 2*expansion)
+ * @returns New expanded grid
+ */
+export function expandGrid(
+  currentGrid: Tile[][],
+  currentSize: number,
+  expansion: number = 15
+): { grid: Tile[][]; newSize: number } {
+  const newSize = currentSize + expansion * 2;
+  const grid: Tile[][] = [];
+  
+  // Helper to check if position is water in the old grid
+  const isOldWater = (oldX: number, oldY: number): boolean => {
+    if (oldX < 0 || oldY < 0 || oldX >= currentSize || oldY >= currentSize) return false;
+    return currentGrid[oldY][oldX].building.type === 'water';
+  };
+  
+  // Helper to check if position is land (not water) in the old grid
+  const isOldLand = (oldX: number, oldY: number): boolean => {
+    if (oldX < 0 || oldY < 0 || oldX >= currentSize || oldY >= currentSize) return false;
+    return currentGrid[oldY][oldX].building.type !== 'water';
+  };
+  
+  // Find the closest edge tile type from the original grid
+  // Returns: 'water' | 'land' | 'mixed' depending on what was at the nearest edge
+  const getClosestEdgeType = (newX: number, newY: number): 'water' | 'land' | 'mixed' => {
+    const oldX = newX - expansion;
+    const oldY = newY - expansion;
+    
+    // Determine which edge(s) we're extending from
+    let waterCount = 0;
+    let landCount = 0;
+    
+    // Check a strip along the nearest original edge
+    if (oldX < 0) {
+      // Left of original grid - check left edge (x=0) of original
+      const startY = Math.max(0, oldY - 3);
+      const endY = Math.min(currentSize - 1, oldY + 3);
+      for (let y = startY; y <= endY; y++) {
+        if (isOldWater(0, y)) waterCount++;
+        else landCount++;
+      }
+    } else if (oldX >= currentSize) {
+      // Right of original grid - check right edge (x=currentSize-1)
+      const startY = Math.max(0, oldY - 3);
+      const endY = Math.min(currentSize - 1, oldY + 3);
+      for (let y = startY; y <= endY; y++) {
+        if (isOldWater(currentSize - 1, y)) waterCount++;
+        else landCount++;
+      }
+    }
+    
+    if (oldY < 0) {
+      // Above original grid - check top edge (y=0)
+      const startX = Math.max(0, oldX - 3);
+      const endX = Math.min(currentSize - 1, oldX + 3);
+      for (let x = startX; x <= endX; x++) {
+        if (isOldWater(x, 0)) waterCount++;
+        else landCount++;
+      }
+    } else if (oldY >= currentSize) {
+      // Below original grid - check bottom edge (y=currentSize-1)
+      const startX = Math.max(0, oldX - 3);
+      const endX = Math.min(currentSize - 1, oldX + 3);
+      for (let x = startX; x <= endX; x++) {
+        if (isOldWater(x, currentSize - 1)) waterCount++;
+        else landCount++;
+      }
+    }
+    
+    // Corner case: check both edges
+    if ((oldX < 0 || oldX >= currentSize) && (oldY < 0 || oldY >= currentSize)) {
+      // In a corner - check the corner tile
+      const cornerX = oldX < 0 ? 0 : currentSize - 1;
+      const cornerY = oldY < 0 ? 0 : currentSize - 1;
+      if (isOldWater(cornerX, cornerY)) waterCount += 2;
+      else landCount += 2;
+    }
+    
+    if (waterCount === 0 && landCount === 0) return 'mixed';
+    if (waterCount > landCount * 2) return 'water';
+    if (landCount > waterCount * 2) return 'land';
+    return 'mixed';
+  };
+  
+  // Helper to get distance from the original grid boundary (how far into expansion zone)
+  const getDistanceFromOriginalBoundary = (newX: number, newY: number): number => {
+    const oldX = newX - expansion;
+    const oldY = newY - expansion;
+    
+    // Calculate distance to nearest edge of original grid
+    let distToOriginal = 0;
+    if (oldX < 0) distToOriginal = Math.max(distToOriginal, -oldX);
+    if (oldY < 0) distToOriginal = Math.max(distToOriginal, -oldY);
+    if (oldX >= currentSize) distToOriginal = Math.max(distToOriginal, oldX - currentSize + 1);
+    if (oldY >= currentSize) distToOriginal = Math.max(distToOriginal, oldY - currentSize + 1);
+    
+    // For corners, use the max of both distances
+    return distToOriginal;
+  };
+  
+  // Helper to find water percentage along the nearest original edge
+  // Also returns whether this appears to be a "sea" (large contiguous water along edge)
+  const getEdgeWaterInfo = (newX: number, newY: number, sampleRadius: number = 10): { density: number; isSea: boolean } => {
+    const oldX = newX - expansion;
+    const oldY = newY - expansion;
+    
+    let waterCount = 0;
+    let totalCount = 0;
+    let consecutiveWater = 0;
+    let maxConsecutive = 0;
+    
+    // Sample along the nearest edge(s) of the original grid
+    if (oldX < 0) {
+      // Left of grid - sample left edge (x=0)
+      consecutiveWater = 0;
+      for (let dy = -sampleRadius; dy <= sampleRadius; dy++) {
+        const sampleY = Math.max(0, Math.min(currentSize - 1, oldY + dy));
+        if (isOldWater(0, sampleY)) {
+          waterCount++;
+          consecutiveWater++;
+          maxConsecutive = Math.max(maxConsecutive, consecutiveWater);
+        } else {
+          consecutiveWater = 0;
+        }
+        totalCount++;
+      }
+    }
+    if (oldX >= currentSize) {
+      // Right of grid - sample right edge
+      consecutiveWater = 0;
+      for (let dy = -sampleRadius; dy <= sampleRadius; dy++) {
+        const sampleY = Math.max(0, Math.min(currentSize - 1, oldY + dy));
+        if (isOldWater(currentSize - 1, sampleY)) {
+          waterCount++;
+          consecutiveWater++;
+          maxConsecutive = Math.max(maxConsecutive, consecutiveWater);
+        } else {
+          consecutiveWater = 0;
+        }
+        totalCount++;
+      }
+    }
+    if (oldY < 0) {
+      // Above grid - sample top edge
+      consecutiveWater = 0;
+      for (let dx = -sampleRadius; dx <= sampleRadius; dx++) {
+        const sampleX = Math.max(0, Math.min(currentSize - 1, oldX + dx));
+        if (isOldWater(sampleX, 0)) {
+          waterCount++;
+          consecutiveWater++;
+          maxConsecutive = Math.max(maxConsecutive, consecutiveWater);
+        } else {
+          consecutiveWater = 0;
+        }
+        totalCount++;
+      }
+    }
+    if (oldY >= currentSize) {
+      // Below grid - sample bottom edge
+      consecutiveWater = 0;
+      for (let dx = -sampleRadius; dx <= sampleRadius; dx++) {
+        const sampleX = Math.max(0, Math.min(currentSize - 1, oldX + dx));
+        if (isOldWater(sampleX, currentSize - 1)) {
+          waterCount++;
+          consecutiveWater++;
+          maxConsecutive = Math.max(maxConsecutive, consecutiveWater);
+        } else {
+          consecutiveWater = 0;
+        }
+        totalCount++;
+      }
+    }
+    
+    const density = totalCount > 0 ? waterCount / totalCount : 0;
+    // A "sea" has high density AND long consecutive water stretches (not just scattered water)
+    const isSea = density > 0.7 && maxConsecutive >= sampleRadius;
+    
+    return { density, isSea };
+  };
+  
+  // Generate a random seed for this expansion (consistent within one expansion call)
+  const expansionSeed = Date.now() % 100000;
+  
+  // First pass: determine terrain type for each new tile
+  for (let y = 0; y < newSize; y++) {
+    const row: Tile[] = [];
+    for (let x = 0; x < newSize; x++) {
+      const oldX = x - expansion;
+      const oldY = y - expansion;
+      
+      // Check if this position was in the old grid
+      const wasInOldGrid = oldX >= 0 && oldY >= 0 && oldX < currentSize && oldY < currentSize;
+      
+      if (wasInOldGrid) {
+        // Copy the old tile with updated coordinates
+        const oldTile = currentGrid[oldY][oldX];
+        row.push({
+          ...oldTile,
+          x,
+          y,
+          // Deep copy building to avoid reference issues
+          building: { ...oldTile.building },
+        });
+      } else {
+        // New tile - taper OUTWARD from original grid
+        const distFromBoundary = getDistanceFromOriginalBoundary(x, y);
+        const { density: edgeWaterDensity, isSea } = getEdgeWaterInfo(x, y);
+        
+        // Use Perlin noise for organic coastline shapes
+        const coastNoise = perlinNoise(x * 0.12, y * 0.12, expansionSeed, 3);
+        
+        let isWater = false;
+        
+        if (isSea) {
+          // This is a SEA - extend all the way to the new map edge with organic coastline
+          // Only add slight variation at the very edges for natural look
+          const distFromNewEdge = Math.min(x, y, newSize - 1 - x, newSize - 1 - y);
+          
+          if (distFromNewEdge <= 2) {
+            // At the very edge of new map - keep as water with slight variation
+            isWater = coastNoise > 0.2;
+          } else {
+            // Interior - full water
+            isWater = true;
+          }
+        } else if (edgeWaterDensity > 0.3) {
+          // Regular water body (lake or small bay) - taper outward
+          // Water probability is HIGH near boundary and DECREASES as we go outward
+          const maxExpansionDist = expansion * (0.5 + coastNoise * 0.3 + edgeWaterDensity * 0.4);
+          
+          // Probability = 1 at boundary, tapers to 0 at maxExpansionDist
+          const taperRatio = distFromBoundary / maxExpansionDist;
+          const waterProb = Math.max(0, 1 - Math.pow(taperRatio, 1.3)) * edgeWaterDensity;
+          
+          // Add some noise for organic edges
+          const noiseThreshold = 0.12 + coastNoise * 0.18;
+          isWater = waterProb > noiseThreshold;
+        }
+        
+        if (isWater) {
+          row.push(createTile(x, y, 'water'));
+        } else {
+          // Grass or tree
+          const treeProbability = 0.12;
+          const treeNoise = perlinNoise(x * 0.3, y * 0.3, expansionSeed + 500, 2);
+          
+          if (treeNoise < treeProbability) {
+            row.push(createTile(x, y, 'tree'));
+          } else {
+            row.push(createTile(x, y, 'grass'));
+          }
+        }
+      }
+    }
+    grid.push(row);
+  }
+  
+  // Helper to count water neighbors in a given radius
+  const countWaterNeighbors = (cx: number, cy: number, radius: number = 1): number => {
+    let count = 0;
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = cx + dx;
+        const ny = cy + dy;
+        if (nx >= 0 && ny >= 0 && nx < newSize && ny < newSize) {
+          if (grid[ny][nx].building.type === 'water') count++;
+        }
+      }
+    }
+    return count;
+  };
+  
+  // Helper to check if a tile is in the expansion zone
+  const isExpansionTile = (x: number, y: number): boolean => {
+    const oldX = x - expansion;
+    const oldY = y - expansion;
+    return oldX < 0 || oldY < 0 || oldX >= currentSize || oldY >= currentSize;
+  };
+  
+  // Smoothing passes: Use cellular automata rules to create smooth coastlines
+  // Run multiple iterations to smooth out jagged edges
+  for (let iteration = 0; iteration < 4; iteration++) {
+    const changes: { x: number; y: number; toWater: boolean }[] = [];
+    
+    for (let y = 0; y < newSize; y++) {
+      for (let x = 0; x < newSize; x++) {
+        if (!isExpansionTile(x, y)) continue;
+        
+        const isWater = grid[y][x].building.type === 'water';
+        const neighbors = countWaterNeighbors(x, y, 1);
+        const extendedNeighbors = countWaterNeighbors(x, y, 2);
+        
+        if (isWater) {
+          // Remove isolated water tiles (less than 2 neighbors) or peninsulas (1-2 neighbors surrounded by land)
+          if (neighbors <= 1) {
+            changes.push({ x, y, toWater: false });
+          }
+        } else {
+          // Fill in bays and smooth concave coastlines (5+ neighbors means surrounded by water)
+          if (neighbors >= 5) {
+            changes.push({ x, y, toWater: true });
+          }
+          // Also fill tiles that are nearly surrounded (4 neighbors and many extended)
+          else if (neighbors >= 4 && extendedNeighbors >= 16) {
+            changes.push({ x, y, toWater: true });
+          }
+        }
+      }
+    }
+    
+    // Apply changes
+    for (const change of changes) {
+      if (change.toWater) {
+        grid[change.y][change.x].building = createBuilding('water');
+      } else {
+        const treeNoise = perlinNoise(change.x * 0.3, change.y * 0.3, expansionSeed + 1000, 2);
+        grid[change.y][change.x].building = createBuilding(treeNoise < 0.15 ? 'tree' : 'grass');
+      }
+    }
+  }
+  
+  // Final smoothing pass: Remove any remaining single-tile peninsulas or isolated water
+  for (let y = 0; y < newSize; y++) {
+    for (let x = 0; x < newSize; x++) {
+      if (!isExpansionTile(x, y)) continue;
+      
+      const isWater = grid[y][x].building.type === 'water';
+      const neighbors = countWaterNeighbors(x, y, 1);
+      
+      if (isWater && neighbors <= 1) {
+        const treeNoise = perlinNoise(x * 0.3, y * 0.3, expansionSeed + 2000, 2);
+        grid[y][x].building = createBuilding(treeNoise < 0.15 ? 'tree' : 'grass');
+      } else if (!isWater && neighbors >= 6) {
+        grid[y][x].building = createBuilding('water');
+      }
+    }
+  }
+  
+  // Sixth pass: Generate NEW lakes in expanded land areas
+  // Create a mix of big lakes and small ponds
+  const lakeNoise = (lx: number, ly: number) => perlinNoise(lx, ly, expansionSeed + 3000, 3);
+  const minDistFromEdge = 2;
+  const minDistBetweenBigLakes = Math.max(expansion * 0.25, 4);
+  const minDistBetweenSmallLakes = Math.max(expansion * 0.15, 3);
+  
+  // Find potential lake centers for BIG lakes
+  const bigLakeCenters: { x: number; y: number; noise: number }[] = [];
+  
+  for (let y = minDistFromEdge; y < newSize - minDistFromEdge; y++) {
+    for (let x = minDistFromEdge; x < newSize - minDistFromEdge; x++) {
+      if (!isExpansionTile(x, y)) continue;
+      if (grid[y][x].building.type === 'water') continue;
+      
+      const noiseVal = lakeNoise(x, y);
+      
+      // Low noise = good for big lakes
+      if (noiseVal < 0.35) {
+        let tooClose = false;
+        for (const center of bigLakeCenters) {
+          const dist = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+          if (dist < minDistBetweenBigLakes) {
+            tooClose = true;
+            break;
+          }
+        }
+        
+        if (!tooClose) {
+          bigLakeCenters.push({ x, y, noise: noiseVal });
+        }
+      }
+    }
+  }
+  
+  // Pick 4-8 big lakes
+  bigLakeCenters.sort((a, b) => a.noise - b.noise);
+  const numBigLakes = Math.min(bigLakeCenters.length, 4 + Math.floor(Math.random() * 5));
+  const selectedBigLakeCenters = bigLakeCenters.slice(0, numBigLakes);
+  
+  // Find potential centers for SMALL ponds (different noise range)
+  const smallLakeCenters: { x: number; y: number; noise: number }[] = [];
+  const pondNoise = (px: number, py: number) => perlinNoise(px, py, expansionSeed + 4000, 2);
+  
+  for (let y = minDistFromEdge; y < newSize - minDistFromEdge; y++) {
+    for (let x = minDistFromEdge; x < newSize - minDistFromEdge; x++) {
+      if (!isExpansionTile(x, y)) continue;
+      if (grid[y][x].building.type === 'water') continue;
+      
+      const noiseVal = pondNoise(x, y);
+      
+      // Different noise range for small ponds
+      if (noiseVal < 0.45) {
+        // Check distance from big lakes
+        let tooCloseToBig = false;
+        for (const center of selectedBigLakeCenters) {
+          const dist = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+          if (dist < minDistBetweenBigLakes) {
+            tooCloseToBig = true;
+            break;
+          }
+        }
+        if (tooCloseToBig) continue;
+        
+        // Check distance from other small lakes
+        let tooClose = false;
+        for (const center of smallLakeCenters) {
+          const dist = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+          if (dist < minDistBetweenSmallLakes) {
+            tooClose = true;
+            break;
+          }
+        }
+        
+        if (!tooClose) {
+          smallLakeCenters.push({ x, y, noise: noiseVal });
+        }
+      }
+    }
+  }
+  
+  // Pick 10-20 small ponds
+  smallLakeCenters.sort((a, b) => a.noise - b.noise);
+  const numSmallLakes = Math.min(smallLakeCenters.length, 10 + Math.floor(Math.random() * 11));
+  const selectedSmallLakeCenters = smallLakeCenters.slice(0, numSmallLakes);
+  
+  // Combine all lake centers with size info
+  const allLakeCenters: { x: number; y: number; noise: number; isBig: boolean }[] = [
+    ...selectedBigLakeCenters.map(c => ({ ...c, isBig: true })),
+    ...selectedSmallLakeCenters.map(c => ({ ...c, isBig: false })),
+  ];
+  
+  // Grow each lake using flood-fill
+  const directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+  
+  for (const center of allLakeCenters) {
+    // Big lakes: 25-70 tiles, Small ponds: 4-15 tiles
+    const targetSize = center.isBig 
+      ? 25 + Math.floor(Math.random() * 46)
+      : 4 + Math.floor(Math.random() * 12);
+    const lakeTiles: { x: number; y: number }[] = [{ x: center.x, y: center.y }];
+    const candidates: { x: number; y: number; dist: number; noise: number }[] = [];
+    
+    for (const [dx, dy] of directions) {
+      const nx = center.x + dx;
+      const ny = center.y + dy;
+      if (nx >= 1 && nx < newSize - 1 &&
+          ny >= 1 && ny < newSize - 1 &&
+          grid[ny][nx].building.type !== 'water') {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const noise = lakeNoise(nx, ny);
+        candidates.push({ x: nx, y: ny, dist, noise });
+      }
+    }
+    
+    while (lakeTiles.length < targetSize && candidates.length > 0) {
+      candidates.sort((a, b) => {
+        if (Math.abs(a.dist - b.dist) < 0.5) {
+          return a.noise - b.noise;
+        }
+        return a.dist - b.dist;
+      });
+      
+      const pickIndex = Math.floor(Math.random() * Math.min(5, candidates.length));
+      const picked = candidates.splice(pickIndex, 1)[0];
+      
+      if (lakeTiles.some(t => t.x === picked.x && t.y === picked.y)) continue;
+      if (grid[picked.y][picked.x].building.type === 'water') continue;
+      
+      lakeTiles.push({ x: picked.x, y: picked.y });
+      
+      for (const [dx, dy] of directions) {
+        const nx = picked.x + dx;
+        const ny = picked.y + dy;
+        if (nx >= 1 && nx < newSize - 1 &&
+            ny >= 1 && ny < newSize - 1 &&
+            grid[ny][nx].building.type !== 'water' &&
+            !lakeTiles.some(t => t.x === nx && t.y === ny) &&
+            !candidates.some(c => c.x === nx && c.y === ny)) {
+          const dist = Math.sqrt((nx - center.x) ** 2 + (ny - center.y) ** 2);
+          const noise = lakeNoise(nx, ny);
+          candidates.push({ x: nx, y: ny, dist, noise });
+        }
+      }
+    }
+    
+    // Apply lake tiles to grid
+    for (const tile of lakeTiles) {
+      grid[tile.y][tile.x].building = createBuilding('water');
+      grid[tile.y][tile.x].landValue = 60;
+    }
+  }
+  
+  // Seventh pass: Generate rivers in expansion zones
+  // Rivers flow from lakes or map edges toward other water bodies
+  const riverChance = 0.4; // 40% chance to generate rivers
+  if (Math.random() < riverChance) {
+    const numRivers = 1 + Math.floor(Math.random() * 3); // 1-3 rivers
+    
+    for (let r = 0; r < numRivers; r++) {
+      // Find a starting point: either from a new lake or from expansion edge
+      let startX = 0, startY = 0;
+      let endX = 0, endY = 0;
+      let foundStart = false;
+      
+      // Try to start from a lake in expansion zone
+      for (let attempts = 0; attempts < 50 && !foundStart; attempts++) {
+        const testX = minDistFromEdge + Math.floor(Math.random() * (newSize - 2 * minDistFromEdge));
+        const testY = minDistFromEdge + Math.floor(Math.random() * (newSize - 2 * minDistFromEdge));
+        
+        if (isExpansionTile(testX, testY) && grid[testY][testX].building.type === 'water') {
+          // Check if this is edge of a water body
+          let hasLandNeighbor = false;
+          for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+            const nx = testX + dx;
+            const ny = testY + dy;
+            if (nx >= 0 && ny >= 0 && nx < newSize && ny < newSize &&
+                grid[ny][nx].building.type !== 'water') {
+              hasLandNeighbor = true;
+              startX = nx;
+              startY = ny;
+              break;
+            }
+          }
+          if (hasLandNeighbor) {
+            foundStart = true;
+          }
+        }
+      }
+      
+      // If no lake edge found, start from expansion boundary
+      if (!foundStart) {
+        const edge = Math.floor(Math.random() * 4);
+        switch (edge) {
+          case 0: // Top
+            startX = minDistFromEdge + Math.floor(Math.random() * (newSize - 2 * minDistFromEdge));
+            startY = minDistFromEdge;
+            break;
+          case 1: // Bottom
+            startX = minDistFromEdge + Math.floor(Math.random() * (newSize - 2 * minDistFromEdge));
+            startY = newSize - minDistFromEdge - 1;
+            break;
+          case 2: // Left
+            startX = minDistFromEdge;
+            startY = minDistFromEdge + Math.floor(Math.random() * (newSize - 2 * minDistFromEdge));
+            break;
+          case 3: // Right
+            startX = newSize - minDistFromEdge - 1;
+            startY = minDistFromEdge + Math.floor(Math.random() * (newSize - 2 * minDistFromEdge));
+            break;
+        }
+        if (!isExpansionTile(startX, startY)) continue;
+        foundStart = true;
+      }
+      
+      if (!foundStart) continue;
+      
+      // Find end point: another water body or opposite edge
+      endX = newSize / 2 + (Math.random() - 0.5) * newSize * 0.6;
+      endY = newSize / 2 + (Math.random() - 0.5) * newSize * 0.6;
+      
+      // Draw river using random walk biased toward end point
+      let curX = startX;
+      let curY = startY;
+      const riverLength = 15 + Math.floor(Math.random() * 25); // 15-40 tiles
+      const riverWidth = 1 + Math.floor(Math.random() * 2); // 1-2 tiles wide
+      
+      for (let step = 0; step < riverLength; step++) {
+        // Place water at current position (and width)
+        for (let w = 0; w < riverWidth; w++) {
+          const wx = curX + (w % 2);
+          const wy = curY + Math.floor(w / 2);
+          if (wx >= 0 && wy >= 0 && wx < newSize && wy < newSize && isExpansionTile(wx, wy)) {
+            grid[wy][wx].building = createBuilding('water');
+          }
+        }
+        
+        // Move toward end with some randomness (Perlin noise for organic curves)
+        const riverNoise = perlinNoise(curX * 0.2, curY * 0.2, expansionSeed + 5000 + r * 100, 2);
+        const angle = Math.atan2(endY - curY, endX - curX) + (riverNoise - 0.5) * Math.PI * 0.8;
+        
+        const nextX = Math.round(curX + Math.cos(angle));
+        const nextY = Math.round(curY + Math.sin(angle));
+        
+        // Stop if we hit existing water or go out of bounds
+        if (nextX < 1 || nextY < 1 || nextX >= newSize - 1 || nextY >= newSize - 1) break;
+        if (!isExpansionTile(nextX, nextY)) break;
+        if (grid[nextY][nextX].building.type === 'water' && step > 5) break; // Connect to water
+        
+        curX = nextX;
+        curY = nextY;
+      }
+    }
+  }
+  
+  return { grid, newSize };
+}
+
+/**
+ * Shrink the grid by removing tiles from all sides.
+ * The shrink deletes the outer tiles on each edge.
+ * 
+ * @param currentGrid The existing grid
+ * @param currentSize The current grid size
+ * @param shrinkAmount How many tiles to remove from EACH side (total reduction = currentSize - 2*shrinkAmount)
+ * @returns New shrunken grid, or null if grid would be too small
+ */
+export function shrinkGrid(
+  currentGrid: Tile[][],
+  currentSize: number,
+  shrinkAmount: number = 15
+): { grid: Tile[][]; newSize: number } | null {
+  const newSize = currentSize - shrinkAmount * 2;
+  
+  // Don't allow shrinking below a minimum size
+  if (newSize < 20) {
+    return null;
+  }
+  
+  const grid: Tile[][] = [];
+  
+  // Copy tiles from the interior of the old grid
+  for (let y = 0; y < newSize; y++) {
+    const row: Tile[] = [];
+    for (let x = 0; x < newSize; x++) {
+      const oldX = x + shrinkAmount;
+      const oldY = y + shrinkAmount;
+      const oldTile = currentGrid[oldY][oldX];
+      
+      // Copy tile with updated coordinates
+      row.push({
+        ...oldTile,
+        x,
+        y,
+        building: { ...oldTile.building },
+      });
+    }
+    grid.push(row);
+  }
+  
+  return { grid, newSize };
 }

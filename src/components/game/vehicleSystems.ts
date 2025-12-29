@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 import { Car, CarDirection, EmergencyVehicle, EmergencyVehicleType, Pedestrian, PedestrianDestType, WorldRenderState, TILE_WIDTH, TILE_HEIGHT } from './types';
-import { CAR_COLORS, CAR_MIN_ZOOM, CAR_MIN_ZOOM_MOBILE, PEDESTRIAN_MIN_ZOOM, PEDESTRIAN_MIN_ZOOM_MOBILE, DIRECTION_META, PEDESTRIAN_MAX_COUNT, PEDESTRIAN_ROAD_TILE_DENSITY, PEDESTRIAN_SPAWN_BATCH_SIZE, PEDESTRIAN_SPAWN_INTERVAL, VEHICLE_FAR_ZOOM_THRESHOLD } from './constants';
+import { CAR_COLORS, CAR_MIN_ZOOM, CAR_MIN_ZOOM_MOBILE, PEDESTRIAN_MIN_ZOOM, PEDESTRIAN_MIN_ZOOM_MOBILE, DIRECTION_META, PEDESTRIAN_MAX_COUNT, PEDESTRIAN_MAX_COUNT_MOBILE, PEDESTRIAN_ROAD_TILE_DENSITY, PEDESTRIAN_ROAD_TILE_DENSITY_MOBILE, PEDESTRIAN_SPAWN_BATCH_SIZE, PEDESTRIAN_SPAWN_BATCH_SIZE_MOBILE, PEDESTRIAN_SPAWN_INTERVAL, PEDESTRIAN_SPAWN_INTERVAL_MOBILE, VEHICLE_FAR_ZOOM_THRESHOLD } from './constants';
 import { isRoadTile, getDirectionOptions, pickNextDirection, findPathOnRoads, getDirectionToTile, gridToScreen } from './utils';
 import { findResidentialBuildings, findPedestrianDestinations, findStations, findFires, findRecreationAreas, findEnterableBuildings, SPORTS_TYPES, ACTIVE_RECREATION_TYPES } from './gridFinders';
 import { drawPedestrians as drawPedestriansUtil } from './drawPedestrians';
@@ -49,6 +49,8 @@ export interface VehicleSystemState {
   worldStateRef: React.MutableRefObject<WorldRenderState>;
   gridVersionRef: React.MutableRefObject<number>;
   cachedRoadTileCountRef: React.MutableRefObject<{ count: number; gridVersion: number }>;
+  // PERF: Pre-computed intersection map to avoid repeated getDirectionOptions() calls per-car per-frame
+  cachedIntersectionMapRef: React.MutableRefObject<{ map: Map<number, boolean>; gridVersion: number }>;
   state: {
     services: {
       police: number[][];
@@ -82,7 +84,7 @@ export function useVehicleSystems(
     trainsRef,
   } = refs;
 
-  const { worldStateRef, gridVersionRef, cachedRoadTileCountRef, state, isMobile } = systemState;
+  const { worldStateRef, gridVersionRef, cachedRoadTileCountRef, cachedIntersectionMapRef, state, isMobile } = systemState;
 
   const spawnRandomCar = useCallback(() => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
@@ -338,6 +340,7 @@ export function useVehicleSystems(
         const isBuilding = tile.building.type !== 'grass' && 
             tile.building.type !== 'water' && 
             tile.building.type !== 'road' && 
+            tile.building.type !== 'bridge' && 
             tile.building.type !== 'tree' &&
             tile.building.type !== 'empty';
         const hasActivity = tile.building.population > 0 || tile.building.jobs > 0;
@@ -689,11 +692,30 @@ export function useVehicleSystems(
   }, [worldStateRef, emergencyVehiclesRef, emergencyDispatchTimerRef, updateEmergencyDispatch, activeFiresRef, activeCrimesRef, activeCrimeIncidentsRef]);
 
   // Helper to check if a tile is an intersection (3+ connections)
+  // PERF: Use cached intersection map to avoid repeated O(n) getDirectionOptions() calls per-car per-frame
   const isIntersection = useCallback((grid: Tile[][], gridSize: number, x: number, y: number): boolean => {
     if (!isRoadTile(grid, gridSize, x, y)) return false;
-    const options = getDirectionOptions(grid, gridSize, x, y);
-    return options.length >= 3;
-  }, []);
+    
+    // Check if cache is valid for current grid version
+    const currentVersion = gridVersionRef.current;
+    if (cachedIntersectionMapRef.current.gridVersion !== currentVersion) {
+      // Rebuild the intersection cache for the entire grid
+      const newMap = new Map<number, boolean>();
+      for (let cy = 0; cy < gridSize; cy++) {
+        for (let cx = 0; cx < gridSize; cx++) {
+          if (isRoadTile(grid, gridSize, cx, cy)) {
+            const options = getDirectionOptions(grid, gridSize, cx, cy);
+            newMap.set(cy * gridSize + cx, options.length >= 3);
+          }
+        }
+      }
+      cachedIntersectionMapRef.current = { map: newMap, gridVersion: currentVersion };
+    }
+    
+    // O(1) lookup from cache
+    const key = y * gridSize + x;
+    return cachedIntersectionMapRef.current.map.get(key) ?? false;
+  }, [gridVersionRef, cachedIntersectionMapRef]);
 
   const updateCars = useCallback((delta: number) => {
     const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed, zoom: currentZoom } = worldStateRef.current;
@@ -714,19 +736,52 @@ export function useVehicleSystems(
     
     const speedMultiplier = currentSpeed === 0 ? 0 : currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2.5 : 4;
     
-    const baseMaxCars = 100;
-    const maxCars = Math.min(baseMaxCars, Math.max(15, Math.floor(currentGridSize * 1.25)));
+    // Scale car count with road tiles (similar to pedestrians) for proper density on large maps
+    // Use cached road tile count for performance
+    const currentGridVersion = gridVersionRef.current;
+    let roadTileCount: number;
+    if (cachedRoadTileCountRef.current.gridVersion === currentGridVersion) {
+      roadTileCount = cachedRoadTileCountRef.current.count;
+    } else {
+      roadTileCount = 0;
+      for (let y = 0; y < currentGridSize; y++) {
+        for (let x = 0; x < currentGridSize; x++) {
+          const type = currentGrid[y][x].building.type;
+          if (type === 'road' || type === 'bridge') {
+            roadTileCount++;
+          }
+        }
+      }
+      cachedRoadTileCountRef.current = { count: roadTileCount, gridVersion: currentGridVersion };
+    }
+    
+    // Target ~0.5 cars per road tile on desktop, ~0.15 on mobile (for performance)
+    // This ensures large maps with more roads get proportionally more cars
+    const carDensity = isMobile ? 0.15 : 0.5;
+    const targetCars = Math.floor(roadTileCount * carDensity);
+    // Cap at 800 for desktop, 60 for mobile - minimum 10/15 for small cities
+    const maxCars = isMobile 
+      ? Math.min(60, Math.max(10, targetCars))
+      : Math.min(800, Math.max(15, targetCars));
+    
     carSpawnTimerRef.current -= delta;
     if (carsRef.current.length < maxCars && carSpawnTimerRef.current <= 0) {
-      // Spawn cars at a moderate rate
-      const carsToSpawn = Math.min(2, maxCars - carsRef.current.length);
+      // Spawn cars at a moderate rate - spawn more at once on large maps to catch up faster
+      // Mobile: spawn fewer cars at once and slower intervals
+      const deficit = maxCars - carsRef.current.length;
+      const carsToSpawn = isMobile 
+        ? Math.min(1, deficit) 
+        : Math.min(deficit > 50 ? 4 : 2, deficit);
       let spawnedCount = 0;
       for (let i = 0; i < carsToSpawn; i++) {
         if (spawnRandomCar()) {
           spawnedCount++;
         }
       }
-      carSpawnTimerRef.current = spawnedCount > 0 ? 0.3 + Math.random() * 0.4 : 0.1;
+      // Mobile: slower spawn rate (0.8-1.2s vs 0.3-0.7s on desktop)
+      carSpawnTimerRef.current = spawnedCount > 0 
+        ? (isMobile ? 0.8 + Math.random() * 0.4 : 0.3 + Math.random() * 0.4) 
+        : 0.1;
     }
     
     // Get current traffic light state
@@ -922,7 +977,7 @@ export function useVehicleSystems(
     }
     
     carsRef.current = updatedCars;
-  }, [worldStateRef, carsRef, carSpawnTimerRef, spawnRandomCar, trafficLightTimerRef, isIntersection, isMobile]);
+  }, [worldStateRef, carsRef, carSpawnTimerRef, spawnRandomCar, trafficLightTimerRef, isIntersection, isMobile, trainsRef, gridVersionRef, cachedRoadTileCountRef]);
 
   const updatePedestrians = useCallback((delta: number) => {
     const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed, zoom: currentZoom } = worldStateRef.current;
@@ -952,7 +1007,8 @@ export function useVehicleSystems(
       roadTileCount = 0;
       for (let y = 0; y < currentGridSize; y++) {
         for (let x = 0; x < currentGridSize; x++) {
-          if (currentGrid[y][x].building.type === 'road') {
+          const type = currentGrid[y][x].building.type;
+          if (type === 'road' || type === 'bridge') {
             roadTileCount++;
           }
         }
@@ -961,17 +1017,22 @@ export function useVehicleSystems(
     }
     
     // Scale pedestrian count with city size (road tiles), with a reasonable cap
-    const targetPedestrians = roadTileCount * PEDESTRIAN_ROAD_TILE_DENSITY;
-    const maxPedestrians = Math.min(PEDESTRIAN_MAX_COUNT, Math.max(150, targetPedestrians));
+    // Mobile: use lower density and max count for performance
+    const pedDensity = isMobile ? PEDESTRIAN_ROAD_TILE_DENSITY_MOBILE : PEDESTRIAN_ROAD_TILE_DENSITY;
+    const pedMaxCount = isMobile ? PEDESTRIAN_MAX_COUNT_MOBILE : PEDESTRIAN_MAX_COUNT;
+    const pedMinCount = isMobile ? 20 : 150;
+    const targetPedestrians = roadTileCount * pedDensity;
+    const maxPedestrians = Math.min(pedMaxCount, Math.max(pedMinCount, targetPedestrians));
     pedestrianSpawnTimerRef.current -= delta;
     
     if (pedestriansRef.current.length < maxPedestrians && pedestrianSpawnTimerRef.current <= 0) {
-      // Spawn pedestrians in batches
-      const spawnBatch = Math.min(PEDESTRIAN_SPAWN_BATCH_SIZE, maxPedestrians - pedestriansRef.current.length);
+      // Spawn pedestrians in batches - smaller batches on mobile
+      const batchSize = isMobile ? PEDESTRIAN_SPAWN_BATCH_SIZE_MOBILE : PEDESTRIAN_SPAWN_BATCH_SIZE;
+      const spawnBatch = Math.min(batchSize, maxPedestrians - pedestriansRef.current.length);
       for (let i = 0; i < spawnBatch; i++) {
         spawnPedestrian();
       }
-      pedestrianSpawnTimerRef.current = PEDESTRIAN_SPAWN_INTERVAL;
+      pedestrianSpawnTimerRef.current = isMobile ? PEDESTRIAN_SPAWN_INTERVAL_MOBILE : PEDESTRIAN_SPAWN_INTERVAL;
     }
     
     // OPTIMIZED: Reuse array instead of spreading

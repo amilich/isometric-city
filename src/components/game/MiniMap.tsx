@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { msg } from 'gt-next';
+import { useMessages } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { Card } from '@/components/ui/card';
 import { TILE_WIDTH, TILE_HEIGHT } from '@/components/game/types';
@@ -31,6 +33,9 @@ interface MiniMapProps {
 }
 
 // Canvas-based Minimap - Memoized with throttled grid rendering
+// Translatable label
+const MINIMAP_LABEL = msg('Minimap');
+
 export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: MiniMapProps) {
   const { state } = useGame();
   const { grid, gridSize, tick } = state;
@@ -38,6 +43,7 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
   const gridImageRef = useRef<ImageData | null>(null);
   const lastGridRenderTickRef = useRef(-1);
   const lastGridRef = useRef<typeof grid | null>(null);
+  const m = useMessages();
   
   // Pre-compute color map for faster lookups
   const serviceBuildings = useMemo(() => SERVICE_BUILDINGS, []);
@@ -186,9 +192,9 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
   }, [isDragging]);
   
   return (
-    <Card className="absolute bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70">
+    <Card className="fixed bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        Minimap
+        {m(MINIMAP_LABEL)}
       </div>
       <canvas
         ref={canvasRef}

@@ -21,10 +21,10 @@ export function VinnieDialog({ open, onOpenChange }: VinnieDialogProps) {
   const { addMoney, addNotification } = useGame();
 
   const handleAccept = () => {
-    addMoney(100000);
+    addMoney(500000);
     addNotification(
       'Questionable Finances',
-      'You received $100,000 from Cousin Vinnie. Your accountants are... concerned.',
+      'You received $500,000 from Cousin Vinnie. Your accountants are... concerned.',
       'disaster'
     );
     onOpenChange(false);
@@ -51,7 +51,7 @@ export function VinnieDialog({ open, onOpenChange }: VinnieDialogProps) {
                 Hey there, Mayor... My associate Vinnie heard you could use some help with the city budget.
               </p>
               <p className="mb-2">
-                He&apos;s offering <span className="text-green-400 font-semibold">$100,000</span>... no strings attached.
+                He&apos;s offering <span className="text-green-400 font-semibold">$500,000</span>... no strings attached.
               </p>
               <p className="text-slate-400 italic">
                 Well, maybe a few strings.

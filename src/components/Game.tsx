@@ -6,12 +6,19 @@ import { Tool } from '@/types/game';
 import { useMobile } from '@/hooks/useMobile';
 import { MobileToolbar } from '@/components/mobile/MobileToolbar';
 import { MobileTopBar } from '@/components/mobile/MobileTopBar';
+import { msg, useMessages, useGT } from 'gt-next';
 
 // Import shadcn components
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCheatCodes } from '@/hooks/useCheatCodes';
 import { VinnieDialog } from '@/components/VinnieDialog';
 import { CommandMenu } from '@/components/ui/CommandMenu';
+import { TipToast } from '@/components/ui/TipToast';
+import { useTipSystem } from '@/hooks/useTipSystem';
+import { useMultiplayerSync } from '@/hooks/useMultiplayerSync';
+import { useMultiplayerOptional } from '@/context/MultiplayerContext';
+import { ShareModal } from '@/components/multiplayer/ShareModal';
+import { Copy, Check } from 'lucide-react';
 
 // Import game components
 import { OverlayMode } from '@/components/game/types';
@@ -29,9 +36,11 @@ import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
 
 // Cargo type names for notifications
-const CARGO_TYPE_NAMES = ['containers', 'bulk materials', 'oil'];
+const CARGO_TYPE_NAMES = [msg('containers'), msg('bulk materials'), msg('oil')];
 
 export default function Game({ onExit }: { onExit?: () => void }) {
+  const gt = useGT();
+  const m = useMessages();
   const { state, setTool, setActivePanel, addMoney, addNotification, setSpeed } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
@@ -40,6 +49,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const isInitialMount = useRef(true);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
+  const [showShareModal, setShowShareModal] = useState(false);
+  const multiplayer = useMultiplayerOptional();
   
   // Cheat code system
   const {
@@ -48,6 +59,36 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     setShowVinnieDialog,
     clearTriggeredCheat,
   } = useCheatCodes();
+  
+  // Tip system for helping new players
+  const {
+    currentTip,
+    isVisible: isTipVisible,
+    onContinue: onTipContinue,
+    onSkipAll: onTipSkipAll,
+  } = useTipSystem(state);
+  
+  // Multiplayer sync
+  const {
+    isMultiplayer,
+    isHost,
+    playerCount,
+    roomCode,
+    players,
+    broadcastPlace,
+    leaveRoom,
+  } = useMultiplayerSync();
+  
+  // Copy room link state
+  const [copiedRoomLink, setCopiedRoomLink] = useState(false);
+  
+  const handleCopyRoomLink = useCallback(() => {
+    if (!roomCode) return;
+    const url = `${window.location.origin}/coop/${roomCode}`;
+    navigator.clipboard.writeText(url);
+    setCopiedRoomLink(true);
+    setTimeout(() => setCopiedRoomLink(false), 2000);
+  }, [roomCode]);
   const initialSelectedToolRef = useRef<Tool | null>(null);
   const previousSelectedToolRef = useRef<Tool | null>(null);
   const hasCapturedInitialTool = useRef(false);
@@ -161,8 +202,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
       case 'konami':
         addMoney(triggeredCheat.amount);
         addNotification(
-          'Retro Cheat Activated!',
-          'Your accountants are confused but not complaining. You received $50,000!',
+          gt('Retro Cheat Activated!'),
+          gt('Your accountants are confused but not complaining. You received $50,000!'),
           'trophy'
         );
         clearTriggeredCheat();
@@ -171,8 +212,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
       case 'motherlode':
         addMoney(triggeredCheat.amount);
         addNotification(
-          'Motherlode!',
-          'Your treasury just got a lot heavier. You received $1,000,000!',
+          gt('Motherlode!'),
+          gt('Your treasury just got a lot heavier. You received $1,000,000!'),
           'trophy'
         );
         clearTriggeredCheat();
@@ -192,17 +233,17 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const handleBargeDelivery = useCallback((cargoValue: number, cargoType: number) => {
     addMoney(cargoValue);
     bargeDeliveryCountRef.current++;
-    
+
     // Show a notification every 5 deliveries to avoid spam
     if (bargeDeliveryCountRef.current % 5 === 1) {
-      const cargoName = CARGO_TYPE_NAMES[cargoType] || 'cargo';
+      const cargoName = CARGO_TYPE_NAMES[cargoType] || msg('cargo');
       addNotification(
-        'Cargo Delivered',
-        `A shipment of ${cargoName} has arrived at the marina. +$${cargoValue} trade revenue.`,
+        gt('Cargo Delivered'),
+        gt('A shipment of {cargoName} has arrived at the marina. +${cargoValue} trade revenue.', { cargoName: m(cargoName), cargoValue }),
         'ship'
       );
     }
-  }, [addMoney, addNotification]);
+  }, [addMoney, addNotification, gt, m]);
 
   // Mobile layout
   if (isMobile) {
@@ -214,8 +255,17 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             selectedTile={selectedTile && state.selectedTool === 'select' ? state.grid[selectedTile.y][selectedTile.x] : null}
             services={state.services}
             onCloseTile={() => setSelectedTile(null)}
+            onShare={() => setShowShareModal(true)}
             onExit={onExit}
           />
+          
+          {/* Share Modal for mobile co-op */}
+          {multiplayer && (
+            <ShareModal
+              open={showShareModal}
+              onOpenChange={setShowShareModal}
+            />
+          )}
           
           {/* Main canvas area - fills remaining space, with padding for top/bottom bars */}
           <div className="flex-1 relative overflow-hidden" style={{ paddingTop: '72px', paddingBottom: '76px' }}>
@@ -226,6 +276,42 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               isMobile={true}
               onBargeDelivery={handleBargeDelivery}
             />
+            
+            {/* Multiplayer Players Indicator - Mobile */}
+            {isMultiplayer && (
+              <div className="absolute top-2 right-2 z-20">
+                <div className="bg-slate-900/90 border border-slate-700 rounded-lg px-2 py-1.5 shadow-lg">
+                  <div className="flex items-center gap-1.5 text-xs text-white">
+                    {roomCode && (
+                      <>
+                        <span className="font-mono tracking-wider">{roomCode}</span>
+                        <button
+                          onClick={handleCopyRoomLink}
+                          className="p-0.5 hover:bg-white/10 rounded transition-colors"
+                          title="Copy invite link"
+                        >
+                          {copiedRoomLink ? (
+                            <Check className="w-3 h-3 text-green-400" />
+                          ) : (
+                            <Copy className="w-3 h-3 text-slate-400" />
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {players.length > 0 && (
+                    <div className="mt-1 space-y-0.5">
+                      {players.map((player) => (
+                        <div key={player.id} className="flex items-center gap-1 text-[10px] text-slate-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          {player.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Mobile Bottom Toolbar */}
@@ -242,6 +328,14 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === 'settings' && <SettingsPanel />}
           
           <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
+          
+          {/* Tip Toast for helping new players */}
+          <TipToast
+            message={currentTip || ''}
+            isVisible={isTipVisible}
+            onContinue={onTipContinue}
+            onSkipAll={onTipSkipAll}
+          />
         </div>
       </TooltipProvider>
     );
@@ -253,7 +347,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
       <div className="w-full h-full min-h-[720px] overflow-hidden bg-background flex">
         <Sidebar onExit={onExit} />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col ml-56">
           <TopBar />
           <StatsPanel />
           <div className="flex-1 relative overflow-visible">
@@ -268,6 +362,42 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             />
             <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
             <MiniMap onNavigate={(x, y) => setNavigationTarget({ x, y })} viewport={viewport} />
+            
+            {/* Multiplayer Players Indicator */}
+            {isMultiplayer && (
+              <div className="absolute top-4 right-4 z-20">
+                <div className="bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-2 shadow-lg min-w-[120px]">
+                  <div className="flex items-center gap-2 text-sm text-white">
+                    {roomCode && (
+                      <>
+                        <span className="font-mono font-medium tracking-wider">{roomCode}</span>
+                        <button
+                          onClick={handleCopyRoomLink}
+                          className="p-1 hover:bg-white/10 rounded transition-colors"
+                          title="Copy invite link"
+                        >
+                          {copiedRoomLink ? (
+                            <Check className="w-3.5 h-3.5 text-green-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-slate-400 hover:text-white" />
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {players.length > 0 && (
+                    <div className="mt-1.5 space-y-0.5">
+                      {players.map((player) => (
+                        <div key={player.id} className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <span className="w-2 h-2 rounded-full bg-green-500" />
+                          {player.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         
@@ -278,6 +408,14 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         
         <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
         <CommandMenu />
+        
+        {/* Tip Toast for helping new players */}
+        <TipToast
+          message={currentTip || ''}
+          isVisible={isTipVisible}
+          onContinue={onTipContinue}
+          onSkipAll={onTipSkipAll}
+        />
       </div>
     </TooltipProvider>
   );

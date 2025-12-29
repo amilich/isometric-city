@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { msg } from 'gt-next';
+import { useMessages } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -42,6 +44,12 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
 };
 
 // ============================================================================
+// Translatable Labels
+// ============================================================================
+
+const VIEW_OVERLAY_LABEL = msg('View Overlay');
+
+// ============================================================================
 // Component
 // ============================================================================
 
@@ -54,10 +62,12 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
   overlayMode,
   setOverlayMode,
 }: OverlayModeToggleProps) {
+  const m = useMessages();
+  
   return (
-    <Card className="absolute bottom-4 left-4 p-2 shadow-lg bg-card/90 border-border/70 z-50">
+    <Card className="fixed bottom-4 left-[240px] p-2 shadow-lg bg-card/90 border-border/70 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        View Overlay
+        {m(VIEW_OVERLAY_LABEL)}
       </div>
       <div className="flex gap-1">
         {(Object.keys(OVERLAY_CONFIG) as OverlayMode[]).map((mode) => {

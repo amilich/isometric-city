@@ -16,10 +16,42 @@ export function getOppositeDirection(direction: CarDirection): CarDirection {
   return OPPOSITE_DIRECTION[direction];
 }
 
-// Check if a tile is a road
+// Check if a tile is a road or road bridge (vehicles can traverse both)
+// Rail bridges are NOT valid for cars
 export function isRoadTile(gridData: Tile[][], gridSizeValue: number, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= gridSizeValue || y >= gridSizeValue) return false;
-  return gridData[y][x].building.type === 'road';
+  const tile = gridData[y][x];
+  const type = tile.building.type;
+  // Road bridges are valid, rail bridges are not
+  if (type === 'bridge') {
+    return tile.building.bridgeTrackType !== 'rail';
+  }
+  return type === 'road';
+}
+
+// Check if a car can enter a tile from a given direction
+// Bridges can only be entered along their orientation (ns bridges: north/south, ew bridges: east/west)
+function canEnterTileFromDirection(gridData: Tile[][], gridSizeValue: number, x: number, y: number, direction: CarDirection): boolean {
+  if (x < 0 || y < 0 || x >= gridSizeValue || y >= gridSizeValue) return false;
+  const tile = gridData[y]?.[x];
+  if (!tile) return false;
+  
+  // If it's a bridge, check if the direction matches the bridge orientation
+  if (tile.building.type === 'bridge') {
+    // Rail bridges are not valid for cars
+    if (tile.building.bridgeTrackType === 'rail') return false;
+    
+    const orientation = tile.building.bridgeOrientation;
+    // ns bridges only allow north/south travel
+    if (orientation === 'ns' && (direction === 'north' || direction === 'south')) return true;
+    // ew bridges only allow east/west travel
+    if (orientation === 'ew' && (direction === 'east' || direction === 'west')) return true;
+    // Direction doesn't match bridge orientation - can't enter
+    return false;
+  }
+  
+  // Regular road tiles can be entered from any direction
+  return tile.building.type === 'road';
 }
 
 // Get available direction options from a tile
@@ -33,6 +65,8 @@ export function getDirectionOptions(gridData: Tile[][], gridSizeValue: number, x
 }
 
 // Pick next direction for vehicle movement
+// On bridges, cars can only go straight (no turning)
+// Cars can only enter bridges from valid directions matching the bridge orientation
 export function pickNextDirection(
   previousDirection: CarDirection,
   gridData: Tile[][],
@@ -42,9 +76,38 @@ export function pickNextDirection(
 ): CarDirection | null {
   const options = getDirectionOptions(gridData, gridSizeValue, x, y);
   if (options.length === 0) return null;
+  
+  // Check if current tile is a bridge - if so, only allow going straight
+  const currentTile = gridData[y]?.[x];
+  if (currentTile?.building.type === 'bridge') {
+    // On a bridge, only continue in the same direction (no turning)
+    if (options.includes(previousDirection)) {
+      return previousDirection;
+    }
+    // If we can't continue straight, fall back to normal behavior
+  }
+  
+  // Filter out directions that would enter a bridge from an invalid angle
+  // For each direction, check if the target tile can be entered from that direction
+  const directionOffsets: Record<CarDirection, { dx: number; dy: number }> = {
+    'north': { dx: -1, dy: 0 },
+    'south': { dx: 1, dy: 0 },
+    'east': { dx: 0, dy: -1 },
+    'west': { dx: 0, dy: 1 },
+  };
+  
+  const validOptions = options.filter(dir => {
+    const offset = directionOffsets[dir];
+    const targetX = x + offset.dx;
+    const targetY = y + offset.dy;
+    return canEnterTileFromDirection(gridData, gridSizeValue, targetX, targetY, dir);
+  });
+  
+  if (validOptions.length === 0) return null;
+  
   const incoming = getOppositeDirection(previousDirection);
-  const filtered = options.filter(dir => dir !== incoming);
-  const pool = filtered.length > 0 ? filtered : options;
+  const filtered = validOptions.filter(dir => dir !== incoming);
+  const pool = filtered.length > 0 ? filtered : validOptions;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 

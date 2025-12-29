@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { msg, useMessages } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { Tile } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import {
   EnvironmentIcon,
   CloseIcon,
 } from '@/components/ui/Icons';
+import { Users } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +30,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
+
+// Translatable UI labels
+const UI_LABELS = {
+  pop: msg('Pop'),
+  funds: msg('Funds'),
+  tax: msg('Tax'),
+  taxRate: msg('Tax Rate'),
+  emptyLot: msg('Empty Lot'),
+  jobsLower: msg('jobs'),
+  jobs: msg('Jobs'),
+  hasPower: msg('Has power'),
+  noPower: msg('No power'),
+  hasWater: msg('Has water'),
+  noWater: msg('No water'),
+  happiness: msg('Happiness'),
+  health: msg('Health'),
+  education: msg('Education'),
+  safety: msg('Safety'),
+  environment: msg('Environ'),
+  population: msg('Population'),
+  monthlyIncome: msg('Monthly Income'),
+  monthlyExpenses: msg('Monthly Expenses'),
+  weeklyNet: msg('Weekly Net'),
+  exitToMainMenu: msg('Exit to Main Menu'),
+  exitDialogTitle: msg('Exit to Main Menu'),
+  exitDialogDescription: msg('Would you like to save your city before exiting?'),
+  exitWithoutSaving: msg('Exit Without Saving'),
+  saveAndExit: msg('Save & Exit'),
+  zone: msg('Zone'),
+};
 
 // Sun/Moon icon for time of day
 function TimeOfDayIcon({ hour }: { hour: number }) {
@@ -77,18 +110,21 @@ export function MobileTopBar({
   selectedTile, 
   services, 
   onCloseTile,
+  onShare,
   onExit,
 }: { 
   selectedTile: Tile | null;
   services: { police: number[][]; fire: number[][]; health: number[][]; education: number[][]; power: boolean[][]; water: boolean[][] };
   onCloseTile: () => void;
+  onShare?: () => void;
   onExit?: () => void;
 }) {
-  const { state, setSpeed, setTaxRate, isSaving, visualHour, saveCity } = useGame();
+  const { state, setSpeed, setTaxRate, visualHour, saveCity } = useGame();
   const { stats, year, month, speed, taxRate, cityName } = state;
   const [showDetails, setShowDetails] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showTaxSlider, setShowTaxSlider] = useState(false);
+  const m = useMessages();
 
   const handleSaveAndExit = useCallback(() => {
     saveCity();
@@ -118,9 +154,6 @@ export function MobileTopBar({
                 <span className="text-foreground font-semibold text-xs truncate max-w-[80px]">
                   {cityName}
                 </span>
-                {isSaving && (
-                  <span className="text-[8px] text-muted-foreground animate-pulse">•</span>
-                )}
               </div>
               <span className="text-muted-foreground text-[10px] font-mono">
                 {monthNames[month - 1]} {year}
@@ -130,13 +163,13 @@ export function MobileTopBar({
               <span className="text-xs font-mono font-semibold text-foreground">
                 {stats.population >= 1000 ? `${(stats.population / 1000).toFixed(1)}k` : stats.population}
               </span>
-              <span className="text-[9px] text-muted-foreground">Pop</span>
+              <span className="text-[9px] text-muted-foreground">{m(UI_LABELS.pop)}</span>
             </div>
             <div className="flex flex-col items-start">
               <span className={`text-xs font-mono font-semibold ${stats.money < 0 ? 'text-red-500' : stats.money < 1000 ? 'text-amber-500' : 'text-green-500'}`}>
                 ${stats.money >= 1000000 ? `${(stats.money / 1000000).toFixed(1)}M` : stats.money >= 1000 ? `${(stats.money / 1000).toFixed(0)}k` : stats.money}
               </span>
-              <span className="text-[9px] text-muted-foreground">Funds</span>
+              <span className="text-[9px] text-muted-foreground">{m(UI_LABELS.funds)}</span>
             </div>
           </button>
 
@@ -188,23 +221,37 @@ export function MobileTopBar({
               </button>
             </div>
 
-            {/* Exit button */}
-            {onExit && (
-              <button
-                onClick={() => setShowExitDialog(true)}
-                className="h-6 w-5 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
-                title="Exit to Main Menu"
-              >
-                <svg 
-                  className="w-3 h-3 -scale-x-100" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
+            {/* Language selector, Share, and Exit button group */}
+            <div className="flex items-center -space-x-0.5">
+              <LanguageSelector useDrawer iconSize={12} />
+
+              {onShare && (
+                <button
+                  onClick={onShare}
+                  className="h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  title="Invite Players"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            )}
+                  <Users className="w-3 h-3" />
+                </button>
+              )}
+
+              {onExit && (
+                <button
+                  onClick={() => setShowExitDialog(true)}
+                  className="h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  title="Exit to Main Menu"
+                >
+                  <svg 
+                    className="w-3 h-3 -scale-x-100" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
 
         </div>
@@ -227,7 +274,7 @@ export function MobileTopBar({
               }
             }}
           >
-            <span className="text-[9px] text-muted-foreground">Tax</span>
+            <span className="text-[9px] text-muted-foreground">{m(UI_LABELS.tax)}</span>
             <span className="text-[10px] font-mono text-foreground">{taxRate}%</span>
           </button>
 
@@ -241,7 +288,7 @@ export function MobileTopBar({
         {/* Tax Slider Row */}
         {showTaxSlider && !selectedTile && (
           <div className="border-t border-sidebar-border/50 bg-secondary/30 px-3 py-0.5 flex items-center gap-2 text-[10px]">
-            <span className="text-muted-foreground whitespace-nowrap">Tax Rate</span>
+            <span className="text-muted-foreground whitespace-nowrap">{m(UI_LABELS.taxRate)}</span>
             <Slider
               value={[taxRate]}
               onValueChange={(value) => setTaxRate(value[0])}
@@ -272,7 +319,7 @@ export function MobileTopBar({
               }`} />
               <span className="text-xs font-medium text-foreground capitalize">
                 {selectedTile.building.type === 'empty' 
-                  ? (selectedTile.zone === 'none' ? 'Empty Lot' : `${selectedTile.zone} Zone`)
+                  ? (selectedTile.zone === 'none' ? m(UI_LABELS.emptyLot) : `${selectedTile.zone} ${m(UI_LABELS.zone)}`)
                   : selectedTile.building.type.replace(/_/g, ' ')}
               </span>
             </div>
@@ -285,15 +332,15 @@ export function MobileTopBar({
               </div>
             )}
             {selectedTile.building.jobs > 0 && (
-              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} jobs</span>
+              <span className="text-foreground font-mono shrink-0">{selectedTile.building.jobs} {m(UI_LABELS.jobsLower)}</span>
             )}
             
             {/* Utilities */}
             <span className={`shrink-0 ${selectedTile.building.powered ? 'text-yellow-400' : 'text-muted-foreground/60'}`}>
-              {selectedTile.building.powered ? 'Has power' : 'No power'}
+              {selectedTile.building.powered ? m(UI_LABELS.hasPower) : m(UI_LABELS.noPower)}
             </span>
             <span className={`shrink-0 ${selectedTile.building.watered ? 'text-cyan-400' : 'text-muted-foreground/60'}`}>
-              {selectedTile.building.watered ? 'Has water' : 'No water'}
+              {selectedTile.building.watered ? m(UI_LABELS.hasWater) : m(UI_LABELS.noWater)}
             </span>
             
             {/* Land value */}
@@ -344,31 +391,31 @@ export function MobileTopBar({
             <div className="p-4 grid grid-cols-5 gap-3">
               <StatItem
                 icon={<HappyIcon size={16} />}
-                label="Happiness"
+                label={String(m(UI_LABELS.happiness))}
                 value={stats.happiness}
                 color={stats.happiness >= 70 ? 'text-green-500' : stats.happiness >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<HealthIcon size={16} />}
-                label="Health"
+                label={String(m(UI_LABELS.health))}
                 value={stats.health}
                 color={stats.health >= 70 ? 'text-green-500' : stats.health >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<EducationIcon size={16} />}
-                label="Education"
+                label={String(m(UI_LABELS.education))}
                 value={stats.education}
                 color={stats.education >= 70 ? 'text-green-500' : stats.education >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<SafetyIcon size={16} />}
-                label="Safety"
+                label={String(m(UI_LABELS.safety))}
                 value={stats.safety}
                 color={stats.safety >= 70 ? 'text-green-500' : stats.safety >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
               <StatItem
                 icon={<EnvironmentIcon size={16} />}
-                label="Environ"
+                label={String(m(UI_LABELS.environment))}
                 value={stats.environment}
                 color={stats.environment >= 70 ? 'text-green-500' : stats.environment >= 40 ? 'text-amber-500' : 'text-red-500'}
               />
@@ -379,23 +426,23 @@ export function MobileTopBar({
             {/* Detailed finances */}
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Population</span>
+                <span className="text-sm text-muted-foreground">{m(UI_LABELS.population)}</span>
                 <span className="text-sm font-mono text-foreground">{stats.population.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Jobs</span>
+                <span className="text-sm text-muted-foreground">{m(UI_LABELS.jobs)}</span>
                 <span className="text-sm font-mono text-foreground">{stats.jobs.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Income</span>
+                <span className="text-sm text-muted-foreground">{m(UI_LABELS.monthlyIncome)}</span>
                 <span className="text-sm font-mono text-green-400">${stats.income.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Expenses</span>
+                <span className="text-sm text-muted-foreground">{m(UI_LABELS.monthlyExpenses)}</span>
                 <span className="text-sm font-mono text-red-400">${stats.expenses.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Weekly Net</span>
+                <span className="text-sm text-muted-foreground">{m(UI_LABELS.weeklyNet)}</span>
                 <span className={`text-sm font-mono ${stats.income - stats.expenses >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   ${Math.floor((stats.income - stats.expenses) / 4).toLocaleString()}
                 </span>
@@ -407,7 +454,7 @@ export function MobileTopBar({
             {/* Tax slider */}
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Tax Rate</span>
+                <span className="text-sm text-muted-foreground">{m(UI_LABELS.taxRate)}</span>
                 <span className="text-sm font-mono text-foreground">{taxRate}%</span>
               </div>
               <Slider
@@ -431,9 +478,9 @@ export function MobileTopBar({
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Exit to Main Menu</DialogTitle>
+            <DialogTitle>{m(UI_LABELS.exitDialogTitle)}</DialogTitle>
             <DialogDescription>
-              Would you like to save your city before exiting?
+              {m(UI_LABELS.exitDialogDescription)}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -442,13 +489,13 @@ export function MobileTopBar({
               onClick={handleExitWithoutSaving}
               className="w-full sm:w-auto"
             >
-              Exit Without Saving
+              {m(UI_LABELS.exitWithoutSaving)}
             </Button>
             <Button
               onClick={handleSaveAndExit}
               className="w-full sm:w-auto"
             >
-              Save & Exit
+              {m(UI_LABELS.saveAndExit)}
             </Button>
           </DialogFooter>
         </DialogContent>

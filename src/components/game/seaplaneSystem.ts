@@ -5,6 +5,7 @@ import {
   SEAPLANE_MIN_BAY_SIZE,
   SEAPLANE_COLORS,
   MAX_SEAPLANES,
+  MAX_SEAPLANES_MOBILE,
   SEAPLANE_SPAWN_INTERVAL_MIN,
   SEAPLANE_SPAWN_INTERVAL_MAX,
   SEAPLANE_TAXI_TIME_MIN,
@@ -127,10 +128,12 @@ export function useSeaplaneSystem(
       return;
     }
 
-    // Calculate max seaplanes based on population and bay count
+    // Calculate max seaplanes based on population and bay count - lower on mobile
+    const maxSeaplaneLimit = isMobile ? MAX_SEAPLANES_MOBILE : MAX_SEAPLANES;
+    const minSeaplanes = isMobile ? 1 : 3;
     const populationBased = Math.floor(totalPopulation / 2000);
     const bayBased = Math.floor(bays.length * 5);
-    const maxSeaplanes = Math.min(MAX_SEAPLANES, Math.max(3, Math.min(populationBased, bayBased)));
+    const maxSeaplanes = Math.min(maxSeaplaneLimit, Math.max(minSeaplanes, Math.min(populationBased, bayBased)));
     
     // Speed multiplier based on game speed
     const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 1.5 : 2;
@@ -244,6 +247,12 @@ export function useSeaplaneSystem(
             break;
           }
           
+          // Safety check: if we're not over water, despawn (stuck on land)
+          if (!isOverWaterCallback(seaplane.x, seaplane.y)) {
+            // Stuck on land, despawn
+            continue;
+          }
+          
           const distToDock = Math.hypot(seaplane.x - seaplane.dockScreenX, seaplane.y - seaplane.dockScreenY);
           const angleToDock = Math.atan2(seaplane.dockScreenY - seaplane.y, seaplane.dockScreenX - seaplane.x);
           
@@ -302,6 +311,14 @@ export function useSeaplaneSystem(
           seaplane.dockTime -= delta;
           seaplane.speed = 0;
           
+          // Safety check: if dock position is no longer over water, despawn
+          if (seaplane.dockScreenX !== null && seaplane.dockScreenY !== null) {
+            if (!isOverWaterCallback(seaplane.dockScreenX, seaplane.dockScreenY)) {
+              // Dock is no longer over water (e.g., marina was demolished), despawn
+              continue;
+            }
+          }
+          
           // Keep position at dock
           if (seaplane.dockScreenX !== null && seaplane.dockScreenY !== null) {
             nextX = seaplane.dockScreenX;
@@ -324,6 +341,12 @@ export function useSeaplaneSystem(
         case 'taxiing_water': {
           // Taxi around on water like a boat
           seaplane.taxiTime -= delta;
+          
+          // Safety check: if we're not over water, despawn (stuck on land)
+          if (!isOverWaterCallback(seaplane.x, seaplane.y)) {
+            // Stuck on land, despawn
+            continue;
+          }
           
           // Normalize current angle to 0-2PI to prevent wraparound issues
           let normalizedAngle = seaplane.angle % (Math.PI * 2);
@@ -474,9 +497,18 @@ export function useSeaplaneSystem(
           
           seaplane.lifeTime -= delta;
           
+          // Safety: Check if seaplane is too far from its bay (could have flown off map)
+          const distFromBayFlying = Math.hypot(seaplane.x - seaplane.bayScreenX, seaplane.y - seaplane.bayScreenY);
+          // Despawn if more than ~20 tiles away (screen units)
+          const maxFlyingDistance = TILE_WIDTH * 25;
+          if (distFromBayFlying > maxFlyingDistance) {
+            // Too far from bay, despawn to prevent getting lost/stuck
+            continue;
+          }
+          
           // Time to land - head back to bay
           if (seaplane.lifeTime <= 5) {
-            const distToBay = Math.hypot(seaplane.x - seaplane.bayScreenX, seaplane.y - seaplane.bayScreenY);
+            const distToBay = distFromBayFlying;
             
             // Smoothly turn toward bay (prevents sudden angle jumps)
             const angleToBay = Math.atan2(seaplane.bayScreenY - seaplane.y, seaplane.bayScreenX - seaplane.x);
@@ -489,8 +521,14 @@ export function useSeaplaneSystem(
             
             // Start landing approach when close to bay
             if (distToBay < 300) {
-              seaplane.state = 'landing';
-              seaplane.targetAltitude = 0;
+              // Validate bay center is still over water before landing
+              if (isOverWaterCallback(seaplane.bayScreenX, seaplane.bayScreenY)) {
+                seaplane.state = 'landing';
+                seaplane.targetAltitude = 0;
+              } else {
+                // Bay no longer valid, despawn
+                continue;
+              }
             }
           } else if (seaplane.lifeTime <= 0) {
             // Out of time - despawn
@@ -509,6 +547,12 @@ export function useSeaplaneSystem(
           seaplane.speed = Math.max(SEAPLANE_TAKEOFF_SPEED, seaplane.speed - delta * 15);
           seaplane.altitude = Math.max(0, seaplane.altitude - delta * 0.25);
           
+          // Safety check: if bay is no longer valid water, despawn before landing on land
+          if (!isOverWaterCallback(seaplane.bayScreenX, seaplane.bayScreenY)) {
+            // Bay is no longer water, despawn
+            continue;
+          }
+          
           // Smoothly adjust angle toward bay center (prevents sudden jumps)
           const angleToBay = Math.atan2(seaplane.bayScreenY - seaplane.y, seaplane.bayScreenX - seaplane.x);
           let landingAngleDiff = angleToBay - seaplane.angle;
@@ -523,6 +567,7 @@ export function useSeaplaneSystem(
           
           // Transition to splashdown when very low
           if (seaplane.altitude <= 0.1) {
+            // Final check: only transition if current position is still approaching water
             seaplane.state = 'splashdown';
           }
           break;
@@ -565,6 +610,12 @@ export function useSeaplaneSystem(
             // Check if we've completed enough flights to despawn
             if (seaplane.flightCount >= SEAPLANE_MAX_FLIGHTS) {
               // Seaplane has done enough flights, remove it
+              continue;
+            }
+            
+            // Check if we're actually over water - if not, despawn (landed on land/outside map)
+            if (!isOverWaterCallback(seaplane.x, seaplane.y)) {
+              // Landed on land or outside map, despawn
               continue;
             }
             

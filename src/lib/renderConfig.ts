@@ -130,6 +130,20 @@ export interface SpritePack {
   stationsHorizontalOffsets?: Record<string, number>;
   // Per-building-type scale adjustments for STATIONS sprite sheet buildings
   stationsScales?: Record<string, number>;
+  // Path to the mansions sprite sheet (alternate mansion variants)
+  mansionsSrc?: string;
+  // Mansions layout configuration (columns and rows for the mansions sheet)
+  mansionsCols?: number;
+  mansionsRows?: number;
+  // Mansions variants: maps building type to available variants in the mansions sheet
+  // Each variant specifies row and column (0-indexed) in the mansions sprite sheet
+  mansionsVariants?: Record<string, { row: number; col: number }[]>;
+  // Per-building-type vertical offset adjustments for MANSIONS sprite sheet buildings
+  mansionsVerticalOffsets?: Record<string, number>;
+  // Per-building-type horizontal offset adjustments for MANSIONS sprite sheet buildings
+  mansionsHorizontalOffsets?: Record<string, number>;
+  // Per-building-type scale adjustments for MANSIONS sprite sheet buildings
+  mansionsScales?: Record<string, number>;
   // Maps building types to sprite keys in spriteOrder
   buildingToSprite: Record<string, string>;
   // Optional global scale multiplier for all sprites in this pack
@@ -153,17 +167,27 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
       { row: 0, col: 2 },
       { row: 0, col: 3 },
     ],
-    // Commercial high density (mall) - Rows 3 and 4, all columns (0-indexed: rows 2, 3)
-    mall: [
+    // Office low density - Row 4, columns 1, 2, 4 (0-indexed: row 3, cols 0, 1, 3)
+    office_low: [
+      { row: 3, col: 0 },
+      { row: 3, col: 1 },
+      { row: 3, col: 3 },
+    ],
+    // Office high density - Row 3 columns 1-3, Row 2 column 1 (0-indexed: row 2 cols 0-2, row 1 col 0)
+    office_high: [
+      { row: 1, col: 0 },
       { row: 2, col: 0 },
       { row: 2, col: 1 },
       { row: 2, col: 2 },
+    ],
+    // Commercial high density (mall) - Row 2 col 5, Row 3 cols 4-5, Row 4 most columns (0-indexed: row 1 col 4, row 2 cols 3-4, row 3 except col 3)
+    mall: [
+      { row: 1, col: 4 },
       { row: 2, col: 3 },
       { row: 2, col: 4 },
       { row: 3, col: 0 },
       { row: 3, col: 1 },
       { row: 3, col: 2 },
-      { row: 3, col: 3 },
       { row: 3, col: 4 },
     ],
     // Industrial high density (factory_large) - Row 5, columns 1, 3, 5 (0-indexed: row 4, cols 0, 2, 4)
@@ -240,7 +264,7 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
     school: -0.35, // Shifted down 0.05 tiles from -0.4
     power_plant: -0.3, // Shift up
     park: -0.125, // Adjusted position
-    park_large: -0.85, // Shift up significantly (almost an entire tile)
+    park_large: -0.77, // Shift up significantly (almost an entire tile)
     tennis: -0.2, // Shifted up 0.1 tiles from -0.1
     city_hall: -0.6, // Shift up about 0.2 tiles
     amusement_park: -1.5, // Shift up about 1 tile
@@ -264,7 +288,7 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
     // 3x3 mall needs to shift up ~1.5 tiles (non-dense)
     mall: -1.5,
     // 2x2 residential apartments need shifting up
-    apartment_low: -0.6,  // shifted down 0.4 from -1.0
+    apartment_low: -0.9,  // shifted up 0.3 from -0.6
     apartment_high: -0.60, // Shifted down ~0.4 tiles from -1.0
   },
   constructionVerticalOffsets: {
@@ -302,11 +326,14 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
     // Dense apartment_high shifted up 0.2 tiles from -0.60
     apartment_high: -0.80, // Shifted up 0.2 tiles from -0.60
     factory_large: -1.15, // Dense variant shifted up 0.1 tiles from -1.05
-    mall: -1.0, // Dense mall stays at original position (non-dense moved to -1.5)
+    mall: -1.5, // Dense mall shifted up 0.5 tiles from -1.0
+    office_low: -0.4, // Dense office_low shifted down 0.3 tiles from -0.7
+    office_high: -0.7, // Dense office_high shifted up 0.2 tiles from -0.5
   },
   denseScales: {
     // Dense apartment_high scaled down 10% total (5% more from 0.95)
     apartment_high: 0.90,
+    office_high: 1.3, // Dense office_high scaled up 30%
   },
   // Modern sprite sheet configuration (same layout as dense: 5 cols, 6 rows)
   modernSrc: '/assets/sprites_red_water_new_modern.png',
@@ -327,7 +354,7 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
   modernVerticalOffsets: {
     // Adjust these as needed for proper positioning
     apartment_high: -0.80,
-    mall: -1.0,
+    mall: -1.3, // Shifted down 0.7 tiles from -2.0
   },
   modernScales: {
     // Adjust these as needed for proper sizing
@@ -505,6 +532,22 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
   stationsHorizontalOffsets: {},
   stationsScales: {
     rail_station: 0.85, // Scale down 15% for better fit
+  },
+  // Mansions sprite sheet with 35 alternate mansion designs
+  mansionsSrc: '/assets/mansion_alternates.png',
+  mansionsCols: 5,
+  mansionsRows: 7,
+  mansionsVariants: {
+    mansion: [
+      // Row 0 only (temporarily)
+      { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 }, { row: 0, col: 4 },
+    ],
+  },
+  mansionsVerticalOffsets: {
+    mansion: -0.65, // Shifted down 0.3 tiles from -0.95
+  },
+  mansionsScales: {
+    mansion: 0.90, // Same as modern apartment_high scale
   },
   buildingToSprite: {
     house_small: 'house_small',

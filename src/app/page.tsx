@@ -3,10 +3,15 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
+import { MultiplayerContextProvider } from '@/context/MultiplayerContext';
 import Game from '@/components/Game';
+import { CoopModal } from '@/components/multiplayer/CoopModal';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
-import { SavedCityMeta } from '@/types/game';
+import { SavedCityMeta, GameState } from '@/types/game';
+import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { Users, X } from 'lucide-react';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
@@ -59,12 +64,28 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 // Check if there's a saved game in localStorage
+// Supports both compressed (lz-string) and uncompressed (legacy) formats
 function hasSavedGame(): boolean {
   if (typeof window === 'undefined') return false;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
+      // Try to decompress first (new format)
+      // lz-string can return garbage when given invalid input, so check for valid JSON start
+      let jsonString = decompressFromUTF16(saved);
+      
+      // Check if decompression returned valid-looking JSON
+      if (!jsonString || !jsonString.startsWith('{')) {
+        // Check if saved string itself is JSON (legacy uncompressed format)
+        if (saved.startsWith('{')) {
+          jsonString = saved;
+        } else {
+          // Data is corrupted
+          return false;
+        }
+      }
+      
+      const parsed = JSON.parse(jsonString);
       return parsed.grid && parsed.gridSize && parsed.stats;
     }
   } catch {
@@ -88,6 +109,47 @@ function loadSavedCities(): SavedCityMeta[] {
     return [];
   }
   return [];
+}
+
+// Save a city to the saved cities index (for multiplayer cities)
+function saveCityToIndex(state: GameState, roomCode?: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const cities = loadSavedCities();
+    
+    // Create city meta
+    const cityMeta: SavedCityMeta = {
+      id: state.id || `city-${Date.now()}`,
+      cityName: state.cityName || 'Co-op City',
+      population: state.stats.population,
+      money: state.stats.money,
+      year: state.year,
+      month: state.month,
+      gridSize: state.gridSize,
+      savedAt: Date.now(),
+      roomCode: roomCode,
+    };
+    
+    // Check if city already exists (by id or roomCode)
+    const existingIndex = cities.findIndex(c => 
+      c.id === cityMeta.id || (roomCode && c.roomCode === roomCode)
+    );
+    
+    if (existingIndex >= 0) {
+      // Update existing entry
+      cities[existingIndex] = cityMeta;
+    } else {
+      // Add new entry at the beginning
+      cities.unshift(cityMeta);
+    }
+    
+    // Keep only the last 20 cities
+    const trimmed = cities.slice(0, 20);
+    
+    localStorage.setItem(SAVED_CITIES_INDEX_KEY, JSON.stringify(trimmed));
+  } catch (e) {
+    console.error('Failed to save city to index:', e);
+  }
 }
 
 // Sprite Gallery component that renders sprites using canvas (like SpriteTestPanel)
@@ -212,20 +274,42 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
 }
 
 // Saved City Card Component
-function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
+function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad: () => void; onDelete?: () => void }) {
   return (
-    <button
-      onClick={onLoad}
-      className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200 group"
-    >
-      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
-        {city.cityName}
-      </h3>
-      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>Pop: {city.population.toLocaleString()}</span>
-        <span>${city.money.toLocaleString()}</span>
-      </div>
-    </button>
+    <div className="relative group">
+      <button
+        onClick={onLoad}
+        className="w-full text-left p-3 pr-8 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm flex-1">
+            {city.cityName}
+          </h3>
+          {city.roomCode && (
+            <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded shrink-0">
+              Co-op
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+          <span>Pop: {city.population.toLocaleString()}</span>
+          <span>${city.money.toLocaleString()}</span>
+          {city.roomCode && <span className="text-blue-400/60">{city.roomCode}</span>}
+        </div>
+      </button>
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
+          title="Delete city"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -235,17 +319,31 @@ export default function HomePage() {
   const [showGame, setShowGame] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+  const [hasSaved, setHasSaved] = useState(false);
+  const [showCoopModal, setShowCoopModal] = useState(false);
+  const [isMultiplayer, setIsMultiplayer] = useState(false);
+  const [startFreshGame, setStartFreshGame] = useState(false);
+  const [pendingRoomCode, setPendingRoomCode] = useState<string | null>(null);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
 
-  // Check for saved game after mount (client-side only)
+  // Check for saved game and room code in URL after mount
   useEffect(() => {
     const checkSavedGame = () => {
       setIsChecking(false);
       setSavedCities(loadSavedCities());
-      if (hasSavedGame()) {
-        setShowGame(true);
+      setHasSaved(hasSavedGame());
+      
+      // Check for room code in URL (legacy format) - redirect to new format
+      const params = new URLSearchParams(window.location.search);
+      const roomCode = params.get('room');
+      if (roomCode && roomCode.length === 5) {
+        // Redirect to new /coop/XXXXX format
+        window.location.replace(`/coop/${roomCode.toUpperCase()}`);
+        return;
       }
+      // Always show landing page - don't auto-load into game
+      // User can select from saved cities or start new
     };
     // Use requestAnimationFrame to avoid synchronous setState in effect
     requestAnimationFrame(checkSavedGame);
@@ -254,13 +352,27 @@ export default function HomePage() {
   // Handle exit from game - refresh saved cities list
   const handleExitGame = () => {
     setShowGame(false);
+    setIsMultiplayer(false);
+    setStartFreshGame(false);
     setSavedCities(loadSavedCities());
+    setHasSaved(hasSavedGame());
+    // Clear room code from URL
+    window.history.replaceState({}, '', '/');
   };
 
   // Load a saved city
-  const loadSavedCity = (cityId: string) => {
+  const loadSavedCity = (city: SavedCityMeta) => {
+    // If it's a multiplayer city, navigate to the room
+    if (city.roomCode) {
+      window.history.replaceState({}, '', `/coop/${city.roomCode}`);
+      setPendingRoomCode(city.roomCode);
+      setShowCoopModal(true);
+      return;
+    }
+    
+    // Otherwise load from local storage
     try {
-      const saved = localStorage.getItem(SAVED_CITY_PREFIX + cityId);
+      const saved = localStorage.getItem(SAVED_CITY_PREFIX + city.id);
       if (saved) {
         localStorage.setItem(STORAGE_KEY, saved);
         setShowGame(true);
@@ -268,6 +380,66 @@ export default function HomePage() {
     } catch {
       console.error('Failed to load saved city');
     }
+  };
+
+  // Delete a saved city from the index
+  const deleteSavedCity = (city: SavedCityMeta) => {
+    try {
+      // Remove from saved cities index
+      const updatedCities = savedCities.filter(c => c.id !== city.id);
+      localStorage.setItem(SAVED_CITIES_INDEX_KEY, JSON.stringify(updatedCities));
+      setSavedCities(updatedCities);
+      
+      // Also remove the city state data if it exists
+      if (!city.roomCode) {
+        localStorage.removeItem(SAVED_CITY_PREFIX + city.id);
+      }
+    } catch {
+      console.error('Failed to delete saved city');
+    }
+  };
+
+  // Handle co-op game start
+  const handleCoopStart = (isHost: boolean, initialState?: GameState, roomCode?: string) => {
+    setIsMultiplayer(true);
+    
+    if (isHost && initialState) {
+      // Host starts with the state they created - save it so GameProvider loads it
+      try {
+        const compressed = compressToUTF16(JSON.stringify(initialState));
+        localStorage.setItem(STORAGE_KEY, compressed);
+        
+        // Also save to saved cities index so it appears on homepage
+        if (roomCode) {
+          saveCityToIndex(initialState, roomCode);
+        }
+      } catch (e) {
+        console.error('Failed to save co-op state:', e);
+      }
+      setStartFreshGame(false);
+    } else if (isHost) {
+      // Host without state - fallback to fresh game
+      setStartFreshGame(true);
+    } else if (initialState) {
+      // Guest received state from host - save it so GameProvider loads it
+      try {
+        const compressed = compressToUTF16(JSON.stringify(initialState));
+        localStorage.setItem(STORAGE_KEY, compressed);
+        
+        // Also save to saved cities index so it appears on homepage
+        if (roomCode) {
+          saveCityToIndex(initialState, roomCode);
+        }
+      } catch (e) {
+        console.error('Failed to save co-op state:', e);
+      }
+      setStartFreshGame(false);
+    } else {
+      // Guest without state - fallback to fresh game
+      setStartFreshGame(true);
+    }
+    
+    setShowGame(true);
   };
 
   if (isChecking) {
@@ -279,142 +451,226 @@ export default function HomePage() {
   }
 
   if (showGame) {
+    const gameContent = (
+      <main className="h-screen w-screen overflow-hidden">
+        <Game onExit={handleExitGame} />
+      </main>
+    );
+
+    // Always wrap in MultiplayerContextProvider so players can invite others from within the game
     return (
-      <GameProvider>
-        <main className="h-screen w-screen overflow-hidden">
-          <Game onExit={handleExitGame} />
-        </main>
-      </GameProvider>
+      <MultiplayerContextProvider>
+        <GameProvider startFresh={startFreshGame}>
+          {gameContent}
+        </GameProvider>
+      </MultiplayerContextProvider>
     );
   }
 
   // Mobile landing page
   if (isMobile) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
-        {/* Title */}
-        <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
-          IsoCity
-        </h1>
-        
-        {/* Sprite Gallery - keep visible even when saves exist */}
-        <div className="mb-6">
-          <SpriteGallery count={9} cols={3} cellSize={72} />
-        </div>
-        
-        {/* Buttons */}
-        <div className="flex flex-col gap-3 w-full max-w-xs">
-          <Button 
-            onClick={() => setShowGame(true)}
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
-          >
-            Start
-          </Button>
+      <MultiplayerContextProvider>
+        <main className="h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
+          {/* Spacer to push content down slightly from top */}
+          <div className="flex-shrink-0 h-4 sm:h-8" />
           
-          <Button 
-            onClick={async () => {
-              const { default: exampleState } = await import('@/resources/example_state_9.json');
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
-              setShowGame(true);
-            }}
-            variant="outline"
-            className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
-          >
-            Load Example
-          </Button>
-          <a
-            href="https://github.com/amilich/isometric-city"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
-          >
-            Open GitHub
-          </a>
-        </div>
-        
-        {/* Saved Cities */}
-        {savedCities.length > 0 && (
-          <div className="w-full max-w-xs mt-4">
-            <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-              Saved Cities
-            </h2>
-            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
-              {savedCities.slice(0, 5).map((city) => (
-                <SavedCityCard
-                  key={city.id}
-                  city={city}
-                  onLoad={() => loadSavedCity(city.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
-    );
-  }
-
-  // Desktop landing page
-  return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
-      <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
-        
-        {/* Left - Title and Start Button */}
-        <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
-          <h1 className="text-8xl font-light tracking-wider text-white/90">
+          {/* Title - smaller on very small screens */}
+          <h1 className="text-4xl sm:text-5xl font-light tracking-wider text-white/90 mb-4 sm:mb-6 flex-shrink-0">
             IsoCity
           </h1>
-          <div className="flex flex-col gap-3">
+          
+          {/* Sprite Gallery - smaller on mobile, contained */}
+          <div className="mb-4 sm:mb-6 flex-shrink-0">
+            <SpriteGallery count={9} cols={3} cellSize={56} />
+          </div>
+          
+          {/* Buttons - more compact */}
+          <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-xs flex-shrink-0">
             <Button 
               onClick={() => setShowGame(true)}
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
-              Start
+              {hasSaved ? 'Continue' : 'New Game'}
             </Button>
+            
+            <Button 
+              onClick={() => setShowCoopModal(true)}
+              variant="outline"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+            >
+              Co-op
+            </Button>
+            
             <Button 
               onClick={async () => {
-                const { default: exampleState } = await import('@/resources/example_state_9.json');
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
+                // Clear any room code from URL to prevent multiplayer conflicts
+                if (window.location.search.includes('room=')) {
+                  window.history.replaceState({}, '', '/');
+                  setPendingRoomCode(null);
+                }
+                const response = await fetch('/example-states/example_state_9.json');
+                const exampleState = await response.json();
+                try {
+                  const compressed = compressToUTF16(JSON.stringify(exampleState));
+                  localStorage.setItem(STORAGE_KEY, compressed);
+                } catch (e) {
+                  console.error('Failed to save example state:', e);
+                }
                 setShowGame(true);
               }}
               variant="outline"
-              className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
             >
               Load Example
             </Button>
-            <a
-              href="https://github.com/amilich/isometric-city"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-64 text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
-            >
-              Open GitHub
-            </a>
+            <div className="flex items-center justify-between w-full">
+              <a
+                href="https://github.com/amilich/isometric-city"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+              >
+                Open GitHub
+              </a>
+              <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
+            </div>
           </div>
           
-          {/* Saved Cities */}
+          {/* Saved Cities - scrollable area takes remaining space */}
           {savedCities.length > 0 && (
-            <div className="w-64">
-              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+            <div className="w-full max-w-xs mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col">
+              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 flex-shrink-0">
                 Saved Cities
               </h2>
-              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+              <div 
+                className="flex flex-col gap-2 flex-1 overflow-y-auto overscroll-y-contain"
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+              >
                 {savedCities.slice(0, 5).map((city) => (
                   <SavedCityCard
                     key={city.id}
                     city={city}
-                    onLoad={() => loadSavedCity(city.id)}
+                    onLoad={() => loadSavedCity(city)}
+                    onDelete={() => deleteSavedCity(city)}
                   />
                 ))}
               </div>
             </div>
           )}
-        </div>
+          
+          {/* Bottom spacer */}
+          <div className="flex-shrink-0 h-2" />
+          
+          {/* Co-op Modal */}
+          <CoopModal
+            open={showCoopModal}
+            onOpenChange={setShowCoopModal}
+            onStartGame={handleCoopStart}
+            pendingRoomCode={pendingRoomCode}
+          />
+        </main>
+      </MultiplayerContextProvider>
+    );
+  }
 
-        {/* Right - Sprite Gallery */}
-        <div className="flex justify-center lg:justify-end">
-          <SpriteGallery count={16} />
+  // Desktop landing page
+  return (
+    <MultiplayerContextProvider>
+      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
+        <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Left - Title and Start Button */}
+          <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
+            <h1 className="text-8xl font-light tracking-wider text-white/90">
+              IsoCity
+            </h1>
+            <div className="flex flex-col gap-3">
+              <Button 
+                onClick={() => setShowGame(true)}
+                className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              >
+                {hasSaved ? 'Continue' : 'New Game'}
+              </Button>
+              <Button 
+                onClick={() => setShowCoopModal(true)}
+                variant="outline"
+                className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              >
+                Co-op
+              </Button>
+              <Button 
+                onClick={async () => {
+                  // Clear any room code from URL to prevent multiplayer conflicts
+                  if (window.location.search.includes('room=')) {
+                    window.history.replaceState({}, '', '/');
+                    setPendingRoomCode(null);
+                  }
+                  const response = await fetch('/example-states/example_state_9.json');
+                  const exampleState = await response.json();
+                  try {
+                    const compressed = compressToUTF16(JSON.stringify(exampleState));
+                    localStorage.setItem(STORAGE_KEY, compressed);
+                  } catch (e) {
+                    console.error('Failed to save example state:', e);
+                  }
+                  setShowGame(true);
+                }}
+                variant="outline"
+                className="w-64 py-8 text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+              >
+                Load Example
+              </Button>
+              <div className="flex items-center justify-between w-64">
+                <a
+                  href="https://github.com/amilich/isometric-city"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                >
+                  Open GitHub
+                </a>
+                <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
+              </div>
+            </div>
+            
+            {/* Saved Cities */}
+            {savedCities.length > 0 && (
+              <div className="w-64">
+                <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+                  Saved Cities
+                </h2>
+                <div 
+                  className="flex flex-col gap-2 max-h-64 overflow-y-auto overscroll-y-contain"
+                  style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+                >
+                  {savedCities.slice(0, 5).map((city) => (
+                    <SavedCityCard
+                      key={city.id}
+                      city={city}
+                      onLoad={() => loadSavedCity(city)}
+                      onDelete={() => deleteSavedCity(city)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right - Sprite Gallery */}
+          <div className="flex justify-center lg:justify-end">
+            <SpriteGallery count={16} />
+          </div>
         </div>
-      </div>
-    </main>
+        
+        {/* Co-op Modal */}
+        <CoopModal
+          open={showCoopModal}
+          onOpenChange={setShowCoopModal}
+          onStartGame={handleCoopStart}
+          pendingRoomCode={pendingRoomCode}
+        />
+      </main>
+    </MultiplayerContextProvider>
   );
 }

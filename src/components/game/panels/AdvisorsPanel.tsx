@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { msg, useMessages } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
@@ -19,6 +20,15 @@ import {
   JobsIcon,
 } from '@/components/ui/Icons';
 
+// Translatable UI labels
+const UI_LABELS = {
+  cityAdvisors: msg('City Advisors'),
+  overallCityRating: msg('Overall City Rating'),
+  ratingDescription: msg('Based on happiness, health, education, safety & environment'),
+  noUrgentIssues: msg('No urgent issues to report!'),
+  cityRunningSmoothly: msg('Your city is running smoothly.'),
+};
+
 const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
   power: <PowerIcon size={18} />,
   water: <WaterIcon size={18} />,
@@ -34,6 +44,7 @@ const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
 export function AdvisorsPanel() {
   const { state, setActivePanel } = useGame();
   const { advisorMessages, stats } = state;
+  const m = useMessages();
   
   const avgRating = (stats.happiness + stats.health + stats.education + stats.safety + stats.environment) / 5;
   const grade = avgRating >= 90 ? 'A+' : avgRating >= 80 ? 'A' : avgRating >= 70 ? 'B' : avgRating >= 60 ? 'C' : avgRating >= 50 ? 'D' : 'F';
@@ -43,7 +54,7 @@ export function AdvisorsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[500px] max-h-[600px]">
         <DialogHeader>
-          <DialogTitle>City Advisors</DialogTitle>
+          <DialogTitle>{m(UI_LABELS.cityAdvisors)}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -54,8 +65,8 @@ export function AdvisorsPanel() {
               {grade}
             </div>
             <div>
-              <div className="text-foreground font-semibold">Overall City Rating</div>
-              <div className="text-muted-foreground text-sm">Based on happiness, health, education, safety & environment</div>
+              <div className="text-foreground font-semibold">{m(UI_LABELS.overallCityRating)}</div>
+              <div className="text-muted-foreground text-sm">{m(UI_LABELS.ratingDescription)}</div>
             </div>
           </Card>
           
@@ -64,8 +75,8 @@ export function AdvisorsPanel() {
               {advisorMessages.length === 0 ? (
                 <Card className="text-center py-8 text-muted-foreground bg-primary/10 border-primary/30">
                   <AdvisorIcon size={32} className="mx-auto mb-3 opacity-50" />
-                  <div className="text-sm">No urgent issues to report!</div>
-                  <div className="text-xs mt-1">Your city is running smoothly.</div>
+                  <div className="text-sm">{m(UI_LABELS.noUrgentIssues)}</div>
+                  <div className="text-xs mt-1">{m(UI_LABELS.cityRunningSmoothly)}</div>
                 </Card>
               ) : (
                 advisorMessages.map((advisor, i) => (

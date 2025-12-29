@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { GameProvider } from '@/context/GameContext';
+import { GameProvider, useGame } from '@/context/GameContext';
 import Game from '@/components/Game';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { SavedCityMeta } from '@/types/game';
 import { useTranslations } from 'next-intl';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { SettingsPanel } from '@/components/game/panels';
 import { 
   Play, 
   Hammer, 
@@ -21,9 +22,16 @@ import {
   Sparkles,
   Trophy
 } from 'lucide-react';
+import { 
+  PLANE_DIRECTION_COLS, 
+  PLANE_TYPE_ROWS, 
+  PLANE_SCALES, 
+  AIRPLANE_SPRITE_SRC 
+} from '@/components/game/constants';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
+const SAVED_CITY_PREFIX = 'isocity-city-';
 
 // Background color to filter from sprite sheets (red)
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -62,14 +70,212 @@ function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {
   return canvas;
 }
 
-// Shuffle array using Fisher-Yates algorithm
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
+// Sky Animation Component
+function SkyAnimation() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const requestRef = useRef<number | null>(null);
+  const planesRef = useRef<any[]>([]);
+  const lastSpawnTimeRef = useRef<number>(0);
+  const spriteRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    // Load sprite
+    const img = new window.Image();
+    img.src = AIRPLANE_SPRITE_SRC;
+    img.onload = () => {
+      spriteRef.current = img;
+    };
+    
+    // Initial planes
+    const createPlane = () => {
+      if (typeof window === 'undefined') return null;
+      
+      const isRight = Math.random() > 0.5;
+      const startY = 50 + Math.random() * 200;
+      const types = Object.keys(PLANE_TYPE_ROWS);
+      const type = types[Math.floor(Math.random() * types.length)];
+      
+      const baseAngle = isRight ? Math.PI : 0; 
+      const angle = baseAngle + (Math.random() * 0.5 - 0.25);
+
+      return {
+        x: isRight ? window.innerWidth + 100 : -100,
+        y: startY,
+        angle: angle,
+        speed: 80 + Math.random() * 40,
+        type: type,
+        altitude: 0.8 + Math.random() * 0.4,
+        scale: (PLANE_SCALES[type] || 0.2) * 3 
+      };
+    };
+
+    planesRef.current = [createPlane(), createPlane()].filter(Boolean);
+
+    const animate = (time: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (time - lastSpawnTimeRef.current > 4000) { 
+        if (planesRef.current.length < 5) {
+          const plane = createPlane();
+          if (plane) planesRef.current.push(plane);
+        }
+        lastSpawnTimeRef.current = time;
+      }
+
+      planesRef.current.forEach((plane, index) => {
+        plane.x += Math.cos(plane.angle) * plane.speed * 0.016;
+        plane.y += Math.sin(plane.angle) * plane.speed * 0.016;
+
+        if (plane.x < -200 || plane.x > canvas.width + 200 || plane.y < -200 || plane.y > canvas.height + 200) {
+          planesRef.current.splice(index, 1);
+          return;
+        }
+
+        if (spriteRef.current) {
+          let degrees = plane.angle * (180 / Math.PI);
+          while (degrees < 0) degrees += 360;
+          while (degrees >= 360) degrees -= 360;
+
+          let dirKey = 'e';
+          if (degrees >= 337.5 || degrees < 22.5) dirKey = 'e';
+          else if (degrees >= 22.5 && degrees < 67.5) dirKey = 'se';
+          else if (degrees >= 67.5 && degrees < 112.5) dirKey = 's';
+          else if (degrees >= 112.5 && degrees < 157.5) dirKey = 'sw';
+          else if (degrees >= 157.5 && degrees < 202.5) dirKey = 'w';
+          else if (degrees >= 202.5 && degrees < 247.5) dirKey = 'nw';
+          else if (degrees >= 247.5 && degrees < 292.5) dirKey = 'n';
+          else if (degrees >= 292.5 && degrees < 337.5) dirKey = 'ne';
+
+          const dirInfo = PLANE_DIRECTION_COLS[dirKey];
+          const row = PLANE_TYPE_ROWS[plane.type] || 0;
+          const col = dirInfo.col;
+          
+          const spriteW = spriteRef.current.width / 5; 
+          const spriteH = spriteRef.current.height / 6; 
+          
+          const sx = col * spriteW;
+          const sy = row * spriteH;
+
+          ctx.save();
+          ctx.translate(plane.x, plane.y);
+          
+          let rotationOffset = plane.angle - dirInfo.baseAngle;
+          while (rotationOffset > Math.PI) rotationOffset -= Math.PI * 2;
+          while (rotationOffset < -Math.PI) rotationOffset += Math.PI * 2;
+          
+          ctx.rotate(rotationOffset);
+          
+          const scaleX = dirInfo.mirrorX ? -plane.scale : plane.scale;
+          const scaleY = dirInfo.mirrorY ? -plane.scale : plane.scale;
+          
+          ctx.scale(scaleX, scaleY);
+          
+          ctx.drawImage(
+            spriteRef.current,
+            sx, sy, spriteW, spriteH,
+            -spriteW/2, -spriteH/2, spriteW, spriteH
+          );
+          
+          ctx.restore();
+        }
+      });
+
+      requestRef.current = requestAnimationFrame(animate);
+    };
+
+    requestRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, []);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="absolute inset-0 pointer-events-none z-10"
+      style={{ imageRendering: 'pixelated' }}
+    />
+  );
+}
+
+// Saved City Card Component
+function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
+  const t = useTranslations('HomePage');
+  return (
+    <button
+      onClick={onLoad}
+      className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200 group"
+    >
+      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
+        {city.cityName}
+      </h3>
+      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+        <span>{t('population')}: {city.population.toLocaleString()}</span>
+        <span>₺{city.money.toLocaleString()}</span>
+      </div>
+    </button>
+  );
+}
+
+// Menu Button Component - Updated for Bottom Bar
+function MenuButton({ 
+  icon: Icon, 
+  label, 
+  onClick, 
+  variant = 'default',
+  active = false 
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  onClick?: () => void;
+  variant?: 'default' | 'primary';
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-2xl transition-all duration-200
+        backdrop-blur-md border
+        ${variant === 'primary' 
+          ? 'bg-gradient-to-b from-sky-500/90 to-blue-600/90 border-blue-400/50 text-white shadow-lg shadow-blue-500/30 hover:scale-110 hover:-translate-y-2' 
+          : active 
+            ? 'bg-white/20 border-white/30 text-white' 
+            : 'bg-slate-900/60 border-white/10 text-white/70 hover:bg-slate-900/80 hover:text-white hover:border-white/30 hover:scale-110 hover:-translate-y-2'
+        }
+      `}
+    >
+      <Icon className="w-6 h-6 mb-1" />
+      <span className="text-[10px] font-medium tracking-wide text-center leading-tight">{label}</span>
+    </button>
+  );
+}
+
+// User Profile Component
+function UserProfile({ cityName, level }: { cityName: string; level: number }) {
+  const t = useTranslations('HomePage');
+  return (
+    <div className="flex items-center gap-3 bg-slate-900/40 backdrop-blur-md p-2 pr-4 rounded-full border border-white/10">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-lg">
+        <Trophy className="w-5 h-5 text-white" />
+      </div>
+      <div>
+        <h2 className="text-white font-bold text-sm leading-tight">{cityName}</h2>
+        <p className="text-white/60 text-[10px] uppercase tracking-wider">{t('level')} {level}</p>
+      </div>
+    </div>
+  );
 }
 
 // Check if there's a saved game in localStorage
@@ -104,291 +310,42 @@ function loadSavedCities(): SavedCityMeta[] {
   return [];
 }
 
-// Sprite Gallery component that renders sprites using canvas (like SpriteTestPanel)
-function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: number; cols?: number; cellSize?: number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [filteredSheet, setFilteredSheet] = useState<HTMLCanvasElement | null>(null);
-  const spritePack = useMemo(() => getSpritePack(DEFAULT_SPRITE_PACK_ID), []);
-  
-  // Get random sprite keys from the sprite order, pre-validated to have valid coords
-  const randomSpriteKeys = useMemo(() => {
-    // Filter to only sprites that have valid building type mappings
-    const validSpriteKeys = spritePack.spriteOrder.filter(spriteKey => {
-      // Check if this sprite key has a building type mapping
-      const hasBuildingMapping = Object.values(spritePack.buildingToSprite).includes(spriteKey);
-      return hasBuildingMapping;
-    });
-    const shuffled = shuffleArray([...validSpriteKeys]);
-    return shuffled.slice(0, count);
-  }, [spritePack.spriteOrder, spritePack.buildingToSprite, count]);
-  
-  // Load and filter sprite sheet
-  useEffect(() => {
-    const img = new window.Image();
-    img.onload = () => {
-      const filtered = filterBackgroundColor(img);
-      setFilteredSheet(filtered);
-    };
-    img.src = spritePack.src;
-  }, [spritePack.src]);
-  
-  // Pre-compute sprite data with valid coords
-  const spriteData = useMemo(() => {
-    if (!filteredSheet) return [];
-    
-    const sheetWidth = filteredSheet.width;
-    const sheetHeight = filteredSheet.height;
-    
-    return randomSpriteKeys.map(spriteKey => {
-      const buildingType = Object.entries(spritePack.buildingToSprite).find(
-        ([, value]) => value === spriteKey
-      )?.[0] || spriteKey;
-      
-      const coords = getSpriteCoords(buildingType, sheetWidth, sheetHeight, spritePack);
-      return coords ? { spriteKey, coords } : null;
-    }).filter((item): item is { spriteKey: string; coords: { sx: number; sy: number; sw: number; sh: number } } => item !== null);
-  }, [filteredSheet, randomSpriteKeys, spritePack]);
-  
-  // Draw sprites to canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !filteredSheet || spriteData.length === 0) return;
-    
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-    
-    const dpr = window.devicePixelRatio || 1;
-    const rows = Math.ceil(spriteData.length / cols);
-    const padding = 10;
-    
-    const canvasWidth = cols * cellSize;
-    const canvasHeight = rows * cellSize;
-    
-    canvas.width = canvasWidth * dpr;
-    canvas.height = canvasHeight * dpr;
-    canvas.style.width = `${canvasWidth}px`;
-    canvas.style.height = `${canvasHeight}px`;
-    
-    ctx.scale(dpr, dpr);
-    ctx.imageSmoothingEnabled = false;
-    
-    // Clear canvas (transparent)
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    // Draw each sprite
-    spriteData.forEach(({ coords }, index) => {
-      const col = index % cols;
-      const row = Math.floor(index / cols);
-      const cellX = col * cellSize;
-      const cellY = row * cellSize;
-      
-      // Draw cell background
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(cellX + 2, cellY + 2, cellSize - 4, cellSize - 4, 4);
-      ctx.fill();
-      ctx.stroke();
-      
-      // Calculate destination size preserving aspect ratio
-      const maxSize = cellSize - padding * 2;
-      const aspectRatio = coords.sh / coords.sw;
-      let destWidth = maxSize;
-      let destHeight = destWidth * aspectRatio;
-      
-      if (destHeight > maxSize) {
-        destHeight = maxSize;
-        destWidth = destHeight / aspectRatio;
-      }
-      
-      // Center sprite in cell
-      const drawX = cellX + (cellSize - destWidth) / 2;
-      const drawY = cellY + (cellSize - destHeight) / 2 + destHeight * 0.1; // Slight offset down
-      
-      // Draw sprite
-      ctx.drawImage(
-        filteredSheet,
-        coords.sx, coords.sy, coords.sw, coords.sh,
-        Math.round(drawX), Math.round(drawY),
-        Math.round(destWidth), Math.round(destHeight)
-      );
-    });
-  }, [filteredSheet, spriteData, cols, cellSize]);
-  
-  return (
-    <canvas
-      ref={canvasRef}
-      className="opacity-80 hover:opacity-100 transition-opacity"
-      style={{ imageRendering: 'pixelated' }}
-    />
-  );
-}
-
-// Saved City Card Component
-function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
-  const t = useTranslations('HomePage');
-  return (
-    <button
-      onClick={onLoad}
-      className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200 group"
-    >
-      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
-        {city.cityName}
-      </h3>
-      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>{t('population')}: {city.population.toLocaleString()}</span>
-        <span>₺{city.money.toLocaleString()}</span>
-      </div>
-    </button>
-  );
-}
-
-// Menu Button Component
-function MenuButton({ 
-  icon: Icon, 
-  label, 
-  onClick, 
-  variant = 'default',
-  active = false 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  onClick?: () => void;
-  variant?: 'default' | 'primary';
-  active?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-        ${variant === 'primary' 
-          ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50' 
-          : active 
-            ? 'bg-white/15 text-white' 
-            : 'bg-white/5 text-white/80 hover:bg-white/10 hover:text-white'
-        }
-      `}
-    >
-      <Icon className="w-5 h-5" />
-      <span className="font-medium">{label}</span>
-    </button>
-  );
-}
-
-// Daily Mission Item
-function MissionItem({ 
-  completed, 
-  text 
-}: { 
-  completed: boolean; 
-  text: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 py-2">
-      {completed ? (
-        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-      ) : (
-        <Circle className="w-5 h-5 text-white/30 flex-shrink-0" />
-      )}
-      <span className={`text-sm ${completed ? 'text-emerald-400 line-through' : 'text-white/80'}`}>
-        {text}
-      </span>
-    </div>
-  );
-}
-
-// News Card Component
-function NewsCard({ 
-  title, 
-  image,
-  badge 
-}: { 
-  title: string; 
-  image?: string;
-  badge?: number;
-}) {
-  return (
-    <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-orange-500 to-amber-600 aspect-[16/10]">
-      {image && (
-        <Image 
-          src={image} 
-          alt={title}
-          fill
-          className="object-cover opacity-80"
-        />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-3">
-        <h4 className="text-white font-bold text-sm">{title}</h4>
-      </div>
-      {badge && (
-        <div className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs font-bold">{badge}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// User Profile Component
-function UserProfile({ cityName, level }: { cityName: string; level: number }) {
-  const t = useTranslations('HomePage');
-  return (
-    <div className="flex items-center gap-3 mb-6">
-      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-lg">
-        <Trophy className="w-6 h-6 text-white" />
-      </div>
-      <div>
-        <h2 className="text-white font-bold text-lg">{cityName}</h2>
-        <p className="text-white/60 text-sm">{t('level')} {level}</p>
-      </div>
-    </div>
-  );
-}
-
-const SAVED_CITY_PREFIX = 'isocity-city-';
-
-export default function HomePage() {
+// Inner Content Component to use GameContext
+function HomePageContent() {
   const t = useTranslations('HomePage');
   const [showGame, setShowGame] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   const [hasCurrentGame, setHasCurrentGame] = useState(false);
   const { isMobileDevice, isSmallScreen } = useMobile();
+  const { state, setActivePanel } = useGame(); // Use GameContext
   const isMobile = isMobileDevice || isSmallScreen;
 
-  // Check for saved game after mount (client-side only) - always show homescreen first
   useEffect(() => {
     const checkSavedGame = () => {
       setIsChecking(false);
       setSavedCities(loadSavedCities());
       setHasCurrentGame(hasSavedGame());
-      // Don't auto-navigate to game, always show homescreen first
     };
-    // Use requestAnimationFrame to avoid synchronous setState in effect
     requestAnimationFrame(checkSavedGame);
   }, []);
 
-  // Start a new game (clear current game from localStorage)
   const startNewGame = () => {
     localStorage.removeItem(STORAGE_KEY);
     setShowGame(true);
   };
 
-  // Continue current game
   const continueGame = () => {
-    setShowGame(true);
+    if (hasSavedGame()) {
+      setShowGame(true);
+    }
   };
 
-  // Handle exit from game - refresh saved cities list
   const handleExitGame = () => {
     setShowGame(false);
     setSavedCities(loadSavedCities());
   };
 
-  // Load a saved city
   const loadSavedCity = (cityId: string) => {
     try {
       const saved = localStorage.getItem(SAVED_CITY_PREFIX + cityId);
@@ -401,7 +358,6 @@ export default function HomePage() {
     }
   };
 
-  // Load example city
   const loadExampleCity = async () => {
     const { default: exampleState } = await import('@/resources/example_state_8.json');
     localStorage.setItem(STORAGE_KEY, JSON.stringify(exampleState));
@@ -418,33 +374,28 @@ export default function HomePage() {
 
   if (showGame) {
     return (
-      <GameProvider>
-        <main className="h-screen w-screen overflow-hidden">
-          <Game onExit={handleExitGame} />
-        </main>
-      </GameProvider>
+      <main className="h-screen w-screen overflow-hidden">
+        <Game onExit={handleExitGame} />
+      </main>
     );
   }
 
-  // Get first saved city info for profile
   const firstCity = savedCities[0];
   const cityName = firstCity?.cityName || 'MyCity';
   const cityLevel = Math.floor((firstCity?.population || 0) / 1000) + 1;
 
-  // Mobile landing page
   if (isMobile) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-lime-400 via-green-500 to-emerald-600 flex flex-col p-4 safe-area-top safe-area-bottom overflow-y-auto">
-        {/* Header */}
+       <main className="min-h-screen bg-gradient-to-br from-lime-400 via-green-500 to-emerald-600 flex flex-col p-4 safe-area-top safe-area-bottom overflow-y-auto">
+        {/* Mobile Header */}
         <div className="flex justify-between items-start mb-4">
           <UserProfile cityName={cityName} level={cityLevel} />
           <LanguageSelector variant="game" />
         </div>
 
-        {/* City Preview */}
+        {/* Mobile City Preview */}
         <div className="flex-1 flex items-center justify-center py-4">
           <div className="relative">
-            {/* Glow effect */}
             <div className="absolute inset-0 bg-gradient-radial from-white/30 to-transparent blur-3xl scale-150" />
             <Image
               src="/truncgil-mycity-icon.png"
@@ -457,9 +408,130 @@ export default function HomePage() {
           </div>
         </div>
         
-        {/* Main Buttons */}
-        <div className="space-y-3 mb-4">
-          {hasCurrentGame ? (
+        {/* Mobile Main Buttons */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {hasCurrentGame && (
+            <button onClick={continueGame} className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-xl border border-white/20">
+              <Play className="w-6 h-6 text-white" />
+              <span className="text-xs text-white font-medium">{t('continue')}</span>
+            </button>
+          )}
+          <button onClick={startNewGame} className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-xl border border-white/20">
+            <Sparkles className="w-6 h-6 text-white" />
+            <span className="text-xs text-white font-medium">{t('newGame')}</span>
+          </button>
+           <button onClick={() => setActivePanel('settings')} className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-xl border border-white/20">
+            <Settings className="w-6 h-6 text-white" />
+            <span className="text-xs text-white font-medium">{t('settings')}</span>
+          </button>
+        </div>
+
+        {/* Saved Cities Mobile */}
+        {savedCities.length > 0 && (
+          <div className="mb-4">
+            <h2 className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
+              {t('savedCities')}
+            </h2>
+            <div className="flex flex-col gap-2 max-h-36 overflow-y-auto">
+              {savedCities.slice(0, 3).map((city) => (
+                <SavedCityCard
+                  key={city.id}
+                  city={city}
+                  onLoad={() => loadSavedCity(city.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {state.activePanel === 'settings' && <SettingsPanel />}
+      </main>
+    );
+  }
+
+  // Desktop Layout
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-lime-400 via-green-500 to-emerald-600 flex overflow-hidden relative">
+      
+      {/* Top Left: Profile */}
+      <div className="absolute top-6 left-6 z-20">
+        <UserProfile cityName={cityName} level={cityLevel} />
+      </div>
+
+      {/* Top Right: Language */}
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageSelector variant="game" />
+      </div>
+
+      {/* Saved Cities Panel (Floating on Left) */}
+      {savedCities.length > 0 && (
+        <div className="absolute top-24 left-6 z-20 w-64 bg-slate-900/40 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+            <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">
+              {t('savedCities')}
+            </h2>
+            <div className="flex flex-col gap-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+              {savedCities.slice(0, 4).map((city) => (
+                <SavedCityCard
+                  key={city.id}
+                  city={city}
+                  onLoad={() => loadSavedCity(city.id)}
+                />
+              ))}
+            </div>
+        </div>
+      )}
+
+      {/* Center - City View */}
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+        {/* Animated Sky Background */}
+        <div className="absolute inset-0 z-0 select-none pointer-events-none overflow-hidden">
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes float-cloud {
+              0% { transform: translateX(-200px); opacity: 0; }
+              10% { opacity: 1; }
+              90% { opacity: 1; }
+              100% { transform: translateX(120vw); opacity: 0; }
+            }
+            .cloud-anim {
+              animation: float-cloud linear infinite;
+            }
+          `}} />
+          
+          <div className="cloud-anim absolute top-20 left-0 w-48 h-24 bg-white/20 rounded-full blur-2xl" style={{ animationDuration: '45s', animationDelay: '0s' }} />
+          <div className="cloud-anim absolute top-40 -left-20 w-64 h-32 bg-white/15 rounded-full blur-3xl" style={{ animationDuration: '60s', animationDelay: '-20s' }} />
+          <div className="cloud-anim absolute top-10 left-1/2 w-32 h-16 bg-white/25 rounded-full blur-xl" style={{ animationDuration: '50s', animationDelay: '-10s' }} />
+          
+          <SkyAnimation />
+        </div>
+
+        {/* Decorative Elements */}
+        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 z-20 select-none pointer-events-none">
+          <Image
+            src="/truncgil-mycity3.png"
+            alt="Truncgil MyCity Logo"
+            width={512}
+            height={100}
+            className="object-contain drop-shadow-lg"
+            priority
+          />
+        </div>
+       
+        {/* City Island */}
+        <div className="relative z-10 -mt-20">
+          <Image
+            src="/truncgil-mycity-icon.png"
+            alt="City Preview"
+            width={900}
+            height={900}
+            className="object-contain drop-shadow-2xl animate-float"
+            priority
+          />
+        </div>
+      </div>
+
+      {/* Bottom Dock Menu */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 px-6 py-4 bg-slate-900/30 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl">
+        {hasCurrentGame ? (
             <MenuButton 
               icon={Play} 
               label={t('continue')} 
@@ -478,191 +550,27 @@ export default function HomePage() {
             label={t('exampleCity')} 
             onClick={loadExampleCity}
           />
-        </div>
-        
-        {/* Saved Cities */}
-        {savedCities.length > 0 && (
-          <div className="mb-4">
-            <h2 className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
-              {t('savedCities')}
-            </h2>
-            <div className="flex flex-col gap-2 max-h-36 overflow-y-auto">
-              {savedCities.slice(0, 3).map((city) => (
-                <SavedCityCard
-                  key={city.id}
-                  city={city}
-                  onLoad={() => loadSavedCity(city.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
-    );
-  }
-
-  // Desktop landing page - Game-style layout
-  return (
-    <main className="min-h-screen bg-gradient-to-br from-lime-400 via-green-500 to-emerald-600 flex overflow-hidden">
-      {/* Left Sidebar - Menu */}
-      <aside className="w-64 bg-slate-900/90 backdrop-blur-xl p-6 flex flex-col border-r border-white/10">
-        {/* User Profile */}
-        <UserProfile cityName={cityName} level={cityLevel} />
-        
-        {/* Language Selector */}
-        <div className="mb-6">
-          <LanguageSelector variant="game" />
-        </div>
-        
-        {/* Menu Items */}
-        <nav className="space-y-2 flex-1">
-          {hasCurrentGame ? (
-            <MenuButton 
-              icon={Play} 
-              label={t('continue')} 
-              onClick={continueGame}
-              variant="primary"
-            />
-          ) : null}
-          <MenuButton 
-            icon={Sparkles} 
-            label={t('newGame')} 
-            onClick={startNewGame}
-            variant={hasCurrentGame ? undefined : "primary"}
-          />
-          {hasCurrentGame && (
-            <MenuButton 
-              icon={Hammer} 
-              label={t('build')} 
-              onClick={continueGame}
-            />
-          )}
-          <MenuButton 
-            icon={Target} 
-            label={t('quests')} 
-          />
-          <MenuButton 
+           <MenuButton 
             icon={ShoppingBag} 
             label={t('shop')} 
           />
           <MenuButton 
             icon={Settings} 
             label={t('settings')} 
+            onClick={() => setActivePanel('settings')}
           />
-        </nav>
-        
-        {/* Saved Cities at bottom */}
-        {savedCities.length > 0 && (
-          <div className="mt-auto pt-4 border-t border-white/10">
-            <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-              {t('savedCities')}
-            </h2>
-            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
-              {savedCities.slice(0, 4).map((city) => (
-                <SavedCityCard
-                  key={city.id}
-                  city={city}
-                  onLoad={() => loadSavedCity(city.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </aside>
-
-      {/* Center - City View */}
-      <div className="flex-1 relative flex items-center justify-center">
-        {/* Decorative Elements */}
-        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 z-20 select-none pointer-events-none">
-          <Image
-            src="/truncgil-mycity3.png"
-            alt="Truncgil MyCity Logo"
-            width={512}
-            height={100}
-            className="object-contain drop-shadow-lg"
-            priority
-          />
-        </div>
-       
-        
-        {/* City Island */}
-        <div className="relative z-10">
-          <Image
-            src="/truncgil-mycity-icon.png"
-            alt="City Preview"
-            width={1024}
-            height={1024}
-            className="object-contain drop-shadow-2xl animate-float"
-            priority
-          />
-        </div>
-        
-        {/* Floating clouds */}
-        <div className="absolute top-20 left-20 w-32 h-16 bg-white/40 rounded-full blur-xl animate-pulse" />
-        <div className="absolute top-32 right-32 w-40 h-20 bg-white/30 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-40 left-32 w-24 h-12 bg-white/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
+      
+      {state.activePanel === 'settings' && <SettingsPanel />}
 
-      {/* Right Sidebar - Info Panels */}
-      <aside className="w-80 bg-slate-900/90 backdrop-blur-xl p-6 flex flex-col gap-6 border-l border-white/10">
-        {/* Daily Missions */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white font-bold flex items-center gap-2">
-              <Target className="w-5 h-5 text-sky-400" />
-              {t('dailyMissions')}
-            </h3>
-            <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
-              1
-            </span>
-          </div>
-          <div className="space-y-1">
-            <MissionItem completed={false} text={t('collectMoney', { amount: '5000' })} />
-            <MissionItem completed={true} text={t('collectMoney', { amount: '500' })} />
-            <MissionItem completed={false} text={t('buildPark')} />
-            <MissionItem completed={false} text={t('upgradeCityHall')} />
-          </div>
-        </div>
-
-        {/* News & Events */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white font-bold flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
-              {t('newsEvents')}
-            </h3>
-            <span className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
-              1
-            </span>
-          </div>
-          <NewsCard 
-            title={t('summerFestival')}
-            image="/games/IMG_6902.PNG"
-            badge={1}
-          />
-        </div>
-
-        {/* Chat Preview */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10 flex-1">
-          <h3 className="text-white font-bold flex items-center gap-2 mb-3">
-            <MessageCircle className="w-5 h-5 text-emerald-400" />
-            {t('chat')}
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex-shrink-0" />
-              <div className="bg-white/10 rounded-xl rounded-tl-none p-2 text-xs text-white/80">
-                Harika bir şehir!
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sprite Gallery Preview */}
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <SpriteGallery count={8} cols={4} cellSize={60} />
-        </div>
-      </aside>
     </main>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <GameProvider>
+      <HomePageContent />
+    </GameProvider>
   );
 }

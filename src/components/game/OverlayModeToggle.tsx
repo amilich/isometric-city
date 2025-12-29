@@ -23,6 +23,8 @@ import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
 export interface OverlayModeToggleProps {
   overlayMode: OverlayMode;
   setOverlayMode: (mode: OverlayMode) => void;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 // ============================================================================
@@ -53,9 +55,14 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
 export const OverlayModeToggle = React.memo(function OverlayModeToggle({
   overlayMode,
   setOverlayMode,
+  className,
+  style,
 }: OverlayModeToggleProps) {
   return (
-    <Card className="absolute bottom-4 left-4 p-2 shadow-lg bg-card/90 border-border/70 z-50">
+    <Card 
+      className={`absolute p-2 shadow-lg bg-card/90 border-border/70 z-30 ${className || 'bottom-4 left-4'}`}
+      style={style}
+    >
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
         Kaplamaları Görüntüle
       </div>

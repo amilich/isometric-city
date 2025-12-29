@@ -28,10 +28,11 @@ interface MiniMapProps {
     zoom: number; 
     canvasSize: { width: number; height: number } 
   } | null;
+  embedded?: boolean;
 }
 
 // Canvas-based Minimap - Memoized with throttled grid rendering
-export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: MiniMapProps) {
+export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport, embedded = false }: MiniMapProps) {
   const { state } = useGame();
   const { grid, gridSize, tick } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -185,6 +186,21 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
     }
   }, [isDragging]);
   
+  if (embedded) {
+    return (
+      <canvas
+        ref={canvasRef}
+        width={140}
+        height={140}
+        className="block w-full h-full object-contain cursor-pointer select-none"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+      />
+    );
+  }
+
   return (
     <Card className="absolute bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">

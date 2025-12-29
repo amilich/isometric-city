@@ -17,7 +17,8 @@ import { CommandMenu } from '@/components/ui/CommandMenu';
 import { OverlayMode } from '@/components/game/types';
 import { getOverlayForTool } from '@/components/game/overlays';
 import { OverlayModeToggle } from '@/components/game/OverlayModeToggle';
-import { Sidebar } from '@/components/game/Sidebar';
+import { LoadingScreen } from '@/components/game/LoadingScreen';
+import { BottomHUD } from '@/components/game/BottomHUD';
 import {
   BudgetPanel,
   StatisticsPanel,
@@ -25,7 +26,6 @@ import {
   AdvisorsPanel,
 } from '@/components/game/panels';
 import { MiniMap } from '@/components/game/MiniMap';
-import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
 
 // Cargo type names for notifications
@@ -33,6 +33,7 @@ const CARGO_TYPE_NAMES = ['containers', 'bulk materials', 'oil'];
 
 export default function Game({ onExit }: { onExit?: () => void }) {
   const { state, setTool, setActivePanel, addMoney, addNotification, setSpeed } = useGame();
+  const [isLoading, setIsLoading] = useState(true);
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
@@ -248,15 +249,14 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   }
 
   // Desktop layout
+  if (isLoading) {
+    return <LoadingScreen onFinished={() => setIsLoading(false)} />;
+  }
+
   return (
     <TooltipProvider>
-      <div className="w-full h-full min-h-[720px] overflow-hidden bg-background flex">
-        <Sidebar onExit={onExit} />
-        
-        <div className="flex-1 flex flex-col">
-          <TopBar />
-          <StatsPanel />
-          <div className="flex-1 relative overflow-visible">
+      <div className="w-full h-full min-h-[720px] overflow-hidden bg-[#0f1219] flex flex-col relative">
+        <div className="flex-1 relative overflow-hidden w-full">
             <CanvasIsometricGrid 
               overlayMode={overlayMode} 
               selectedTile={selectedTile} 
@@ -266,10 +266,20 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               onViewportChange={setViewport}
               onBargeDelivery={handleBargeDelivery}
             />
-            <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
-            <MiniMap onNavigate={(x, y) => setNavigationTarget({ x, y })} viewport={viewport} />
-          </div>
+            <OverlayModeToggle 
+              overlayMode={overlayMode} 
+              setOverlayMode={setOverlayMode} 
+              style={{ bottom: '20px', right: '20px' }}
+            />
         </div>
+
+        <BottomHUD onExit={onExit}>
+             <MiniMap 
+                embedded 
+                onNavigate={(x, y) => setNavigationTarget({ x, y })} 
+                viewport={viewport} 
+             />
+        </BottomHUD>
         
         {state.activePanel === 'budget' && <BudgetPanel />}
         {state.activePanel === 'statistics' && <StatisticsPanel />}

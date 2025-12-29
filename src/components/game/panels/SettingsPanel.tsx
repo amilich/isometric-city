@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useGame, DayNightMode } from '@/context/GameContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -128,496 +129,519 @@ export function SettingsPanel() {
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[400px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t('Settings')}</DialogTitle>
+      <DialogContent className="max-w-[800px] w-full max-h-[85vh] overflow-y-auto flex flex-col p-6">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-2xl">{t('Settings')}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('GameSettings')}</div>
-            
-            <div className="flex items-center justify-between py-2 gap-4">
-              <div className="flex-1 min-w-0">
-                <Label>{t('Disasters')}</Label>
-                <p className="text-muted-foreground text-xs">{t('DisastersDesc')}</p>
-              </div>
-              <Switch
-                checked={disastersEnabled}
-                onCheckedChange={setDisastersEnabled}
-              />
-            </div>
+        <Tabs defaultValue="game" className="w-full flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="game">{t('GameSettings')}</TabsTrigger>
+            <TabsTrigger value="appearance">Görünüm</TabsTrigger>
+            <TabsTrigger value="city">{t('CityInfo')}</TabsTrigger>
+            <TabsTrigger value="dev">{t('DevTools')}</TabsTrigger>
+          </TabsList>
 
-            <div className="flex items-center justify-between py-2 gap-4">
-              <div className="flex-1 min-w-0">
-                <Label>Dil / Language</Label>
-                <p className="text-muted-foreground text-xs">Arayüz dilini değiştir / Change interface language</p>
+          <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-2">
+            
+            {/* Game Settings Tab */}
+            <TabsContent value="game" className="mt-0 space-y-6">
+              <div className="flex items-center justify-between py-2 gap-4 border-b border-border/50 pb-4">
+                <div className="flex-1 min-w-0">
+                  <Label className="text-base">{t('Disasters')}</Label>
+                  <p className="text-muted-foreground text-sm">{t('DisastersDesc')}</p>
+                </div>
+                <Switch
+                  checked={disastersEnabled}
+                  onCheckedChange={setDisastersEnabled}
+                />
               </div>
-              <LanguageSelector variant="game" />
-            </div>
 
-            <div className="py-2 mb-2">
-              <div className="flex items-center justify-between mb-2">
-                <Label>{t('ZoomSensitivity')}</Label>
-                <span className="text-xs text-muted-foreground">{zoomSensitivity}</span>
+              <div className="flex items-center justify-between py-2 gap-4 border-b border-border/50 pb-4">
+                <div className="flex-1 min-w-0">
+                  <Label className="text-base">Dil / Language</Label>
+                  <p className="text-muted-foreground text-sm">Arayüz dilini değiştir / Change interface language</p>
+                </div>
+                <LanguageSelector variant="game" />
               </div>
-              <Slider
-                value={[zoomSensitivity]}
-                min={1}
-                max={10}
-                step={1}
-                onValueChange={(vals) => setZoomSensitivity(vals[0])}
-                className="py-2"
-              />
-              <p className="text-muted-foreground text-xs mt-1">{t('ZoomSensitivityDesc')}</p>
-            </div>
+
+              <div className="py-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-base">{t('ZoomSensitivity')}</Label>
+                  <span className="text-sm text-muted-foreground">{zoomSensitivity}</span>
+                </div>
+                <Slider
+                  value={[zoomSensitivity]}
+                  min={1}
+                  max={10}
+                  step={1}
+                  onValueChange={(vals) => setZoomSensitivity(vals[0])}
+                  className="py-4"
+                />
+                <p className="text-muted-foreground text-sm">{t('ZoomSensitivityDesc')}</p>
+              </div>
+            </TabsContent>
             
-            <div className="py-2">
-              <Label>{t('SpritePack')}</Label>
-              <p className="text-muted-foreground text-xs mb-2">{t('SpritePackDesc')}</p>
-              <div className="grid grid-cols-1 gap-2">
-                {availableSpritePacks.map((pack) => (
-                  <button
-                    key={pack.id}
-                    onClick={() => setSpritePack(pack.id)}
-                    className={`flex items-center gap-3 p-2 rounded-md border transition-colors text-left ${
-                      currentSpritePack.id === pack.id
-                        ? 'border-primary bg-primary/10 text-foreground'
-                        : 'border-border hover:border-muted-foreground/50 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded overflow-hidden bg-muted flex-shrink-0 relative">
-                      <Image 
-                        src={pack.src} 
-                        alt={pack.name}
-                        fill
-                        className="object-cover object-top"
-                        style={{ imageRendering: 'pixelated' }}
-                        unoptimized
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{pack.name}</div>
-                      <div className="text-xs text-muted-foreground truncate">{pack.src}</div>
-                    </div>
-                    {currentSpritePack.id === pack.id && (
-                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('CityInfo')}</div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <span>{t('CityName')}</span>
-                <span className="text-foreground">{cityName}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>{t('GridSize')}</span>
-                <span className="text-foreground">{gridSize} x {gridSize}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>{t('AutoSave')}</span>
-                <span className="text-green-400">{t('AutoSaveEnabled')}</span>
-              </div>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          {/* Saved Cities Section */}
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('SavedCities')}</div>
-            <p className="text-muted-foreground text-xs mb-3">{t('SavedCitiesDesc')}</p>
-            
-            {/* Save Current City Button */}
-            <Button
-              variant="game"
-              className="w-full mb-3"
-              onClick={() => {
-                saveCity();
-                setSaveCitySuccess(true);
-                setTimeout(() => setSaveCitySuccess(false), 2000);
-              }}
-            >
-              {saveCitySuccess ? '✓ Şehir Kaydedildi!' : `${t('SaveCity')} "${cityName}"`}
-            </Button>
-            
-            {/* Saved Cities List */}
-            {savedCities.length > 0 ? (
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {savedCities.map((city) => (
-                  <div
-                    key={city.id}
-                    className={`p-3 rounded-md border transition-colors ${
-                      city.id === currentCityId
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-muted-foreground/50'
-                    }`}
-                  >
-                    {cityToRename?.id === city.id ? (
-                      <div className="space-y-2">
-                        <Input
-                          value={renameValue}
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          placeholder={t('NewCityNamePlaceholder')}
-                          className="h-8 text-sm"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            variant="game-secondary"
-                            size="sm"
-                            className="flex-1 h-7 text-xs"
-                            onClick={() => {
-                              setCityToRename(null);
-                              setRenameValue('');
-                            }}
-                          >
-                            {t('Cancel')}
-                          </Button>
-                          <Button
-                            variant="game"
-                            size="sm"
-                            className="flex-1 h-7 text-xs"
-                            onClick={() => {
-                              if (renameValue.trim()) {
-                                renameSavedCity(city.id, renameValue.trim());
-                              }
-                              setCityToRename(null);
-                              setRenameValue('');
-                            }}
-                          >
-                            {t('SaveCity')}
-                          </Button>
+            {/* Appearance Tab */}
+            <TabsContent value="appearance" className="mt-0 space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base">{t('SpritePack')}</Label>
+                  <p className="text-muted-foreground text-sm mb-3">{t('SpritePackDesc')}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {availableSpritePacks.map((pack) => (
+                      <button
+                        key={pack.id}
+                        onClick={() => setSpritePack(pack.id)}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                          currentSpritePack.id === pack.id
+                            ? 'border-primary bg-primary/10 text-foreground ring-1 ring-primary'
+                            : 'border-border hover:border-muted-foreground/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 relative shadow-sm">
+                          <Image 
+                            src={pack.src} 
+                            alt={pack.name}
+                            fill
+                            className="object-cover object-top"
+                            style={{ imageRendering: 'pixelated' }}
+                            unoptimized
+                          />
                         </div>
-                      </div>
-                    ) : cityToDelete?.id === city.id ? (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground text-center">{t('DeleteCityConfirm')}</p>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="game-secondary"
-                            size="sm"
-                            className="flex-1 h-7 text-xs"
-                            onClick={() => setCityToDelete(null)}
-                          >
-                            {t('Cancel')}
-                          </Button>
-                          <Button
-                            variant="game-danger"
-                            size="sm"
-                            className="flex-1 h-7 text-xs"
-                            onClick={() => {
-                              deleteSavedCity(city.id);
-                              setCityToDelete(null);
-                            }}
-                          >
-                            {t('Delete')}
-                          </Button>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{pack.name}</div>
+                          <div className="text-xs text-muted-foreground truncate opacity-70">{pack.src.split('/').pop()}</div>
                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="font-medium text-sm truncate flex-1">
-                            {city.cityName}
-                            {city.id === currentCityId && (
-                              <span className="ml-2 text-[10px] text-primary">{t('Current')}</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-                          <span>{t.raw('Population')}: {formatPopulation(city.population)}</span>
-                          <span>{formatMoney(city.money)}</span>
-                          <span>{city.gridSize}×{city.gridSize}</span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground mb-2">
-                          {t('SavedAt')} {formatDate(city.savedAt)}
-                        </div>
-                        <div className="flex gap-2">
-                          {city.id !== currentCityId && (
-                            <Button
-                              variant="game"
-                              size="sm"
-                              className="flex-1 h-7 text-xs"
-                              onClick={() => {
-                                loadSavedCity(city.id);
-                                setActivePanel('none');
-                              }}
-                            >
-                              {t('Load')}
-                            </Button>
-                          )}
-                          <Button
-                            variant="game-secondary"
-                            size="sm"
-                            className="flex-1 h-7 text-xs"
-                            onClick={() => {
-                              setCityToRename(city);
-                              setRenameValue(city.cityName);
-                            }}
-                          >
-                            {t('Rename')}
-                          </Button>
-                          <Button
-                            variant="game-secondary"
-                            size="sm"
-                            className="flex-1 h-7 text-xs hover:bg-destructive hover:text-destructive-foreground"
-                            onClick={() => setCityToDelete(city)}
-                          >
-                            {t('Delete')}
-                          </Button>
-                        </div>
-                      </>
-                    )}
+                        {currentSpritePack.id === pack.id && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0 shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                        )}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <Label className="text-base">{t('DayNightMode')}</Label>
+                  <p className="text-muted-foreground text-sm mb-3">{t('DayNightModeDesc')}</p>
+                  <div className="flex rounded-lg border border-border overflow-hidden bg-muted/20 p-1">
+                    {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setDayNightMode(mode)}
+                        className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                          dayNightMode === mode
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        }`}
+                      >
+                        {mode === 'auto' && t('ModeAuto')}
+                        {mode === 'day' && t('ModeDay')}
+                        {mode === 'night' && t('ModeNight')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <p className="text-muted-foreground text-xs text-center py-3 border border-dashed rounded-md">
-                {t('NoSavedCities')}
-              </p>
-            )}
-          </div>
-          
-          {/* Restore saved city button - shown if there's a saved city from before viewing a shared city */}
-          {savedCityInfo && (
-            <div className="space-y-2">
-              <Button
-                variant="game"
-                className="w-full"
-                onClick={() => {
-                  restoreSavedCity();
-                  setSavedCityInfo(null);
-                  setActivePanel('none');
-                }}
-              >
-                {t('Restore')} {savedCityInfo.cityName}
-              </Button>
-              <p className="text-muted-foreground text-xs text-center">
-                {t('RestoreDesc')}
-              </p>
+            </TabsContent>
+
+            {/* City & Save Tab */}
+            <TabsContent value="city" className="mt-0 space-y-6">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('CityName')}</span>
+                  <div className="text-lg font-semibold">{cityName}</div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('GridSize')}</span>
+                  <div className="text-lg font-semibold">{gridSize} x {gridSize}</div>
+                </div>
+                <div className="space-y-1 col-span-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-muted-foreground uppercase">{t('AutoSave')}</span>
+                    <span className="text-sm font-medium text-emerald-500 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+                      {t('AutoSaveEnabled')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <Separator />
-            </div>
-          )}
-          
-          {!showNewGameConfirm ? (
-            <Button
-              variant="game-danger"
-              className="w-full"
-              onClick={() => setShowNewGameConfirm(true)}
-            >
-              {t('NewGame')}
-            </Button>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-muted-foreground text-sm text-center">{t('NewGameConfirm')}</p>
-              <Input
-                value={newCityName}
-                onChange={(e) => setNewCityName(e.target.value)}
-                placeholder={t('NewCityNamePlaceholder')}
-              />
-              <div className="flex gap-2">
-                <Button
-                  variant="game-secondary"
-                  className="flex-1"
-                  onClick={() => setShowNewGameConfirm(false)}
-                >
-                  {t('Cancel')}
-                </Button>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                   <div>
+                     <div className="text-sm font-medium uppercase tracking-wider text-muted-foreground">{t('SavedCities')}</div>
+                     <p className="text-xs text-muted-foreground">{t('SavedCitiesDesc')}</p>
+                   </div>
+                   <Button
+                      variant="game"
+                      size="sm"
+                      onClick={() => {
+                        saveCity();
+                        setSaveCitySuccess(true);
+                        setTimeout(() => setSaveCitySuccess(false), 2000);
+                      }}
+                    >
+                      {saveCitySuccess ? '✓' : t('SaveCity')}
+                    </Button>
+                </div>
+                
+                {savedCities.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-2 max-h-[250px] overflow-y-auto pr-2">
+                    {savedCities.map((city) => (
+                      <div
+                        key={city.id}
+                        className={`p-3 rounded-lg border transition-all ${
+                          city.id === currentCityId
+                            ? 'border-primary/50 bg-primary/5'
+                            : 'border-border hover:border-muted-foreground/30 hover:bg-muted/30'
+                        }`}
+                      >
+                         {cityToRename?.id === city.id ? (
+                            <div className="space-y-2">
+                              <Input
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                placeholder={t('NewCityNamePlaceholder')}
+                                className="h-8 text-sm"
+                                autoFocus
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="game-secondary"
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs"
+                                  onClick={() => {
+                                    setCityToRename(null);
+                                    setRenameValue('');
+                                  }}
+                                >
+                                  {t('Cancel')}
+                                </Button>
+                                <Button
+                                  variant="game"
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs"
+                                  onClick={() => {
+                                    if (renameValue.trim()) {
+                                      renameSavedCity(city.id, renameValue.trim());
+                                    }
+                                    setCityToRename(null);
+                                    setRenameValue('');
+                                  }}
+                                >
+                                  {t('SaveCity')}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : cityToDelete?.id === city.id ? (
+                            <div className="space-y-2">
+                              <p className="text-xs text-muted-foreground text-center">{t('DeleteCityConfirm')}</p>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="game-secondary"
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs"
+                                  onClick={() => setCityToDelete(null)}
+                                >
+                                  {t('Cancel')}
+                                </Button>
+                                <Button
+                                  variant="game-danger"
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs"
+                                  onClick={() => {
+                                    deleteSavedCity(city.id);
+                                    setCityToDelete(null);
+                                  }}
+                                >
+                                  {t('Delete')}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-start justify-between mb-1">
+                                <div className="font-medium text-sm truncate flex-1">
+                                  {city.cityName}
+                                  {city.id === currentCityId && (
+                                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">{t('Current')}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                                <span className="flex items-center gap-1">👥 {formatPopulation(city.population)}</span>
+                                <span className="flex items-center gap-1">💰 {formatMoney(city.money)}</span>
+                                <span className="flex items-center gap-1">📐 {city.gridSize}×{city.gridSize}</span>
+                              </div>
+                              <div className="flex gap-2">
+                                {city.id !== currentCityId && (
+                                  <Button
+                                    variant="game"
+                                    size="sm"
+                                    className="flex-1 h-7 text-xs"
+                                    onClick={() => {
+                                      loadSavedCity(city.id);
+                                      setActivePanel('none');
+                                    }}
+                                  >
+                                    {t('Load')}
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="game-secondary"
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs"
+                                  onClick={() => {
+                                    setCityToRename(city);
+                                    setRenameValue(city.cityName);
+                                  }}
+                                >
+                                  {t('Rename')}
+                                </Button>
+                                <Button
+                                  variant="game-secondary"
+                                  size="sm"
+                                  className="flex-1 h-7 text-xs hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => setCityToDelete(city)}
+                                >
+                                  {t('Delete')}
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-xs text-center py-8 border border-dashed rounded-lg bg-muted/20">
+                    {t('NoSavedCities')}
+                  </p>
+                )}
+              </div>
+
+               {savedCityInfo && (
+                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <h4 className="text-sm font-medium text-orange-500 mb-2">Önceki Kayıt</h4>
+                  <Button
+                    variant="game"
+                    className="w-full"
+                    onClick={() => {
+                      restoreSavedCity();
+                      setSavedCityInfo(null);
+                      setActivePanel('none');
+                    }}
+                  >
+                    {t('Restore')} {savedCityInfo.cityName}
+                  </Button>
+                  <p className="text-muted-foreground text-xs text-center mt-2">
+                    {t('RestoreDesc')}
+                  </p>
+                </div>
+              )}
+              
+              {!showNewGameConfirm ? (
                 <Button
                   variant="game-danger"
-                  className="flex-1"
-                  onClick={() => {
-                    newGame(newCityName || 'Yeni Şehir', gridSize);
+                  className="w-full py-6 text-base"
+                  onClick={() => setShowNewGameConfirm(true)}
+                >
+                  {t('NewGame')}
+                </Button>
+              ) : (
+                <div className="p-4 border border-destructive/30 bg-destructive/5 rounded-lg space-y-3">
+                  <p className="text-destructive font-medium text-sm text-center">{t('NewGameConfirm')}</p>
+                  <Input
+                    value={newCityName}
+                    onChange={(e) => setNewCityName(e.target.value)}
+                    placeholder={t('NewCityNamePlaceholder')}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="game-secondary"
+                      className="flex-1"
+                      onClick={() => setShowNewGameConfirm(false)}
+                    >
+                      {t('Cancel')}
+                    </Button>
+                    <Button
+                      variant="game-danger"
+                      className="flex-1"
+                      onClick={() => {
+                        newGame(newCityName || 'Yeni Şehir', gridSize);
+                        setActivePanel('none');
+                      }}
+                    >
+                      {t('Reset')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">{t('ExportGame')}</div>
+                    <Button
+                      variant="game-secondary"
+                      className="w-full h-auto py-2 text-xs"
+                      onClick={handleCopyExport}
+                    >
+                      {exportCopied ? '✓ Kopyalandı!' : t('CopyExport')}
+                    </Button>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">{t('ImportGame')}</div>
+                    <div className="relative">
+                        <textarea
+                          className="w-full h-[34px] min-h-[34px] bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring overflow-hidden"
+                          placeholder="..."
+                          value={importValue}
+                          onChange={(e) => {
+                            setImportValue(e.target.value);
+                            setImportError(false);
+                            setImportSuccess(false);
+                          }}
+                        />
+                         <Button
+                          variant="game-secondary"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full rounded-l-none"
+                          onClick={handleImport}
+                          disabled={!importValue.trim()}
+                        >
+                          {t('LoadImport')}
+                        </Button>
+                    </div>
+                     {importError && (
+                      <p className="text-red-400 text-[10px] mt-1">Hata!</p>
+                    )}
+                    {importSuccess && (
+                      <p className="text-green-400 text-[10px] mt-1">Başarılı!</p>
+                    )}
+                  </div>
+              </div>
+
+            </TabsContent>
+
+            {/* Dev Tools Tab */}
+            <TabsContent value="dev" className="mt-0 space-y-4">
+               <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={() => setShowSpriteTest(true)}
+                >
+                  {t('OpenSpriteTest')}
+                </Button>
+                {/* Example Loaders */}
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState } = await import('@/resources/example_state.json');
+                    loadState(JSON.stringify(exampleState));
                     setActivePanel('none');
                   }}
                 >
-                  {t('Reset')}
+                  {t('LoadExample')}
                 </Button>
-              </div>
-            </div>
-          )}
-          
-          <Separator />
-          
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('ExportGame')}</div>
-            <p className="text-muted-foreground text-xs mb-2">{t('ExportDesc')}</p>
-            <Button
-              variant="game-secondary"
-              className="w-full"
-              onClick={handleCopyExport}
-            >
-              {exportCopied ? '✓ Kopyalandı!' : t('CopyExport')}
-            </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState2 } = await import('@/resources/example_state_2.json');
+                    loadState(JSON.stringify(exampleState2));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 2
+                </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState3 } = await import('@/resources/example_state_3.json');
+                    loadState(JSON.stringify(exampleState3));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 3
+                </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState4 } = await import('@/resources/example_state_4.json');
+                    loadState(JSON.stringify(exampleState4));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 4
+                </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState5 } = await import('@/resources/example_state_5.json');
+                    loadState(JSON.stringify(exampleState5));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 5
+                </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState6 } = await import('@/resources/example_state_6.json');
+                    loadState(JSON.stringify(exampleState6));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 6
+                </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState7 } = await import('@/resources/example_state_7.json');
+                    loadState(JSON.stringify(exampleState7));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 7
+                </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState8 } = await import('@/resources/example_state_8.json');
+                    loadState(JSON.stringify(exampleState8));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 8
+                </Button>
+                <Button
+                  variant="game-secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    const { default: exampleState9 } = await import('@/resources/example_state_9.json');
+                    loadState(JSON.stringify(exampleState9));
+                    setActivePanel('none');
+                  }}
+                >
+                  {t('LoadExample')} 9
+                </Button>
+               </div>
+            </TabsContent>
+
           </div>
-          
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('ImportGame')}</div>
-            <p className="text-muted-foreground text-xs mb-2">{t('ImportDesc')}</p>
-            <textarea
-              className="w-full h-20 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder="Oyun durumunu buraya yapıştırın..."
-              value={importValue}
-              onChange={(e) => {
-                setImportValue(e.target.value);
-                setImportError(false);
-                setImportSuccess(false);
-              }}
-            />
-            {importError && (
-              <p className="text-red-400 text-xs mt-1">Geçersiz oyun durumu. Lütfen kontrol edip tekrar deneyin.</p>
-            )}
-            {importSuccess && (
-              <p className="text-green-400 text-xs mt-1">Oyun başarıyla yüklendi!</p>
-            )}
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={handleImport}
-              disabled={!importValue.trim()}
-            >
-              {t('LoadImport')}
-            </Button>
-          </div>
-          
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{t('DevTools')}</div>
-            <Button
-              variant="game-secondary"
-              className="w-full"
-              onClick={() => setShowSpriteTest(true)}
-            >
-              {t('OpenSpriteTest')}
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState } = await import('@/resources/example_state.json');
-                loadState(JSON.stringify(exampleState));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')}
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState2 } = await import('@/resources/example_state_2.json');
-                loadState(JSON.stringify(exampleState2));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 2
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState3 } = await import('@/resources/example_state_3.json');
-                loadState(JSON.stringify(exampleState3));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 3
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState4 } = await import('@/resources/example_state_4.json');
-                loadState(JSON.stringify(exampleState4));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 4
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState5 } = await import('@/resources/example_state_5.json');
-                loadState(JSON.stringify(exampleState5));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 5
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState6 } = await import('@/resources/example_state_6.json');
-                loadState(JSON.stringify(exampleState6));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 6
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState7 } = await import('@/resources/example_state_7.json');
-                loadState(JSON.stringify(exampleState7));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 7
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState8 } = await import('@/resources/example_state_8.json');
-                loadState(JSON.stringify(exampleState8));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 8
-            </Button>
-            <Button
-              variant="game-secondary"
-              className="w-full mt-2"
-              onClick={async () => {
-                const { default: exampleState9 } = await import('@/resources/example_state_9.json');
-                loadState(JSON.stringify(exampleState9));
-                setActivePanel('none');
-              }}
-            >
-              {t('LoadExample')} 9
-            </Button>
-            <div className="mt-4 pt-4 border-t border-border">
-              <Label>{t('DayNightMode')}</Label>
-              <p className="text-muted-foreground text-xs mb-2">{t('DayNightModeDesc')}</p>
-              <div className="flex rounded-md border border-border overflow-hidden">
-                {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setDayNightMode(mode)}
-                    className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-                      dayNightMode === mode
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {mode === 'auto' && t('ModeAuto')}
-                    {mode === 'day' && t('ModeDay')}
-                    {mode === 'night' && t('ModeNight')}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        </Tabs>
       </DialogContent>
       
       {showSpriteTest && (

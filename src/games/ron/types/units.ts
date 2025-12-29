@@ -947,6 +947,7 @@ export type UnitTask =
   | 'gather_gold'
   | 'gather_oil'
   | 'gather_knowledge'
+  | 'gather_fish'
   | 'build'
   | 'repair'
   | 'attack'

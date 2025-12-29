@@ -215,6 +215,7 @@ export function createInitialRoNGameState(
         hasOilDeposit: false,
         hasMetalDeposit: false,
         forestDensity: 0,
+        hasFishingSpot: false,
       });
     }
     grid.push(row);
@@ -516,6 +517,34 @@ export function createInitialRoNGameState(
       const tile = grid[y][x];
       if (tile.terrain === 'grass' && tile.forestDensity === 0 && !tile.hasMetalDeposit) {
         tile.hasOilDeposit = Math.random() < OIL_DEPOSIT_CHANCE;
+      }
+    }
+  }
+
+  // Add fishing spots in water (clustered near shores and in open water)
+  const FISHING_SPOT_CHANCE = 0.08; // 8% of water tiles have fishing spots
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      const tile = grid[y][x];
+      if (tile.terrain === 'water') {
+        // Higher chance near shore (adjacent to land)
+        let isNearShore = false;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize) {
+              if (grid[ny][nx].terrain !== 'water') {
+                isNearShore = true;
+                break;
+              }
+            }
+          }
+          if (isNearShore) break;
+        }
+        // 15% chance near shore, 5% in open water
+        const chance = isNearShore ? 0.15 : 0.05;
+        tile.hasFishingSpot = Math.random() < chance;
       }
     }
   }

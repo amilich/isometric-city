@@ -187,9 +187,12 @@ function drawMilitaryUnit(
   tick: number
 ): void {
   const stats = UNIT_STATS[unit.type];
-  const scale = 0.5;
+  // Naval units are larger, air units medium, land units smaller
+  const baseScale = stats.category === 'naval' ? 1.0 : 
+                    stats.category === 'air' ? 0.7 : 0.5;
+  const scale = baseScale;
   const animPhase = (tick * 0.1 + parseInt(unit.id.slice(-4), 16)) % (Math.PI * 2);
-  
+
   // Darken color for shadows
   const darkerColor = shadeColor(color, -30);
   const lighterColor = shadeColor(color, 30);

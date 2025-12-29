@@ -450,6 +450,22 @@ function updatePlayers(state: RoNGameState): RoNGameState {
       });
     });
     
+    // Calculate fishing income from fishing boats at fishing spots
+    state.units.forEach(unit => {
+      if (unit.ownerId !== player.id) return;
+      if (unit.type !== 'fishing_boat') return;
+      if (unit.task !== 'gather_fish') return;
+      if (unit.isMoving) return; // Only count boats that have arrived
+      
+      // Check if the boat is at a fishing spot
+      const boatX = Math.floor(unit.x);
+      const boatY = Math.floor(unit.y);
+      const tile = state.grid[boatY]?.[boatX];
+      if (tile?.hasFishingSpot) {
+        rates.food += RESOURCE_GATHER_RATE * 1.2; // Fishing is good for food
+      }
+    });
+    
     // Apply rates to resources (capped by storage)
     const newResources = { ...player.resources };
     for (const [resource, rate] of Object.entries(rates)) {
@@ -659,6 +675,47 @@ function countWorkersAtBuilding(
 }
 
 /**
+ * Find nearby fishing spots for fishing boats
+ * Prioritizes closer spots
+ */
+function findNearbyFishingSpot(
+  unit: Unit,
+  grid: RoNTile[][],
+  gridSize: number,
+  radius: number
+): { x: number; y: number } | null {
+  const unitX = Math.floor(unit.x);
+  const unitY = Math.floor(unit.y);
+
+  const candidates: { x: number; y: number; dist: number }[] = [];
+
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const gx = unitX + dx;
+      const gy = unitY + dy;
+
+      if (gx < 0 || gx >= gridSize || gy < 0 || gy >= gridSize) continue;
+
+      const tile = grid[gy]?.[gx];
+      if (!tile) continue;
+      if (tile.terrain !== 'water') continue;
+      if (!tile.hasFishingSpot) continue;
+
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > radius) continue;
+
+      candidates.push({ x: gx, y: gy, dist });
+    }
+  }
+
+  if (candidates.length === 0) return null;
+
+  // Sort by distance and return closest
+  candidates.sort((a, b) => a.dist - b.dist);
+  return { x: candidates[0].x, y: candidates[0].y };
+}
+
+/**
  * Find nearby economic buildings that a citizen can work at
  * Prioritizes buildings with fewer workers, then by distance
  */
@@ -825,6 +882,39 @@ function updateUnits(state: RoNGameState): RoNGameState {
         }
       } else {
         // Not idle - clear the tracker
+        updatedUnit.idleSince = undefined;
+      }
+    }
+    
+    // Auto-work for fishing boats - find nearby fishing spots
+    if (updatedUnit.type === 'fishing_boat') {
+      const isIdle = updatedUnit.task === 'idle' || updatedUnit.task === undefined;
+      
+      if (isIdle && !updatedUnit.isMoving) {
+        if (updatedUnit.idleSince === undefined) {
+          updatedUnit.idleSince = state.tick;
+        }
+        
+        const idleDuration = state.tick - updatedUnit.idleSince;
+        if (idleDuration >= IDLE_AUTO_WORK_THRESHOLD) {
+          // Find nearby fishing spot
+          const nearbyFishingSpot = findNearbyFishingSpot(
+            updatedUnit,
+            state.grid,
+            state.gridSize,
+            AUTO_WORK_SEARCH_RADIUS * 2 // Larger search radius for fishing boats
+          );
+          
+          if (nearbyFishingSpot) {
+            updatedUnit.task = 'gather_fish';
+            updatedUnit.taskTarget = { x: nearbyFishingSpot.x, y: nearbyFishingSpot.y };
+            updatedUnit.targetX = nearbyFishingSpot.x + 0.5;
+            updatedUnit.targetY = nearbyFishingSpot.y + 0.5;
+            updatedUnit.isMoving = true;
+            updatedUnit.idleSince = undefined;
+          }
+        }
+      } else if (updatedUnit.task !== 'gather_fish') {
         updatedUnit.idleSince = undefined;
       }
     }

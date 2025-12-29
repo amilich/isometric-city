@@ -738,12 +738,17 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
           const selectedUnits = gameState.units.filter(u => u.isSelected);
           const hasNavalUnits = selectedUnits.some(u => UNIT_STATS[u.type]?.isNaval);
           const hasLandUnits = selectedUnits.some(u => !UNIT_STATS[u.type]?.isNaval);
+          const hasFishingBoats = selectedUnits.some(u => u.type === 'fishing_boat');
           
           // If we have naval units, target must be water
           // If we have land units, target must be land
           const isWaterTile = tile?.terrain === 'water';
           
-          if (hasNavalUnits && !hasLandUnits) {
+          // Check if clicking on a fishing spot with fishing boats selected
+          if (hasFishingBoats && isWaterTile && tile?.hasFishingSpot) {
+            // Assign fishing task to fishing boats
+            assignTask('gather_fish' as import('../types/units').UnitTask, { x: gridX, y: gridY });
+          } else if (hasNavalUnits && !hasLandUnits) {
             // Only naval units selected - must click on water
             if (isWaterTile) {
               moveSelectedUnits(gridX, gridY);
@@ -1148,6 +1153,54 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               west: y < gameState.gridSize - 1 && gameState.grid[y + 1]?.[x]?.terrain === 'water',
             };
             drawWaterTile(ctx, screenX, screenY, x, y, adjacentWater);
+            
+            // Draw fishing spot indicator
+            if (tile.hasFishingSpot) {
+              const cx = screenX + TILE_WIDTH / 2;
+              const cy = screenY + TILE_HEIGHT / 2;
+              
+              // Draw ripples/fish silhouette
+              ctx.save();
+              ctx.globalAlpha = 0.5;
+              
+              // Draw concentric ripples
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 0.8;
+              
+              // Animated ripple effect based on tile position
+              const time = performance.now() / 1000;
+              const phase = ((x + y) * 0.3 + time) % (Math.PI * 2);
+              const rippleSize = 3 + Math.sin(phase) * 2;
+              
+              ctx.beginPath();
+              ctx.ellipse(cx, cy, rippleSize * 2, rippleSize, 0, 0, Math.PI * 2);
+              ctx.stroke();
+              
+              ctx.beginPath();
+              ctx.ellipse(cx, cy, rippleSize * 3.5, rippleSize * 1.75, 0, 0, Math.PI * 2);
+              ctx.stroke();
+              
+              // Draw small fish silhouette
+              ctx.fillStyle = '#4a90a4';
+              ctx.globalAlpha = 0.4;
+              const fishX = cx + Math.sin(phase * 2) * 4;
+              const fishY = cy + Math.cos(phase) * 2;
+              
+              // Fish body (ellipse)
+              ctx.beginPath();
+              ctx.ellipse(fishX, fishY, 4, 2, Math.sin(phase) * 0.3, 0, Math.PI * 2);
+              ctx.fill();
+              
+              // Fish tail
+              ctx.beginPath();
+              ctx.moveTo(fishX - 4, fishY);
+              ctx.lineTo(fishX - 7, fishY - 2);
+              ctx.lineTo(fishX - 7, fishY + 2);
+              ctx.closePath();
+              ctx.fill();
+              
+              ctx.restore();
+            }
           } else if (isPartOfDock) {
             // Draw water tile for dock footprint (like IsoCity marina)
             // Check adjacent water for proper blending

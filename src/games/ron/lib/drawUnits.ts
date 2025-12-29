@@ -64,7 +64,8 @@ function drawCitizenUnit(
   tick: number
 ): void {
   const appearance = getUnitAppearance(unit.id);
-  const scale = zoom * 0.5;
+  // Canvas is already scaled by zoom, so just use a fixed scale
+  const scale = 0.5;
   
   // Animation based on task and movement
   const isWorking = unit.task && unit.task.startsWith('gather_') && !unit.isMoving;
@@ -186,7 +187,8 @@ function drawMilitaryUnit(
   tick: number
 ): void {
   const stats = UNIT_STATS[unit.type];
-  const scale = zoom * 0.5;
+  // Canvas is already scaled by zoom, so just use a fixed scale
+  const scale = 0.5;
   const animPhase = (tick * 0.1 + parseInt(unit.id.slice(-4), 16)) % (Math.PI * 2);
   
   // Different rendering based on category
@@ -277,8 +279,9 @@ export function drawRoNUnit(
   const { screenX, screenY } = gridToScreen(unit.x, unit.y, offsetX, offsetY);
   
   // Unit center position (adjusted for tile)
-  const centerX = (screenX + TILE_WIDTH / 2) * zoom;
-  const centerY = (screenY + TILE_HEIGHT * 0.3) * zoom;
+  // Note: Canvas context is already scaled, so we don't multiply by zoom here
+  const centerX = screenX + TILE_WIDTH / 2;
+  const centerY = screenY + TILE_HEIGHT * 0.3;
   
   const stats = UNIT_STATS[unit.type];
   
@@ -291,7 +294,7 @@ export function drawRoNUnit(
   
   // Selection ring
   if (unit.isSelected) {
-    const ringRadius = 5 * zoom;
+    const ringRadius = 5;
     
     // White ring
     ctx.strokeStyle = '#ffffff';
@@ -311,10 +314,10 @@ export function drawRoNUnit(
   // Health bar if damaged
   const healthPercent = unit.health / unit.maxHealth;
   if (healthPercent < 1) {
-    const barWidth = 10 * zoom;
-    const barHeight = 2 * zoom;
+    const barWidth = 10;
+    const barHeight = 2;
     const barX = centerX - barWidth / 2;
-    const barY = centerY - 12 * zoom;
+    const barY = centerY - 12;
     
     // Background
     ctx.fillStyle = '#1f2937';

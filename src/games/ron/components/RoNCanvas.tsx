@@ -1079,18 +1079,46 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete }: RoNCanvasP
               // Get building size from BUILDING_STATS (most are 2x2)
               const buildingStats = BUILDING_STATS[buildingType];
               const buildingSize = buildingStats?.size || { width: 1, height: 1 };
+              const isMultiTile = buildingSize.width > 1 || buildingSize.height > 1;
               
-              // Scale based on building size - 2x2 buildings should cover 2 tiles
-              const sizeScale = Math.max(buildingSize.width, buildingSize.height);
+              // Calculate base draw position - for multi-tile buildings, use frontmost tile
+              let drawPosX = screenX;
+              let drawPosY = screenY;
+              
+              if (isMultiTile) {
+                // Offset to the frontmost tile of the building (like IsoCity)
+                const frontmostOffsetX = buildingSize.width - 1;
+                const frontmostOffsetY = buildingSize.height - 1;
+                const screenOffsetX = (frontmostOffsetX - frontmostOffsetY) * (TILE_WIDTH / 2);
+                const screenOffsetY = (frontmostOffsetX + frontmostOffsetY) * (TILE_HEIGHT / 2);
+                drawPosX = screenX + screenOffsetX;
+                drawPosY = screenY + screenOffsetY;
+              }
+              
+              // Scale based on building size
               const baseScale = (BUILDING_SCALES[buildingType] || 1) * spritePack.globalScale;
-              const scale = baseScale * sizeScale * 0.8; // 0.8 to fine-tune
-              const vertOffset = BUILDING_VERTICAL_OFFSETS[buildingType] || -0.4;
+              const sizeScale = isMultiTile ? Math.max(buildingSize.width, buildingSize.height) : 1;
+              const scaleMultiplier = baseScale * sizeScale;
               
-              const destWidth = TILE_WIDTH * 1.2 * scale;
-              const destHeight = destWidth * (tileHeight / tileWidth);
+              const destWidth = TILE_WIDTH * 1.2 * scaleMultiplier;
+              const aspectRatio = tileHeight / tileWidth;
+              const destHeight = destWidth * aspectRatio;
               
-              const drawX = screenX + TILE_WIDTH / 2 - destWidth / 2;
-              const drawY = screenY + TILE_HEIGHT - destHeight + vertOffset * TILE_HEIGHT;
+              // Calculate vertical push (like IsoCity)
+              let verticalPush: number;
+              if (isMultiTile) {
+                const footprintDepth = buildingSize.width + buildingSize.height - 2;
+                verticalPush = footprintDepth * TILE_HEIGHT * 0.25;
+              } else {
+                verticalPush = destHeight * 0.15;
+              }
+              
+              // Apply building-specific vertical offset
+              const vertOffset = BUILDING_VERTICAL_OFFSETS[buildingType] ?? 0;
+              verticalPush += vertOffset * TILE_HEIGHT;
+              
+              const drawX = drawPosX + TILE_WIDTH / 2 - destWidth / 2;
+              const drawY = drawPosY + TILE_HEIGHT - destHeight + verticalPush;
               
               // Construction progress transparency
               if (tile.building.constructionProgress < 100) {

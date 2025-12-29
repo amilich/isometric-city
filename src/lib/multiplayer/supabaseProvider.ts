@@ -50,6 +50,7 @@ export class MultiplayerProvider {
   private gameState: GameState | null = null;
   private destroyed = false;
   private hasReceivedInitialState = false; // Prevent multiple state-sync overwrites
+  private hasShownSaveTooLargeError = false;
   
   // State save throttling
   private lastStateSave = 0;
@@ -91,12 +92,16 @@ export class MultiplayerProvider {
     if (this.isCreator && this.gameState) {
       // Creator has the canonical state - mark as already received
       this.hasReceivedInitialState = true;
-      const success = await createGameRoom(
+      const result = await createGameRoom(
         this.roomCode,
         this.options.cityName,
         this.gameState
       );
-      if (!success) {
+      if (!result.ok) {
+        if (result.code === 'CITY_TOO_LARGE') {
+          this.options.onError?.(msg('City is too large to save (max 20MB).'));
+          throw new Error(msg('City is too large to save (max 20MB).'));
+        }
         this.options.onError?.(msg('Failed to create room in database'));
         throw new Error(msg('Failed to create room in database'));
       }
@@ -262,8 +267,18 @@ export class MultiplayerProvider {
 
   private saveStateToDatabase(state: GameState): void {
     this.lastStateSave = Date.now();
-    updateGameRoom(this.roomCode, state).catch((e) => {
-      console.error('[Multiplayer] Failed to save state to database:', e);
+    updateGameRoom(this.roomCode, state)
+      .then((result) => {
+        if (!result.ok && result.code === 'CITY_TOO_LARGE') {
+          // Avoid spamming an error toast every 3 seconds.
+          if (!this.hasShownSaveTooLargeError) {
+            this.hasShownSaveTooLargeError = true;
+            this.options.onError?.(msg('City is too large to save (max 20MB).'));
+          }
+        }
+      })
+      .catch((e) => {
+        console.error('[Multiplayer] Failed to save state to database:', e);
     });
   }
 

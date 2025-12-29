@@ -10,6 +10,12 @@
 //   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 //   player_count INTEGER DEFAULT 1
 // );
+//
+// -- Enforce a max city save size (20 MiB) at the database level.
+// -- (The value stored is compressed text; this caps that string's byte size.)
+// ALTER TABLE game_rooms
+//   ADD CONSTRAINT game_rooms_game_state_max_20mb
+//   CHECK (octet_length(game_state) <= 20 * 1024 * 1024);
 // 
 // -- Enable RLS
 // ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
@@ -42,6 +48,8 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const MAX_GAME_STATE_BYTES = 20 * 1024 * 1024; // 20 MiB
+
 export interface GameRoomRow {
   room_code: string;
   city_name: string;
@@ -49,6 +57,16 @@ export interface GameRoomRow {
   created_at: string;
   updated_at: string;
   player_count: number;
+}
+
+export type SaveStateErrorCode = 'CITY_TOO_LARGE' | 'DB_ERROR' | 'UNKNOWN';
+
+export type SaveStateResult =
+  | { ok: true }
+  | { ok: false; code: SaveStateErrorCode; message: string };
+
+function getUtf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).length;
 }
 
 /**
@@ -59,10 +77,19 @@ export async function createGameRoom(
   roomCode: string,
   cityName: string,
   gameState: GameState
-): Promise<boolean> {
+): Promise<SaveStateResult> {
   try {
     // PERF: Both JSON.stringify and lz-string compression happen in the worker
     const compressed = await serializeAndCompressForDBAsync(gameState);
+
+    const byteLen = getUtf8ByteLength(compressed);
+    if (byteLen > MAX_GAME_STATE_BYTES) {
+      return {
+        ok: false,
+        code: 'CITY_TOO_LARGE',
+        message: `City is too large to save (max ${MAX_GAME_STATE_BYTES} bytes).`,
+      };
+    }
     
     const { error } = await supabase
       .from('game_rooms')
@@ -75,13 +102,17 @@ export async function createGameRoom(
 
     if (error) {
       console.error('[Database] Failed to create room:', error);
-      return false;
+      return { ok: false, code: 'DB_ERROR', message: error.message };
     }
 
-    return true;
+    return { ok: true };
   } catch (e) {
     console.error('[Database] Error creating room:', e);
-    return false;
+    return {
+      ok: false,
+      code: 'UNKNOWN',
+      message: e instanceof Error ? e.message : 'Unknown error',
+    };
   }
 }
 
@@ -124,10 +155,19 @@ export async function loadGameRoom(
 export async function updateGameRoom(
   roomCode: string,
   gameState: GameState
-): Promise<boolean> {
+): Promise<SaveStateResult> {
   try {
     // PERF: Both JSON.stringify and lz-string compression happen in the worker
     const compressed = await serializeAndCompressForDBAsync(gameState);
+
+    const byteLen = getUtf8ByteLength(compressed);
+    if (byteLen > MAX_GAME_STATE_BYTES) {
+      return {
+        ok: false,
+        code: 'CITY_TOO_LARGE',
+        message: `City is too large to save (max ${MAX_GAME_STATE_BYTES} bytes).`,
+      };
+    }
     
     const { error } = await supabase
       .from('game_rooms')
@@ -136,13 +176,17 @@ export async function updateGameRoom(
 
     if (error) {
       console.error('[Database] Failed to update room:', error);
-      return false;
+      return { ok: false, code: 'DB_ERROR', message: error.message };
     }
 
-    return true;
+    return { ok: true };
   } catch (e) {
     console.error('[Database] Error updating room:', e);
-    return false;
+    return {
+      ok: false,
+      code: 'UNKNOWN',
+      message: e instanceof Error ? e.message : 'Unknown error',
+    };
   }
 }
 

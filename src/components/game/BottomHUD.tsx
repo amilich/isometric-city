@@ -31,7 +31,8 @@ import {
   GraduationCap,
   Smile,
   Leaf,
-  Building2
+  Building2,
+  Anchor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openCommandMenu } from '@/components/ui/CommandMenu';
@@ -160,7 +161,7 @@ const PopupMenu = ({
   return (
     <div className="relative" ref={containerRef}>
       {isOpen && (
-        <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-[#1a1d26]/95 backdrop-blur-md border border-slate-600 rounded-xl p-3 shadow-2xl z-50 min-w-[320px] max-w-[400px] animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-[#1a1d26]/95 backdrop-blur-md border border-slate-600 rounded-xl p-3 shadow-2xl z-[60] min-w-[320px] max-w-[400px] animate-in slide-in-from-bottom-4 fade-in duration-200">
            <div className="px-2 py-1.5 mb-3 border-b border-white/10 text-[11px] font-bold tracking-[0.2em] text-emerald-400 uppercase text-center">
             {label}
           </div>
@@ -330,6 +331,12 @@ export const BottomHUD = React.memo(function BottomHUD({
       tools: ['mini_golf_course', 'go_kart_track', 'amphitheater', 'roller_coaster_small', 'campground', 'cabin_house', 'mountain_lodge', 'mountain_trailhead'] as Tool[]
     },
     { 
+      key: 'waterfront', 
+      label: 'Waterfront', 
+      icon: Anchor,
+      tools: ['marina_docks_small', 'pier_large'] as Tool[]
+    },
+    { 
       key: 'utilities', 
       label: t('Tools.Categories.utilities'), 
       icon: Zap,
@@ -345,10 +352,10 @@ export const BottomHUD = React.memo(function BottomHUD({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="fixed bottom-4 left-0 right-0 flex justify-between items-end px-6 z-[50] pointer-events-none select-none">
+      <div className="fixed bottom-4 left-0 right-0 flex flex-wrap lg:flex-nowrap justify-between items-end px-4 lg:px-6 z-[50] pointer-events-none select-none">
         
         {/* LEFT: Home Button & Stats Drawer */}
-        <div className="pointer-events-auto relative" ref={statsRef}>
+        <div className="pointer-events-auto relative flex items-end gap-2 max-w-full lg:max-w-none" ref={statsRef}>
              {/* Stats Drawer */}
              {showStats && (
                <div className="absolute bottom-16 left-0 w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200 z-50">
@@ -539,7 +546,7 @@ export const BottomHUD = React.memo(function BottomHUD({
           </div>
 
           {/* Categories Popups */}
-          <div className="flex gap-2 overflow-visible pl-2 border-l border-white/10 ml-2 bg-slate-900/90 backdrop-blur-md p-2 rounded-2xl border border-slate-700 shadow-2xl mb-1">
+          <div className="flex gap-2 pl-2 border-l border-white/10 ml-2 bg-slate-900/90 backdrop-blur-md p-2 rounded-2xl border border-slate-700 shadow-2xl mb-1 flex-nowrap overflow-x-auto max-w-[calc(100vw-100px)] lg:max-w-none scrollbar-hide">
              {categoryGroups.map(group => (
                <PopupMenu 
                   key={group.key}
@@ -556,7 +563,7 @@ export const BottomHUD = React.memo(function BottomHUD({
         </div>
 
         {/* RIGHT: Status & Systems */}
-        <div className="pointer-events-auto flex flex-col w-[280px] bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-4 shadow-2xl mb-1">
+        <div className="pointer-events-auto flex flex-col w-[280px] bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-4 shadow-2xl mb-1 ml-auto lg:ml-0 mt-2 lg:mt-0">
           
           {/* City Name & Date */}
           <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10">

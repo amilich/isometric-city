@@ -330,7 +330,7 @@ function HomePageContent() {
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   const [hasCurrentGame, setHasCurrentGame] = useState(false);
   const { isMobileDevice, isSmallScreen } = useMobile();
-  const { state, setActivePanel } = useGame(); // Use GameContext
+  const { state, setActivePanel, newGame } = useGame(); // Use GameContext
   const isMobile = isMobileDevice || isSmallScreen;
 
   useEffect(() => {
@@ -343,6 +343,7 @@ function HomePageContent() {
   }, []);
 
   const startNewGame = () => {
+    newGame(); // Start fresh game state
     localStorage.removeItem(STORAGE_KEY);
     setShowGame(true);
   };

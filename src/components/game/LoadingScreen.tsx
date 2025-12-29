@@ -38,8 +38,8 @@ export const LoadingScreen = ({ onFinished }: { onFinished: () => void }) => {
         }
         updateProgress(20);
 
-        // 2. Collect all assets to load
-        if (mounted) setStatus('Loading assets...');
+        // 2. Start asset loading in background (don't wait)
+        if (mounted) setStatus('Initializing interface...');
         
         // Get the default sprite pack
         const defaultPack = SPRITE_PACKS.find(p => p.id === DEFAULT_SPRITE_PACK_ID) || SPRITE_PACKS[0];
@@ -61,32 +61,13 @@ export const LoadingScreen = ({ onFinished }: { onFinished: () => void }) => {
             defaultPack.stationsSrc
         ].filter(Boolean) as string[]; // Remove undefined values
 
-        const totalAssets = assetsToLoad.length;
-        let loadedCount = 0;
-
-        const loadImage = (src: string) => new Promise((resolve) => {
+        // Preload images in background without blocking
+        assetsToLoad.forEach(src => {
             const img = new window.Image();
             img.src = src;
-            img.onload = () => {
-                loadedCount++;
-                const percent = 20 + Math.floor((loadedCount / totalAssets) * 60); // 20% to 80%
-                updateProgress(percent);
-                console.log(`Loaded asset: ${src}`);
-                resolve(true);
-            };
-            img.onerror = () => {
-                console.warn(`Failed to load asset: ${src}`);
-                loadedCount++; // Count as handled even if failed
-                const percent = 20 + Math.floor((loadedCount / totalAssets) * 60);
-                updateProgress(percent);
-                resolve(null); 
-            };
         });
-
-        // Load all images in parallel
-        await Promise.all(assetsToLoad.map(loadImage));
         
-        console.log('Assets phase finished');
+        console.log('Assets preloading started in background');
         updateProgress(80);
 
         // 3. Initialize Simulation

@@ -2,6 +2,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
+import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 import {
   Budget,
   BuildingType,
@@ -156,13 +157,27 @@ const toolZoneMap: Partial<Record<Tool, ZoneType>> = {
   zone_dezone: 'none',
 };
 
+// Helper to parse saved data (handles both compressed and uncompressed)
+function parseSavedData(saved: string): any {
+  try {
+    if (saved.startsWith('LZ:')) {
+      const decompressed = decompressFromUTF16(saved.substring(3));
+      return decompressed ? JSON.parse(decompressed) : null;
+    }
+    return JSON.parse(saved);
+  } catch (e) {
+    console.error('Failed to parse saved data:', e);
+    return null;
+  }
+}
+
 // Load game state from localStorage
 function loadGameState(): GameState | null {
   if (typeof window === 'undefined') return null;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
+      const parsed = parseSavedData(saved);
       // Validate it has essential properties
       if (parsed && 
           parsed.grid && 
@@ -257,14 +272,17 @@ function saveGameState(state: GameState): void {
       return;
     }
     
-    const serialized = JSON.stringify(state);
+    // Compress data using lz-string
+    const json = JSON.stringify(state);
+    const compressed = 'LZ:' + compressToUTF16(json);
     
     // Check if data is too large (localStorage has ~5-10MB limit)
-    if (serialized.length > 5 * 1024 * 1024) {
+    if (compressed.length > 5 * 1024 * 1024) {
+      console.error('Game state too large to save (compressed)');
       return;
     }
     
-    localStorage.setItem(STORAGE_KEY, serialized);
+    localStorage.setItem(STORAGE_KEY, compressed);
   } catch (e) {
     // Handle quota exceeded errors
     if (e instanceof DOMException && (e.code === 22 || e.code === 1014)) {
@@ -467,13 +485,15 @@ function saveSavedCitiesIndex(cities: SavedCityMeta[]): void {
 function saveCityState(cityId: string, state: GameState): void {
   if (typeof window === 'undefined') return;
   try {
-    const serialized = JSON.stringify(state);
+    const json = JSON.stringify(state);
+    const compressed = 'LZ:' + compressToUTF16(json);
+    
     // Check if data is too large
-    if (serialized.length > 5 * 1024 * 1024) {
-      console.error('City state too large to save');
+    if (compressed.length > 5 * 1024 * 1024) {
+      console.error('City state too large to save (compressed)');
       return;
     }
-    localStorage.setItem(SAVED_CITY_PREFIX + cityId, serialized);
+    localStorage.setItem(SAVED_CITY_PREFIX + cityId, compressed);
   } catch (e) {
     if (e instanceof DOMException && (e.code === 22 || e.code === 1014)) {
       console.error('localStorage quota exceeded');
@@ -489,7 +509,7 @@ function loadCityState(cityId: string): GameState | null {
   try {
     const saved = localStorage.getItem(SAVED_CITY_PREFIX + cityId);
     if (saved) {
-      const parsed = JSON.parse(saved);
+      const parsed = parseSavedData(saved);
       if (parsed && parsed.grid && parsed.gridSize && parsed.stats) {
         return parsed as GameState;
       }

@@ -126,6 +126,15 @@ export async function updateGameRoom(
   gameState: GameState
 ): Promise<boolean> {
   try {
+    // CRITICAL: Validate state before saving to prevent overwriting with empty/invalid state
+    // This is a final safeguard against race conditions
+    if (!gameState || !gameState.grid || !Array.isArray(gameState.grid) || 
+        !gameState.gridSize || gameState.gridSize <= 0 ||
+        !gameState.stats || gameState.stats.population === undefined) {
+      console.error('[Database] Rejecting invalid state update - state appears empty or malformed');
+      return false;
+    }
+    
     // PERF: Both JSON.stringify and lz-string compression happen in the worker
     const compressed = await serializeAndCompressForDBAsync(gameState);
     

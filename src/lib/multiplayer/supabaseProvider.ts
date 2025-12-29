@@ -108,8 +108,12 @@ export class MultiplayerProvider {
         throw new Error(msg('Room not found'));
       }
       this.gameState = roomData.gameState;
-      // Note: We do NOT set hasReceivedInitialState here because we want to
-      // receive state-sync from existing players (which will have fresher state)
+      // Mark that we have received valid initial state from the database
+      // This allows us to save state updates and broadcast to new joiners
+      // Note: We may still receive state-sync from existing players (fresher state),
+      // which will also be accepted since hasReceivedInitialState protects against
+      // EMPTY state, not against receiving updates
+      this.hasReceivedInitialState = true;
       // Notify that we received state from the database
       this.options.onStateReceived?.(roomData.gameState);
     }
@@ -147,9 +151,11 @@ export class MultiplayerProvider {
             
             // When a new player joins, send them the current state via broadcast
             // This ensures they get the latest state (database might be stale)
-            if (this.gameState) {
+            // CRITICAL: Only broadcast if we have received initial state
+            // This prevents joiners with empty/default state from overwriting real game state
+            if (this.gameState && this.hasReceivedInitialState) {
               setTimeout(() => {
-                if (!this.destroyed && this.gameState) {
+                if (!this.destroyed && this.gameState && this.hasReceivedInitialState) {
                   this.channel.send({
                     type: 'broadcast',
                     event: 'state-sync',
@@ -236,6 +242,26 @@ export class MultiplayerProvider {
    * Update the game state and save to database (throttled)
    */
   updateGameState(state: GameState): void {
+    // CRITICAL: Validate state before saving to prevent overwriting with empty/invalid state
+    // This guards against race conditions where the game hasn't loaded real state yet
+    if (!state || !state.grid || !Array.isArray(state.grid) || !state.gridSize || !state.stats) {
+      console.warn('[MultiplayerProvider] Rejecting invalid state update:', {
+        hasState: !!state,
+        hasGrid: !!state?.grid,
+        isGridArray: Array.isArray(state?.grid),
+        hasGridSize: !!state?.gridSize,
+        hasStats: !!state?.stats
+      });
+      return;
+    }
+    
+    // Also verify we have received initial state (for joiners)
+    // This prevents saving before we've loaded the canonical state
+    if (!this.hasReceivedInitialState) {
+      console.warn('[MultiplayerProvider] Rejecting state update - initial state not yet received');
+      return;
+    }
+    
     this.gameState = state;
     
     const now = Date.now();

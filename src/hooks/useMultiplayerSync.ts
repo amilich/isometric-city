@@ -63,6 +63,9 @@ export function useMultiplayerSync() {
   const lastActionRef = useRef<string | null>(null);
   const initialStateLoadedRef = useRef(false);
   
+  // Track whether we've received valid state (for joiners, prevents saving empty state)
+  const hasValidStateRef = useRef(false);
+  
   // Batching for placements - use refs to avoid stale closures
   const placementBufferRef = useRef<Array<{ x: number; y: number; tool: Tool }>>([]);
   const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -92,8 +95,20 @@ export function useMultiplayerSync() {
     if (success) {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
+      // Mark that we now have valid state (safe to save to database)
+      hasValidStateRef.current = true;
     }
   }, [multiplayer?.initialState, game]);
+  
+  // For room creators, mark state as valid immediately since they have the canonical state
+  useEffect(() => {
+    if (!multiplayer?.provider) return;
+    
+    // If this player is the creator, they have valid state from the start
+    if (multiplayer.provider.isCreator) {
+      hasValidStateRef.current = true;
+    }
+  }, [multiplayer]);
 
   // Apply a remote action to the local game state
   const applyRemoteAction = useCallback((action: GameAction) => {
@@ -268,6 +283,21 @@ export function useMultiplayerSync() {
   useEffect(() => {
     if (!multiplayer || multiplayer.connectionState !== 'connected') return;
     
+    // CRITICAL: Don't save state until we have valid state
+    // This prevents race condition where an empty/default state overwrites the real game
+    // For creators: hasValidStateRef is set immediately
+    // For joiners: hasValidStateRef is set after receiving initialState
+    if (!hasValidStateRef.current) {
+      console.log('[useMultiplayerSync] Skipping state save - waiting for valid state');
+      return;
+    }
+    
+    // Also wait for GameContext to finish loading
+    if (!game.isStateReady) {
+      console.log('[useMultiplayerSync] Skipping state save - game state not ready');
+      return;
+    }
+    
     const now = Date.now();
     if (now - lastUpdateRef.current < 2000) return; // Throttle to 2 second intervals
     lastUpdateRef.current = now;
@@ -280,7 +310,7 @@ export function useMultiplayerSync() {
       lastIndexUpdateRef.current = now;
       updateSavedCitiesIndex(game.state, multiplayer.roomCode);
     }
-  }, [multiplayer, game.state]);
+  }, [multiplayer, game.state, game.isStateReady]);
 
   // Broadcast a local action to peers
   const broadcastAction = useCallback((action: GameActionInput) => {

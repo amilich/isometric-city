@@ -93,7 +93,7 @@ export function useMultiplayerSync() {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
     }
-  }, [multiplayer?.initialState, game]);
+  }, [multiplayer, multiplayer?.initialState, game]);
 
   // Apply a remote action to the local game state
   const applyRemoteAction = useCallback((action: GameAction) => {
@@ -267,6 +267,16 @@ export function useMultiplayerSync() {
   const lastIndexUpdateRef = useRef<number>(0);
   useEffect(() => {
     if (!multiplayer || multiplayer.connectionState !== 'connected') return;
+
+    // Prevent a race on initial mount where the default "fresh city" state
+    // can be pushed to Supabase before the real co-op state finishes loading.
+    if (!game.isStateReady) return;
+
+    // Guests should not write any state until they've successfully loaded
+    // an initial co-op state from the network (DB/state-sync).
+    // Creators are allowed to write immediately once their local state is ready.
+    const isCreator = multiplayer.provider?.isCreator ?? false;
+    if (!isCreator && !initialStateLoadedRef.current) return;
     
     const now = Date.now();
     if (now - lastUpdateRef.current < 2000) return; // Throttle to 2 second intervals
@@ -280,7 +290,7 @@ export function useMultiplayerSync() {
       lastIndexUpdateRef.current = now;
       updateSavedCitiesIndex(game.state, multiplayer.roomCode);
     }
-  }, [multiplayer, game.state]);
+  }, [multiplayer, game.isStateReady, game.state]);
 
   // Broadcast a local action to peers
   const broadcastAction = useCallback((action: GameActionInput) => {

@@ -14,14 +14,18 @@ import {
   loadGameRoom,
   updateGameRoom,
   updatePlayerCount,
+  CitySizeLimitError,
 } from './database';
 import { GameState } from '@/types/game';
 import { msg } from 'gt-next';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Lazy init: only create client when Supabase is configured
+const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey) 
+  : null;
 
 // Throttle state saves to avoid excessive database writes
 const STATE_SAVE_INTERVAL = 3000; // Save state every 3 seconds max
@@ -57,6 +61,9 @@ export class MultiplayerProvider {
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: MultiplayerProviderOptions) {
+    if (!supabase) {
+      throw new Error('Multiplayer requires Supabase configuration');
+    }
     this.options = options;
     this.roomCode = options.roomCode;
     this.peerId = generatePlayerId();
@@ -91,14 +98,22 @@ export class MultiplayerProvider {
     if (this.isCreator && this.gameState) {
       // Creator has the canonical state - mark as already received
       this.hasReceivedInitialState = true;
-      const success = await createGameRoom(
-        this.roomCode,
-        this.options.cityName,
-        this.gameState
-      );
-      if (!success) {
-        this.options.onError?.(msg('Failed to create room in database'));
-        throw new Error(msg('Failed to create room in database'));
+      try {
+        const success = await createGameRoom(
+          this.roomCode,
+          this.options.cityName,
+          this.gameState
+        );
+        if (!success) {
+          this.options.onError?.(msg('Failed to create room in database'));
+          throw new Error(msg('Failed to create room in database'));
+        }
+      } catch (e) {
+        if (e instanceof CitySizeLimitError) {
+          this.options.onError?.(e.message);
+          throw e;
+        }
+        throw e;
       }
     } else {
       // Joining an existing room - load state from database
@@ -263,7 +278,12 @@ export class MultiplayerProvider {
   private saveStateToDatabase(state: GameState): void {
     this.lastStateSave = Date.now();
     updateGameRoom(this.roomCode, state).catch((e) => {
-      console.error('[Multiplayer] Failed to save state to database:', e);
+      if (e instanceof CitySizeLimitError) {
+        console.warn('[Multiplayer] City too large to save:', e.message);
+        this.options.onError?.(e.message);
+      } else {
+        console.error('[Multiplayer] Failed to save state to database:', e);
+      }
     });
   }
 
@@ -296,7 +316,7 @@ export class MultiplayerProvider {
     }
     
     this.channel.unsubscribe();
-    supabase.removeChannel(this.channel);
+    supabase?.removeChannel(this.channel);
   }
 }
 

@@ -198,13 +198,11 @@ function buildNaturalTileTexture(kind: NaturalGroundKind, variant: number): HTML
  */
 export function drawNaturalGroundTile(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
+  coords: { screenX: number; screenY: number; gridX: number; gridY: number },
   kind: NaturalGroundKind = 'grass',
   zoom: number = 1
 ): void {
+  const { screenX, screenY, gridX, gridY } = coords;
   const variant = hash2D(gridX, gridY) % VARIANT_COUNT;
   const tex = buildNaturalTileTexture(kind, variant);
 

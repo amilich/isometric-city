@@ -1483,7 +1483,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               }
             } else if (tile.hasOilDeposit) {
               // Draw grass base first (more realistic terrain)
-              drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
+              drawNaturalGroundTile(ctx, { screenX, screenY, gridX: x, gridY: y }, 'grass', currentZoom);
               
               // Only show oil in industrial+ ages
               const isIndustrial = AGE_ORDER.indexOf(playerAge) >= AGE_ORDER.indexOf('industrial');
@@ -1562,7 +1562,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               }
             } else if (tile.forestDensity > 0) {
               // Draw base grass tile for forest (more realistic terrain)
-              drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
+              drawNaturalGroundTile(ctx, { screenX, screenY, gridX: x, gridY: y }, 'grass', currentZoom);
               
               // Draw trees on forest tiles using IsoCity's tree sprite
               const isoCitySprite = getCachedImage(ISOCITY_SPRITE_PATH, true);
@@ -1623,13 +1623,13 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               }
             } else if (tile.building?.type === 'road') {
               // Draw grass base under roads (roads are drawn on top in second pass)
-              drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
+              drawNaturalGroundTile(ctx, { screenX, screenY, gridX: x, gridY: y }, 'grass', currentZoom);
             } else {
               // Regular grass tile
               // RoN terrain: keep zones for future use, but render with realistic ground shading.
               // (RoN currently uses 'none' almost always.)
               if (zoneType === 'none') {
-                drawNaturalGroundTile(ctx, screenX, screenY, x, y, 'grass', currentZoom);
+                drawNaturalGroundTile(ctx, { screenX, screenY, gridX: x, gridY: y }, 'grass', currentZoom);
               } else {
                 // Fall back to shared zoned rendering if zones are ever enabled.
                 drawGroundTile(ctx, screenX, screenY, zoneType, currentZoom, false);
@@ -1734,7 +1734,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
           // Draw beach if any adjacent tile is land (and not a dock)
           if (adjacentLand.north || adjacentLand.east || adjacentLand.south || adjacentLand.west) {
             // RoN shoreline: sand shallows + foam (more realistic than sidewalk-style strips)
-            drawRoNShorelineOnWater(ctx, screenX, screenY, x, y, adjacentLand);
+            drawRoNShorelineOnWater(ctx, { screenX, screenY, gridX: x, gridY: y }, adjacentLand);
           }
         }
       }

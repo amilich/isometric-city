@@ -39,12 +39,10 @@ type AdjacentLand = { north: boolean; east: boolean; south: boolean; west: boole
  */
 export function drawRoNShorelineOnWater(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
+  coords: { screenX: number; screenY: number; gridX: number; gridY: number },
   adjacentLand: AdjacentLand
 ): void {
+  const { screenX, screenY, gridX, gridY } = coords;
   const { north, east, south, west } = adjacentLand;
   if (!north && !east && !south && !west) return;
 

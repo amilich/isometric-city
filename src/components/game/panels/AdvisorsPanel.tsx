@@ -67,20 +67,20 @@ export function AdvisorsPanel() {
           <DialogTitle>{t('CityAdvisors')}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <Card className="flex items-center gap-4 p-4 bg-primary/10 border-primary/30">
-            <div 
-              className={`w-16 h-16 flex items-center justify-center text-3xl font-black rounded-md ${gradeColor} bg-primary/20`}
-            >
-              {grade}
-            </div>
-            <div>
-              <div className="text-foreground font-semibold">{t('AdvisorsContent.GeneralEvaluation')}</div>
-              <div className="text-muted-foreground text-sm">{t('AdvisorsContent.GeneralEvaluationDesc')}</div>
-            </div>
-          </Card>
-          
-          <ScrollArea className="max-h-[350px]">
+        <ScrollArea className="max-h-[500px] pr-4">
+          <div className="space-y-4">
+            <Card className="flex items-center gap-4 p-4 bg-primary/10 border-primary/30">
+              <div 
+                className={`w-16 h-16 flex items-center justify-center text-3xl font-black rounded-md ${gradeColor} bg-primary/20`}
+              >
+                {grade}
+              </div>
+              <div>
+                <div className="text-foreground font-semibold">{t('AdvisorsContent.GeneralEvaluation')}</div>
+                <div className="text-muted-foreground text-sm">{t('AdvisorsContent.GeneralEvaluationDesc')}</div>
+              </div>
+            </Card>
+            
             <div className="space-y-3">
               {advisorMessages.length === 0 ? (
                 <Card className="text-center py-8 text-muted-foreground bg-primary/10 border-primary/30">
@@ -117,8 +117,8 @@ export function AdvisorsPanel() {
                 ))
               )}
             </div>
-          </ScrollArea>
-        </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

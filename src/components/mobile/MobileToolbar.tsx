@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useGame } from '@/context/GameContext';
-import { Tool, TOOL_INFO } from '@/types/game';
+import { Tool, TOOL_INFO, ActivePanel } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -206,7 +206,7 @@ const toolCategories = {
 type OverlayMode = 'none' | 'power' | 'water' | 'fire' | 'police' | 'health' | 'education' | 'subway';
 
 interface MobileToolbarProps {
-  onOpenPanel: (panel: 'budget' | 'statistics' | 'advisors' | 'settings') => void;
+  onOpenPanel: (panel: ActivePanel) => void;
   overlayMode?: OverlayMode;
   setOverlayMode?: (mode: OverlayMode) => void;
 }

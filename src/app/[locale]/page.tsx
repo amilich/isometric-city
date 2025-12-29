@@ -533,8 +533,8 @@ function HomePageContent() {
           <Image
             src="/truncgil-mycity-icon.png"
             alt="City Preview"
-            width={900}
-            height={900}
+            width={600}
+            height={600}
             className="object-contain drop-shadow-2xl animate-float"
             priority
           />

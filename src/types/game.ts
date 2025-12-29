@@ -313,6 +313,8 @@ export interface WaterBody {
   centerY: number;
 }
 
+export type ActivePanel = 'none' | 'budget' | 'statistics' | 'advisors' | 'settings';
+
 export interface GameState {
   id: string; // Unique UUID for this game
   grid: Tile[][];
@@ -333,7 +335,7 @@ export interface GameState {
   notifications: Notification[];
   advisorMessages: AdvisorMessage[];
   history: HistoryPoint[];
-  activePanel: 'none' | 'budget' | 'statistics' | 'advisors' | 'settings';
+  activePanel: ActivePanel;
   disastersEnabled: boolean;
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];

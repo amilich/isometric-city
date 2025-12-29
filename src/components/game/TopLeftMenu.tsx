@@ -18,13 +18,14 @@ import {
   BudgetIcon,
 } from '@/components/ui/Icons';
 import { OverlayMode } from './types';
+import { ActivePanel } from '@/types/game';
 import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
 import { useTranslations } from 'next-intl';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface TopLeftMenuProps {
-  activePanel: string;
-  setActivePanel: (panel: string) => void;
+  activePanel: ActivePanel;
+  setActivePanel: (panel: ActivePanel) => void;
   overlayMode: OverlayMode;
   setOverlayMode: (mode: OverlayMode) => void;
 }

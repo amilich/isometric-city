@@ -270,11 +270,15 @@ export const BottomHUD = React.memo(function BottomHUD({
   children?: React.ReactNode; 
 }) {
   const { state, setTool, setActivePanel, saveCity, setSpeed } = useGame();
-  const { selectedTool, stats, activePanel, speed, year, month, day } = state;
+  const { selectedTool, stats, activePanel, speed, year, month, day, cityName } = state;
   const date = useMemo(() => new Date(year, month - 1, day), [year, month, day]);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const t = useTranslations('Game');
+  
+  const avgRating = (stats.happiness + stats.health + stats.education + stats.safety + stats.environment) / 5;
+  const grade = avgRating >= 90 ? 'A+' : avgRating >= 80 ? 'A' : avgRating >= 70 ? 'B' : avgRating >= 60 ? 'C' : avgRating >= 50 ? 'D' : 'F';
+  const gradeColor = avgRating >= 70 ? 'text-green-400' : avgRating >= 50 ? 'text-amber-400' : 'text-red-400';
   
   // Close stats on outside click
   const statsRef = useRef<HTMLDivElement>(null);
@@ -355,85 +359,85 @@ export const BottomHUD = React.memo(function BottomHUD({
                    
                    <div className="space-y-3">
                      {/* Happiness */}
-                     <div className="space-y-1">
-                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                     <div className="space-y-1.5">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300 px-1">
                          <div className="flex items-center gap-1.5">
-                           <Smile size={14} className="text-yellow-400" />
+                           <Smile size={14} className="text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
                            <span>{t('Stats.happiness')}</span>
                          </div>
-                         <span>{Math.round(stats.happiness)}%</span>
+                         <span className="font-mono text-yellow-400">{Math.round(stats.happiness)}%</span>
                        </div>
-                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                       <div className="h-2.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
                          <div 
-                           className="h-full bg-yellow-400 transition-all duration-500" 
+                           className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.4)] transition-all duration-500 rounded-full" 
                            style={{ width: `${Math.min(100, Math.max(0, stats.happiness))}%` }}
                          />
                        </div>
                      </div>
 
                      {/* Health */}
-                     <div className="space-y-1">
-                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                     <div className="space-y-1.5">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300 px-1">
                          <div className="flex items-center gap-1.5">
-                           <Heart size={14} className="text-red-400" />
+                           <Heart size={14} className="text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]" />
                            <span>{t('Stats.health')}</span>
                          </div>
-                         <span>{Math.round(stats.health)}%</span>
+                         <span className="font-mono text-red-400">{Math.round(stats.health)}%</span>
                        </div>
-                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                       <div className="h-2.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
                          <div 
-                           className="h-full bg-red-400 transition-all duration-500" 
+                           className="h-full bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_10px_rgba(248,113,113,0.4)] transition-all duration-500 rounded-full" 
                            style={{ width: `${Math.min(100, Math.max(0, stats.health))}%` }}
                          />
                        </div>
                      </div>
 
                      {/* Education */}
-                     <div className="space-y-1">
-                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                     <div className="space-y-1.5">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300 px-1">
                          <div className="flex items-center gap-1.5">
-                           <GraduationCap size={14} className="text-blue-400" />
+                           <GraduationCap size={14} className="text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
                            <span>{t('Stats.education')}</span>
                          </div>
-                         <span>{Math.round(stats.education)}%</span>
+                         <span className="font-mono text-blue-400">{Math.round(stats.education)}%</span>
                        </div>
-                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                       <div className="h-2.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
                          <div 
-                           className="h-full bg-blue-400 transition-all duration-500" 
+                           className="h-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.4)] transition-all duration-500 rounded-full" 
                            style={{ width: `${Math.min(100, Math.max(0, stats.education))}%` }}
                          />
                        </div>
                      </div>
 
                      {/* Safety */}
-                     <div className="space-y-1">
-                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                     <div className="space-y-1.5">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300 px-1">
                          <div className="flex items-center gap-1.5">
-                           <Shield size={14} className="text-indigo-400" />
+                           <Shield size={14} className="text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)]" />
                            <span>{t('Stats.safety')}</span>
                          </div>
-                         <span>{Math.round(stats.safety)}%</span>
+                         <span className="font-mono text-indigo-400">{Math.round(stats.safety)}%</span>
                        </div>
-                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                       <div className="h-2.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
                          <div 
-                           className="h-full bg-indigo-400 transition-all duration-500" 
+                           className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.4)] transition-all duration-500 rounded-full" 
                            style={{ width: `${Math.min(100, Math.max(0, stats.safety))}%` }}
                          />
                        </div>
                      </div>
 
                      {/* Environment */}
-                     <div className="space-y-1">
-                       <div className="flex justify-between items-center text-xs font-bold text-slate-300">
+                     <div className="space-y-1.5">
+                       <div className="flex justify-between items-center text-xs font-bold text-slate-300 px-1">
                          <div className="flex items-center gap-1.5">
-                           <Leaf size={14} className="text-green-400" />
+                           <Leaf size={14} className="text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
                            <span>{t('Stats.environment')}</span>
                          </div>
-                         <span>{Math.round(stats.environment)}%</span>
+                         <span className="font-mono text-green-400">{Math.round(stats.environment)}%</span>
                        </div>
-                       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                       <div className="h-2.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
                          <div 
-                           className="h-full bg-green-400 transition-all duration-500" 
+                           className="h-full bg-gradient-to-r from-green-600 to-green-400 shadow-[0_0_10px_rgba(74,222,128,0.4)] transition-all duration-500 rounded-full" 
                            style={{ width: `${Math.min(100, Math.max(0, stats.environment))}%` }}
                          />
                        </div>
@@ -554,17 +558,31 @@ export const BottomHUD = React.memo(function BottomHUD({
         {/* RIGHT: Status & Systems */}
         <div className="pointer-events-auto flex flex-col w-[280px] bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-4 shadow-2xl mb-1">
           
+          {/* City Name & Date */}
+          <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10">
+            <div className="font-bold text-white text-sm truncate max-w-[150px]" title={cityName}>
+              {cityName || "My City"}
+            </div>
+             <div className="text-xs font-mono text-slate-400">
+               {date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+            </div>
+          </div>
+
           {/* Money & Pop */}
           <div className="flex-1 flex flex-col justify-center gap-2 mb-2">
-            <div className="text-emerald-400 font-mono text-3xl font-bold text-right drop-shadow-md tracking-tight">
-              ₺{formatNumber(stats.money)}
+            <div className="flex justify-between items-end">
+               <div className={`text-4xl font-black ${gradeColor} drop-shadow-md bg-black/20 px-2 rounded`}>
+                  {grade}
+               </div>
+               <div className="text-emerald-400 font-mono text-3xl font-bold text-right drop-shadow-md tracking-tight">
+                  ₺{formatNumber(stats.money)}
+               </div>
             </div>
             <div className="flex justify-between items-center text-slate-400 text-[10px] uppercase font-bold tracking-wider border-t border-white/10 pt-2">
                <span>Population</span>
                <span className="text-white text-base">{formatNumber(stats.population)}</span>
             </div>
              <div className="flex justify-between items-center text-slate-500 text-[10px] font-mono">
-               <span>{date?.toLocaleDateString ? date.toLocaleDateString() : 'Loading...'}</span>
                <span className={speed === 0 ? 'text-amber-500' : 'text-slate-400'}>{speed === 0 ? 'PAUSED' : speed === 1 ? 'NORMAL' : 'FAST'}</span>
             </div>
           </div>

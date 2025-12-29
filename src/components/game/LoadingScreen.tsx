@@ -3,6 +3,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
+import { SPRITE_PACKS, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
+import { AIRPLANE_SPRITE_SRC, WATER_ASSET_PATH } from '@/components/game/constants';
 
 export const LoadingScreen = ({ onFinished }: { onFinished: () => void }) => {
   const [progress, setProgress] = useState(0);
@@ -28,48 +30,68 @@ export const LoadingScreen = ({ onFinished }: { onFinished: () => void }) => {
         if (mounted) setStatus('Loading fonts...');
         try {
           await document.fonts.ready;
+          // Optional: Check if Material Symbols is ready
+          // const isLoaded = document.fonts.check('20px "Material Symbols Rounded"');
           console.log('Fonts loaded');
         } catch (e) {
-          console.warn('Font loading skipped', e);
+          console.warn('Font loading skipped or failed', e);
         }
-        updateProgress(30);
+        updateProgress(20);
 
-        // 2. Preload Main Sprite Sheets
+        // 2. Collect all assets to load
         if (mounted) setStatus('Loading assets...');
         
-        const imagesToLoad = [
-          '/truncgil-mycity-icon.png',
-          // Add other critical assets here if needed
-        ].filter(Boolean) as string[];
+        // Get the default sprite pack
+        const defaultPack = SPRITE_PACKS.find(p => p.id === DEFAULT_SPRITE_PACK_ID) || SPRITE_PACKS[0];
+        
+        const assetsToLoad = [
+            '/truncgil-mycity-icon.png',
+            '/truncgil-mycity3.png',
+            AIRPLANE_SPRITE_SRC,
+            WATER_ASSET_PATH,
+            defaultPack.src,
+            defaultPack.constructionSrc,
+            defaultPack.abandonedSrc,
+            defaultPack.denseSrc,
+            defaultPack.modernSrc,
+            defaultPack.parksSrc,
+            defaultPack.parksConstructionSrc,
+            defaultPack.farmsSrc,
+            defaultPack.shopsSrc,
+            defaultPack.stationsSrc
+        ].filter(Boolean) as string[]; // Remove undefined values
+
+        const totalAssets = assetsToLoad.length;
+        let loadedCount = 0;
 
         const loadImage = (src: string) => new Promise((resolve) => {
             const img = new window.Image();
             img.src = src;
             img.onload = () => {
+                loadedCount++;
+                const percent = 20 + Math.floor((loadedCount / totalAssets) * 60); // 20% to 80%
+                updateProgress(percent);
                 console.log(`Loaded asset: ${src}`);
                 resolve(true);
             };
             img.onerror = () => {
                 console.warn(`Failed to load asset: ${src}`);
-                resolve(null); // Continue even if one fails
+                loadedCount++; // Count as handled even if failed
+                const percent = 20 + Math.floor((loadedCount / totalAssets) * 60);
+                updateProgress(percent);
+                resolve(null); 
             };
         });
 
-        // Use a timeout to ensure we don't hang forever
-        const assetLoadingPromise = Promise.all(imagesToLoad.map(loadImage));
-        const timeoutPromise = new Promise(resolve => setTimeout(() => {
-            console.log('Asset loading timed out');
-            resolve(false);
-        }, 3000)); // Max 3s for assets
-        
-        await Promise.race([assetLoadingPromise, timeoutPromise]);
+        // Load all images in parallel
+        await Promise.all(assetsToLoad.map(loadImage));
         
         console.log('Assets phase finished');
-        updateProgress(70);
+        updateProgress(80);
 
         // 3. Initialize Simulation
         if (mounted) setStatus('Initializing simulation...');
-        await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause for UX
+        await new Promise(resolve => setTimeout(resolve, 800)); // Brief pause for UX and CSS/JS parsing
         console.log('Simulation init wait finished');
 
         updateProgress(100);
@@ -90,6 +112,8 @@ export const LoadingScreen = ({ onFinished }: { onFinished: () => void }) => {
       }
     };
 
+    // Tiny polyfill for FontFaceObserver if not available
+    // or just rely on document.fonts.ready which is modern
     loadAssets();
 
     return () => {
@@ -116,8 +140,12 @@ export const LoadingScreen = ({ onFinished }: { onFinished: () => void }) => {
             <p className="text-white/80 text-sm font-medium animate-pulse">{status}</p>
           </div>
           
-          <div className="relative">
-            <Progress value={progress} className="h-4 bg-black/20 border border-white/20 backdrop-blur-sm" indicatorClassName="bg-white transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+          <div className="relative px-2">
+            <Progress 
+              value={progress} 
+              className="h-3 bg-black/40 border border-white/20 backdrop-blur-md rounded-full shadow-inner overflow-hidden" 
+              indicatorClassName="bg-gradient-to-r from-sky-400 to-blue-500 shadow-[0_0_15px_rgba(56,189,248,0.6)] transition-all duration-300" 
+            />
           </div>
           
           <div className="flex justify-between text-xs text-white/60 font-mono font-medium">

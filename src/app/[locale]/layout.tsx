@@ -128,7 +128,7 @@ export default async function RootLayout({
         <meta name="msapplication-TileColor" content="#0f1219" />
         <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

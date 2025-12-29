@@ -22,6 +22,12 @@ import {
   Sparkles,
   Trophy
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   PLANE_DIRECTION_COLS, 
   PLANE_TYPE_ROWS, 
@@ -243,22 +249,28 @@ function MenuButton({
   active?: boolean;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`
-        flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-2xl transition-all duration-200
-        backdrop-blur-md border
-        ${variant === 'primary' 
-          ? 'bg-gradient-to-b from-sky-500/90 to-blue-600/90 border-blue-400/50 text-white shadow-lg shadow-blue-500/30 hover:scale-110 hover:-translate-y-2' 
-          : active 
-            ? 'bg-white/20 border-white/30 text-white' 
-            : 'bg-slate-900/60 border-white/10 text-white/70 hover:bg-slate-900/80 hover:text-white hover:border-white/30 hover:scale-110 hover:-translate-y-2'
-        }
-      `}
-    >
-      <Icon className="w-6 h-6 mb-1" />
-      <span className="text-[10px] font-medium tracking-wide text-center leading-tight">{label}</span>
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          className={`
+            flex items-center justify-center w-14 h-14 rounded-full transition-all duration-200
+            shadow-lg border-2
+            ${variant === 'primary' 
+              ? 'bg-blue-600 border-blue-400 text-white hover:bg-blue-500 hover:scale-110' 
+              : active 
+                ? 'bg-blue-600 border-blue-400 text-white' 
+                : 'bg-slate-900/90 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white hover:scale-110'
+            }
+          `}
+        >
+          <Icon size={24} />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={10} className="bg-slate-900 border-slate-700 text-white">
+        <span className="font-bold">{label}</span>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -530,36 +542,38 @@ function HomePageContent() {
       </div>
 
       {/* Bottom Dock Menu */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 px-6 py-4 bg-slate-900/30 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl">
-        {hasCurrentGame ? (
+      <TooltipProvider delayDuration={0}>
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-3 bg-slate-900/30 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+          {hasCurrentGame ? (
+              <MenuButton 
+                icon={Play} 
+                label={t('continue')} 
+                onClick={continueGame}
+                variant="primary"
+              />
+            ) : null}
             <MenuButton 
-              icon={Play} 
-              label={t('continue')} 
-              onClick={continueGame}
-              variant="primary"
+              icon={Sparkles} 
+              label={t('newGame')} 
+              onClick={startNewGame}
+              variant={hasCurrentGame ? undefined : "primary"}
             />
-          ) : null}
-          <MenuButton 
-            icon={Sparkles} 
-            label={t('newGame')} 
-            onClick={startNewGame}
-            variant={hasCurrentGame ? undefined : "primary"}
-          />
-          <MenuButton 
-            icon={Trophy} 
-            label={t('exampleCity')} 
-            onClick={loadExampleCity}
-          />
-           <MenuButton 
-            icon={ShoppingBag} 
-            label={t('shop')} 
-          />
-          <MenuButton 
-            icon={Settings} 
-            label={t('settings')} 
-            onClick={() => setActivePanel('settings')}
-          />
-      </div>
+            <MenuButton 
+              icon={Trophy} 
+              label={t('exampleCity')} 
+              onClick={loadExampleCity}
+            />
+            <MenuButton 
+              icon={ShoppingBag} 
+              label={t('shop')} 
+            />
+            <MenuButton 
+              icon={Settings} 
+              label={t('settings')} 
+              onClick={() => setActivePanel('settings')}
+            />
+        </div>
+      </TooltipProvider>
       
       {state.activePanel === 'settings' && <SettingsPanel />}
 

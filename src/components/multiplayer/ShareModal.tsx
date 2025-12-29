@@ -23,16 +23,17 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
   const [isCreating, setIsCreating] = useState(false);
   
   const { roomCode, createRoom } = useMultiplayer();
-  const { state } = useGame();
+  const { state, isStateReady } = useGame();
 
   // Create room when modal opens (if not already in a room)
+  // IMPORTANT: Wait for isStateReady to ensure we have the loaded state, not the default empty state
   useEffect(() => {
-    if (open && !roomCode && !isCreating) {
+    if (open && !roomCode && !isCreating && isStateReady) {
       setIsCreating(true);
       createRoom(state.cityName, state)
         .then((code) => {
           // Update URL to show room code
-          window.history.replaceState({}, '', `/?room=${code}`);
+          window.history.replaceState({}, '', `/coop/${code}`);
         })
         .catch((err) => {
           console.error('[ShareModal] Failed to create room:', err);
@@ -41,7 +42,7 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
           setIsCreating(false);
         });
     }
-  }, [open, roomCode, isCreating, createRoom, state]);
+  }, [open, roomCode, isCreating, isStateReady, createRoom, state]);
 
   // Reset copied state when modal closes
   useEffect(() => {
@@ -53,13 +54,13 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
   const handleCopyLink = () => {
     if (!roomCode) return;
 
-    const url = `${window.location.origin}/?room=${roomCode}`;
+    const url = `${window.location.origin}/coop/${roomCode}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const inviteUrl = roomCode ? `${window.location.origin}/?room=${roomCode}` : '';
+  const inviteUrl = roomCode ? `${window.location.origin}/coop/${roomCode}` : '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

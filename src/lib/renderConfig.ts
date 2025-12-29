@@ -130,6 +130,20 @@ export interface SpritePack {
   stationsHorizontalOffsets?: Record<string, number>;
   // Per-building-type scale adjustments for STATIONS sprite sheet buildings
   stationsScales?: Record<string, number>;
+  // Path to the mansions sprite sheet (alternate mansion variants)
+  mansionsSrc?: string;
+  // Mansions layout configuration (columns and rows for the mansions sheet)
+  mansionsCols?: number;
+  mansionsRows?: number;
+  // Mansions variants: maps building type to available variants in the mansions sheet
+  // Each variant specifies row and column (0-indexed) in the mansions sprite sheet
+  mansionsVariants?: Record<string, { row: number; col: number }[]>;
+  // Per-building-type vertical offset adjustments for MANSIONS sprite sheet buildings
+  mansionsVerticalOffsets?: Record<string, number>;
+  // Per-building-type horizontal offset adjustments for MANSIONS sprite sheet buildings
+  mansionsHorizontalOffsets?: Record<string, number>;
+  // Per-building-type scale adjustments for MANSIONS sprite sheet buildings
+  mansionsScales?: Record<string, number>;
   // Maps building types to sprite keys in spriteOrder
   buildingToSprite: Record<string, string>;
   // Optional global scale multiplier for all sprites in this pack
@@ -518,6 +532,22 @@ const SPRITE_PACK_SPRITES4: SpritePack = {
   stationsHorizontalOffsets: {},
   stationsScales: {
     rail_station: 0.85, // Scale down 15% for better fit
+  },
+  // Mansions sprite sheet with 35 alternate mansion designs
+  mansionsSrc: '/assets/mansion_alternates.png',
+  mansionsCols: 5,
+  mansionsRows: 7,
+  mansionsVariants: {
+    mansion: [
+      // Row 0 only (temporarily)
+      { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 }, { row: 0, col: 4 },
+    ],
+  },
+  mansionsVerticalOffsets: {
+    mansion: -0.65, // Shifted down 0.3 tiles from -0.95
+  },
+  mansionsScales: {
+    mansion: 0.90, // Same as modern apartment_high scale
   },
   buildingToSprite: {
     house_small: 'house_small',

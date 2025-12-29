@@ -5,6 +5,7 @@ import {
   SEAPLANE_MIN_BAY_SIZE,
   SEAPLANE_COLORS,
   MAX_SEAPLANES,
+  MAX_SEAPLANES_MOBILE,
   SEAPLANE_SPAWN_INTERVAL_MIN,
   SEAPLANE_SPAWN_INTERVAL_MAX,
   SEAPLANE_TAXI_TIME_MIN,
@@ -127,10 +128,12 @@ export function useSeaplaneSystem(
       return;
     }
 
-    // Calculate max seaplanes based on population and bay count
+    // Calculate max seaplanes based on population and bay count - lower on mobile
+    const maxSeaplaneLimit = isMobile ? MAX_SEAPLANES_MOBILE : MAX_SEAPLANES;
+    const minSeaplanes = isMobile ? 1 : 3;
     const populationBased = Math.floor(totalPopulation / 2000);
     const bayBased = Math.floor(bays.length * 5);
-    const maxSeaplanes = Math.min(MAX_SEAPLANES, Math.max(3, Math.min(populationBased, bayBased)));
+    const maxSeaplanes = Math.min(maxSeaplaneLimit, Math.max(minSeaplanes, Math.min(populationBased, bayBased)));
     
     // Speed multiplier based on game speed
     const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 1.5 : 2;

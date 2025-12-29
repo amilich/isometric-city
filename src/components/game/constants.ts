@@ -1,5 +1,6 @@
-import { BuildingType } from '@/types/game';
-import { CarDirection, DirectionMeta, TILE_WIDTH, TILE_HEIGHT } from './types';
+import { BuildingType } from '@/games/isocity/types';
+import { DirectionMeta } from '@/core/types';
+import { CarDirection, TILE_WIDTH, TILE_HEIGHT } from './types';
 
 // Vehicle colors (duller/muted versions)
 export const CAR_COLORS = ['#d97777', '#d4a01f', '#2ba67a', '#4d84c8', '#9a6ac9'];
@@ -34,9 +35,13 @@ export const MAX_BEACH_MATS_PER_EDGE = 2;           // Max mats per beach edge
 
 // Pedestrian performance limits
 export const PEDESTRIAN_MAX_COUNT = 560;            // Maximum pedestrians (hard cap) - reduced ~30%
+export const PEDESTRIAN_MAX_COUNT_MOBILE = 80;      // Mobile: much lower for performance
 export const PEDESTRIAN_ROAD_TILE_DENSITY = 1.7;    // Target pedestrians per road tile - reduced ~30%
+export const PEDESTRIAN_ROAD_TILE_DENSITY_MOBILE = 0.5; // Mobile: lower density
 export const PEDESTRIAN_SPAWN_BATCH_SIZE = 25;      // How many to try spawning at once
+export const PEDESTRIAN_SPAWN_BATCH_SIZE_MOBILE = 5; // Mobile: smaller batches
 export const PEDESTRIAN_SPAWN_INTERVAL = 0.03;      // Seconds between spawn batches
+export const PEDESTRIAN_SPAWN_INTERVAL_MOBILE = 0.15; // Mobile: slower spawning
 export const PEDESTRIAN_UPDATE_SKIP_DISTANCE = 30;  // Skip detailed updates for pedestrians this far from view
 
 // Zoom limits for camera
@@ -131,6 +136,7 @@ export const SEAPLANE_MIN_POPULATION = 3000; // Minimum population for seaplanes
 export const SEAPLANE_MIN_BAY_SIZE = 12; // Minimum water tiles for a bay to support seaplanes
 export const SEAPLANE_COLORS = ['#ffffff', '#1e40af', '#dc2626', '#f97316', '#059669']; // Seaplane liveries
 export const MAX_SEAPLANES = 25; // Maximum seaplanes in the city
+export const MAX_SEAPLANES_MOBILE = 5; // Mobile: fewer seaplanes for performance
 export const SEAPLANE_SPAWN_INTERVAL_MIN = 4; // Minimum seconds between spawns
 export const SEAPLANE_SPAWN_INTERVAL_MAX = 10; // Maximum seconds between spawns
 export const SEAPLANE_TAXI_TIME_MIN = 4; // Minimum seconds taxiing on water before takeoff
@@ -161,7 +167,9 @@ export const BOAT_COLORS = ['#ffffff', '#1e3a5f', '#8b4513', '#2f4f4f', '#c41e3a
 export const BOAT_MIN_ZOOM = 0.3; // Minimum zoom level to show boats
 export const WAKE_MIN_ZOOM_MOBILE = 0.45; // Minimum zoom level to show wakes on mobile (matches traffic lights threshold)
 export const BOATS_PER_DOCK = 1.5; // Number of boats per marina/pier
+export const BOATS_PER_DOCK_MOBILE = 0.5; // Mobile: fewer boats per dock
 export const MAX_BOATS = 12; // Maximum total boats in the city
+export const MAX_BOATS_MOBILE = 4; // Mobile: fewer boats for performance
 export const WAKE_MAX_AGE = 2.0; // seconds - how long wake particles last
 export const WAKE_SPAWN_INTERVAL = 0.03; // seconds between wake particles
 
@@ -171,6 +179,7 @@ export const BARGE_MIN_ZOOM = 0.25; // Minimum zoom level to show barges (slight
 export const BARGE_SPEED_MIN = 8; // Minimum speed (pixels/second) - slower than boats
 export const BARGE_SPEED_MAX = 12; // Maximum speed (pixels/second)
 export const MAX_BARGES = 4; // Maximum barges in the city at once
+export const MAX_BARGES_MOBILE = 2; // Mobile: fewer barges for performance
 export const BARGE_SPAWN_INTERVAL_MIN = 8; // Minimum seconds between barge spawns
 export const BARGE_SPAWN_INTERVAL_MAX = 20; // Maximum seconds between barge spawns
 export const BARGE_DOCK_TIME_MIN = 8; // Minimum seconds docked at marina
@@ -264,8 +273,10 @@ export const TRAFFIC_LIGHT_CYCLE = 7.6;            // Full cycle time
 // Train system constants
 export const TRAIN_MIN_ZOOM = 0.35;               // Minimum zoom to show trains (normal)
 export const TRAIN_SPAWN_INTERVAL = 3.0;          // Seconds between train spawn attempts
+export const TRAIN_SPAWN_INTERVAL_MOBILE = 6.0;   // Mobile: slower train spawning
 export const MIN_RAIL_TILES_FOR_TRAINS = 10;      // Minimum rail tiles needed
 export const MAX_TRAINS = 35;                      // Maximum trains in city
+export const MAX_TRAINS_MOBILE = 8;               // Mobile: fewer trains for performance
 
 // Far zoom thresholds - all mobile/animated entities hidden below these levels
 export const HELICOPTER_MIN_ZOOM = 0.3;           // Minimum zoom to show helicopters

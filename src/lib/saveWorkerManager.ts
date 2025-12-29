@@ -2,7 +2,7 @@
 // Manages a Web Worker for off-main-thread serialization, compression, and decompression
 // Uses Next.js built-in worker bundling (bundles lz-string with the worker)
 
-import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import { compressToUTF16, decompressFromUTF16, compressToEncodedURIComponent } from 'lz-string';
 
 type PendingRequest = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,6 +41,12 @@ function initWorker(): boolean {
         pending.reject(new Error(error));
       } else if (type === 'serialized-compressed') {
         pending.resolve(compressed);
+      } else if (type === 'serialized-compressed-uri') {
+        pending.resolve(compressed);
+      } else if (type === 'compressed-transferred') {
+        pending.resolve(compressed);
+      } else if (type === 'compressed-transferred-uri') {
+        pending.resolve(compressed);
       } else if (type === 'decompressed-parsed') {
         pending.resolve(state);
       }
@@ -68,7 +74,10 @@ function initWorker(): boolean {
 
 /**
  * Serialize and compress a game state using the worker (off main thread)
- * Both JSON.stringify and LZ-string compression happen in the worker
+ * PERF: Uses Transferable ArrayBuffer to avoid expensive structuredClone!
+ * - Main thread: JSON.stringify (fast) + encode to ArrayBuffer
+ * - Transfer: Zero-copy ownership transfer to worker
+ * - Worker: Decode + compress (heavy work off main thread)
  * Falls back to main thread if worker is not available
  */
 export async function serializeAndCompressAsync(state: unknown): Promise<string> {
@@ -98,7 +107,17 @@ export async function serializeAndCompressAsync(state: unknown): Promise<string>
     pendingRequests.set(id, { resolve, reject, timeoutId });
     
     try {
-      worker!.postMessage({ type: 'serialize-compress', id, state });
+      // PERF: Serialize to JSON string, then encode to ArrayBuffer for zero-copy transfer
+      // This avoids the expensive structuredClone that postMessage does on complex objects
+      const jsonString = JSON.stringify(state);
+      const encoder = new TextEncoder();
+      const buffer = encoder.encode(jsonString).buffer;
+      
+      // Transfer the buffer (zero-copy, ownership moves to worker)
+      worker!.postMessage(
+        { type: 'compress-transferred', id, buffer },
+        [buffer] // Transfer list - buffer ownership moves to worker
+      );
     } catch (error) {
       clearTimeout(timeoutId);
       pendingRequests.delete(id);
@@ -190,6 +209,61 @@ export async function decompressAndParseAsync<T = unknown>(compressed: string): 
 export const compressAsync = (data: string): Promise<string> => {
   return serializeAndCompressAsync(data);
 };
+
+/**
+ * Serialize and compress for Supabase database (URI-safe encoding)
+ * PERF: Uses Transferable ArrayBuffer to avoid expensive structuredClone!
+ * Falls back to main thread if worker is not available
+ */
+export async function serializeAndCompressForDBAsync(state: unknown): Promise<string> {
+  // Try to initialize worker if not already done
+  if (!worker && !initWorker()) {
+    // Fallback: serialize and compress on main thread
+    return compressToEncodedURIComponent(JSON.stringify(state));
+  }
+  
+  const id = ++requestId;
+  
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      const pending = pendingRequests.get(id);
+      if (pending) {
+        pendingRequests.delete(id);
+        console.warn('Save worker timeout, falling back to main thread');
+        try {
+          const compressed = compressToEncodedURIComponent(JSON.stringify(state));
+          resolve(compressed);
+        } catch (error) {
+          reject(error);
+        }
+      }
+    }, 15000); // 15 second timeout for larger states
+    
+    pendingRequests.set(id, { resolve, reject, timeoutId });
+    
+    try {
+      // PERF: Serialize to JSON string, then encode to ArrayBuffer for zero-copy transfer
+      const jsonString = JSON.stringify(state);
+      const encoder = new TextEncoder();
+      const buffer = encoder.encode(jsonString).buffer;
+      
+      // Transfer the buffer (zero-copy, ownership moves to worker)
+      worker!.postMessage(
+        { type: 'compress-transferred-uri', id, buffer },
+        [buffer]
+      );
+    } catch (error) {
+      clearTimeout(timeoutId);
+      pendingRequests.delete(id);
+      try {
+        const compressed = compressToEncodedURIComponent(JSON.stringify(state));
+        resolve(compressed);
+      } catch (fallbackError) {
+        reject(fallbackError);
+      }
+    }
+  });
+}
 
 /**
  * Terminate the worker and clean up resources

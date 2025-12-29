@@ -11,7 +11,7 @@ import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/re
 import { SavedCityMeta, GameState } from '@/types/game';
 import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
-import { Users } from 'lucide-react';
+import { Users, X } from 'lucide-react';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
@@ -109,6 +109,47 @@ function loadSavedCities(): SavedCityMeta[] {
     return [];
   }
   return [];
+}
+
+// Save a city to the saved cities index (for multiplayer cities)
+function saveCityToIndex(state: GameState, roomCode?: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const cities = loadSavedCities();
+    
+    // Create city meta
+    const cityMeta: SavedCityMeta = {
+      id: state.id || `city-${Date.now()}`,
+      cityName: state.cityName || 'Co-op City',
+      population: state.stats.population,
+      money: state.stats.money,
+      year: state.year,
+      month: state.month,
+      gridSize: state.gridSize,
+      savedAt: Date.now(),
+      roomCode: roomCode,
+    };
+    
+    // Check if city already exists (by id or roomCode)
+    const existingIndex = cities.findIndex(c => 
+      c.id === cityMeta.id || (roomCode && c.roomCode === roomCode)
+    );
+    
+    if (existingIndex >= 0) {
+      // Update existing entry
+      cities[existingIndex] = cityMeta;
+    } else {
+      // Add new entry at the beginning
+      cities.unshift(cityMeta);
+    }
+    
+    // Keep only the last 20 cities
+    const trimmed = cities.slice(0, 20);
+    
+    localStorage.setItem(SAVED_CITIES_INDEX_KEY, JSON.stringify(trimmed));
+  } catch (e) {
+    console.error('Failed to save city to index:', e);
+  }
 }
 
 // Sprite Gallery component that renders sprites using canvas (like SpriteTestPanel)
@@ -233,20 +274,42 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
 }
 
 // Saved City Card Component
-function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
+function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad: () => void; onDelete?: () => void }) {
   return (
-    <button
-      onClick={onLoad}
-      className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200 group"
-    >
-      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
-        {city.cityName}
-      </h3>
-      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>Pop: {city.population.toLocaleString()}</span>
-        <span>${city.money.toLocaleString()}</span>
-      </div>
-    </button>
+    <div className="relative group">
+      <button
+        onClick={onLoad}
+        className="w-full text-left p-3 pr-8 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm flex-1">
+            {city.cityName}
+          </h3>
+          {city.roomCode && (
+            <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded shrink-0">
+              Co-op
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+          <span>Pop: {city.population.toLocaleString()}</span>
+          <span>${city.money.toLocaleString()}</span>
+          {city.roomCode && <span className="text-blue-400/60">{city.roomCode}</span>}
+        </div>
+      </button>
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
+          title="Delete city"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -256,6 +319,7 @@ export default function HomePage() {
   const [showGame, setShowGame] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+  const [hasSaved, setHasSaved] = useState(false);
   const [showCoopModal, setShowCoopModal] = useState(false);
   const [isMultiplayer, setIsMultiplayer] = useState(false);
   const [startFreshGame, setStartFreshGame] = useState(false);
@@ -268,17 +332,18 @@ export default function HomePage() {
     const checkSavedGame = () => {
       setIsChecking(false);
       setSavedCities(loadSavedCities());
+      setHasSaved(hasSavedGame());
       
-      // Check for room code in URL
+      // Check for room code in URL (legacy format) - redirect to new format
       const params = new URLSearchParams(window.location.search);
       const roomCode = params.get('room');
       if (roomCode && roomCode.length === 5) {
-        setPendingRoomCode(roomCode.toUpperCase());
-        setShowCoopModal(true);
-        // Keep the room code in URL so users can see it
-      } else if (hasSavedGame()) {
-        setShowGame(true);
+        // Redirect to new /coop/XXXXX format
+        window.location.replace(`/coop/${roomCode.toUpperCase()}`);
+        return;
       }
+      // Always show landing page - don't auto-load into game
+      // User can select from saved cities or start new
     };
     // Use requestAnimationFrame to avoid synchronous setState in effect
     requestAnimationFrame(checkSavedGame);
@@ -290,14 +355,24 @@ export default function HomePage() {
     setIsMultiplayer(false);
     setStartFreshGame(false);
     setSavedCities(loadSavedCities());
+    setHasSaved(hasSavedGame());
     // Clear room code from URL
     window.history.replaceState({}, '', '/');
   };
 
   // Load a saved city
-  const loadSavedCity = (cityId: string) => {
+  const loadSavedCity = (city: SavedCityMeta) => {
+    // If it's a multiplayer city, navigate to the room
+    if (city.roomCode) {
+      window.history.replaceState({}, '', `/coop/${city.roomCode}`);
+      setPendingRoomCode(city.roomCode);
+      setShowCoopModal(true);
+      return;
+    }
+    
+    // Otherwise load from local storage
     try {
-      const saved = localStorage.getItem(SAVED_CITY_PREFIX + cityId);
+      const saved = localStorage.getItem(SAVED_CITY_PREFIX + city.id);
       if (saved) {
         localStorage.setItem(STORAGE_KEY, saved);
         setShowGame(true);
@@ -307,8 +382,25 @@ export default function HomePage() {
     }
   };
 
+  // Delete a saved city from the index
+  const deleteSavedCity = (city: SavedCityMeta) => {
+    try {
+      // Remove from saved cities index
+      const updatedCities = savedCities.filter(c => c.id !== city.id);
+      localStorage.setItem(SAVED_CITIES_INDEX_KEY, JSON.stringify(updatedCities));
+      setSavedCities(updatedCities);
+      
+      // Also remove the city state data if it exists
+      if (!city.roomCode) {
+        localStorage.removeItem(SAVED_CITY_PREFIX + city.id);
+      }
+    } catch {
+      console.error('Failed to delete saved city');
+    }
+  };
+
   // Handle co-op game start
-  const handleCoopStart = (isHost: boolean, initialState?: GameState) => {
+  const handleCoopStart = (isHost: boolean, initialState?: GameState, roomCode?: string) => {
     setIsMultiplayer(true);
     
     if (isHost && initialState) {
@@ -316,6 +408,11 @@ export default function HomePage() {
       try {
         const compressed = compressToUTF16(JSON.stringify(initialState));
         localStorage.setItem(STORAGE_KEY, compressed);
+        
+        // Also save to saved cities index so it appears on homepage
+        if (roomCode) {
+          saveCityToIndex(initialState, roomCode);
+        }
       } catch (e) {
         console.error('Failed to save co-op state:', e);
       }
@@ -328,6 +425,11 @@ export default function HomePage() {
       try {
         const compressed = compressToUTF16(JSON.stringify(initialState));
         localStorage.setItem(STORAGE_KEY, compressed);
+        
+        // Also save to saved cities index so it appears on homepage
+        if (roomCode) {
+          saveCityToIndex(initialState, roomCode);
+        }
       } catch (e) {
         console.error('Failed to save co-op state:', e);
       }
@@ -369,36 +471,44 @@ export default function HomePage() {
   if (isMobile) {
     return (
       <MultiplayerContextProvider>
-        <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
-          {/* Title */}
-          <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
+        <main className="h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
+          {/* Spacer to push content down slightly from top */}
+          <div className="flex-shrink-0 h-4 sm:h-8" />
+          
+          {/* Title - smaller on very small screens */}
+          <h1 className="text-4xl sm:text-5xl font-light tracking-wider text-white/90 mb-4 sm:mb-6 flex-shrink-0">
             IsoCity
           </h1>
           
-          {/* Sprite Gallery - keep visible even when saves exist */}
-          <div className="mb-6">
-            <SpriteGallery count={9} cols={3} cellSize={72} />
+          {/* Sprite Gallery - smaller on mobile, contained */}
+          <div className="mb-4 sm:mb-6 flex-shrink-0">
+            <SpriteGallery count={9} cols={3} cellSize={56} />
           </div>
           
-          {/* Buttons */}
-          <div className="flex flex-col gap-3 w-full max-w-xs">
+          {/* Buttons - more compact */}
+          <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-xs flex-shrink-0">
             <Button 
               onClick={() => setShowGame(true)}
-              className="w-full py-6 text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
-              Start
+              {hasSaved ? 'Continue' : 'New Game'}
             </Button>
             
             <Button 
               onClick={() => setShowCoopModal(true)}
               variant="outline"
-              className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
             >
               Co-op
             </Button>
             
             <Button 
               onClick={async () => {
+                // Clear any room code from URL to prevent multiplayer conflicts
+                if (window.location.search.includes('room=')) {
+                  window.history.replaceState({}, '', '/');
+                  setPendingRoomCode(null);
+                }
                 const response = await fetch('/example-states/example_state_9.json');
                 const exampleState = await response.json();
                 try {
@@ -410,7 +520,7 @@ export default function HomePage() {
                 setShowGame(true);
               }}
               variant="outline"
-              className="w-full py-6 text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
             >
               Load Example
             </Button>
@@ -427,23 +537,30 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Saved Cities */}
+          {/* Saved Cities - scrollable area takes remaining space */}
           {savedCities.length > 0 && (
-            <div className="w-full max-w-xs mt-4">
-              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+            <div className="w-full max-w-xs mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col">
+              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 flex-shrink-0">
                 Saved Cities
               </h2>
-              <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+              <div 
+                className="flex flex-col gap-2 flex-1 overflow-y-auto overscroll-y-contain"
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+              >
                 {savedCities.slice(0, 5).map((city) => (
                   <SavedCityCard
                     key={city.id}
                     city={city}
-                    onLoad={() => loadSavedCity(city.id)}
+                    onLoad={() => loadSavedCity(city)}
+                    onDelete={() => deleteSavedCity(city)}
                   />
                 ))}
               </div>
             </div>
           )}
+          
+          {/* Bottom spacer */}
+          <div className="flex-shrink-0 h-2" />
           
           {/* Co-op Modal */}
           <CoopModal
@@ -473,7 +590,7 @@ export default function HomePage() {
                 onClick={() => setShowGame(true)}
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
               >
-                Start
+                {hasSaved ? 'Continue' : 'New Game'}
               </Button>
               <Button 
                 onClick={() => setShowCoopModal(true)}
@@ -484,6 +601,11 @@ export default function HomePage() {
               </Button>
               <Button 
                 onClick={async () => {
+                  // Clear any room code from URL to prevent multiplayer conflicts
+                  if (window.location.search.includes('room=')) {
+                    window.history.replaceState({}, '', '/');
+                    setPendingRoomCode(null);
+                  }
                   const response = await fetch('/example-states/example_state_9.json');
                   const exampleState = await response.json();
                   try {
@@ -518,12 +640,16 @@ export default function HomePage() {
                 <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
                   Saved Cities
                 </h2>
-                <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                <div 
+                  className="flex flex-col gap-2 max-h-64 overflow-y-auto overscroll-y-contain"
+                  style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+                >
                   {savedCities.slice(0, 5).map((city) => (
                     <SavedCityCard
                       key={city.id}
                       city={city}
-                      onLoad={() => loadSavedCity(city.id)}
+                      onLoad={() => loadSavedCity(city)}
+                      onDelete={() => deleteSavedCity(city)}
                     />
                   ))}
                 </div>

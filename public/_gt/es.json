@@ -10,6 +10,7 @@
   "026adc03115f2abb": "petróleo",
   "036be42493f75286": " - Arrastra para zonificar el área",
   "03e108901c6d428d": "Estación de pasajeros y carga",
+  "044a1cd2d11b505f": "Unirse a ciudad cooperativa",
   "06cb84462c974933": "¡Filón!",
   "06cf637219c05461": "Zona de acampada al aire libre",
   "07440458a59d2f55": "¿Seguro? Esto restablecerá todo el progreso.",
@@ -29,7 +30,19 @@
   "0cc2c983267b6a33": "Ribera",
   "0df552c71ceffdea": "Cancha de baloncesto al aire libre",
   "11e592ce36623118": "Ayuntamiento",
+  "13b2402c6c023ebc": "Ir a la página principal",
+  "13fcc02124829d6c": "No se pudo crear la sala",
+  "146b7a76457cbdc5": "Crear ciudad cooperativa",
+  "1681a6233ff22e03": [
+    "Código de sala: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "16e15fc06c6a007c": "Piscina pública",
+  "1838df54b0bb4797": "Hubo un problema al conectar con la sala. Esto puede deberse a problemas de red o límites del servidor.",
   "196936ae6b19dcdc": {
     "c": [
       "Conectar con ",
@@ -77,6 +90,7 @@
       "t": "ArrowRight"
     }
   ],
+  "265faf7d02352750": "Esta sala no existe o puede haber expirado.",
   "26c08edf08a8fd43": "Expandir ciudad (+30x30)",
   "277949eda13391e5": "Comercial",
   "27b33d5e7ca06b25": "Estadio",
@@ -84,8 +98,16 @@
   "2c1c93a646bbea6e": "Idioma",
   "2cfd6433e4b2a26a": "Activar incendios y desastres aleatorios",
   "2e46736f6530763d": "Parque pequeño",
+  "2ee85b5d8a92b88c": "Unirse a ciudad",
+  "311dc7890d2b1d67": {
+    "c": "Esperando estado del juego",
+    "i": 1,
+    "t": "p"
+  },
   "315f62fadaa37351": "Mejorar la salud (2x2)",
   "32957fce34b7e56b": "Moldear terreno",
+  "32db31f0dc62bec8": "Conectando...",
+  "33421e8d33bce805": "Código de invitación",
   "361b52252c485db1": "Educación básica (2x2)",
   "36999eca1aa6a62d": "Paneles",
   "3713fd8f06b7bdbd": "Demoler",
@@ -100,13 +122,45 @@
   "3e3047cbe8ba9923": "Quitar 15 casillas de cada borde. Los edificios en los bordes se eliminarán.",
   "3fed752c6b827eb4": "Parque de patinaje",
   "40bad8960b093d63": "Basado en la felicidad, la salud, la educación, la seguridad y el medio ambiente",
+  "421db366df78606f": "Continuar jugando",
   "423be6bbfb254615": "Planta árboles para mejorar el entorno",
+  "42f8808e6f183aa2": "Error al unirse a la sala",
   "43852fb2c437417a": "{toolName} debe colocarse junto al agua",
   "43f8d980f9a0671a": "Transporte subterráneo",
   "441e4c507e4ad288": "Oficina pequeña",
   "4552acda39be69ce": "Eliminar zonas",
   "459f0b9e4a127d63": "Torre de agua",
   "459fd02379259631": "Empleos",
+  "46706925a64edad7": {
+    "c": {
+      "d": {
+        "b": {
+          "one": {
+            "c": "1 jugador",
+            "i": 3,
+            "t": "C3"
+          },
+          "other": {
+            "c": [
+              {
+                "i": 4,
+                "k": "_gt_value_4",
+                "v": "v"
+              },
+              " jugadores"
+            ],
+            "i": 3,
+            "t": "C3"
+          }
+        },
+        "t": "p"
+      },
+      "i": 2,
+      "t": "Plural"
+    },
+    "i": 1,
+    "t": "p"
+  },
   "46bcf1a804883ab0": "Jardín comunitario",
   "482a95b964ba67dc": "Inicio del sendero",
   "482ea0cd55a6de89": "Huerto comunitario",
@@ -130,6 +184,7 @@
   "570f15ad126ec582": "{toolName} en ({x}, {y})",
   "5710fcf3d552b2e4": "Estación de bomberos",
   "573173896178c5b2": "Parque de atracciones",
+  "57a3b5a61e0ff28c": "Comparte el código de invitación con amigos",
   "5842190480e1e770": "Tiene agua",
   "58b631994c014e93": "¡Bienvenido! Empieza zonificando áreas para edificios residenciales, comerciales e industriales. Luego añade carreteras, energía y agua para construir tu ciudad.",
   "5a08b8941a037d58": "Campo de béisbol local (2x2)",
@@ -158,12 +213,15 @@
   "6b2711965c0aecca": "Deportes",
   "6bbf388c7005fa30": "Universidad",
   "6c45a87bca570dfb": "Entorno",
+  "6d966a4f4fb838a2": "Sala no encontrada",
   "6e706fe5f4dead95": "Zona para comercios y oficinas",
   "6ef03a3ce71f2e80": "Tesorería",
   "6f799a1e48046e50": "Zonas",
+  "7098a61cad8c8e17": "Configura tu ciudad cooperativa",
   "71ba7468560d8d94": "Parque infantil pequeño",
   "71c6a9765d5e2456": "Añade parques y árboles para mejorar el entorno de tu ciudad y hacer más felices a los habitantes.",
   "72bef77d7b502f8f": "Impuestos",
+  "7423144f1896834e": "Ciudad cooperativa",
   "745eee8680d46de2": "Piscina",
   "750760318912cde3": "(actual)",
   "7599ffe8c31a20dc": "Pista de tenis",
@@ -171,11 +229,13 @@
   "762fcce45b65eea9": "Guardar",
   "764fb358fb772d35": "Tasa de impuestos",
   "7699c52140c9d9d1": "Parques",
+  "7742d857935b5fce": "Crear ciudad",
   "786f78fa84e8f121": "Parque con estanque pintoresco",
   "7a2dd3bc72dfe4a0": "Campo de fútbol",
   "7ab9534f0cd01856": "Minimapa",
   "7af04611900a2ec1": "materiales a granel",
   "7db45eab1e6e4c9e": "Parque grande",
+  "7f248a14247b63c3": "Construye una ciudad junto a tus amigos en tiempo real",
   "7fb5371007f7f493": "Estadísticas",
   "825d7120d9e5c572": "contenedores",
   "830e21fdb11a5d4a": "Proporcionar agua",
@@ -193,12 +253,24 @@
   "8b5e8de8f4c85850": "Educación superior (3x3)",
   "8b9192b9f5e25ab9": "Elige el estilo gráfico de los edificios",
   "8cfe5cbc808ec9b6": "Vigila la demanda de zonas. Una demanda negativa puede hacer que los edificios queden abandonados.",
+  "8e1b26faa1066903": [
+    {
+      "i": 1,
+      "t": "Loader2"
+    },
+    "Conectando..."
+  ],
   "8e51a2f65e212afd": "Terraformar agua en tierra",
   "900353afc0ae0c5f": "Todavía no hay ciudades guardadas.",
   "907abc04009841aa": "Minigolf (2x2)",
   "90e19ab2fba5da15": "Restaurar",
   "915ed53f3aec731b": "Copiar estado de la partida",
   "931f3cdc1db7ade0": "Granja interactiva / animales de granja",
+  "933fa7740fe8c681": {
+    "i": 1,
+    "k": "_gt_value_1",
+    "v": "v"
+  },
   "942af069571719cf": "Gastos mensuales",
   "947b31327f9622d3": "Iniciar nueva partida",
   "955389bd727d0995": "Estadio de fútbol (2x2)",
@@ -215,9 +287,20 @@
   "9bd3d3242f1ed87e": "Sin energía",
   "9c47942e96f87eff": "Salir al menú principal",
   "9d254026827d7830": "Campo con gradas",
+  "9db16884c1c9d324": "Atrás",
+  "9e7842be401ec868": "Multijugador cooperativo",
   "9f2ba8acaf861529": "¿Quieres guardar tu ciudad antes de salir?",
   "9f624c646a344dd9": "Invernadero botánico (2x2)",
+  "a0ffbf0fb30b0c88": "Error al crear la sala en la base de datos",
+  "a1608c009c5abc68": [
+    {
+      "i": 1,
+      "t": "Loader2"
+    },
+    "Creando..."
+  ],
   "a1fe3b85fd8e6410": "Reducir ciudad (-30x30)",
+  "a251f31bd82b46e3": "Nombre de la ciudad",
   "a757c44bab1bfc4d": "Un envío de {cargoName} ha llegado al puerto deportivo. +${cargoValue} de ingresos comerciales.",
   "a7894306a08bac01": "Residencial",
   "a7cc8ff7202beca4": "Retiro en cabaña rústica",
@@ -236,6 +319,13 @@
   "b43d25aa91aa1edd": "Anula la apariencia de la hora del día sin afectar la progresión del tiempo",
   "b453abc6c0aa9847": "Campo de béisbol",
   "b4619e9087ef77c7": "Programa espacial",
+  "b7383a44b9c31f2e": [
+    {
+      "i": 1,
+      "t": "Check"
+    },
+    "¡Copiado!"
+  ],
   "b7a2c2e53cd1a902": {
     "c": [
       "Conectar a ",
@@ -252,17 +342,27 @@
   "b821113430f5f0af": "Ferrocarril",
   "b8ffa77d868a668b": "Nombre de la ciudad",
   "bad59346a21883a3": "Aeropuerto",
+  "bc1312ca9875c6db": "Unirse a otra sala",
   "bc57a3573b2d731a": "Asesores de la ciudad",
   "bcfcdb828fb6febe": "Industrial",
+  "bd81be63d5902150": "Unirse a ciudad cooperativa",
   "bf03c9d6ae13442a": "No se puede reducir más la ciudad: se alcanzó el tamaño mínimo.",
   "c1118dc21f1a3a70": "Campo de fútbol",
   "c374929bd865ac52": "Albergue de retiro natural (2x2)",
   "c49fb569cf0344a1": "Conecta tu ciudad",
   "c56f5cbb6dbe8edb": "Cabaña",
   "c6fa2905d56a750c": "Guardado",
+  "c73a2100c4004277": [
+    {
+      "i": 1,
+      "t": "Copy"
+    },
+    "Copiar enlace de invitación"
+  ],
   "c7d1e9c9bd97d52d": "Mensual",
   "c94455ba1a9942b7": "Reducir ciudad",
   "c96a3fd1bbe8f38a": "Aumenta la demanda industrial y residencial (3x3)",
+  "caf697c48a419488": "Crear nueva ciudad",
   "cb91c05c442d6da0": "Muelle costero (debe colocarse junto al agua)",
   "cba582095df8e4d9": "Minigolf",
   "cd69d8784e9ce625": "Desastres",
@@ -276,13 +376,21 @@
   "d5120487d8637bd5": "Entrada de parque decorativa",
   "d563172b11e46265": " - Arrastra para colocar",
   "d5bb9c7d05c9221d": "Exportar partida",
+  "d5cfefaf7011c288": "Reintentar",
   "d76336950671d1e2": "Muelles para barcos (2x2, debe colocarse junto al agua)",
   "d7804cf2c098d4c3": "Mostrar superposición",
+  "d84684d9e8bbd3d5": {
+    "c": "Uniéndose a la ciudad...",
+    "i": 1,
+    "t": "p"
+  },
   "d893fd59ec2b90be": "Tamaño de cuadrícula",
+  "d894f6cb29f7a3ea": "Atrás",
   "d8f8e96fe087aec3": "Estadio de béisbol",
   "d960080f10b5a21e": "Aumenta todos los tipos de demanda (2x2)",
   "da49b8271b9dffa0": "Eliminar",
   "dd6807c3c88471d5": "Añade 15 casillas a cada lado. Los bordes de tierra se amplían como tierra y los bordes de agua se amplían como agua.",
+  "de19414adf212a36": "ABCDE",
   "ded883367c8ddcb0": "Abrir vista de prueba de sprites",
   "e0a1cc92bd08aa24": "Energía",
   "e0fa959d80ac0d81": "Seleccionar",
@@ -313,12 +421,24 @@
     "Saltar todos los consejos"
   ],
   "e23439349cbca510": "Haz clic para ver la información de la casilla",
+  "e41b7f26a2f7453b": "No se pudo unir a la sala",
   "e4ca1c349676657c": "Noche",
+  "e4f07cb539c8b592": "Mi ciudad cooperativa",
+  "e78b04c25599cd81": {
+    "c": "Código de invitación",
+    "i": 1,
+    "t": "p"
+  },
   "e79d3dd997b03f78": "Sin agua",
   "e94b8809e7637224": "Configuración del juego",
   "e9574dcabfdab036": "Salir sin guardar",
   "e9f3a9337aab62c6": "Semanal",
   "eaa9e68396589c20": "Construir vías férreas",
+  "ec8a07c2ad1276af": {
+    "c": "Conectando...",
+    "i": 1,
+    "t": "p"
+  },
   "edb23f2758bbe9f9": "Escuela",
   "eeca902329b200e6": "Refugio de montaña",
   "efd9775f35548e44": "¡Copiado!",
@@ -331,6 +451,7 @@
   "f3e6f71a8bc19b40": "Pega un estado de juego para cargarlo",
   "f62db7ca5ce71d28": "Activado",
   "f69724f1685d216d": "Corrales de animales",
+  "f6bd806cafa9556d": "Ingresa el código de invitación de 5 caracteres para unirte",
   "f704e9e58929074b": "Información de la ciudad",
   "f8107da5171f54fc": "Incendio",
   "f86d1b3defd75cea": "Ninguno",

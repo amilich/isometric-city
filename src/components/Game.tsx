@@ -16,6 +16,8 @@ import { CommandMenu } from '@/components/ui/CommandMenu';
 import { TipToast } from '@/components/ui/TipToast';
 import { useTipSystem } from '@/hooks/useTipSystem';
 import { useMultiplayerSync } from '@/hooks/useMultiplayerSync';
+import { useMultiplayerOptional } from '@/context/MultiplayerContext';
+import { ShareModal } from '@/components/multiplayer/ShareModal';
 import { Copy, Check } from 'lucide-react';
 
 // Import game components
@@ -47,6 +49,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const isInitialMount = useRef(true);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
+  const [showShareModal, setShowShareModal] = useState(false);
+  const multiplayer = useMultiplayerOptional();
   
   // Cheat code system
   const {
@@ -80,7 +84,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   
   const handleCopyRoomLink = useCallback(() => {
     if (!roomCode) return;
-    const url = `${window.location.origin}/?room=${roomCode}`;
+    const url = `${window.location.origin}/coop/${roomCode}`;
     navigator.clipboard.writeText(url);
     setCopiedRoomLink(true);
     setTimeout(() => setCopiedRoomLink(false), 2000);
@@ -251,8 +255,17 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             selectedTile={selectedTile && state.selectedTool === 'select' ? state.grid[selectedTile.y][selectedTile.x] : null}
             services={state.services}
             onCloseTile={() => setSelectedTile(null)}
+            onShare={() => setShowShareModal(true)}
             onExit={onExit}
           />
+          
+          {/* Share Modal for mobile co-op */}
+          {multiplayer && (
+            <ShareModal
+              open={showShareModal}
+              onOpenChange={setShowShareModal}
+            />
+          )}
           
           {/* Main canvas area - fills remaining space, with padding for top/bottom bars */}
           <div className="flex-1 relative overflow-hidden" style={{ paddingTop: '72px', paddingBottom: '76px' }}>

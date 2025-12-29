@@ -65,7 +65,8 @@ type GameContextValue = {
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
   placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
   setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => void;
-  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail') => void; // Create bridges after road/rail drag
+  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void; // Create bridges after road/rail drag
+  setBridgeCallback: (callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => void;
   connectToCity: (cityId: string) => void;
   discoverCity: (cityId: string) => void;
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
@@ -77,6 +78,7 @@ type GameContextValue = {
   expandCity: () => void;
   shrinkCity: () => boolean;
   hasExistingGame: boolean;
+  isStateReady: boolean; // True when initial state loading is complete
   isSaving: boolean;
   addMoney: (amount: number) => void;
   addNotification: (title: string, description: string, icon: string) => void;
@@ -646,6 +648,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
   const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
   
   const [hasExistingGame, setHasExistingGame] = useState(false);
+  const [isStateReady, setIsStateReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextSaveRef = useRef(false);
@@ -653,6 +656,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
   
   // Callback for multiplayer action broadcast
   const placeCallbackRef = useRef<((args: { x: number; y: number; tool: Tool }) => void) | null>(null);
+  const bridgeCallbackRef = useRef<((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null>(null);
   
   // Sprite pack state
   const [currentSpritePack, setCurrentSpritePack] = useState<SpritePack>(() => getSpritePack(DEFAULT_SPRITE_PACK_ID));
@@ -694,6 +698,8 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }
     // Mark as loaded immediately - the skipNextSaveRef will handle skipping the first save
     hasLoadedRef.current = true;
+    // Mark state as ready - consumers should wait for this before using state
+    setIsStateReady(true);
   }, [startFresh]);
   
   // Track the state that needs to be saved
@@ -967,8 +973,13 @@ export function GameProvider({ children, startFresh = false }: { children: React
   }, []);
 
   // Called after a road/rail drag operation to create bridges for water crossings
-  const finishTrackDrag = useCallback((pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail') => {
+  const finishTrackDrag = useCallback((pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote = false) => {
     setState((prev) => createBridgesOnPath(prev, pathTiles, trackType));
+    
+    // Broadcast to multiplayer if this is a local action (not remote)
+    if (!isRemote && bridgeCallbackRef.current) {
+      bridgeCallbackRef.current({ pathTiles, trackType });
+    }
   }, []);
 
   const connectToCity = useCallback((cityId: string) => {
@@ -1073,6 +1084,10 @@ export function GameProvider({ children, startFresh = false }: { children: React
   
   const setPlaceCallback = useCallback((callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => {
     placeCallbackRef.current = callback;
+  }, []);
+
+  const setBridgeCallback = useCallback((callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => {
+    bridgeCallbackRef.current = callback;
   }, []);
 
   const setSpritePack = useCallback((packId: string) => {
@@ -1609,6 +1624,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     placeAtTile,
     setPlaceCallback,
     finishTrackDrag,
+    setBridgeCallback,
     connectToCity,
     discoverCity,
     checkAndDiscoverCities,
@@ -1620,6 +1636,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     expandCity,
     shrinkCity,
     hasExistingGame,
+    isStateReady,
     isSaving,
     addMoney,
     addNotification,

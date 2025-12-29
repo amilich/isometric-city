@@ -1,13 +1,15 @@
 // Game-specific types for rendering and animation
 
-// Isometric tile dimensions (shared constants)
+import { CardinalDirection } from '@/core/types';
+
+// Isometric tile dimensions
 export const TILE_WIDTH = 64;
 export const HEIGHT_RATIO = 0.60;
 export const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
-export const KEY_PAN_SPEED = 520; // Pixels per second for keyboard panning
+export const KEY_PAN_SPEED = 520;
 
-// Car/Vehicle types
-export type CarDirection = 'north' | 'east' | 'south' | 'west';
+// Car/Vehicle types - alias CardinalDirection for backward compatibility
+export type CarDirection = CardinalDirection;
 
 export type Car = {
   id: number;
@@ -450,13 +452,8 @@ export type Firework = {
   sourceTileY: number;
 };
 
-// Direction metadata for vehicle movement
-export type DirectionMeta = {
-  step: { x: number; y: number };
-  vec: { dx: number; dy: number };
-  angle: number;
-  normal: { nx: number; ny: number };
-};
+// Direction metadata - re-export from core
+export type { DirectionMeta } from '@/core/types/grid';
 
 // World render state
 export type WorldRenderState = {

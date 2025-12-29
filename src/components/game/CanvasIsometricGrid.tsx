@@ -100,8 +100,11 @@ import {
   drawTrains,
   MIN_RAIL_TILES_FOR_TRAINS,
   MAX_TRAINS,
+  MAX_TRAINS_MOBILE,
   TRAIN_SPAWN_INTERVAL,
+  TRAIN_SPAWN_INTERVAL_MOBILE,
   TRAINS_PER_RAIL_TILES,
+  TRAINS_PER_RAIL_TILES_MOBILE,
 } from '@/components/game/trainSystem';
 import { Train } from '@/components/game/types';
 import { useLightingSystem } from '@/components/game/lightingSystem';
@@ -776,20 +779,23 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       return;
     }
 
-    // Calculate max trains based on rail network size
-    const maxTrains = Math.min(MAX_TRAINS, Math.ceil(railTileCount / TRAINS_PER_RAIL_TILES));
+    // Calculate max trains based on rail network size - lower limits on mobile
+    const maxTrainsLimit = isMobile ? MAX_TRAINS_MOBILE : MAX_TRAINS;
+    const trainsPerTile = isMobile ? TRAINS_PER_RAIL_TILES_MOBILE : TRAINS_PER_RAIL_TILES;
+    const maxTrains = Math.min(maxTrainsLimit, Math.ceil(railTileCount / trainsPerTile));
     
     // Speed multiplier based on game speed
     const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2 : 3;
 
-    // Spawn timer
+    // Spawn timer - slower on mobile
+    const spawnInterval = isMobile ? TRAIN_SPAWN_INTERVAL_MOBILE : TRAIN_SPAWN_INTERVAL;
     trainSpawnTimerRef.current -= delta;
     if (trainsRef.current.length < maxTrains && trainSpawnTimerRef.current <= 0) {
       const newTrain = spawnTrain(currentGrid, currentGridSize, trainIdRef);
       if (newTrain) {
         trainsRef.current.push(newTrain);
       }
-      trainSpawnTimerRef.current = TRAIN_SPAWN_INTERVAL;
+      trainSpawnTimerRef.current = spawnInterval;
     }
 
     // Update existing trains (pass all trains for collision detection)
@@ -870,6 +876,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
       if (currentSpritePack.modernSrc) {
         loadSpriteImage(currentSpritePack.modernSrc, true).catch(console.error);
+      }
+      if (currentSpritePack.mansionsSrc) {
+        loadSpriteImage(currentSpritePack.mansionsSrc, true).catch(console.error);
       }
       // Load airplane sprite sheet (always loaded, not dependent on sprite pack)
       loadSpriteImage(AIRPLANE_SPRITE_SRC, false).catch(console.error);
@@ -2370,7 +2379,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       lastTime = time;
       lastRenderTime = time;
       
-      if (delta > 0) {
+      // PERF: Skip ALL vehicle/entity updates during mobile panning/zooming (not just drawing)
+      // This provides a massive performance boost for big cities on mobile
+      const skipMobileUpdates = isMobile && (isPanningRef.current || isPinchZoomingRef.current);
+      
+      if (delta > 0 && !skipMobileUpdates) {
         updateCars(delta);
         spawnCrimeIncidents(delta); // Spawn new crime incidents
         updateCrimeIncidents(delta); // Update/decay crime incidents

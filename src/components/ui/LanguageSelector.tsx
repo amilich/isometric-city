@@ -100,7 +100,7 @@ export function LanguageSelector({
       <>
         <button
           onClick={() => setIsOpen(true)}
-          className={`h-6 w-5 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
+          className={`h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
           title="Change Language"
         >
           <GlobeIcon size={iconSize} />

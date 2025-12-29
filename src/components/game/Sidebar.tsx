@@ -623,6 +623,10 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         {/* Direct categories (TOOLS, ZONES) */}
         {Object.entries(directCategories).map(([category, tools]) => (
           <div key={category} className="mb-1">
+            {/* Separator above ZONES */}
+            {category === 'ZONES' && (
+              <div className="mx-4 my-2 h-px bg-sidebar-border/50" />
+            )}
             <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground">
               {m((CATEGORY_LABELS[category] || category) as Parameters<typeof m>[0])}
             </div>

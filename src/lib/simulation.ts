@@ -2536,6 +2536,43 @@ export function simulateTick(state: GameState): GameState {
         }
       }
 
+      // Fire spread to adjacent buildings
+      // Check if any neighboring tile is on fire and spread with a chance reduced by fire coverage
+      if (state.disastersEnabled && !tile.building.onFire &&
+          tile.building.type !== 'grass' && tile.building.type !== 'water' &&
+          tile.building.type !== 'road' && tile.building.type !== 'tree' &&
+          tile.building.type !== 'empty' && tile.building.type !== 'bridge' &&
+          tile.building.type !== 'rail') {
+        // Check 4 adjacent tiles for fires
+        const adjacentOffsets = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        let adjacentFireCount = 0;
+        
+        for (const [dx, dy] of adjacentOffsets) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+            const neighbor = newGrid[ny][nx];
+            if (neighbor.building.onFire) {
+              adjacentFireCount++;
+            }
+          }
+        }
+        
+        if (adjacentFireCount > 0) {
+          // Base spread chance per adjacent fire: 0.5% per tick (reduced from 1.5%)
+          // Fire coverage significantly reduces spread chance
+          const fireCoverage = services.fire[y][x];
+          const coverageReduction = fireCoverage / 100; // 0-1 based on coverage (100% coverage = 1)
+          const baseSpreadChance = 0.005 * adjacentFireCount;
+          const spreadChance = baseSpreadChance * (1 - coverageReduction * 0.95); // Fire coverage can reduce spread by up to 95%
+          
+          if (Math.random() < spreadChance) {
+            tile.building.onFire = true;
+            tile.building.fireProgress = 0;
+          }
+        }
+      }
+
       // Random fire start
       if (state.disastersEnabled && !tile.building.onFire && 
           tile.building.type !== 'grass' && tile.building.type !== 'water' && 

@@ -17,6 +17,7 @@ export type GameAction =
   | (BaseAction & { type: 'setBudget'; key: keyof Budget; funding: number })
   | (BaseAction & { type: 'setSpeed'; speed: 0 | 1 | 2 | 3 })
   | (BaseAction & { type: 'setDisasters'; enabled: boolean })
+  | (BaseAction & { type: 'createBridges'; pathTiles: Array<{ x: number; y: number }>; trackType: 'road' | 'rail' })
   | (BaseAction & { type: 'fullState'; state: GameState })
   | (BaseAction & { type: 'tick'; tickData: TickData });
 
@@ -28,6 +29,7 @@ export type SetTaxRateAction = { type: 'setTaxRate'; rate: number };
 export type SetBudgetAction = { type: 'setBudget'; key: keyof Budget; funding: number };
 export type SetSpeedAction = { type: 'setSpeed'; speed: 0 | 1 | 2 | 3 };
 export type SetDisastersAction = { type: 'setDisasters'; enabled: boolean };
+export type CreateBridgesAction = { type: 'createBridges'; pathTiles: Array<{ x: number; y: number }>; trackType: 'road' | 'rail' };
 export type FullStateAction = { type: 'fullState'; state: GameState };
 export type TickAction = { type: 'tick'; tickData: TickData };
 
@@ -39,6 +41,7 @@ export type GameActionInput =
   | SetBudgetAction
   | SetSpeedAction
   | SetDisastersAction
+  | CreateBridgesAction
   | FullStateAction
   | TickAction;
 

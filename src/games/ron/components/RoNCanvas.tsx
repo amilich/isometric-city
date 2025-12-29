@@ -1269,7 +1269,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               west: y < gameState.gridSize - 1 && gameState.grid[y + 1]?.[x]?.terrain === 'water',
             };
             // Use enhanced water with animated waves and reflections
-            drawEnhancedWaterTile(ctx, screenX, screenY, x, y, enhancedAnimTimeRef.current, currentZoom, adjacentWater, { sparkle: true });
+            drawEnhancedWaterTile(ctx, { screenX, screenY, gridX: x, gridY: y, animTime: enhancedAnimTimeRef.current, zoom: currentZoom, adjacentWater, sparkle: true });
             
             // Draw fishing spot indicator
             if (tile.hasFishingSpot) {
@@ -1328,7 +1328,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               west: y < gameState.gridSize - 1 && (gameState.grid[y + 1]?.[x]?.terrain === 'water' || hasDock(gameState.grid, x, y + 1, gameState.gridSize)),
             };
             // Use enhanced water with animated waves
-            drawEnhancedWaterTile(ctx, screenX, screenY, x, y, enhancedAnimTimeRef.current, currentZoom, adjacentWater, { sparkle: false });
+            drawEnhancedWaterTile(ctx, { screenX, screenY, gridX: x, gridY: y, animTime: enhancedAnimTimeRef.current, zoom: currentZoom, adjacentWater, sparkle: false });
           } else {
             // Determine zone color based on ownership/deposits
             let zoneType: 'none' | 'residential' | 'commercial' | 'industrial' = 'none';
@@ -1339,7 +1339,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               drawEnhancedMountain(ctx, screenX, screenY, x, y, true, currentZoom);
             } else if (tile.hasOilDeposit) {
               // Draw enhanced grass base first
-              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { ambient: 0.95 });
+              drawEnhancedGrassTile(ctx, { screenX, screenY, gridX: x, gridY: y, zoom: currentZoom, ambient: 0.95 });
               
               // Only show oil in industrial+ ages
               const isIndustrial = AGE_ORDER.indexOf(playerAge) >= AGE_ORDER.indexOf('industrial');
@@ -1397,16 +1397,21 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               }
             } else if (tile.forestDensity > 0) {
               // Draw enhanced grass base for forest
-              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { ambient: 0.9 });
+              drawEnhancedGrassTile(ctx, { screenX, screenY, gridX: x, gridY: y, zoom: currentZoom, ambient: 0.9 });
               
               // Draw enhanced procedural forest trees with wind animation
-              drawEnhancedForest(ctx, screenX, screenY, x, y, tile.forestDensity, currentZoom, enhancedAnimTimeRef.current);
+              drawEnhancedForest(ctx, { screenX, screenY, gridX: x, gridY: y, forestDensity: tile.forestDensity, zoom: currentZoom, animTime: enhancedAnimTimeRef.current });
             } else if (tile.building?.type === 'road') {
               // Draw enhanced grass base under roads (roads are drawn on top in second pass)
-              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { ambient: 1.0 });
+              drawEnhancedGrassTile(ctx, { screenX, screenY, gridX: x, gridY: y, zoom: currentZoom, ambient: 1.0 });
             } else {
               // Regular enhanced grass tile with procedural texture
-              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { 
+              drawEnhancedGrassTile(ctx, { 
+                screenX, 
+                screenY, 
+                gridX: x, 
+                gridY: y, 
+                zoom: currentZoom,
                 ambient: 1.0, 
                 highlight: false,
                 selected: false

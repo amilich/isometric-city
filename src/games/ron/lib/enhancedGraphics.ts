@@ -141,18 +141,18 @@ function octaveNoise(
  */
 export function drawEnhancedGrassTile(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
-  zoom: number,
-  options: {
+  params: {
+    screenX: number;
+    screenY: number;
+    gridX: number;
+    gridY: number;
+    zoom: number;
     ambient?: number; // 0-1 ambient light level
     highlight?: boolean;
     selected?: boolean;
-  } = {}
+  }
 ): void {
-  const { ambient = 1.0, highlight = false, selected = false } = options;
+  const { screenX, screenY, gridX, gridY, zoom, ambient = 1.0, highlight = false, selected = false } = params;
   const noise = getTerrainNoise();
   const detailNoise = getGrassDetailNoise();
 
@@ -274,19 +274,19 @@ export interface WaterAnimationState {
  */
 export function drawEnhancedWaterTile(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
-  animTime: number,
-  zoom: number,
-  adjacentWater: { north: boolean; east: boolean; south: boolean; west: boolean },
-  options: {
+  params: {
+    screenX: number;
+    screenY: number;
+    gridX: number;
+    gridY: number;
+    animTime: number;
+    zoom: number;
+    adjacentWater: { north: boolean; east: boolean; south: boolean; west: boolean };
     ambient?: number;
     sparkle?: boolean;
-  } = {}
+  }
 ): void {
-  const { ambient = 1.0, sparkle = true } = options;
+  const { screenX, screenY, gridX, gridY, animTime, zoom, adjacentWater, ambient = 1.0, sparkle = true } = params;
   const waterNoiseFn = getWaterNoise();
   const waveNoiseFn = getWaveNoise();
 
@@ -551,14 +551,17 @@ export function drawEnhancedBeach(
  */
 export function drawEnhancedForest(
   ctx: CanvasRenderingContext2D,
-  screenX: number,
-  screenY: number,
-  gridX: number,
-  gridY: number,
-  forestDensity: number,
-  zoom: number,
-  animTime: number
+  params: {
+    screenX: number;
+    screenY: number;
+    gridX: number;
+    gridY: number;
+    forestDensity: number;
+    zoom: number;
+    animTime: number;
+  }
 ): void {
+  const { screenX, screenY, gridX, gridY, forestDensity, zoom, animTime } = params;
   const noise = getTerrainNoise();
   const w = TILE_WIDTH;
   const h = TILE_HEIGHT;

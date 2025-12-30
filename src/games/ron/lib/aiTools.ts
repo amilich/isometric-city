@@ -1323,8 +1323,9 @@ export function executeAssignIdleWorkers(
   const needsGoldForCity = popCapped && player.resources.gold < 200;
   const needsWoodForCity = popCapped && player.resources.wood < 400;
   
-  // Check excess resources - if we have way more than needed, workers can be reassigned
-  const hasExcessFood = player.resources.food > 500; // More than enough food stockpiled
+  // Check excess resources - if we have enough food (200+), workers can be reassigned to wood
+  // 200 food = can train ~3 citizens if needed, safe buffer
+  const hasExcessFood = player.resources.food > 200;
 
   // Check if we have buildings but no production
   const hasWoodBuilding = state.grid.flat().some(t =>

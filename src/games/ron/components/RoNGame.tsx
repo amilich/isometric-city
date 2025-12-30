@@ -240,7 +240,7 @@ function GameContent({ onExit }: { onExit?: () => void }) {
                   { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
                   { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },
                   { name: 'AI Purple', type: 'ai', difficulty: 'medium', color: '#a855f7' },
-                  { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
+                  // { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
                 ],
               })}
               title="Start new game (1 human + 4 AIs)"

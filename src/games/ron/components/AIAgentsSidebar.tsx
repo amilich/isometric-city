@@ -72,6 +72,15 @@ function ToolResultEntry({ entry }: { entry: AIConversationEntry }) {
                    entry.content.includes('Built') || entry.content.includes('Queued') ||
                    entry.content.includes('Assigned');
   
+  // Truncate preview to first line or first 80 chars
+  const getPreview = (content: string) => {
+    const firstLine = content.split('\n')[0];
+    if (firstLine.length > 80) {
+      return firstLine.slice(0, 80) + '...';
+    }
+    return firstLine + (content.includes('\n') ? '...' : '');
+  };
+  
   return (
     <div className={`border rounded overflow-hidden ${isSuccess ? 'border-green-800/50' : 'border-amber-800/50'}`}>
       <button
@@ -86,8 +95,8 @@ function ToolResultEntry({ entry }: { entry: AIConversationEntry }) {
         <span className={`text-xs font-mono flex-shrink-0 ${isSuccess ? 'text-green-500' : 'text-amber-500'}`}>
           {isSuccess ? 'ok' : 'err'}
         </span>
-        <span className="text-xs text-slate-400 flex-1 font-mono whitespace-pre-wrap break-words">
-          {entry.content}
+        <span className="text-xs text-slate-400 flex-1 font-mono truncate">
+          {getPreview(entry.content)}
         </span>
       </button>
       {isExpanded && (

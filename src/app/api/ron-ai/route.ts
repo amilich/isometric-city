@@ -602,7 +602,24 @@ Oil: ${Math.round(p.resources.oil || 0)} (rate: ${(p.resourceRates.oil || 0).toF
 ${condensed.myBuildings.map(b => `- ${b.type} at (${b.x},${b.y})`).join('\n') || '(none)'}
 
 ## YOUR UNITS:
-- Citizens: ${condensed.myUnits.filter(u => u.type === 'citizen').length} (idle: ${condensed.myUnits.filter(u => u.type === 'citizen' && u.task === 'idle').length})
+- Citizens: ${condensed.myUnits.filter(u => u.type === 'citizen').length} total
+${(() => {
+  const citizens = condensed.myUnits.filter(u => u.type === 'citizen');
+  const byTask: Record<string, string[]> = {};
+  for (const c of citizens) {
+    const task = c.task || 'idle';
+    if (!byTask[task]) byTask[task] = [];
+    byTask[task].push(c.id);
+  }
+  const lines: string[] = [];
+  if (byTask['gather_food']?.length) lines.push(`  🍖 Food: ${byTask['gather_food'].length} workers (${byTask['gather_food'].slice(0,3).join(', ')}${byTask['gather_food'].length > 3 ? '...' : ''})`);
+  if (byTask['gather_wood']?.length) lines.push(`  🪵 Wood: ${byTask['gather_wood'].length} workers (${byTask['gather_wood'].slice(0,3).join(', ')}${byTask['gather_wood'].length > 3 ? '...' : ''})`);
+  if (byTask['gather_metal']?.length) lines.push(`  ⛏️ Metal: ${byTask['gather_metal'].length} workers (${byTask['gather_metal'].slice(0,3).join(', ')}${byTask['gather_metal'].length > 3 ? '...' : ''})`);
+  if (byTask['gather_gold']?.length) lines.push(`  💰 Gold: ${byTask['gather_gold'].length} workers (${byTask['gather_gold'].slice(0,3).join(', ')}${byTask['gather_gold'].length > 3 ? '...' : ''})`);
+  if (byTask['gather_knowledge']?.length) lines.push(`  📚 Knowledge: ${byTask['gather_knowledge'].length} workers`);
+  if (byTask['idle']?.length) lines.push(`  ⏸️ IDLE: ${byTask['idle'].length} workers (${byTask['idle'].join(', ')})`);
+  return lines.length > 0 ? lines.join('\n') : '  (no workers)';
+})()}
 - Military: ${condensed.myUnits.filter(u => u.type !== 'citizen').map(u => `${u.type}[${u.id}]`).join(', ') || 'none'}
 
 ## YOUR TERRITORY (x: ${condensed.territoryBounds.minX}-${condensed.territoryBounds.maxX}, y: ${condensed.territoryBounds.minY}-${condensed.territoryBounds.maxY}):

@@ -339,7 +339,7 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
   {
     type: 'function',
     name: 'train_unit',
-    description: 'Train a unit. Citizens at city (60 food). Infantry at barracks (40f+20w, scales with age). Ranged at barracks (35f+25w). Cavalry at stable (60f+40g). Siege at siege_factory.',
+    description: 'Train units. Citizens at city (60 food). Infantry at barracks (40f+20w, scales with age). Ranged at barracks (35f+25w). Cavalry at stable (60f+40g). Siege at siege_factory. Use count to train multiple at once.',
     strict: true,
     parameters: {
       type: 'object',
@@ -351,8 +351,9 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
         },
         building_x: { type: 'number', description: 'X coordinate of production building' },
         building_y: { type: 'number', description: 'Y coordinate of production building' },
+        count: { type: 'number', description: 'Number of units to train (1-5).' },
       },
-      required: ['unit_type', 'building_x', 'building_y'],
+      required: ['unit_type', 'building_x', 'building_y', 'count'],
       additionalProperties: false,
     },
   },
@@ -393,16 +394,21 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
 ];
 
 // System prompt uses dynamic costs from actual game data
-const SYSTEM_PROMPT = `You are an AI player in Rise of Nations, a real-time strategy game. Win by destroying enemy city_centers.
+const SYSTEM_PROMPT = `You are an AI player in Rise of Nations. Build a thriving civilization with a strong economy before military conquest.
 
 GAME MECHANICS:
 - Buildings: farm ${BUILDING_COSTS.farm}, woodcutters_camp ${BUILDING_COSTS.woodcutters_camp}, mine ${BUILDING_COSTS.mine}, market ${BUILDING_COSTS.market}, barracks ${BUILDING_COSTS.barracks}, library ${BUILDING_COSTS.library}, smelter ${BUILDING_COSTS.smelter}, small_city ${BUILDING_COSTS.small_city}
 - Units: citizen ${UNIT_COSTS.citizen}, infantry ${UNIT_COSTS.infantry} (strength scales with age)
-- Population cap increases with cities: small_city adds +20 pop cap
-- You can only build within your territory (around your cities)
-- Workers gather resources when assigned to buildings: farm→food, woodcutters_camp→wood, mine→metal, market→gold
+- Population cap increases with cities: small_city (+20 pop), large_city (+35 pop)
+- Workers gather resources when assigned: farm→food, woodcutters_camp→wood, mine→metal, market→gold
 
-Each turn: take actions based on the state provided. Be concise. Build cities with all resource buildings within them, workers assigned to them, militaries, and expanding your territory.`;
+PRIORITIES:
+1. Economy first: train citizens, build farms/woodcutters/mines, assign all workers
+2. Expand: build small_city when at pop cap to grow further
+3. Military: only attack with 8+ units, never attack early with just 2-3 units
+4. Late game: destroy enemy city_centers to win
+
+A strong economy (15+ workers, 3+ cities) beats a rushed attack. Be patient. Build big.`;
 
 interface AIAction {
   type: 'build' | 'unit_task' | 'train' | 'resource_update';
@@ -705,18 +711,35 @@ Take actions now based on the state above. You can call get_game_state later if 
           }
 
           case 'train_unit': {
-            const { unit_type, building_x, building_y } = args as { unit_type: string; building_x: number; building_y: number };
-            const res = executeCreateUnit(currentState, aiPlayerId, unit_type, building_x, building_y);
-            currentState = res.newState;
-            result = res.result;
-            console.log(`  → ${result.message}`);
-            // Track action for frontend
-            if (res.result.success) {
-              actions.push({
-                type: 'train',
-                data: { unitType: unit_type, buildingX: building_x, buildingY: building_y }
-              });
+            const { unit_type, building_x, building_y, count } = args as { unit_type: string; building_x: number; building_y: number; count?: number };
+            const trainCount = Math.min(5, Math.max(1, count || 1)); // Clamp to 1-5
+            
+            let successCount = 0;
+            let lastError = '';
+            
+            for (let i = 0; i < trainCount; i++) {
+              const res = executeCreateUnit(currentState, aiPlayerId, unit_type, building_x, building_y);
+              if (res.result.success) {
+                currentState = res.newState;
+                successCount++;
+                actions.push({
+                  type: 'train',
+                  data: { unitType: unit_type, buildingX: building_x, buildingY: building_y }
+                });
+              } else {
+                lastError = res.result.message;
+                break; // Stop on first failure (likely pop cap or resources)
+              }
             }
+            
+            if (successCount === trainCount) {
+              result = { success: true, message: `Trained ${successCount} ${unit_type}(s) at (${building_x},${building_y})` };
+            } else if (successCount > 0) {
+              result = { success: true, message: `Trained ${successCount}/${trainCount} ${unit_type}(s). Stopped: ${lastError}` };
+            } else {
+              result = { success: false, message: lastError };
+            }
+            console.log(`  → ${result.message}`);
             break;
           }
 

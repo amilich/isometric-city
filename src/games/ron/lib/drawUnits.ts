@@ -198,11 +198,11 @@ function drawMilitaryUnit(
   tick: number
 ): void {
   const stats = UNIT_STATS[unit.type];
-  // Naval units largest, cavalry/tanks and air medium-large, infantry smaller
+  // Naval units largest, cavalry/tanks medium-large, air smaller (they circle so look bigger), infantry smaller
   // All scales increased by 50% for better visibility
   const isTankOrVehicle = unit.type.includes('tank') || unit.type.includes('armored');
   const baseScale = stats.category === 'naval' ? 1.5 :
-                    stats.category === 'air' ? 1.2 :
+                    stats.category === 'air' ? 0.7 :  // Smaller aircraft with larger circles
                     stats.category === 'cavalry' ? (isTankOrVehicle ? 1.5 : 1.05) :
                     stats.category === 'siege' ? 1.2 : 0.75;
   const scale = baseScale;
@@ -2095,8 +2095,8 @@ function drawAirUnit(
   animPhase: number
 ): void {
   // Circling animation - aircraft circle around their position
-  const circleRadius = 8 * scale;
-  const circleSpeed = 1.5;
+  const circleRadius = 20 * scale;  // Larger circles for visible flight pattern
+  const circleSpeed = 0.6;  // Slower, more graceful circling
   const circleX = Math.cos(animPhase * circleSpeed) * circleRadius;
   const circleY = Math.sin(animPhase * circleSpeed) * circleRadius * 0.4; // Flattened for isometric
   
@@ -2104,7 +2104,7 @@ function drawAirUnit(
   const heading = animPhase * circleSpeed + Math.PI / 2;
   
   // Altitude offset (aircraft fly above ground)
-  const altitude = -12 * scale;
+  const altitude = -15 * scale;  // Slightly higher
   
   const drawX = centerX + circleX;
   const drawY = centerY + circleY + altitude;

@@ -371,7 +371,7 @@ function PlayerConversation({ conversation, player, isExpanded, onToggle }: {
       {isExpanded && (
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-2 min-h-0 bg-gradient-to-b from-slate-900/50 to-slate-900/80 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
+          className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-2 min-h-0 bg-slate-900 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
         >
           {groupedEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">

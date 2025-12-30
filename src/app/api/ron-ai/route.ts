@@ -635,15 +635,28 @@ Take actions now based on the state above. You can call get_game_state later if 
     console.log('[AGENT INPUT] Available tools:', AI_TOOLS.map(t => (t as { name?: string }).name).join(', '));
     console.log('-'.repeat(60));
 
-    // Create initial response - always provide input, optionally use previous_response_id for context
+    // Create initial response - use previous_response_id for conversation continuity if available
     const startTime = Date.now();
-    let response = await client.responses.create({
+    
+    // Build request params - add previous_response_id if available for conversation continuity
+    const baseParams = {
       model: AI_MODEL,
       instructions: SYSTEM_PROMPT,
       input: turnPrompt,
       tools: AI_TOOLS,
-      tool_choice: 'auto',
-    });
+      tool_choice: 'auto' as const,
+    };
+    
+    let response;
+    if (previousResponseId) {
+      console.log(`[AGENT] Using previous response ID for context: ${previousResponseId}`);
+      response = await client.responses.create({
+        ...baseParams,
+        previous_response_id: previousResponseId,
+      });
+    } else {
+      response = await client.responses.create(baseParams);
+    }
     const responseTime = Date.now() - startTime;
 
     console.log(`[AGENT OUTPUT] Initial response in ${responseTime}ms, ${response.output?.length || 0} outputs`);

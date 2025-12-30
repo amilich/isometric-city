@@ -1073,10 +1073,19 @@ function updateUnits(state: RoNGameState): RoNGameState {
   // Track damage to apply to buildings - key is "x,y" of building origin, value is total damage
   // This is needed because multiple units might attack the same building in one tick
   const buildingDamageToApply: Map<string, number> = new Map();
+  
+  // Track units that died this tick (for population decrease)
+  const deadUnitOwners: string[] = [];
 
   for (let unitIndex = 0; unitIndex < originalUnits.length; unitIndex++) {
     const unit = originalUnits[unitIndex];
     let updatedUnit = { ...unit };
+    
+    // Debug: log air unit state at start of tick (every 60 ticks)
+    const unitStats = UNIT_STATS[unit.type];
+    if (unitStats?.category === 'air' && state.tick % 60 === 0) {
+      console.log(`[AIR STATE] ${unit.type}(${unit.id}) task=${unit.task} taskTarget=${JSON.stringify(unit.taskTarget)} isMoving=${unit.isMoving} targetX=${unit.targetX} targetY=${unit.targetY} cooldown=${unit.attackCooldown}`);
+    }
     
     // Reset isAttacking flag each tick - will be set true if attack occurs
     updatedUnit.isAttacking = false;
@@ -1287,6 +1296,11 @@ function updateUnits(state: RoNGameState): RoNGameState {
 
       const unitStats = UNIT_STATS[unit.type];
       const speed = (unitStats?.speed || 1) * UNIT_MOVE_SPEED;
+      
+      // Debug: log air unit movement every 30 ticks
+      if (unitStats?.category === 'air' && state.tick % 30 === 0) {
+        console.log(`[AIR MOVE] ${updatedUnit.type}(${updatedUnit.id}) pos=(${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}) -> target=(${updatedUnit.targetX.toFixed(1)},${updatedUnit.targetY.toFixed(1)}) dist=${dist.toFixed(1)} speed=${speed.toFixed(2)} task=${updatedUnit.task}`);
+      }
 
       // For gathering tasks, stop when close to the building (not exactly on it)
       const arrivalDist = updatedUnit.task?.startsWith('gather_') ? 1.5 : speed;
@@ -1686,9 +1700,29 @@ function updateUnits(state: RoNGameState): RoNGameState {
     if (updatedUnit.health > 0) {
       newUnits.push(updatedUnit);
     } else {
-      // Unit died - log it
+      // Unit died - log it and track for population decrease
       console.log(`[UNIT DIED] ${updatedUnit.type} (${updatedUnit.id}) at (${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}), ownerId=${updatedUnit.ownerId}`);
+      deadUnitOwners.push(updatedUnit.ownerId);
     }
+  }
+  
+  // Decrease population for players who lost units
+  let newPlayers = state.players;
+  if (deadUnitOwners.length > 0) {
+    // Count deaths per player
+    const deathCounts: Map<string, number> = new Map();
+    for (const ownerId of deadUnitOwners) {
+      deathCounts.set(ownerId, (deathCounts.get(ownerId) || 0) + 1);
+    }
+    
+    newPlayers = state.players.map(p => {
+      const deaths = deathCounts.get(p.id) || 0;
+      if (deaths > 0) {
+        console.log(`[POPULATION] ${p.name} lost ${deaths} unit(s), population: ${p.population} -> ${p.population - deaths}`);
+        return { ...p, population: Math.max(0, p.population - deaths) };
+      }
+      return p;
+    });
   }
   
   // Apply all accumulated building damage
@@ -1717,7 +1751,7 @@ function updateUnits(state: RoNGameState): RoNGameState {
     );
   }
   
-  return { ...state, units: newUnits, grid: newGrid };
+  return { ...state, units: newUnits, grid: newGrid, players: newPlayers };
 }
 
 /**

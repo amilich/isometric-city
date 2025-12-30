@@ -689,10 +689,12 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
   
   // Attack target - spread units around target building so they don't stack
   const attackTarget = useCallback((targetId: string | { x: number; y: number }) => {
+    console.log('[ATTACK CMD] attackTarget called with:', targetId);
     setState(prev => {
       // Get all selected units for formation spreading
       const selectedUnits = prev.units.filter(u => u.isSelected);
       const numSelected = selectedUnits.length;
+      console.log(`[ATTACK CMD] ${numSelected} units selected:`, selectedUnits.map(u => `${u.type}(${u.id})`).join(', '));
       
       let unitIndex = 0;
       const updatedUnits = prev.units.map(u => {
@@ -718,7 +720,7 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
         
         unitIndex++;
         
-        return {
+        const newUnit = {
           ...u,
           task: 'attack' as UnitTask,
           taskTarget: targetId,
@@ -727,6 +729,8 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
           targetY: typeof targetId === 'object' ? targetId.y + offsetY : undefined,
           attackCooldown: 0, // Reset cooldown so unit can attack immediately when in range
         };
+        console.log(`[ATTACK CMD] Unit ${u.type}(${u.id}) -> task=${newUnit.task}, target=${JSON.stringify(newUnit.taskTarget)}, isMoving=${newUnit.isMoving}, targetX=${newUnit.targetX}, targetY=${newUnit.targetY}`);
+        return newUnit;
       });
       
       return { ...prev, units: updatedUnits };

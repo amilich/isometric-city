@@ -860,14 +860,18 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
             moveSelectedUnits(gridX, gridY);
           }
         } else {
-          // No building - check terrain for naval units
+          // No building at clicked location
+          console.log('[RIGHT-CLICK] No building found at', gridX, gridY);
           const tile = gameState.grid[gridY]?.[gridX];
           
-          // Get selected units and check if any are naval
+          // Get selected units and check unit types
           const selectedUnits = gameState.units.filter(u => u.isSelected);
           const hasNavalUnits = selectedUnits.some(u => UNIT_STATS[u.type]?.isNaval);
-          const hasLandUnits = selectedUnits.some(u => !UNIT_STATS[u.type]?.isNaval);
+          const hasAirUnits = selectedUnits.some(u => UNIT_STATS[u.type]?.category === 'air');
+          const hasLandUnits = selectedUnits.some(u => !UNIT_STATS[u.type]?.isNaval && UNIT_STATS[u.type]?.category !== 'air');
           const hasFishingBoats = selectedUnits.some(u => u.type === 'fishing_boat');
+          
+          console.log('[RIGHT-CLICK] Unit types:', { hasNavalUnits, hasAirUnits, hasLandUnits, terrain: tile?.terrain });
           
           // If we have naval units, target must be water
           // If we have land units, target must be land
@@ -877,6 +881,10 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
           if (hasFishingBoats && isWaterTile && tile?.hasFishingSpot) {
             // Assign fishing task to fishing boats
             assignTask('gather_fish' as import('../types/units').UnitTask, { x: gridX, y: gridY });
+          } else if (hasAirUnits) {
+            // Air units can move anywhere - no terrain restrictions
+            console.log('[RIGHT-CLICK] Air units moving to', gridX, gridY);
+            moveSelectedUnits(gridX, gridY);
           } else if (hasNavalUnits && !hasLandUnits) {
             // Only naval units selected - must click on water
             if (isWaterTile) {
@@ -1857,6 +1865,15 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
         }
       }
       
+      // Collect damaged buildings for health bar overlay (drawn last, on top of everything)
+      const damagedBuildings: Array<{
+        screenX: number;
+        screenY: number;
+        healthPercent: number;
+        buildingWidth: number;
+        buildingHeight: number;
+      }> = [];
+      
       // Third pass: Draw buildings (after all terrain so they appear on top)
       for (let y = 0; y < gameState.gridSize; y++) {
         for (let x = 0; x < gameState.gridSize; x++) {
@@ -2314,7 +2331,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 }
               }
 
-              // Fire effect and health bar for damaged buildings (under attack)
+              // Fire effect for damaged buildings (health bar drawn in final pass)
               if (tile.building.health < tile.building.maxHealth) {
                 // Calculate fire intensity based on damage (more damage = more intense fire)
                 const healthPercent = tile.building.health / tile.building.maxHealth;
@@ -2323,9 +2340,17 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 // Draw fire effect at the center-top of the building
                 drawFireEffect(ctx, screenX, screenY - destHeight / 2, fireAnimTimeRef.current, fireIntensity);
                 
-                // Draw health bar
-                const barWidth = destWidth * 0.5;
-                drawHealthBar(ctx, drawX + destWidth / 2 - barWidth / 2, drawY - 8, barWidth, healthPercent, 1);
+                // Collect for health bar overlay (drawn last, on top of everything)
+                const buildingStats = BUILDING_STATS[buildingType];
+                const bWidth = buildingStats?.size?.width || 1;
+                const bHeight = buildingStats?.size?.height || 1;
+                damagedBuildings.push({
+                  screenX: screenX,
+                  screenY: screenY - destHeight + TILE_HEIGHT, // Top of building
+                  healthPercent,
+                  buildingWidth: bWidth,
+                  buildingHeight: bHeight,
+                });
               }
             }
           }
@@ -2345,6 +2370,14 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
         // Draw unit with pedestrian-like appearance and task activities
         drawRoNUnit(ctx, unit, 0, 0, currentZoom, color, gameState.tick);
       });
+      
+      // Fifth pass: Draw building health bars ON TOP of everything (always visible)
+      for (const damaged of damagedBuildings) {
+        const barWidth = TILE_WIDTH * damaged.buildingWidth * 0.6;
+        const barX = damaged.screenX + TILE_WIDTH / 2 - barWidth / 2;
+        const barY = damaged.screenY - 12; // Above the building
+        drawHealthBar(ctx, barX, barY, barWidth, damaged.healthPercent, 1);
+      }
       
       ctx.restore();
       

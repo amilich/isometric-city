@@ -1258,6 +1258,10 @@ export function executeAssignIdleWorkers(
   // Pop cap check for gold prioritization
   const popCapped = player.population >= player.populationCap;
   const needsGoldForCity = popCapped && player.resources.gold < 200;
+  const needsWoodForCity = popCapped && player.resources.wood < 400;
+  
+  // Check excess resources - if we have way more than needed, workers can be reassigned
+  const hasExcessFood = player.resources.food > 500; // More than enough food stockpiled
 
   // Check if we have buildings but no production
   const hasWoodBuilding = state.grid.flat().some(t =>
@@ -1283,10 +1287,11 @@ export function executeAssignIdleWorkers(
 
   // Find farmers to reassign if we have unproductive resource buildings
   // CRITICAL: Also rebalance if food rate is 0 but we have farms!
-  // ALSO: Aggressively rebalance to gold when pop-capped and need gold for city!
+  // ALSO: Aggressively rebalance to gold/wood when pop-capped and need resources for city!
   const needsRebalance = (hasWoodBuilding && woodRate === 0) ||
                          (hasMineBuilding && metalRate === 0) ||
-                         (hasMarketBuilding && needsGoldForCity) || // More aggressive - rebalance to gold when saving for city!
+                         (hasMarketBuilding && needsGoldForCity) || // Rebalance to gold when saving for city
+                         (hasWoodBuilding && needsWoodForCity && hasExcessFood) || // WOOD FOR CITY - move excess food workers!
                          (hasFarmBuilding && foodRate === 0); // FOOD IS CRITICAL!
   console.log(`[assign_workers] Checking rebalance: idleCount=${idleCitizens.length}, hasFarm=${hasFarmBuilding}, foodRate=${foodRate}, hasWood=${hasWoodBuilding}, woodRate=${woodRate}, hasMine=${hasMineBuilding}, metalRate=${metalRate}`);
   if (idleCitizens.length === 0 && needsRebalance) {
@@ -1330,12 +1335,19 @@ export function executeAssignIdleWorkers(
     console.log(`[assign_workers] Resource status: food=${Math.round(player.resources.food)} (rate=${foodRate.toFixed(2)}), wood=${Math.round(player.resources.wood)} (rate=${woodRate.toFixed(2)}), gold=${Math.round(player.resources.gold)} (rate=${goldRate.toFixed(2)}), workers: food=${farmWorkers.length}, wood=${woodWorkers.length}, metal=${metalWorkers.length}, gold=${goldWorkers.length}`);
     
     // Priority: 
-    // 1. GOLD FOR CITY - if pop-capped and need gold, move workers to market!
-    // 2. FOOD IS MOST IMPORTANT - if food rate is 0 and we have farms, move workers TO food
-    // 3. Take from metal first for other needs
-    // 4. Only take from food if food is abundant
+    // 1. WOOD FOR CITY - if pop-capped and need wood with excess food, aggressively move to wood!
+    // 2. GOLD FOR CITY - if pop-capped and need gold, move workers to market!
+    // 3. FOOD IS MOST IMPORTANT - if food rate is 0 and we have farms, move workers TO food
+    // 4. Take from metal first for other needs
+    // 5. Only take from food if food is abundant
     
-    if (needsGoldForCity && hasMarketBuilding && goldWorkers.length === 0) {
+    if (needsWoodForCity && hasWoodBuilding && hasExcessFood && farmWorkers.length >= 2) {
+      // CRITICAL: Pop-capped, need WOOD for city, have excess food - move half of food workers to wood!
+      const workersToMove = Math.ceil(farmWorkers.length / 2);
+      workersToReassign = farmWorkers.slice(0, workersToMove);
+      rebalanceTarget = 'wood';
+      console.log(`[assign_workers] CRITICAL: Need WOOD for city (have ${Math.round(player.resources.wood)}/400)! Moving ${workersToReassign.length}/${farmWorkers.length} food workers to wood (food=${Math.round(player.resources.food)})`);
+    } else if (needsGoldForCity && hasMarketBuilding && goldWorkers.length === 0) {
       // CRITICAL: Need gold for city but no gold workers! Move to market
       if (metalWorkers.length >= 1) {
         workersToReassign = metalWorkers.slice(0, Math.max(1, Math.ceil(metalWorkers.length / 2)));
@@ -1424,9 +1436,15 @@ export function executeAssignIdleWorkers(
     resourcePriority['gather_food'] = 200;
   }
   
+  // CRITICAL: Boost wood priority when pop-capped and need wood for small_city!
+  if (popCapped && needsWoodForCity) {
+    resourcePriority['gather_wood'] = 300; // HIGHEST priority when saving for city!
+    console.log(`[assign_workers] BOOSTING WOOD PRIORITY - pop capped and need 400 wood (have ${Math.round(player.resources.wood)})`);
+  }
+  
   // CRITICAL: Boost gold priority when pop-capped and need gold for small_city!
   if (popCapped && needsGoldForCity) {
-    resourcePriority['gather_gold'] = 250; // HIGHEST priority when saving for city!
+    resourcePriority['gather_gold'] = 250; // High priority when saving for city!
     console.log(`[assign_workers] BOOSTING GOLD PRIORITY - pop capped and need 200 gold (have ${Math.round(player.resources.gold)})`);
   } else if (player.resourceRates.gold === 0) {
     resourcePriority['gather_gold'] = 120; // Boost if no gold income

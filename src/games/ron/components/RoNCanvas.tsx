@@ -8,7 +8,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useRoN } from '../context/RoNContext';
-import { AGE_SPRITE_PACKS, BUILDING_SPRITE_MAP, BUILDING_VERTICAL_OFFSETS, AGE_VERTICAL_OFFSETS, BUILDING_SCALES, AGE_BUILDING_SCALES, CONSTRUCTION_VERTICAL_OFFSETS, CONSTRUCTION_CROP_TOP, CONSTRUCTION_CROP_BOTTOM, AGE_BUILDING_CROP, PLAYER_COLORS, getAgeSpritePosition } from '../lib/renderConfig';
+import { AGE_SPRITE_PACKS, BUILDING_SPRITE_MAP, BUILDING_VERTICAL_OFFSETS, AGE_VERTICAL_OFFSETS, BUILDING_SCALES, AGE_BUILDING_SCALES, PLAYER_COLORS, getAgeSpritePosition } from '../lib/renderConfig';
 import { BUILDING_STATS } from '../types/buildings';
 import { AGE_ORDER } from '../types/ages';
 import { RoNBuildingType } from '../types/buildings';
@@ -40,7 +40,30 @@ import {
   drawFireEffect,
 } from '@/components/game/shared';
 import { drawRoNUnit } from '../lib/drawUnits';
+
+// Import enhanced graphics system for improved visual fidelity
+import {
+  drawEnhancedGrassTile,
+  drawEnhancedWaterTile,
+  drawEnhancedBeach,
+  drawEnhancedForest,
+  drawEnhancedMountain,
+  drawEnhancedSky,
+  drawUnitShadow,
+  drawSelectionGlow,
+  globalParticles,
+} from '../lib/enhancedGraphics';
 import { getTerritoryOwner, extractCityCenters } from '../lib/simulation';
+
+// Slightly de-saturate / increase contrast for sprite sheets so they match the
+// more realistic terrain grade (keeps assets cohesive; avoids "toy-like" colors).
+const SPRITE_GRADE_FILTER = 'saturate(0.86) contrast(1.06) brightness(0.985)';
+function drawGradedSprite(ctx: CanvasRenderingContext2D, draw: () => void): void {
+  ctx.save();
+  ctx.filter = SPRITE_GRADE_FILTER;
+  draw();
+  ctx.restore();
+}
 
 /**
  * Find the origin tile of a multi-tile building by searching backwards from a clicked position.
@@ -631,6 +654,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   const isSelectingRef = useRef(false);
   const selectionStartScreenRef = useRef<{ x: number; y: number } | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
+  const [cursor, setCursor] = useState<'default' | 'grabbing' | 'crosshair'>('default');
   
   // Road drag state (like IsoCity)
   const isRoadDraggingRef = useRef(false);
@@ -638,7 +662,10 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   
   // Fire animation time
   const fireAnimTimeRef = useRef(0);
-  const lastFrameTimeRef = useRef(performance.now());
+  const lastFrameTimeRef = useRef(0);
+  
+  // Enhanced graphics animation time
+  const enhancedAnimTimeRef = useRef(0);
   const [roadDrawDirection, setRoadDrawDirection] = useState<'h' | 'v' | null>(null);
   const placedRoadTilesRef = useRef<Set<string>>(new Set());
   const [roadDragEnd, setRoadDragEnd] = useState<{ x: number; y: number } | null>(null);
@@ -795,64 +822,31 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
           const originTile = gameState.grid[buildingOrigin.originY]?.[buildingOrigin.originX];
           const buildingType = buildingOrigin.buildingType;
           
-          // Debug: log the building info
-          console.log('[RIGHT-CLICK] Building found:', {
-            buildingType,
-            originX: buildingOrigin.originX,
-            originY: buildingOrigin.originY,
-            tileOwnerId: originTile?.ownerId,
-            buildingOwnerId: originTile?.building?.ownerId,
-            currentPlayerId: gameState.currentPlayerId,
-            isEnemy: originTile?.ownerId && originTile.ownerId !== gameState.currentPlayerId,
-          });
-          
           // Check if it's an enemy building - attack
-          // Use building.ownerId since tile.ownerId might not be set for non-origin tiles
-          const buildingOwnerId = originTile?.building?.ownerId || originTile?.ownerId;
-          if (buildingOwnerId && buildingOwnerId !== gameState.currentPlayerId) {
-            console.log('[RIGHT-CLICK] Attacking building at', buildingOrigin.originX, buildingOrigin.originY);
+          if (originTile?.ownerId && originTile.ownerId !== gameState.currentPlayerId) {
             attackTarget({ x: buildingOrigin.originX, y: buildingOrigin.originY });
           } 
-          // Check if it's our own economic building - assign gather task (only for civilians!)
+          // Check if it's our own economic building - assign gather task
           else if (originTile?.ownerId === gameState.currentPlayerId) {
-            // Check if selected units are military - they shouldn't be assigned to gather
-            const selectedUnits = gameState.units.filter(u => state.selectedUnitIds.includes(u.id));
-            const hasMilitaryUnits = selectedUnits.some(u => {
-              const stats = UNIT_STATS[u.type];
-              return stats?.category !== 'civilian';
-            });
-            const hasCivilianUnits = selectedUnits.some(u => {
-              const stats = UNIT_STATS[u.type];
-              return stats?.category === 'civilian';
-            });
+            // Determine gather task based on building type
+            let gatherTask: string | null = null;
             
-            // Only assign gather tasks if we have civilian units and no military units
-            if (hasCivilianUnits && !hasMilitaryUnits) {
-              // Determine gather task based on building type
-              let gatherTask: string | null = null;
-              
-              if (buildingType === 'farm') {
-                gatherTask = 'gather_food';
-              } else if (buildingType === 'woodcutters_camp' || buildingType === 'lumber_mill') {
-                gatherTask = 'gather_wood';
-              } else if (buildingType === 'mine' || buildingType === 'smelter') {
-                gatherTask = 'gather_metal';
-              } else if (buildingType === 'market') {
-                gatherTask = 'gather_gold';
-              } else if (buildingType === 'oil_well' || buildingType === 'oil_platform' || buildingType === 'refinery') {
-                gatherTask = 'gather_oil';
-              } else if (buildingType === 'library' || buildingType === 'university') {
-                gatherTask = 'gather_knowledge';
-              }
-              
-              if (gatherTask) {
-                assignTask(gatherTask as import('../types/units').UnitTask, { x: buildingOrigin.originX, y: buildingOrigin.originY });
-              } else {
-                // It's our building but not economic - just move near it
-                moveSelectedUnits(gridX, gridY);
-              }
+            if (buildingType === 'farm') {
+              gatherTask = 'gather_food';
+            } else if (buildingType === 'woodcutters_camp' || buildingType === 'lumber_mill') {
+              gatherTask = 'gather_wood';
+            } else if (buildingType === 'mine' || buildingType === 'smelter') {
+              gatherTask = 'gather_metal';
+            } else if (buildingType === 'market') {
+              gatherTask = 'gather_gold';
+            } else if (buildingType === 'oil_well' || buildingType === 'oil_platform' || buildingType === 'refinery') {
+              gatherTask = 'gather_oil';
+            }
+            
+            if (gatherTask) {
+              assignTask(gatherTask as import('../types/units').UnitTask, { x: buildingOrigin.originX, y: buildingOrigin.originY });
             } else {
-              // Military units selected - just move near own buildings, don't assign tasks
+              // It's our building but not economic - just move near it
               moveSelectedUnits(gridX, gridY);
             }
           } else {
@@ -905,6 +899,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
     if (e.button === 1 || e.altKey) {
       // Middle-click or alt: start panning
       isPanningRef.current = true;
+      setCursor('grabbing');
       panStartRef.current = { 
         x: e.clientX, 
         y: e.clientY,
@@ -946,11 +941,12 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       } else {
         // Default mode (no building tool) - start selection box
         isSelectingRef.current = true;
+        setCursor('crosshair');
         selectionStartScreenRef.current = { x: screenX, y: screenY };
         setSelectionBox({ startX: screenX, startY: screenY, endX: screenX, endY: screenY });
       }
     }
-  }, [state.selectedTool, state.selectedUnitIds, placeBuilding, moveSelectedUnits, attackTarget, latestStateRef]);
+  }, [state.selectedTool, state.selectedUnitIds, placeBuilding, moveSelectedUnits, attackTarget, assignTask, latestStateRef]);
   
   // Handle mouse move
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -1052,6 +1048,9 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Always reset cursor to default on mouse up
+    setCursor('default');
     
     // End panning
     if (isPanningRef.current) {
@@ -1145,7 +1144,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     // Use smaller base delta and scale by current zoom for consistent feel
-    const baseZoomDelta = 0.02;
+    const baseZoomDelta = 0.05;
     const scaledDelta = baseZoomDelta * Math.max(0.5, zoomRef.current);
     const zoomDelta = e.deltaY > 0 ? -scaledDelta : scaledDelta;
     setZoom(prev => Math.max(0.3, Math.min(3, prev + zoomDelta)));
@@ -1224,9 +1223,14 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       
       // Calculate delta time for animations
       const now = performance.now();
-      const delta = (now - lastFrameTimeRef.current) / 1000;
+      const last = lastFrameTimeRef.current || now;
+      const delta = Math.min(0.05, (now - last) / 1000); // clamp to avoid huge jumps
       lastFrameTimeRef.current = now;
       fireAnimTimeRef.current += delta;
+      enhancedAnimTimeRef.current += delta;
+      
+      // Update particle system
+      globalParticles.update(delta);
       
       // PERF: Pre-compute city centers ONCE per frame for all territory lookups
       const cityCenters = extractCityCenters(gameState.grid, gameState.gridSize);
@@ -1234,8 +1238,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       // Disable image smoothing for crisp pixel art
       ctx.imageSmoothingEnabled = false;
       
-      // Draw sky background
-      drawSkyBackground(ctx, canvas, 'day');
+      // Draw enhanced sky background with atmospheric effects
+      drawEnhancedSky(ctx, canvas, 'day', enhancedAnimTimeRef.current);
       
       // Get sprite sheet for current player's age
       const playerAge = currentPlayer?.age || 'classical';
@@ -1281,7 +1285,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               south: x < gameState.gridSize - 1 && gameState.grid[y]?.[x + 1]?.terrain === 'water',
               west: y < gameState.gridSize - 1 && gameState.grid[y + 1]?.[x]?.terrain === 'water',
             };
-            drawWaterTile(ctx, screenX, screenY, x, y, adjacentWater);
+            // Use enhanced water with animated waves and reflections
+            drawEnhancedWaterTile(ctx, screenX, screenY, x, y, enhancedAnimTimeRef.current, currentZoom, adjacentWater, { sparkle: true });
             
             // Draw fishing spot indicator
             if (tile.hasFishingSpot) {
@@ -1339,178 +1344,19 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               south: x < gameState.gridSize - 1 && (gameState.grid[y]?.[x + 1]?.terrain === 'water' || hasDock(gameState.grid, x + 1, y, gameState.gridSize)),
               west: y < gameState.gridSize - 1 && (gameState.grid[y + 1]?.[x]?.terrain === 'water' || hasDock(gameState.grid, x, y + 1, gameState.gridSize)),
             };
-            drawWaterTile(ctx, screenX, screenY, x, y, adjacentWater);
+            // Use enhanced water with animated waves
+            drawEnhancedWaterTile(ctx, screenX, screenY, x, y, enhancedAnimTimeRef.current, currentZoom, adjacentWater, { sparkle: false });
           } else {
             // Determine zone color based on ownership/deposits
             let zoneType: 'none' | 'residential' | 'commercial' | 'industrial' = 'none';
             
             // Apply slight tinting for special tiles
             if (tile.hasMetalDeposit) {
-              // Draw mountainous terrain for metal deposits
-              // Base rocky ground with gradient
-              const gradient = ctx.createLinearGradient(
-                screenX, screenY,
-                screenX + TILE_WIDTH, screenY + TILE_HEIGHT
-              );
-              gradient.addColorStop(0, '#6b7280');
-              gradient.addColorStop(0.5, '#78716c');
-              gradient.addColorStop(1, '#57534e');
-              ctx.fillStyle = gradient;
-              ctx.beginPath();
-              ctx.moveTo(screenX + TILE_WIDTH / 2, screenY);
-              ctx.lineTo(screenX + TILE_WIDTH, screenY + TILE_HEIGHT / 2);
-              ctx.lineTo(screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT);
-              ctx.lineTo(screenX, screenY + TILE_HEIGHT / 2);
-              ctx.closePath();
-              ctx.fill();
-              
-              // Deterministic seed for this tile
-              const seed = x * 1000 + y;
-              
-              // Draw clustered mountain peaks (6-8 per tile, tightly packed, taller)
-              const numMountains = 6 + (seed % 3);
-              
-              // Tighter cluster positions near center with varying heights
-              const mountainPositions = [
-                { dx: 0.5, dy: 0.28, sizeMult: 1.4, heightMult: 1.3 },   // Back center - tallest
-                { dx: 0.35, dy: 0.32, sizeMult: 1.2, heightMult: 1.1 }, // Back left
-                { dx: 0.65, dy: 0.32, sizeMult: 1.2, heightMult: 1.15 },  // Back right
-                { dx: 0.42, dy: 0.42, sizeMult: 1.0, heightMult: 0.9 }, // Mid left
-                { dx: 0.58, dy: 0.44, sizeMult: 1.1, heightMult: 0.95 },  // Mid right
-                { dx: 0.5, dy: 0.52, sizeMult: 0.9, heightMult: 0.8 },   // Front center
-                { dx: 0.32, dy: 0.50, sizeMult: 0.7, heightMult: 0.65 },  // Front left edge
-                { dx: 0.68, dy: 0.48, sizeMult: 0.75, heightMult: 0.7 },  // Front right edge
-              ];
-              
-              // Draw mountains with more detail
-              for (let m = 0; m < Math.min(numMountains, mountainPositions.length); m++) {
-                const pos = mountainPositions[m];
-                const mSeed = seed * 7 + m * 13;
-                
-                // Tight clustering with minimal randomization
-                const baseX = screenX + TILE_WIDTH * pos.dx + ((mSeed % 5) - 2.5) * 0.4;
-                const baseY = screenY + TILE_HEIGHT * pos.dy + ((mSeed * 3 % 4) - 2) * 0.2;
-                
-                // Taller mountains with some width variation
-                const baseWidth = (14 + (mSeed % 5)) * pos.sizeMult;
-                const peakHeight = (16 + (mSeed * 2 % 8)) * pos.heightMult;
-                const peakX = baseX + ((mSeed % 3) - 1) * 0.5; // Slight peak offset
-                const peakY = baseY - peakHeight;
-                
-                // Left face (shadow) with rocky texture
-                ctx.fillStyle = '#4a4a52';
-                ctx.beginPath();
-                ctx.moveTo(peakX, peakY);
-                // Add a slight ridge on the left face
-                const leftRidgeX = baseX - baseWidth * 0.3;
-                const leftRidgeY = baseY - peakHeight * 0.4;
-                ctx.lineTo(leftRidgeX, leftRidgeY);
-                ctx.lineTo(baseX - baseWidth * 0.5, baseY);
-                ctx.lineTo(baseX, baseY);
-                ctx.closePath();
-                ctx.fill();
-                
-                // Right face (lit) with subtle detail
-                ctx.fillStyle = '#9ca3af';
-                ctx.beginPath();
-                ctx.moveTo(peakX, peakY);
-                // Add a slight ridge on the right face
-                const rightRidgeX = baseX + baseWidth * 0.25;
-                const rightRidgeY = baseY - peakHeight * 0.35;
-                ctx.lineTo(rightRidgeX, rightRidgeY);
-                ctx.lineTo(baseX + baseWidth * 0.5, baseY);
-                ctx.lineTo(baseX, baseY);
-                ctx.closePath();
-                ctx.fill();
-                
-                // Add a darker ridge line on larger mountains
-                if (pos.heightMult > 0.8) {
-                  ctx.fillStyle = '#3f3f46';
-                  ctx.beginPath();
-                  ctx.moveTo(peakX, peakY);
-                  ctx.lineTo(peakX - 1, peakY + peakHeight * 0.5);
-                  ctx.lineTo(peakX + 1, peakY + peakHeight * 0.5);
-                  ctx.closePath();
-                  ctx.fill();
-                }
-                
-                // Snow cap on taller peaks
-                if (pos.heightMult >= 1.0) {
-                  const snowHeight = peakHeight * 0.25;
-                  ctx.fillStyle = '#f5f5f5';
-                  ctx.beginPath();
-                  ctx.moveTo(peakX, peakY);
-                  ctx.lineTo(peakX - baseWidth * 0.1, peakY + snowHeight);
-                  ctx.lineTo(peakX + baseWidth * 0.1, peakY + snowHeight);
-                  ctx.closePath();
-                  ctx.fill();
-                  
-                  // Snow drip effect
-                  if (pos.heightMult >= 1.2) {
-                    ctx.fillStyle = '#e5e5e5';
-                    ctx.beginPath();
-                    ctx.arc(peakX - 2, peakY + snowHeight + 2, 1.5, 0, Math.PI * 2);
-                    ctx.fill();
-                  }
-                }
-              }
-              
-              // Smaller ore deposits (dark diamonds) at base - 4-6 deposits
-              const numOreDeposits = 4 + (seed % 3);
-              const orePositions = [
-                { dx: 0.28, dy: 0.70 },
-                { dx: 0.42, dy: 0.74 },
-                { dx: 0.58, dy: 0.72 },
-                { dx: 0.72, dy: 0.70 },
-                { dx: 0.38, dy: 0.66 },
-                { dx: 0.62, dy: 0.68 },
-              ];
-              
-              for (let o = 0; o < Math.min(numOreDeposits, orePositions.length); o++) {
-                const oPos = orePositions[o];
-                const oSeed = seed * 11 + o * 17;
-                const oreX = screenX + TILE_WIDTH * oPos.dx + ((oSeed % 4) - 2) * 0.3;
-                const oreY = screenY + TILE_HEIGHT * oPos.dy + ((oSeed * 2 % 3) - 1) * 0.2;
-                const oreSize = 1.5 + (oSeed % 2); // Smaller ore pieces
-                
-                // Dark ore diamond shape (more interesting than square)
-                ctx.fillStyle = '#18181b';
-                ctx.beginPath();
-                ctx.moveTo(oreX, oreY - oreSize);
-                ctx.lineTo(oreX + oreSize, oreY);
-                ctx.lineTo(oreX, oreY + oreSize);
-                ctx.lineTo(oreX - oreSize, oreY);
-                ctx.closePath();
-                ctx.fill();
-                
-                // Tiny metallic glint
-                ctx.fillStyle = '#71717a';
-                ctx.fillRect(oreX - 0.5, oreY - 0.5, 1, 1);
-              }
-              
-              // More grey boulders/circles at bottom - 7-10 boulders
-              const numBoulders = 7 + (seed % 4);
-              for (let b = 0; b < numBoulders; b++) {
-                const bSeed = seed * 19 + b * 23;
-                const bx = screenX + TILE_WIDTH * 0.2 + ((bSeed % 100) / 100) * TILE_WIDTH * 0.6;
-                const by = screenY + TILE_HEIGHT * 0.58 + ((bSeed * 3 % 50) / 100) * TILE_HEIGHT * 0.35;
-                const bSize = 2 + (bSeed % 3);
-                
-                // Grey boulder
-                ctx.fillStyle = '#6b7280';
-                ctx.beginPath();
-                ctx.arc(bx, by, bSize, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Light highlight
-                ctx.fillStyle = '#a1a1aa';
-                ctx.beginPath();
-                ctx.arc(bx - bSize * 0.25, by - bSize * 0.25, bSize * 0.35, 0, Math.PI * 2);
-                ctx.fill();
-              }
+              // Draw enhanced mountainous terrain for metal deposits
+              drawEnhancedMountain(ctx, screenX, screenY, x, y, true, currentZoom);
             } else if (tile.hasOilDeposit) {
-              // Draw grass base first
-              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
+              // Draw enhanced grass base first
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { ambient: 0.95 });
               
               // Only show oil in industrial+ ages
               const isIndustrial = AGE_ORDER.indexOf(playerAge) >= AGE_ORDER.indexOf('industrial');
@@ -1519,22 +1365,18 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 const seed = x * 31 + y * 17;
                 
                 // Generate 4-6 overlapping oil splotches of similar sizes
-                const numSplotches = 4 + (seed % 3); // 4, 5, or 6 splotches
+                const numSplotches = 4 + (seed % 3);
                 
                 // Splotch configurations (deterministic based on seed)
                 const splotches: Array<{ dx: number; dy: number; w: number; h: number; angle: number }> = [];
                 for (let i = 0; i < numSplotches; i++) {
                   const splotchSeed = seed * 7 + i * 13;
-                  // Random size for each - all similar range (0.08 to 0.14)
-                  const baseSize = 0.08 + (splotchSeed % 60) / 1000; // 0.08 to 0.14
+                  const baseSize = 0.08 + (splotchSeed % 60) / 1000;
                   splotches.push({
-                    // Position offset from center (spread more across tile)
                     dx: ((splotchSeed % 70) - 35) / 100 * TILE_WIDTH * 0.55,
                     dy: ((splotchSeed * 3 % 50) - 25) / 100 * TILE_HEIGHT * 0.55,
-                    // All splotches similar size with random variation
                     w: TILE_WIDTH * baseSize,
                     h: TILE_HEIGHT * (baseSize * 0.8 + (splotchSeed * 2 % 30) / 1000),
-                    // More rotation for variety
                     angle: ((splotchSeed * 5) % 90 - 45) * Math.PI / 180,
                   });
                 }
@@ -1542,118 +1384,50 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 const cx = screenX + TILE_WIDTH / 2;
                 const cy = screenY + TILE_HEIGHT / 2;
                 
-                // Draw splotches in random order (no size sorting - they're all similar)
+                // Draw splotches with enhanced oil-slick appearance
                 for (let i = 0; i < splotches.length; i++) {
                   const s = splotches[i];
                   const px = cx + s.dx;
                   const py = cy + s.dy;
                   
-                  // Dark oil base - slight variation in darkness
+                  // Dark oil base with iridescent effect
                   const darkness = 8 + (i * 2 % 6);
                   ctx.fillStyle = `rgb(${darkness}, ${darkness}, ${darkness + 4})`;
                   ctx.beginPath();
                   ctx.ellipse(px, py, s.w, s.h, s.angle, 0, Math.PI * 2);
                   ctx.fill();
                   
-                  // Subtle glossy highlight on each splotch
-                  ctx.fillStyle = 'rgba(50, 50, 70, 0.25)';
+                  // Rainbow iridescence shimmer (subtle)
+                  const shimmerPhase = enhancedAnimTimeRef.current * 0.5 + i * 0.5;
+                  const shimmerHue = (shimmerPhase * 30) % 360;
+                  ctx.fillStyle = `hsla(${shimmerHue}, 50%, 30%, 0.15)`;
                   ctx.beginPath();
-                  ctx.ellipse(
-                    px - s.w * 0.2, 
-                    py - s.h * 0.2, 
-                    s.w * 0.5, 
-                    s.h * 0.4, 
-                    s.angle, 
-                    0, 
-                    Math.PI * 2
-                  );
+                  ctx.ellipse(px - s.w * 0.1, py - s.h * 0.1, s.w * 0.6, s.h * 0.5, s.angle, 0, Math.PI * 2);
                   ctx.fill();
-                }
-                
-                // Add tiny white highlights on a couple of splotches
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                for (let i = 0; i < Math.min(2, splotches.length); i++) {
-                  const s = splotches[i];
+                  
+                  // White highlights
+                  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
                   ctx.beginPath();
-                  ctx.ellipse(
-                    cx + s.dx - s.w * 0.25,
-                    cy + s.dy - s.h * 0.25,
-                    s.w * 0.25,
-                    s.h * 0.2,
-                    s.angle,
-                    0,
-                    Math.PI * 2
-                  );
+                  ctx.ellipse(px - s.w * 0.25, py - s.h * 0.25, s.w * 0.25, s.h * 0.2, s.angle, 0, Math.PI * 2);
                   ctx.fill();
                 }
               }
             } else if (tile.forestDensity > 0) {
-              // Draw base grass tile for forest
-              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
+              // Draw enhanced grass base for forest
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { ambient: 0.9 });
               
-              // Draw trees on forest tiles using IsoCity's tree sprite
-              const isoCitySprite = getCachedImage(ISOCITY_SPRITE_PATH, true);
-              if (isoCitySprite) {
-                // Tree sprite is at row 3, col 0 in IsoCity's 5x6 grid
-                const treeCols = 5;
-                const treeRows = 6;
-                const treeTileWidth = isoCitySprite.width / treeCols;
-                const treeTileHeight = isoCitySprite.height / treeRows;
-                
-                // Crop top 15% to avoid bleeding from asset above, and bottom 5%
-                const cropTop = treeTileHeight * 0.15;
-                const cropBottom = treeTileHeight * 0.05;
-                const treeSx = 0 * treeTileWidth;  // col 0
-                const treeSy = 3 * treeTileHeight + cropTop; // row 3, offset down to avoid asset above
-                const treeSrcHeight = treeTileHeight - cropTop - cropBottom;
-
-                // Number of trees based on forest density (6-8 trees for dense forests)
-                const numTrees = 6 + Math.floor((tile.forestDensity / 100) * 2);
-
-                // Tree positions within the tile - spread across the diamond
-                const treePositions = [
-                  { dx: 0.5, dy: 0.35 },   // top-center
-                  { dx: 0.3, dy: 0.45 },   // upper-left
-                  { dx: 0.7, dy: 0.45 },   // upper-right
-                  { dx: 0.2, dy: 0.55 },   // mid-left
-                  { dx: 0.5, dy: 0.55 },   // center
-                  { dx: 0.8, dy: 0.55 },   // mid-right
-                  { dx: 0.35, dy: 0.65 },  // lower-left
-                  { dx: 0.65, dy: 0.65 },  // lower-right
-                ];
-
-                const treeAspect = treeSrcHeight / treeTileWidth;
-
-                for (let t = 0; t < numTrees; t++) {
-                  const pos = treePositions[t];
-                  // Use tile position to create variation in size and position
-                  const seed = (x * 31 + y * 17 + t * 7) % 100;
-                  const offsetX = (seed % 10 - 5) * 0.03 * TILE_WIDTH;
-                  const offsetY = (Math.floor(seed / 10) - 5) * 0.02 * TILE_HEIGHT;
-
-                  // Vary tree size (0.35 to 0.55 scale)
-                  const sizeSeed = (x * 13 + y * 23 + t * 11) % 100;
-                  const treeScale = 0.35 + (sizeSeed / 100) * 0.2;
-                  const treeDestWidth = TILE_WIDTH * treeScale;
-                  const treeDestHeight = treeDestWidth * treeAspect;
-
-                  const treeDrawX = screenX + TILE_WIDTH * pos.dx - treeDestWidth / 2 + offsetX;
-                  // Position trees higher (reduced the 0.3 to 0.15 offset)
-                  const treeDrawY = screenY + TILE_HEIGHT * pos.dy - treeDestHeight + TILE_HEIGHT * 0.15 + offsetY;
-
-                  ctx.drawImage(
-                    isoCitySprite,
-                    treeSx, treeSy, treeTileWidth, treeSrcHeight,
-                    treeDrawX, treeDrawY, treeDestWidth, treeDestHeight
-                  );
-                }
-              }
+              // Draw enhanced procedural forest trees with wind animation
+              drawEnhancedForest(ctx, screenX, screenY, x, y, tile.forestDensity, currentZoom, enhancedAnimTimeRef.current);
             } else if (tile.building?.type === 'road') {
-              // Draw grass base under roads (roads are drawn on top in second pass)
-              drawGroundTile(ctx, screenX, screenY, 'none', currentZoom, false);
+              // Draw enhanced grass base under roads (roads are drawn on top in second pass)
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { ambient: 1.0 });
             } else {
-              // Regular grass tile
-              drawGroundTile(ctx, screenX, screenY, zoneType, currentZoom, false);
+              // Regular enhanced grass tile with procedural texture
+              drawEnhancedGrassTile(ctx, screenX, screenY, x, y, currentZoom, { 
+                ambient: 1.0, 
+                highlight: false,
+                selected: false
+              });
             }
             
             // Ownership tint overlay (skip for roads)
@@ -1746,9 +1520,9 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                   !hasDock(gameState.grid, x, y + 1, gameState.gridSize),
           };
 
-          // Draw beach if any adjacent tile is land (and not a dock)
+          // Draw enhanced beach with smooth sand-to-water transitions and animated foam
           if (adjacentLand.north || adjacentLand.east || adjacentLand.south || adjacentLand.west) {
-            drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
+            drawEnhancedBeach(ctx, screenX, screenY, x, y, adjacentLand, currentZoom, enhancedAnimTimeRef.current);
           }
         }
       }
@@ -1919,11 +1693,13 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               const drawX = drawPosX + TILE_WIDTH / 2 - destWidth / 2;
               const drawY = drawPosY + TILE_HEIGHT - destHeight + verticalPush + buildingOffset;
 
-              ctx.drawImage(
-                parksSprite,
-                sx, sy, parksTileWidth, parksTileHeight,
-                drawX, drawY, destWidth, destHeight
-              );
+              drawGradedSprite(ctx, () => {
+                ctx.drawImage(
+                  parksSprite,
+                  sx, sy, parksTileWidth, parksTileHeight,
+                  drawX, drawY, destWidth, destHeight
+                );
+              });
             }
             continue; // Skip regular sprite drawing for dock
           }
@@ -1981,11 +1757,13 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               const drawX = drawPosX + TILE_WIDTH / 2 - destWidth / 2;
               const drawY = drawPosY + TILE_HEIGHT - destHeight + verticalPush + buildingOffset;
               
-              ctx.drawImage(
-                denseSprite,
-                sx, sy, denseTileWidth, denseTileHeight,
-                drawX, drawY, destWidth, destHeight
-              );
+              drawGradedSprite(ctx, () => {
+                ctx.drawImage(
+                  denseSprite,
+                  sx, sy, denseTileWidth, denseTileHeight,
+                  drawX, drawY, destWidth, destHeight
+                );
+              });
               
               continue; // Skip regular sprite drawing for modern city center
             }
@@ -2033,11 +1811,13 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               const drawY = screenY + TILE_HEIGHT - destHeight + buildingOffset;
 
               // Farms are instant - no construction phase, always show farm sprite
-              ctx.drawImage(
-                farmSprite,
-                sx, sy, farmTileWidth, srcHeight,
-                drawX, drawY, destWidth, destHeight
-              );
+              drawGradedSprite(ctx, () => {
+                ctx.drawImage(
+                  farmSprite,
+                  sx, sy, farmTileWidth, srcHeight,
+                  drawX, drawY, destWidth, destHeight
+                );
+              });
             }
             continue; // Skip regular sprite drawing for farm
           }
@@ -2078,11 +1858,13 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 const drawX = drawPosX + TILE_WIDTH / 2 - destWidth / 2;
                 const drawY = drawPosY + TILE_HEIGHT - destHeight + buildingOffset;
 
-                ctx.drawImage(
-                  airportSprite,
-                  0, 0, airportSprite.width, airportSprite.height,
-                  drawX, drawY, destWidth, destHeight
-                );
+                drawGradedSprite(ctx, () => {
+                  ctx.drawImage(
+                    airportSprite,
+                    0, 0, airportSprite.width, airportSprite.height,
+                    drawX, drawY, destWidth, destHeight
+                  );
+                });
               }
               continue; // Skip regular sprite drawing for airbase (using IsoCity)
             }
@@ -2163,11 +1945,13 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               const drawX = drawPosX + TILE_WIDTH / 2 - destWidth / 2;
               const drawY = drawPosY + TILE_HEIGHT - destHeight + verticalPush;
 
-              ctx.drawImage(
-                medievalSheet,
-                sx, sy, medTileWidth, medTileHeight,
-                drawX, drawY, destWidth, destHeight
-              );
+              drawGradedSprite(ctx, () => {
+                ctx.drawImage(
+                  medievalSheet,
+                  sx, sy, medTileWidth, medTileHeight,
+                  drawX, drawY, destWidth, destHeight
+                );
+              });
               
               continue; // Skip regular sprite drawing
             }
@@ -2267,51 +2051,25 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                   constrRow = 2; constrCol = 0; // Medium building construction
                 }
                 
-                // Apply construction-specific cropping
-                const cropTopFraction = CONSTRUCTION_CROP_TOP[buildingType] || 0;
-                const cropBottomFraction = CONSTRUCTION_CROP_BOTTOM[buildingType] || 0;
-                const constrVertOffset = CONSTRUCTION_VERTICAL_OFFSETS[buildingType] || 0;
-                
-                const cropTopPx = constrTileHeight * cropTopFraction;
-                const cropBottomPx = constrTileHeight * cropBottomFraction;
-                const actualSrcHeight = constrTileHeight - cropTopPx - cropBottomPx;
-                
                 const constrSx = constrCol * constrTileWidth;
-                const constrSy = constrRow * constrTileHeight + cropTopPx;
+                const constrSy = constrRow * constrTileHeight;
                 
-                // Adjust destination size to maintain aspect ratio after cropping
-                const cropRatio = actualSrcHeight / constrTileHeight;
-                const adjustedDestHeight = destHeight * cropRatio;
-                const constrDrawY = drawY + constrVertOffset * TILE_HEIGHT + (destHeight - adjustedDestHeight);
-                
-                ctx.drawImage(
-                  constructionSprite,
-                  constrSx, constrSy, constrTileWidth, actualSrcHeight,
-                  drawX, constrDrawY, destWidth, adjustedDestHeight
-                );
-              } else {
-                // Draw completed building with optional age-specific cropping
-                const ageCrop = AGE_BUILDING_CROP[playerAge]?.[buildingType];
-                if (ageCrop) {
-                  const cropTopPx = tileHeight * (ageCrop.cropTop || 0);
-                  const cropBottomPx = tileHeight * (ageCrop.cropBottom || 0);
-                  const croppedSrcHeight = tileHeight - cropTopPx - cropBottomPx;
-                  const cropRatio = croppedSrcHeight / tileHeight;
-                  const croppedDestHeight = destHeight * cropRatio;
-                  const croppedDrawY = drawY + (destHeight - croppedDestHeight);
-                  
+                drawGradedSprite(ctx, () => {
                   ctx.drawImage(
-                    spriteSheet,
-                    sx, sy + cropTopPx, tileWidth, croppedSrcHeight,
-                    drawX, croppedDrawY, destWidth, croppedDestHeight
+                    constructionSprite,
+                    constrSx, constrSy, constrTileWidth, constrTileHeight,
+                    drawX, drawY, destWidth, destHeight
                   );
-                } else {
+                });
+              } else {
+                // Draw completed building normally
+                drawGradedSprite(ctx, () => {
                   ctx.drawImage(
                     spriteSheet,
                     sx, sy, tileWidth, tileHeight,
                     drawX, drawY, destWidth, destHeight
                   );
-                }
+                });
               }
 
               // Fire effect and health bar for damaged buildings (under attack)
@@ -2332,7 +2090,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
         }
       }
       
-      // Fourth pass: Draw units with pedestrian-like sprites
+      // Fourth pass: Draw units with enhanced visuals
       gameState.units.forEach(unit => {
         const { screenX, screenY } = gridToScreen(unit.x, unit.y, 0, 0);
         
@@ -2342,9 +2100,23 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
         const playerIndex = gameState.players.findIndex(p => p.id === unit.ownerId);
         const color = PLAYER_COLORS[playerIndex] || '#ffffff';
         
+        // Draw enhanced unit shadow for depth
+        const unitCenterX = screenX + TILE_WIDTH / 2;
+        const unitCenterY = screenY + TILE_HEIGHT * 0.3;
+        const isAirUnit = UNIT_STATS[unit.type]?.isAir;
+        drawUnitShadow(ctx, unitCenterX, unitCenterY + 5, 6, isAirUnit ? 12 : 0);
+        
         // Draw unit with pedestrian-like appearance and task activities
         drawRoNUnit(ctx, unit, 0, 0, currentZoom, color, gameState.tick);
+        
+        // Draw enhanced selection glow for selected units
+        if (unit.isSelected) {
+          drawSelectionGlow(ctx, screenX, screenY, enhancedAnimTimeRef.current);
+        }
       });
+      
+      // Fifth pass: Draw particles (smoke, dust, sparks, etc.)
+      globalParticles.draw(ctx);
       
       ctx.restore();
       
@@ -2376,9 +2148,7 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
       ref={containerRef} 
       className="relative w-full h-full overflow-hidden touch-none"
       style={{ 
-        cursor: isPanningRef.current ? 'grabbing' : 
-                isSelectingRef.current ? 'crosshair' : 
-                'default' 
+        cursor
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

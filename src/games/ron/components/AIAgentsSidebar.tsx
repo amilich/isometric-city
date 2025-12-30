@@ -272,7 +272,10 @@ export function AIAgentsSidebar({ conversations, players, onClear, onWidthChange
   // Initialize expanded state for new AI players (expand first one by default)
   useEffect(() => {
     if (aiConversations.length > 0 && expandedPlayers.size === 0) {
-      setExpandedPlayers(new Set([aiConversations[0].playerId]));
+      const t = setTimeout(() => {
+        setExpandedPlayers(new Set([aiConversations[0].playerId]));
+      }, 0);
+      return () => clearTimeout(t);
     }
   }, [aiConversations.length]);
   

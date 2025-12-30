@@ -188,6 +188,75 @@ function drawCitizenUnit(
 /**
  * Draw a military unit with detailed appearance based on unit type
  */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const h = hex.replace('#', '').trim();
+  if (h.length !== 6) return null;
+  const n = Number.parseInt(h, 16);
+  if (Number.isNaN(n)) return null;
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  const rr = clamp(r).toString(16).padStart(2, '0');
+  const gg = clamp(g).toString(16).padStart(2, '0');
+  const bb = clamp(b).toString(16).padStart(2, '0');
+  return `#${rr}${gg}${bb}`;
+}
+
+/**
+ * Mix two colors. t=0 -> a, t=1 -> b.
+ * Used to "ground" bright player colors into more realistic materials.
+ */
+function mixHex(a: string, b: string, t: number): string {
+  const ar = hexToRgb(a);
+  const br = hexToRgb(b);
+  if (!ar || !br) return a;
+  const tt = Math.max(0, Math.min(1, t));
+  return rgbToHex(
+    ar.r + (br.r - ar.r) * tt,
+    ar.g + (br.g - ar.g) * tt,
+    ar.b + (br.b - ar.b) * tt
+  );
+}
+
+function drawTeamInsignia(
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  teamColor: string,
+  category: string,
+  scale: number
+): void {
+  ctx.save();
+  ctx.globalAlpha = 0.95;
+
+  // Small, readable accent (avoid painting whole unit in flat team color)
+  const badgeR = (category === 'naval' ? 2.6 : category === 'air' ? 2.2 : 1.9) * scale;
+  const bx = centerX + 0.8 * scale;
+  const by = centerY - 6.5 * scale;
+
+  // Dark backing for contrast
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.arc(bx, by, badgeR + 0.8 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Team badge
+  ctx.fillStyle = teamColor;
+  ctx.beginPath();
+  ctx.arc(bx, by, badgeR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Tiny highlight for "paint" feel
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.beginPath();
+  ctx.arc(bx - 0.6 * scale, by - 0.6 * scale, badgeR * 0.45, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function drawMilitaryUnit(
   ctx: CanvasRenderingContext2D,
   centerX: number,
@@ -198,6 +267,7 @@ function drawMilitaryUnit(
   tick: number
 ): void {
   const stats = UNIT_STATS[unit.type];
+  const teamColor = color;
   // Naval units largest, cavalry/tanks and air medium-large, infantry smaller
   // All scales increased by 50% for better visibility
   const isTankOrVehicle = unit.type.includes('tank') || unit.type.includes('armored');
@@ -208,29 +278,42 @@ function drawMilitaryUnit(
   const scale = baseScale;
   const animPhase = (tick * 0.1 + getUnitIdHash(unit.id)) % (Math.PI * 2);
 
-  // Darken color for shadows
-  const darkerColor = shadeColor(color, -30);
-  const lighterColor = shadeColor(color, 30);
+  // Make units feel less "painted team color" and more like real materials.
+  // Keep team color as an insignia/accent instead of repainting everything.
+  const category = stats.category;
+  const neutralBase =
+    category === 'naval' ? '#5b6574' :
+    category === 'air' ? '#5f6b78' :
+    category === 'siege' ? '#5a5a5a' :
+    category === 'cavalry' ? (isTankOrVehicle ? '#4f5b4a' : '#6b5b4b') :
+    category === 'ranged' ? '#5b5f66' :
+    '#5f645d';
+
+  const primaryColor = mixHex(teamColor, neutralBase, 0.72);
+  const darkerColor = shadeColor(primaryColor, -22);
+  const lighterColor = shadeColor(primaryColor, 16);
   
   if (stats.category === 'cavalry') {
     // Draw horse/mount with rider
-    drawCavalryUnit(ctx, centerX, centerY, unit, color, darkerColor, lighterColor, scale, animPhase);
+    drawCavalryUnit(ctx, centerX, centerY, unit, primaryColor, darkerColor, lighterColor, scale, animPhase);
   } else if (stats.category === 'siege') {
     // Draw siege weapon (catapult, cannon, etc.)
-    drawSiegeUnit(ctx, centerX, centerY, unit, color, darkerColor, scale, animPhase);
+    drawSiegeUnit(ctx, centerX, centerY, unit, primaryColor, darkerColor, scale, animPhase);
   } else if (stats.category === 'ranged') {
     // Draw ranged soldier with bow/gun
-    drawRangedUnit(ctx, centerX, centerY, unit, color, darkerColor, scale, animPhase);
+    drawRangedUnit(ctx, centerX, centerY, unit, primaryColor, darkerColor, scale, animPhase);
   } else if (stats.category === 'naval') {
     // Draw ship/boat
-    drawNavalUnit(ctx, centerX, centerY, unit, color, darkerColor, lighterColor, scale, animPhase);
+    drawNavalUnit(ctx, centerX, centerY, unit, primaryColor, darkerColor, lighterColor, scale, animPhase);
   } else if (stats.category === 'air') {
     // Draw aircraft
-    drawAirUnit(ctx, centerX, centerY, unit, color, darkerColor, lighterColor, scale, animPhase);
+    drawAirUnit(ctx, centerX, centerY, unit, primaryColor, darkerColor, lighterColor, scale, animPhase);
   } else {
     // Infantry - draw soldier with weapon and shield
-    drawInfantryUnit(ctx, centerX, centerY, unit, color, darkerColor, scale, animPhase);
+    drawInfantryUnit(ctx, centerX, centerY, unit, primaryColor, darkerColor, scale, animPhase);
   }
+
+  drawTeamInsignia(ctx, centerX, centerY, teamColor, stats.category, scale);
 }
 
 /**

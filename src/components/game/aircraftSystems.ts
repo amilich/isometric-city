@@ -199,62 +199,65 @@ export function useAircraftSystems(
     const updatedAirplanes: Airplane[] = [];
     
     for (const plane of airplanesRef.current) {
+      // Work on a local copy (avoid mutating ref contents directly)
+      let nextPlane: Airplane = { ...plane };
+
       // Update contrail particles - shorter duration on mobile for performance
       const contrailMaxAge = isMobile ? 0.8 : CONTRAIL_MAX_AGE;
       const contrailSpawnInterval = isMobile ? 0.06 : CONTRAIL_SPAWN_INTERVAL;
-      plane.contrail = plane.contrail
+      nextPlane.contrail = nextPlane.contrail
         .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / contrailMaxAge) }))
         .filter(p => p.age < contrailMaxAge);
       
       // Add new contrail particles at high altitude (less frequent on mobile)
-      if (plane.altitude > 0.7) {
-        plane.stateProgress += delta;
-        if (plane.stateProgress >= contrailSpawnInterval) {
-          plane.stateProgress -= contrailSpawnInterval;
+      if (nextPlane.altitude > 0.7) {
+        nextPlane.stateProgress += delta;
+        if (nextPlane.stateProgress >= contrailSpawnInterval) {
+          nextPlane.stateProgress -= contrailSpawnInterval;
           // Single centered contrail particle - offset behind plane and down
           const behindOffset = 40; // Distance behind the plane
           const downOffset = 8; // Vertical offset down
-          const contrailX = plane.x - Math.cos(plane.angle) * behindOffset;
-          const contrailY = plane.y - Math.sin(plane.angle) * behindOffset + downOffset;
-          plane.contrail.push({ x: contrailX, y: contrailY, age: 0, opacity: 1 });
+          const contrailX = nextPlane.x - Math.cos(nextPlane.angle) * behindOffset;
+          const contrailY = nextPlane.y - Math.sin(nextPlane.angle) * behindOffset + downOffset;
+          nextPlane.contrail = [...nextPlane.contrail, { x: contrailX, y: contrailY, age: 0, opacity: 1 }];
         }
       }
       
       // Update based on state
-      switch (plane.state) {
+      switch (nextPlane.state) {
         case 'taking_off': {
           // Move forward and climb
-          plane.x += Math.cos(plane.angle) * plane.speed * delta * speedMultiplier;
-          plane.y += Math.sin(plane.angle) * plane.speed * delta * speedMultiplier;
-          plane.altitude = Math.min(1, plane.altitude + delta * 0.3); // Climb rate
-          plane.speed = Math.min(120, plane.speed + delta * 20); // Accelerate
+          nextPlane.x += Math.cos(nextPlane.angle) * nextPlane.speed * delta * speedMultiplier;
+          nextPlane.y += Math.sin(nextPlane.angle) * nextPlane.speed * delta * speedMultiplier;
+          nextPlane.altitude = Math.min(1, nextPlane.altitude + delta * 0.3); // Climb rate
+          nextPlane.speed = Math.min(120, nextPlane.speed + delta * 20); // Accelerate
           
-          if (plane.altitude >= 1) {
-            plane.state = 'flying';
+          if (nextPlane.altitude >= 1) {
+            nextPlane.state = 'flying';
           }
           break;
         }
         
         case 'flying': {
           // Move forward at cruising speed
-          plane.x += Math.cos(plane.angle) * plane.speed * delta * speedMultiplier;
-          plane.y += Math.sin(plane.angle) * plane.speed * delta * speedMultiplier;
+          nextPlane.x += Math.cos(nextPlane.angle) * nextPlane.speed * delta * speedMultiplier;
+          nextPlane.y += Math.sin(nextPlane.angle) * nextPlane.speed * delta * speedMultiplier;
           
-          plane.lifeTime -= delta;
+          nextPlane.lifeTime -= delta;
           
           // Check if near airport and should land
-          const { screenX: airportScreenX, screenY: airportScreenY } = gridToScreen(plane.airportX, plane.airportY, 0, 0);
+          const { screenX: airportScreenX, screenY: airportScreenY } = gridToScreen(nextPlane.airportX, nextPlane.airportY, 0, 0);
           const airportCenterX = airportScreenX + TILE_WIDTH * 2;
           const airportCenterY = airportScreenY + TILE_HEIGHT * 2;
-          const distToAirport = Math.hypot(plane.x - airportCenterX, plane.y - airportCenterY);
+          const distToAirport = Math.hypot(nextPlane.x - airportCenterX, nextPlane.y - airportCenterY);
           
           // Start landing approach when close enough and lifetime is low
-          if (distToAirport < 400 && plane.lifeTime < 10) {
-            plane.state = 'landing';
-            plane.targetAltitude = 0;
+          if (distToAirport < 400 && nextPlane.lifeTime < 10) {
+            nextPlane.state = 'landing';
+            nextPlane.targetAltitude = 0;
             // Adjust angle to point at airport
-            plane.angle = Math.atan2(airportCenterY - plane.y, airportCenterX - plane.x);
-          } else if (plane.lifeTime <= 0) {
+            nextPlane.angle = Math.atan2(airportCenterY - nextPlane.y, airportCenterX - nextPlane.x);
+          } else if (nextPlane.lifeTime <= 0) {
             // Despawn if too far from airport and out of time
             continue;
           }
@@ -263,21 +266,21 @@ export function useAircraftSystems(
         
         case 'landing': {
           // Descend and slow down while approaching airport
-          const { screenX: airportScreenX, screenY: airportScreenY } = gridToScreen(plane.airportX, plane.airportY, 0, 0);
+          const { screenX: airportScreenX, screenY: airportScreenY } = gridToScreen(nextPlane.airportX, nextPlane.airportY, 0, 0);
           const airportCenterX = airportScreenX + TILE_WIDTH * 2;
           const airportCenterY = airportScreenY + TILE_HEIGHT * 2;
           
           // Adjust angle to point at airport
-          const angleToAirport = Math.atan2(airportCenterY - plane.y, airportCenterX - plane.x);
-          plane.angle = angleToAirport;
+          const angleToAirport = Math.atan2(airportCenterY - nextPlane.y, airportCenterX - nextPlane.x);
+          nextPlane.angle = angleToAirport;
           
-          plane.x += Math.cos(plane.angle) * plane.speed * delta * speedMultiplier;
-          plane.y += Math.sin(plane.angle) * plane.speed * delta * speedMultiplier;
-          plane.altitude = Math.max(0, plane.altitude - delta * 0.25); // Descend
-          plane.speed = Math.max(30, plane.speed - delta * 15); // Decelerate
+          nextPlane.x += Math.cos(nextPlane.angle) * nextPlane.speed * delta * speedMultiplier;
+          nextPlane.y += Math.sin(nextPlane.angle) * nextPlane.speed * delta * speedMultiplier;
+          nextPlane.altitude = Math.max(0, nextPlane.altitude - delta * 0.25); // Descend
+          nextPlane.speed = Math.max(30, nextPlane.speed - delta * 15); // Decelerate
           
-          const distToAirport = Math.hypot(plane.x - airportCenterX, plane.y - airportCenterY);
-          if (distToAirport < 50 || plane.altitude <= 0) {
+          const distToAirport = Math.hypot(nextPlane.x - airportCenterX, nextPlane.y - airportCenterY);
+          if (distToAirport < 50 || nextPlane.altitude <= 0) {
             // Landed - remove plane
             continue;
           }
@@ -289,7 +292,7 @@ export function useAircraftSystems(
           continue;
       }
       
-      updatedAirplanes.push(plane);
+      updatedAirplanes.push(nextPlane);
     }
     
     airplanesRef.current = updatedAirplanes;
@@ -408,92 +411,98 @@ export function useAircraftSystems(
     const updatedHelicopters: Helicopter[] = [];
     
     for (const heli of helicoptersRef.current) {
+      // Work on a local copy (avoid mutating ref contents directly)
+      let nextHeli: Helicopter = { ...heli };
+
       // Update rotor animation
-      heli.rotorAngle += delta * 25; // Fast rotor spin
+      nextHeli.rotorAngle += delta * 25; // Fast rotor spin
       
       // Update searchlight sweep animation (sinusoidal motion)
-      heli.searchlightAngle += delta * heli.searchlightSweepSpeed;
+      nextHeli.searchlightAngle += delta * nextHeli.searchlightSweepSpeed;
       // Update base angle to follow helicopter direction for more natural sweep
-      heli.searchlightBaseAngle = heli.angle + Math.PI / 2;
+      nextHeli.searchlightBaseAngle = nextHeli.angle + Math.PI / 2;
       
       // Update rotor wash particles - shorter duration on mobile
       const washMaxAge = isMobile ? 0.4 : ROTOR_WASH_MAX_AGE;
       const washSpawnInterval = isMobile ? 0.08 : ROTOR_WASH_SPAWN_INTERVAL;
-      heli.rotorWash = heli.rotorWash
+      nextHeli.rotorWash = nextHeli.rotorWash
         .map(p => ({ ...p, age: p.age + delta, opacity: Math.max(0, 1 - p.age / washMaxAge) }))
         .filter(p => p.age < washMaxAge);
       
       // Add new rotor wash particles when flying
-      if (heli.altitude > 0.2 && heli.state === 'flying') {
-        heli.stateProgress += delta;
-        if (heli.stateProgress >= washSpawnInterval) {
-          heli.stateProgress -= washSpawnInterval;
+      if (nextHeli.altitude > 0.2 && nextHeli.state === 'flying') {
+        nextHeli.stateProgress += delta;
+        if (nextHeli.stateProgress >= washSpawnInterval) {
+          nextHeli.stateProgress -= washSpawnInterval;
           // Single small rotor wash particle behind helicopter
-          const behindAngle = heli.angle + Math.PI;
+          const behindAngle = nextHeli.angle + Math.PI;
           const offsetDist = 6;
-          heli.rotorWash.push({
-            x: heli.x + Math.cos(behindAngle) * offsetDist,
-            y: heli.y + Math.sin(behindAngle) * offsetDist,
-            age: 0,
-            opacity: 1
-          });
+          nextHeli.rotorWash = [
+            ...nextHeli.rotorWash,
+            {
+              x: nextHeli.x + Math.cos(behindAngle) * offsetDist,
+              y: nextHeli.y + Math.sin(behindAngle) * offsetDist,
+              age: 0,
+              opacity: 1,
+            },
+          ];
         }
       }
       
       // Update based on state
-      switch (heli.state) {
+      switch (nextHeli.state) {
         case 'taking_off': {
           // Rise vertically first, then start moving
-          heli.altitude = Math.min(0.5, heli.altitude + delta * 0.4);
-          heli.speed = Math.min(50, heli.speed + delta * 15);
+          nextHeli.altitude = Math.min(0.5, nextHeli.altitude + delta * 0.4);
+          nextHeli.speed = Math.min(50, nextHeli.speed + delta * 15);
           
           // Start moving once at cruising altitude
-          if (heli.altitude >= 0.3) {
-            heli.x += Math.cos(heli.angle) * heli.speed * delta * speedMultiplier * 0.5;
-            heli.y += Math.sin(heli.angle) * heli.speed * delta * speedMultiplier * 0.5;
+          if (nextHeli.altitude >= 0.3) {
+            nextHeli.x += Math.cos(nextHeli.angle) * nextHeli.speed * delta * speedMultiplier * 0.5;
+            nextHeli.y += Math.sin(nextHeli.angle) * nextHeli.speed * delta * speedMultiplier * 0.5;
           }
           
-          if (heli.altitude >= 0.5) {
-            heli.state = 'flying';
+          if (nextHeli.altitude >= 0.5) {
+            nextHeli.state = 'flying';
           }
           break;
         }
         
         case 'flying': {
           // Move toward destination
-          heli.x += Math.cos(heli.angle) * heli.speed * delta * speedMultiplier;
-          heli.y += Math.sin(heli.angle) * heli.speed * delta * speedMultiplier;
+          nextHeli.x += Math.cos(nextHeli.angle) * nextHeli.speed * delta * speedMultiplier;
+          nextHeli.y += Math.sin(nextHeli.angle) * nextHeli.speed * delta * speedMultiplier;
           
           // Check if near destination
-          const distToDest = Math.hypot(heli.x - heli.destScreenX, heli.y - heli.destScreenY);
+          const distToDest = Math.hypot(nextHeli.x - nextHeli.destScreenX, nextHeli.y - nextHeli.destScreenY);
           
           if (distToDest < 80) {
-            heli.state = 'landing';
-            heli.targetAltitude = 0;
+            nextHeli.state = 'landing';
+            nextHeli.targetAltitude = 0;
           }
           break;
         }
         
         case 'landing': {
           // Approach destination and descend
-          const distToDest = Math.hypot(heli.x - heli.destScreenX, heli.y - heli.destScreenY);
+          const distToDest = Math.hypot(nextHeli.x - nextHeli.destScreenX, nextHeli.y - nextHeli.destScreenY);
           
           // Slow down as we get closer
-          heli.speed = Math.max(10, heli.speed - delta * 20);
+          nextHeli.speed = Math.max(10, nextHeli.speed - delta * 20);
           
           // Keep moving toward destination if not there yet
           if (distToDest > 15) {
-            const angleToDestination = Math.atan2(heli.destScreenY - heli.y, heli.destScreenX - heli.x);
-            heli.angle = angleToDestination;
-            heli.x += Math.cos(heli.angle) * heli.speed * delta * speedMultiplier;
-            heli.y += Math.sin(heli.angle) * heli.speed * delta * speedMultiplier;
+            const angleToDestination = Math.atan2(nextHeli.destScreenY - nextHeli.y, nextHeli.destScreenX - nextHeli.x);
+            nextHeli.angle = angleToDestination;
+            nextHeli.x += Math.cos(nextHeli.angle) * nextHeli.speed * delta * speedMultiplier;
+            nextHeli.y += Math.sin(nextHeli.angle) * nextHeli.speed * delta * speedMultiplier;
           }
           
           // Descend
-          heli.altitude = Math.max(0, heli.altitude - delta * 0.3);
+          nextHeli.altitude = Math.max(0, nextHeli.altitude - delta * 0.3);
           
           // Landed - remove helicopter
-          if (heli.altitude <= 0 && distToDest < 20) {
+          if (nextHeli.altitude <= 0 && distToDest < 20) {
             continue;
           }
           break;
@@ -504,7 +513,7 @@ export function useAircraftSystems(
           break;
       }
       
-      updatedHelicopters.push(heli);
+      updatedHelicopters.push(nextHeli);
     }
     
     helicoptersRef.current = updatedHelicopters;

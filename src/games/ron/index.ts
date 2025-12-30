@@ -21,13 +21,13 @@ export type { AgenticAIConfig, AgenticAIMessage, UseAgenticAIResult } from './ho
 export { simulateRoNTick } from './lib/simulation';
 export { AGE_SPRITE_PACKS, BUILDING_SPRITE_MAP, PLAYER_COLORS, TILE_WIDTH, TILE_HEIGHT } from './lib/renderConfig';
 
-// Agentic AI Tools (for API routes)
+// AI Tool Executors (for API routes)
 export { 
-  AI_TOOLS,
   generateCondensedGameState,
   executeBuildBuilding,
   executeCreateUnit,
   executeSendUnits,
   executeAdvanceAge,
+  executeReassignWorkerToResource,
 } from './lib/aiTools';
 export type { CondensedGameState, ToolResult } from './lib/aiTools';

@@ -16,12 +16,19 @@ import {
   Target, 
   ShoppingBag, 
   Settings, 
-  CheckCircle2, 
-  Circle,
-  MessageCircle,
   Sparkles,
-  Trophy
+  Trophy,
+  FolderOpen,
+  Calendar,
+  Clock
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Tooltip,
   TooltipContent,
@@ -215,13 +222,13 @@ function SkyAnimation() {
   );
 }
 
-// Saved City Card Component
-function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
+// Saved City List Item for Modal
+function SavedCityListItem({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
   const t = useTranslations('HomePage');
 
   // Rating rengini belirle
   const getRatingColor = (grade?: string) => {
-    if (!grade) return 'bg-white/10 text-white/50';
+    if (!grade) return 'bg-white/10 text-white/50 border-white/10';
     if (grade.startsWith('A')) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     if (grade.startsWith('B')) return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
     if (grade.startsWith('C')) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
@@ -229,25 +236,53 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
     return 'bg-red-500/20 text-red-400 border-red-500/30';
   };
 
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <button
       onClick={onLoad}
-      className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200 group relative pr-12"
+      className="w-full text-left p-4 bg-slate-800/50 hover:bg-slate-800 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-200 group relative flex items-center gap-4"
     >
-      <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
-        {city.cityName}
-      </h3>
-      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-        <span>{t('population')}: {city.population.toLocaleString()}</span>
-        <span>₺{city.money.toLocaleString()}</span>
+      {/* Rating Badge (Left) */}
+      <div className={`w-12 h-12 flex items-center justify-center rounded-lg border-2 text-xl font-bold ${getRatingColor(city.rating)}`}>
+        {city.rating || '-'}
       </div>
-      
-      {/* Rating Badge */}
-      {city.rating && (
-        <div className={`absolute top-1/2 -translate-y-1/2 right-3 w-8 h-8 flex items-center justify-center rounded-lg border text-sm font-bold ${getRatingColor(city.rating)}`}>
-          {city.rating}
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-white font-bold text-lg truncate group-hover:text-blue-400 transition-colors">
+          {city.cityName}
+        </h3>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-white/50">
+          <span className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" />
+            {t('year')} {city.year}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" />
+            {formatDate(city.savedAt)}
+          </span>
         </div>
-      )}
+      </div>
+
+      {/* Stats (Right) */}
+      <div className="text-right flex flex-col gap-1">
+        <div className="text-emerald-400 font-medium font-mono">
+          ₺{city.money.toLocaleString()}
+        </div>
+        <div className="text-white/70 text-sm flex items-center justify-end gap-1.5">
+          <span className="text-white/40">{t('population')}:</span>
+          {city.population.toLocaleString()}
+        </div>
+      </div>
     </button>
   );
 }
@@ -347,6 +382,7 @@ function HomePageContent() {
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   const [hasCurrentGame, setHasCurrentGame] = useState(false);
+  const [showLoadGame, setShowLoadGame] = useState(false);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const { state, setActivePanel, newGame } = useGame(); // Use GameContext
   const isMobile = isMobileDevice || isSmallScreen;
@@ -451,30 +487,60 @@ function HomePageContent() {
             <Sparkles className="w-6 h-6 text-white" />
             <span className="text-xs text-white font-medium">{t('newGame')}</span>
           </button>
-           <button onClick={() => setActivePanel('settings')} className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-xl border border-white/20">
-            <Settings className="w-6 h-6 text-white" />
-            <span className="text-xs text-white font-medium">{t('settings')}</span>
+           <button onClick={() => setShowLoadGame(true)} className="flex flex-col items-center gap-2 p-3 bg-white/10 rounded-xl border border-white/20">
+            <FolderOpen className="w-6 h-6 text-white" />
+            <span className="text-xs text-white font-medium">{t('loadGame') || 'Yükle'}</span>
           </button>
         </div>
 
-        {/* Saved Cities Mobile */}
-        {savedCities.length > 0 && (
-          <div className="mb-4">
-            <h2 className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
-              {t('savedCities')}
-            </h2>
-            <div className="flex flex-col gap-2 max-h-36 overflow-y-auto">
-              {savedCities.slice(0, 3).map((city) => (
-                <SavedCityCard
-                  key={city.id}
-                  city={city}
-                  onLoad={() => loadSavedCity(city.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* Saved Cities Mobile Modal */}
+        <Dialog open={showLoadGame} onOpenChange={setShowLoadGame}>
+          <DialogContent className="max-w-md bg-slate-900/95 border-slate-700 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <FolderOpen className="w-6 h-6 text-blue-400" />
+                {t('loadGame') || 'Oyun Yükle'}
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh]">
+              <div className="flex flex-col gap-3 pr-4">
+                {savedCities.length > 0 ? (
+                  savedCities.map((city) => (
+                    <SavedCityListItem
+                      key={city.id}
+                      city={city}
+                      onLoad={() => loadSavedCity(city.id)}
+                    />
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-white/40">
+                    <p>{t('NoSavedCities') || 'Kayıtlı oyun bulunamadı.'}</p>
+                  </div>
+                )}
+                
+                <div className="h-px bg-white/10 my-2" />
+                
+                <button
+                  onClick={loadExampleCity}
+                  className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-200 group flex items-center gap-4"
+                >
+                  <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-lg group-hover:text-amber-400 transition-colors">
+                      {t('exampleCity')}
+                    </h3>
+                    <p className="text-white/50 text-sm">
+                      Tamamlanmış bir şehri keşfedin
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+        
         {state.activePanel === 'settings' && <SettingsPanel />}
       </main>
     );
@@ -493,24 +559,6 @@ function HomePageContent() {
       <div className="absolute top-6 right-6 z-20">
         <LanguageSelector variant="game" />
       </div>
-
-      {/* Saved Cities Panel (Floating on Left) */}
-      {savedCities.length > 0 && (
-        <div className="absolute top-24 left-6 z-20 w-64 bg-slate-900/40 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-            <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">
-              {t('savedCities')}
-            </h2>
-            <div className="flex flex-col gap-2 max-h-[calc(100vh-300px)] overflow-y-auto">
-              {savedCities.slice(0, 4).map((city) => (
-                <SavedCityCard
-                  key={city.id}
-                  city={city}
-                  onLoad={() => loadSavedCity(city.id)}
-                />
-              ))}
-            </div>
-        </div>
-      )}
 
       {/* Center - City View */}
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
@@ -578,9 +626,9 @@ function HomePageContent() {
               variant={hasCurrentGame ? undefined : "primary"}
             />
             <MenuButton 
-              icon={Trophy} 
-              label={t('exampleCity')} 
-              onClick={loadExampleCity}
+              icon={FolderOpen} 
+              label={t('loadGame') || 'Oyun Yükle'} 
+              onClick={() => setShowLoadGame(true)}
             />
             <MenuButton 
               icon={ShoppingBag} 
@@ -593,6 +641,58 @@ function HomePageContent() {
             />
         </div>
       </TooltipProvider>
+
+      {/* Load Game Modal */}
+      <Dialog open={showLoadGame} onOpenChange={setShowLoadGame}>
+        <DialogContent className="max-w-xl bg-slate-900/95 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <FolderOpen className="w-6 h-6 text-blue-400" />
+              {t('loadGame') || 'Oyun Yükle'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-white/50 -mt-2 mb-2">
+            {t('loadGameDesc') || 'Kayıtlı şehirlerinizden birini seçerek devam edin'}
+          </div>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="flex flex-col gap-3 pr-4">
+              {savedCities.length > 0 ? (
+                savedCities.map((city) => (
+                  <SavedCityListItem
+                    key={city.id}
+                    city={city}
+                    onLoad={() => loadSavedCity(city.id)}
+                  />
+                ))
+              ) : (
+                <div className="py-8 text-center text-white/40 border-2 border-dashed border-white/10 rounded-xl">
+                  <FolderOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                  <p>{t('NoSavedCities') || 'Henüz kayıtlı bir şehir bulunmuyor.'}</p>
+                </div>
+              )}
+              
+              <div className="h-px bg-white/10 my-2" />
+              
+              <button
+                onClick={loadExampleCity}
+                className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-200 group flex items-center gap-4"
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Trophy className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-white font-bold text-lg group-hover:text-amber-400 transition-colors">
+                    {t('exampleCity')}
+                  </h3>
+                  <p className="text-white/50 text-sm">
+                    Gelişmiş bir örnek şehir yükleyerek oyunu keşfedin
+                  </p>
+                </div>
+              </button>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
       
       {state.activePanel === 'settings' && <SettingsPanel />}
 

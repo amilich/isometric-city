@@ -187,14 +187,39 @@ export const AI_TOOLS: OpenAI.Responses.Tool[] = [
   },
   {
     type: 'function',
-    name: 'assign_idle_workers',
-    description: 'Automatically assign all idle or moving citizens to the best available economic buildings. Prioritizes food production, then wood, then other resources. This is a CRITICAL tool - USE IT EVERY TURN to keep your economy running!',
+    name: 'assign_workers',
+    description: 'Automatically assign idle citizens AND rebalance existing workers to economic buildings based on need. Will move workers FROM resources you have plenty of TO resources you need (e.g., move farm workers to markets when saving for city). Prioritizes based on current resource rates and game state. USE IT EVERY TURN!',
     strict: true,
     parameters: {
       type: 'object',
       additionalProperties: false,
       properties: {},
       required: [] as string[],
+    },
+  },
+  {
+    type: 'function',
+    name: 'reassign_worker',
+    description: 'Reassign a specific citizen worker to a different task. Use this to manually control which resources your workers gather. Works on ANY citizen, not just idle ones.',
+    strict: true,
+    parameters: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        unit_id: {
+          type: 'string',
+          description: 'The ID of the citizen to reassign (e.g., "u123" or "player-1-citizen-0")',
+        },
+        target_x: {
+          type: 'number',
+          description: 'X coordinate of the building to work at',
+        },
+        target_y: {
+          type: 'number',
+          description: 'Y coordinate of the building to work at',
+        },
+      },
+      required: ['unit_id', 'target_x', 'target_y'],
     },
   },
   {
@@ -532,7 +557,7 @@ export function generateCondensedGameState(
         return true;
       });
       
-      // Shuffle for randomization, then sort by distance (keeps variety but prefers closer)
+      // Shuffle for randomization
       // Use tick-based seed for deterministic but varying results each turn
       const shuffled = [...empty].sort(() => Math.sin(state.tick * 0.1 + empty.length) - 0.5);
       
@@ -545,13 +570,7 @@ export function generateCondensedGameState(
         if (spaced.length >= 8) break;
       }
       
-      // Sort final results by distance to city for display
-      spaced.sort((a, b) => {
-        const distA = Math.sqrt((a.x - primaryCity.x) ** 2 + (a.y - primaryCity.y) ** 2);
-        const distB = Math.sqrt((b.x - primaryCity.x) ** 2 + (b.y - primaryCity.y) ** 2);
-        return distA - distB;
-      });
-      
+      // Return spaced tiles without distance sorting for more variety
       return spaced;
     })(),
     // Find tiles ADJACENT to forests (good for woodcutters_camp)
@@ -1257,9 +1276,10 @@ export function executeAssignIdleWorkers(
 
   // Find farmers to reassign if we have unproductive resource buildings
   // CRITICAL: Also rebalance if food rate is 0 but we have farms!
-  const needsRebalance = (hasWoodBuilding && woodRate === 0) || 
+  // ALSO: Aggressively rebalance to gold when pop-capped and need gold for city!
+  const needsRebalance = (hasWoodBuilding && woodRate === 0) ||
                          (hasMineBuilding && metalRate === 0) ||
-                         (hasMarketBuilding && goldRate === 0 && needsGoldForCity) ||
+                         (hasMarketBuilding && needsGoldForCity) || // More aggressive - rebalance to gold when saving for city!
                          (hasFarmBuilding && foodRate === 0); // FOOD IS CRITICAL!
   console.log(`[assign_workers] Checking rebalance: idleCount=${idleCitizens.length}, hasFarm=${hasFarmBuilding}, foodRate=${foodRate}, hasWood=${hasWoodBuilding}, woodRate=${woodRate}, hasMine=${hasMineBuilding}, metalRate=${metalRate}`);
   if (idleCitizens.length === 0 && needsRebalance) {
@@ -1284,7 +1304,7 @@ export function executeAssignIdleWorkers(
 
     // SMART rebalancing: protect food if low, prioritize by actual need
     let workersToReassign: typeof farmWorkers = [];
-    let rebalanceTarget: 'food' | 'wood' | 'metal' | null = null;
+    let rebalanceTarget: 'food' | 'wood' | 'metal' | 'gold' | null = null;
     const foodIsLow = player.resources.food < 80; // Less than cost of 1 citizen
     const woodIsLow = player.resources.wood < 50;
     
@@ -1294,14 +1314,36 @@ export function executeAssignIdleWorkers(
       u.task === 'gather_wood'
     );
     
-    console.log(`[assign_workers] Resource status: food=${Math.round(player.resources.food)} (rate=${foodRate.toFixed(2)}), wood=${Math.round(player.resources.wood)} (rate=${woodRate.toFixed(2)}), workers: food=${farmWorkers.length}, wood=${woodWorkers.length}, metal=${metalWorkers.length}`);
+    const goldWorkers = state.units.filter(u =>
+      u.ownerId === aiPlayerId &&
+      u.type === 'citizen' &&
+      u.task === 'gather_gold'
+    );
+    
+    console.log(`[assign_workers] Resource status: food=${Math.round(player.resources.food)} (rate=${foodRate.toFixed(2)}), wood=${Math.round(player.resources.wood)} (rate=${woodRate.toFixed(2)}), gold=${Math.round(player.resources.gold)} (rate=${goldRate.toFixed(2)}), workers: food=${farmWorkers.length}, wood=${woodWorkers.length}, metal=${metalWorkers.length}, gold=${goldWorkers.length}`);
     
     // Priority: 
-    // 1. FOOD IS MOST IMPORTANT - if food rate is 0 and we have farms, move workers TO food
-    // 2. Take from metal first for other needs
-    // 3. Only take from food if food is abundant
+    // 1. GOLD FOR CITY - if pop-capped and need gold, move workers to market!
+    // 2. FOOD IS MOST IMPORTANT - if food rate is 0 and we have farms, move workers TO food
+    // 3. Take from metal first for other needs
+    // 4. Only take from food if food is abundant
     
-    if (foodRate === 0 && hasFarmBuilding && farmWorkers.length === 0) {
+    if (needsGoldForCity && hasMarketBuilding && goldWorkers.length === 0) {
+      // CRITICAL: Need gold for city but no gold workers! Move to market
+      if (metalWorkers.length >= 1) {
+        workersToReassign = metalWorkers.slice(0, Math.max(1, Math.ceil(metalWorkers.length / 2)));
+        rebalanceTarget = 'gold';
+        console.log(`[assign_workers] CRITICAL: Need gold for city! Moving ${workersToReassign.length} workers from METAL to gold`);
+      } else if (farmWorkers.length >= 2 && !foodIsLow) {
+        workersToReassign = farmWorkers.slice(0, 1);
+        rebalanceTarget = 'gold';
+        console.log(`[assign_workers] CRITICAL: Need gold for city! Moving 1 worker from FOOD to gold`);
+      } else if (woodWorkers.length >= 2 && !woodIsLow) {
+        workersToReassign = woodWorkers.slice(0, 1);
+        rebalanceTarget = 'gold';
+        console.log(`[assign_workers] CRITICAL: Need gold for city! Moving 1 worker from WOOD to gold`);
+      }
+    } else if (foodRate === 0 && hasFarmBuilding && farmWorkers.length === 0) {
       // CRITICAL: No food income! Move workers TO food from wood or metal
       if (woodWorkers.length >= 1) {
         workersToReassign = woodWorkers.slice(0, Math.max(1, Math.ceil(woodWorkers.length / 2)));
@@ -1508,6 +1550,92 @@ export function executeAssignIdleWorkers(
       success: true,
       message: `Assigned ${assigned} workers. Tasks: ${tasksSummary || 'none'}`,
       data: { assigned, buildings: economicBuildings.length },
+    },
+  };
+}
+
+/**
+ * Reassign a specific worker to a new building/task
+ */
+export function executeReassignWorker(
+  state: RoNGameState,
+  aiPlayerId: string,
+  unitId: string,
+  targetX: number,
+  targetY: number
+): { newState: RoNGameState; result: ToolResult } {
+  // Find the unit
+  const unit = state.units.find(u => u.id === unitId || u.id.endsWith(unitId));
+  
+  if (!unit) {
+    return { newState: state, result: { success: false, message: `Unit ${unitId} not found` } };
+  }
+  
+  if (unit.ownerId !== aiPlayerId) {
+    return { newState: state, result: { success: false, message: `Unit ${unitId} is not yours` } };
+  }
+  
+  if (unit.type !== 'citizen') {
+    return { newState: state, result: { success: false, message: `Unit ${unitId} is not a citizen (is ${unit.type})` } };
+  }
+  
+  // Find the building at target location
+  const tile = state.grid[Math.floor(targetY)]?.[Math.floor(targetX)];
+  
+  // Also check nearby tiles for multi-tile buildings
+  let buildingTile = tile;
+  if (!tile?.building) {
+    // Check in a small area for building origins
+    for (let dy = 0; dy < 3; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        const checkTile = state.grid[Math.floor(targetY) - dy]?.[Math.floor(targetX) - dx];
+        if (checkTile?.building && checkTile.building.ownerId === aiPlayerId) {
+          buildingTile = checkTile;
+          break;
+        }
+      }
+      if (buildingTile?.building) break;
+    }
+  }
+  
+  if (!buildingTile?.building) {
+    return { newState: state, result: { success: false, message: `No building found at (${targetX}, ${targetY})` } };
+  }
+  
+  if (buildingTile.building.ownerId !== aiPlayerId) {
+    return { newState: state, result: { success: false, message: `Building at (${targetX}, ${targetY}) is not yours` } };
+  }
+  
+  // Determine the task for this building
+  const task = getTaskForBuilding(buildingTile.building.type as RoNBuildingType);
+  
+  if (!task) {
+    return { newState: state, result: { success: false, message: `Building ${buildingTile.building.type} doesn't support worker assignment` } };
+  }
+  
+  // Update the unit
+  const newUnits = state.units.map(u => {
+    if (u.id === unit.id) {
+      return {
+        ...u,
+        task: task as Unit['task'],
+        taskTarget: { x: targetX, y: targetY },
+        targetX: targetX + (Math.random() - 0.5) * 0.5,
+        targetY: targetY + (Math.random() - 0.5) * 0.5,
+        isMoving: true,
+        idleSince: undefined,
+      };
+    }
+    return u;
+  });
+  
+  console.log(`[reassign_worker] Reassigned ${unit.id} from ${unit.task || 'idle'} to ${task} at (${targetX}, ${targetY})`);
+  
+  return {
+    newState: { ...state, units: newUnits },
+    result: {
+      success: true,
+      message: `Reassigned worker to ${task.replace('gather_', '')} at (${targetX}, ${targetY})`,
     },
   };
 }

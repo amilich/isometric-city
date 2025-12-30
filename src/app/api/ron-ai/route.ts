@@ -19,6 +19,7 @@ import {
   executeSendUnits,
   executeAdvanceAge,
   executeAssignIdleWorkers,
+  executeReassignWorker,
 } from '@/games/ron/lib/aiTools';
 
 // Helper to format cost from building/unit stats
@@ -33,16 +34,23 @@ function formatCost(cost: Partial<Record<string, number>>): string {
   return parts.join('+') || 'free';
 }
 
+// Helper to check if player can afford a building
+function canAfford(resources: Record<string, number>, cost: Partial<Record<string, number>>): boolean {
+  return Object.entries(cost).every(([key, value]) => (resources[key] || 0) >= (value || 0));
+}
+
 // Generate costs dynamically from actual game data to prevent divergence
 const BUILDING_COSTS = {
   farm: formatCost(BUILDING_STATS.farm.cost),
-  woodcutter: formatCost(BUILDING_STATS.woodcutters_camp.cost),
+  woodcutters_camp: formatCost(BUILDING_STATS.woodcutters_camp.cost),
   mine: formatCost(BUILDING_STATS.mine.cost),
   barracks: formatCost(BUILDING_STATS.barracks.cost),
   market: formatCost(BUILDING_STATS.market.cost),
   library: formatCost(BUILDING_STATS.library.cost),
   smelter: formatCost(BUILDING_STATS.smelter.cost),
   small_city: formatCost(BUILDING_STATS.small_city.cost),
+  oil_well: formatCost(BUILDING_STATS.oil_well.cost),
+  refinery: formatCost(BUILDING_STATS.refinery.cost),
 };
 
 const UNIT_COSTS = {
@@ -292,13 +300,17 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
 // System prompt uses dynamic costs from actual game data
 const SYSTEM_PROMPT = `You are playing a RTS game called Rise of Nations. You are playing against many other extremely skilled players who want to destroy your cities.
 
-COSTS: farm ${BUILDING_COSTS.farm}, woodcutter ${BUILDING_COSTS.woodcutter}, mine ${BUILDING_COSTS.mine}, market ${BUILDING_COSTS.market}, barracks ${BUILDING_COSTS.barracks}, library ${BUILDING_COSTS.library}, smelter ${BUILDING_COSTS.smelter}, small_city ${BUILDING_COSTS.small_city}
+COSTS: farm ${BUILDING_COSTS.farm}, woodcutters_camp ${BUILDING_COSTS.woodcutters_camp}, mine ${BUILDING_COSTS.mine}, market ${BUILDING_COSTS.market}, barracks ${BUILDING_COSTS.barracks}, library ${BUILDING_COSTS.library}, smelter ${BUILDING_COSTS.smelter}, small_city ${BUILDING_COSTS.small_city}
 TRAIN: citizen ${UNIT_COSTS.citizen}, infantry ${UNIT_COSTS.infantry} (scales with age - same unit, stronger each age)
 
 CITY DEVELOPMENT (PRIORITY!):
 1. BUILD CITIES when you can afford small_city (${BUILDING_COSTS.small_city}) - more cities = more population cap + territory!
 2. Each city should have a FULL SET of buildings nearby: farm, woodcutters_camp, mine, market, library, barracks, smelter
 3. Spread your cities across the map to claim more territory and resources
+
+⚠️ WHEN POPULATION CAPPED: STOP building other buildings! SAVE ALL RESOURCES for small_city!
+- Don't build farms/woodcutters/barracks when pop-capped - you're wasting wood needed for city!
+- Only exception: build market if you need more gold income to afford city
 
 ECONOMY PRIORITY:
 1. Build farm + woodcutters_camp near each city
@@ -630,65 +642,71 @@ ${(() => {
 
 ## WHAT YOU CAN DO RIGHT NOW:
 ${(() => {
+  const res = p.resources as Record<string, number>;
   const popCapped = p.population >= p.populationCap;
-  const canTrainCitizen = !popCapped && p.resources.food >= 60; // Citizen costs 60 food
-  const canTrainMilitia = !popCapped && p.resources.food >= 40 && p.resources.wood >= 20;
-  // Use actual costs from BUILDING_STATS
-  const canBuildFarm = p.resources.wood >= 50;
-  const canBuildWoodcutter = p.resources.wood >= 30;
-  const canBuildMine = p.resources.wood >= 80 && p.resources.gold >= 50;
-  const canBuildMarket = p.resources.wood >= 120; // Market is 120w only (no gold - it's how you GET gold)
-  const canBuildBarracks = p.resources.wood >= 100 && p.resources.gold >= 50; // Barracks needs gold too!
-  const canBuildLibrary = p.resources.wood >= 100 && p.resources.gold >= 80;
-  const canBuildSmelter = p.resources.wood >= 120 && p.resources.gold >= 80 && p.resources.metal >= 50;
-  const canBuildSmallCity = p.resources.wood >= 400 && p.resources.metal >= 100 && p.resources.gold >= 200;
+  
+  // Use canAfford helper with actual BUILDING_STATS costs
+  const canTrainCitizen = !popCapped && canAfford(res, UNIT_STATS.citizen.cost);
+  const canTrainMilitia = !popCapped && canAfford(res, UNIT_STATS.infantry.cost);
+  const canBuildFarm = canAfford(res, BUILDING_STATS.farm.cost);
+  const canBuildWoodcutter = canAfford(res, BUILDING_STATS.woodcutters_camp.cost);
+  const canBuildMine = canAfford(res, BUILDING_STATS.mine.cost);
+  const canBuildMarket = canAfford(res, BUILDING_STATS.market.cost);
+  const canBuildBarracks = canAfford(res, BUILDING_STATS.barracks.cost);
+  const canBuildLibrary = canAfford(res, BUILDING_STATS.library.cost);
+  const canBuildSmelter = canAfford(res, BUILDING_STATS.smelter.cost);
+  const canBuildSmallCity = canAfford(res, BUILDING_STATS.small_city.cost);
   
   const cityTypes = ['city_center', 'small_city', 'large_city', 'major_city'];
   const cities = condensed.myBuildings.filter(b => cityTypes.includes(b.type));
-  const barracks = condensed.myBuildings.filter(b => b.type === 'barracks');
+  const barracksBuildings = condensed.myBuildings.filter(b => b.type === 'barracks');
+  
+  // Get small_city cost for display
+  const cityCost = BUILDING_STATS.small_city.cost;
   
   let result = '';
   
   if (popCapped) {
     result += `⛔ POPULATION CAPPED (${p.population}/${p.populationCap}) - CANNOT TRAIN UNITS!\n`;
-    result += `   Your ONLY goal: Build small_city (need 400w+100m+200g)\n`;
+    result += `   Your ONLY goal: Build small_city (need ${BUILDING_COSTS.small_city})\n`;
     result += `   Have: ${Math.round(p.resources.wood)}w / ${Math.round(p.resources.metal)}m / ${Math.round(p.resources.gold)}g\n`;
     if (canBuildSmallCity) {
-      result += `   ✅ YOU CAN BUILD small_city NOW! DO IT!\n`;
+      result += `   🚨 YOU CAN BUILD small_city NOW!\n`;
     } else {
       const need = [];
-      if (p.resources.wood < 400) need.push(`${Math.round(400 - p.resources.wood)} more wood`);
-      if (p.resources.metal < 100) need.push(`${Math.round(100 - p.resources.metal)} more metal`);
-      if (p.resources.gold < 200) need.push(`${Math.round(200 - p.resources.gold)} more gold`);
+      if (cityCost.wood && p.resources.wood < cityCost.wood) need.push(`${Math.round(cityCost.wood - p.resources.wood)} more wood`);
+      if (cityCost.metal && p.resources.metal < cityCost.metal) need.push(`${Math.round(cityCost.metal - p.resources.metal)} more metal`);
+      if (cityCost.gold && p.resources.gold < cityCost.gold) need.push(`${Math.round(cityCost.gold - p.resources.gold)} more gold`);
       result += `   Need: ${need.join(', ')}\n`;
+      result += `   ⚠️ DO NOT BUILD OTHER BUILDINGS! Save wood for small_city!\n`;
     }
   } else {
     result += `### TRAINING (pop ${p.population}/${p.populationCap}):\n`;
     if (canTrainCitizen && cities.length > 0) {
-      result += `  ✅ Can train citizens at: ${cities.map(c => `(${c.x},${c.y})`).join(', ')}\n`;
+      result += `  ✅ Can train citizens (${UNIT_COSTS.citizen}) at: ${cities.map(c => `(${c.x},${c.y})`).join(', ')}\n`;
     }
-    if (canTrainMilitia && barracks.length > 0) {
-      result += `  ✅ Can train infantry at: ${barracks.map(b => `(${b.x},${b.y})`).join(', ')}\n`;
+    if (canTrainMilitia && barracksBuildings.length > 0) {
+      result += `  ✅ Can train infantry (${UNIT_COSTS.infantry}) at: ${barracksBuildings.map(b => `(${b.x},${b.y})`).join(', ')}\n`;
     }
-    if (!canTrainCitizen) result += `  ❌ Cannot train citizen (need 60 food, have ${Math.round(p.resources.food)})\n`;
-    if (!canTrainMilitia && barracks.length > 0) result += `  ❌ Cannot train infantry (need 40f+20w)\n`;
+    if (!canTrainCitizen) result += `  ❌ Cannot train citizen (need ${UNIT_COSTS.citizen})\n`;
+    if (!canTrainMilitia && barracksBuildings.length > 0) result += `  ❌ Cannot train infantry (need ${UNIT_COSTS.infantry})\n`;
   }
   
   result += `\n### BUILDINGS YOU CAN AFFORD:\n`;
-  if (canBuildSmallCity) result += `  ✅ small_city (400w+100m+200g) - PRIORITY IF POP CAPPED!\n`;
-  if (canBuildFarm) result += `  ✅ farm (50w)\n`;
-  if (canBuildWoodcutter) result += `  ✅ woodcutters_camp (30w)\n`;
-  if (canBuildMine) result += `  ✅ mine (80w+50g)\n`;
-  if (canBuildMarket) result += `  ✅ market (120w) - for gold income\n`;
-  if (canBuildBarracks) result += `  ✅ barracks (100w+50g)\n`;
-  if (canBuildLibrary) result += `  ✅ library (100w+80g) - for knowledge/age advancement\n`;
-  if (canBuildSmelter) result += `  ✅ smelter (120w+80g+50m) - boosts metal gathering\n`;
+  if (canBuildSmallCity) result += `  ✅ small_city (${BUILDING_COSTS.small_city}) - PRIORITY IF POP CAPPED!\n`;
+  if (canBuildFarm) result += `  ✅ farm (${BUILDING_COSTS.farm})\n`;
+  if (canBuildWoodcutter) result += `  ✅ woodcutters_camp (${BUILDING_COSTS.woodcutters_camp})\n`;
+  if (canBuildMine) result += `  ✅ mine (${BUILDING_COSTS.mine})\n`;
+  if (canBuildMarket) result += `  ✅ market (${BUILDING_COSTS.market}) - for gold income\n`;
+  if (canBuildBarracks) result += `  ✅ barracks (${BUILDING_COSTS.barracks})\n`;
+  if (canBuildLibrary) result += `  ✅ library (${BUILDING_COSTS.library}) - for knowledge/age advancement\n`;
+  if (canBuildSmelter) result += `  ✅ smelter (${BUILDING_COSTS.smelter}) - boosts metal gathering\n`;
   
   // Industrial Age+ Oil buildings
   const isIndustrialPlus = ['industrial', 'modern'].includes(p.age);
   if (isIndustrialPlus) {
-    const canBuildOilWell = p.resources.wood >= 200 && p.resources.metal >= 150 && p.resources.gold >= 100;
-    const canBuildRefinery = p.resources.wood >= 250 && p.resources.metal >= 200 && p.resources.gold >= 150;
+    const canBuildOilWell = canAfford(res, BUILDING_STATS.oil_well.cost);
+    const canBuildRefinery = canAfford(res, BUILDING_STATS.refinery.cost);
     const oilWells = condensed.myBuildings.filter(b => b.type === 'oil_well');
     const refineries = condensed.myBuildings.filter(b => b.type === 'refinery');
     const oilDeposits = condensed.resourceTiles.oilDeposits;
@@ -705,8 +723,8 @@ ${(() => {
       result += `  ⚠️ NO REFINERY! Build refinery to boost oil +50%!\n`;
     }
     
-    if (canBuildOilWell) result += `  ✅ oil_well (200w+150m+100g) - build near oil deposit!\n`;
-    if (canBuildRefinery) result += `  ✅ refinery (250w+200m+150g) - boosts oil gathering!\n`;
+    if (canBuildOilWell) result += `  ✅ oil_well (${BUILDING_COSTS.oil_well}) - build near oil deposit!\n`;
+    if (canBuildRefinery) result += `  ✅ refinery (${BUILDING_COSTS.refinery}) - boosts oil gathering!\n`;
     
     if (oilWells.length > 0) {
       result += `  👷 Assign workers to oil_wells for oil income!\n`;
@@ -714,7 +732,7 @@ ${(() => {
   }
   
   if (!canBuildFarm && !canBuildWoodcutter) {
-    result += `  ❌ Not enough wood for any buildings!\n`;
+    result += `  ❌ Not enough resources for any buildings!\n`;
   }
   
   return result;
@@ -867,6 +885,32 @@ ${condensed.myUnits.filter(u => u.type === 'citizen' && (u.task === 'idle' || !u
                   }
                 });
               });
+            }
+            break;
+          }
+
+          case 'reassign_worker': {
+            const { unit_id, target_x, target_y } = args as { unit_id: string; target_x: number; target_y: number };
+            const res = executeReassignWorker(currentState, aiPlayerId, unit_id, target_x, target_y);
+            currentState = res.newState;
+            result = res.result;
+            console.log(`  → ${result.message}`);
+            // Track action for frontend
+            if (res.result.success) {
+              const unit = currentState.units.find((u: Unit) => u.id === unit_id || u.id.endsWith(unit_id));
+              if (unit) {
+                actions.push({
+                  type: 'unit_task',
+                  data: {
+                    unitId: unit.id,
+                    task: unit.task,
+                    taskTarget: unit.taskTarget,
+                    targetX: unit.targetX,
+                    targetY: unit.targetY,
+                    isMoving: unit.isMoving
+                  }
+                });
+              }
             }
             break;
           }

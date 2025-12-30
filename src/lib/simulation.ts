@@ -809,12 +809,13 @@ function generateUUID(): string {
   });
 }
 
-export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityName: string = 'New City'): GameState {
+export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityName: string = 'New City', gameMode: 'sandbox' | 'scenario' = 'sandbox'): GameState {
   const { grid, waterBodies } = generateTerrain(size);
   const adjacentCities = generateAdjacentCities();
 
   return {
     id: generateUUID(),
+    gameMode,
     grid,
     gridSize: size,
     cityName,

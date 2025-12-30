@@ -1226,6 +1226,12 @@ function updateUnits(state: RoNGameState): RoNGameState {
         if (targetPos) {
           const unitIndex = state.units.findIndex(u => u.id === unit.id);
           
+          // Check what building type is at the target location
+          const targetTileX = Math.floor(targetPos.x);
+          const targetTileY = Math.floor(targetPos.y);
+          const targetTile = state.grid[targetTileY]?.[targetTileX];
+          const targetBuildingType = targetTile?.building?.type;
+          
           if (updatedUnit.task === 'gather_food') {
             // Farm workers should be ON the farm tile (within bounds)
             // Keep spread tight to stay within the 1x1 farm sprite
@@ -1234,15 +1240,45 @@ function updateUnits(state: RoNGameState): RoNGameState {
             updatedUnit.x = targetPos.x + 0.5 + Math.cos(angle) * spreadDist;
             updatedUnit.y = targetPos.y + 0.5 + Math.sin(angle) * spreadDist;
           } else if (updatedUnit.task === 'gather_wood' || updatedUnit.task === 'gather_metal') {
-            // Lumber/mine workers spread broadly around resources
-            const angle = (unitIndex * 1.2) + Math.random() * 1.5;
-            const spreadDist = 1.0 + Math.random() * 1.5; // 1.0 to 2.5 tiles from center
-            updatedUnit.x = targetPos.x + Math.cos(angle) * spreadDist;
-            updatedUnit.y = targetPos.y + Math.sin(angle) * spreadDist;
-          } else if (updatedUnit.task === 'gather_knowledge' || updatedUnit.task === 'gather_gold' || updatedUnit.task === 'gather_oil') {
-            // Library/market/oil workers spread around the building
+            // Processing buildings (lumber_mill, smelter) - workers cluster close to building
+            // Resource extraction (woodcutters_camp, mine) - workers can spread further to resources
+            const isProcessingBuilding = targetBuildingType === 'lumber_mill' || targetBuildingType === 'smelter';
+            
+            if (isProcessingBuilding) {
+              // Cluster close to processing buildings
+              const angle = Math.random() * Math.PI * 2;
+              const spreadDist = 0.3 + Math.random() * 0.5; // 0.3 to 0.8 tiles from center
+              updatedUnit.x = targetPos.x + 0.5 + Math.cos(angle) * spreadDist;
+              updatedUnit.y = targetPos.y + 0.5 + Math.sin(angle) * spreadDist;
+            } else {
+              // Extraction buildings (woodcutters_camp, mine) - spread to gather from resources
+              const angle = (unitIndex * 1.2) + Math.random() * 1.5;
+              const spreadDist = 1.0 + Math.random() * 1.5; // 1.0 to 2.5 tiles from center
+              updatedUnit.x = targetPos.x + Math.cos(angle) * spreadDist;
+              updatedUnit.y = targetPos.y + Math.sin(angle) * spreadDist;
+            }
+          } else if (updatedUnit.task === 'gather_oil') {
+            // Refinery is a processing building - workers cluster close
+            // Oil_well/oil_platform are extraction - workers can spread more
+            const isRefinery = targetBuildingType === 'refinery';
+            
+            if (isRefinery) {
+              // Cluster close to processing building
+              const angle = Math.random() * Math.PI * 2;
+              const spreadDist = 0.3 + Math.random() * 0.5; // 0.3 to 0.8 tiles from center
+              updatedUnit.x = targetPos.x + 0.5 + Math.cos(angle) * spreadDist;
+              updatedUnit.y = targetPos.y + 0.5 + Math.sin(angle) * spreadDist;
+            } else {
+              // Oil well/platform extraction - spread around
+              const angle = Math.random() * Math.PI * 2;
+              const spreadDist = 0.6 + Math.random() * 1.0; // 0.6 to 1.6 tiles from center
+              updatedUnit.x = targetPos.x + 0.5 + Math.cos(angle) * spreadDist;
+              updatedUnit.y = targetPos.y + 0.5 + Math.sin(angle) * spreadDist;
+            }
+          } else if (updatedUnit.task === 'gather_knowledge' || updatedUnit.task === 'gather_gold') {
+            // Library/market workers cluster close to buildings
             const angle = Math.random() * Math.PI * 2;
-            const spreadDist = 0.4 + Math.random() * 1.0; // 0.4 to 1.4 tiles from center
+            const spreadDist = 0.4 + Math.random() * 0.6; // 0.4 to 1.0 tiles from center
             updatedUnit.x = targetPos.x + 0.5 + Math.cos(angle) * spreadDist;
             updatedUnit.y = targetPos.y + 0.5 + Math.sin(angle) * spreadDist;
           } else if (updatedUnit.task === 'gather_fish') {

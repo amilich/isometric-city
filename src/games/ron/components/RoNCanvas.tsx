@@ -814,6 +814,8 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               gatherTask = 'gather_gold';
             } else if (buildingType === 'oil_well' || buildingType === 'oil_platform' || buildingType === 'refinery') {
               gatherTask = 'gather_oil';
+            } else if (buildingType === 'library' || buildingType === 'university') {
+              gatherTask = 'gather_knowledge';
             }
             
             if (gatherTask) {

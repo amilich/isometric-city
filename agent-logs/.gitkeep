@@ -1,0 +1,54 @@
+# Agent Logs Directory
+
+This folder contains structured logs from AI agent game sessions.
+
+## Log Structure
+
+Each game session creates a folder: `session-{timestamp}/`
+
+Inside each session:
+- `session-info.json` - Game metadata (players, start time, etc.)
+- `turn-{tick}-{playerName}.json` - Individual turn logs
+
+## Turn Log Format
+
+```json
+{
+  "timestamp": "ISO date",
+  "tick": 12345,
+  "playerId": "player-1",
+  "playerName": "AI Red",
+  
+  "input": {
+    "systemPrompt": "...",
+    "turnPrompt": "...",
+    "gameStateSnapshot": {...}
+  },
+  
+  "toolCalls": [
+    { "name": "get_game_state", "args": {}, "result": "..." },
+    { "name": "build", "args": {...}, "result": "..." }
+  ],
+  
+  "output": {
+    "thinking": "...",
+    "actions": [...],
+    "responseTimeMs": 1234
+  },
+  
+  "metrics": {
+    "resourcesBefore": {...},
+    "resourcesAfter": {...},
+    "militaryCount": 5,
+    "population": "20/40"
+  }
+}
+```
+
+## Usage
+
+Review logs to identify:
+- Common failure patterns
+- Suboptimal decisions
+- Missing context in prompts
+- Opportunities for prompt improvements

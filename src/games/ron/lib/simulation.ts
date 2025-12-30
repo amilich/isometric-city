@@ -15,11 +15,11 @@ import { RoNBuilding, RoNBuildingType, BUILDING_STATS, ECONOMIC_BUILDINGS, UNIT_
 import { Unit, UnitType, UnitTask, UNIT_STATS } from '../types/units';
 
 // Simulation constants
-const CONSTRUCTION_SPEED = 2; // Progress per tick
-const PRODUCTION_SPEED = 1.5; // Unit production progress per tick
+const CONSTRUCTION_SPEED = 1; // Progress per tick (slower construction)
+const PRODUCTION_SPEED = 0.5; // Unit production progress per tick (3x slower)
 const UNIT_MOVE_SPEED = 0.1; // Movement per tick (in tiles)
 const ATTACK_COOLDOWN = 10; // Ticks between attacks
-const RESOURCE_GATHER_RATE = 0.5; // Base gathering per tick per worker
+const RESOURCE_GATHER_RATE = 0.15; // Base gathering per tick per worker (3x slower)
 
 // Border/Territory constants
 const CITY_CENTER_RADIUS = 24; // Base territory radius from city centers (3x larger for warring states style)
@@ -733,20 +733,23 @@ function updateDefensiveBuildings(state: RoNGameState): RoNGameState {
       
       // Attack the closest enemy
       if (closestEnemy) {
+        const newHealth = closestEnemy.unit.health - attackDamage;
         newUnits[closestEnemy.index] = {
           ...closestEnemy.unit,
-          health: closestEnemy.unit.health - attackDamage,
+          health: newHealth,
         };
         
-        // Debug log occasionally
-        if (state.tick % 100 === 0) {
-          console.log(`[DEFENSE] ${buildingType} at (${x},${y}) attacks ${closestEnemy.unit.type}, dmg=${attackDamage}, hp=${newUnits[closestEnemy.index].health}`);
-        }
+        // Debug log defensive building attack
+        console.log(`[DEFENSE] ${buildingType} at (${x},${y}) attacks ${closestEnemy.unit.type}, dmg=${attackDamage}, hp=${newHealth}/${closestEnemy.unit.maxHealth}`);
       }
     }
   }
   
-  // Remove dead units
+  // Remove dead units and log deaths
+  const deadUnits = newUnits.filter(u => u.health <= 0);
+  for (const dead of deadUnits) {
+    console.log(`[DEFENSE KILL] ${dead.type} (${dead.id}) killed by defensive building`);
+  }
   newUnits = newUnits.filter(u => u.health > 0);
   
   return { ...state, units: newUnits };
@@ -1061,6 +1064,15 @@ function updateUnits(state: RoNGameState): RoNGameState {
   const newUnits: Unit[] = [];
   let newGrid = state.grid;
   const originalUnits = state.units;
+  
+  // Track damage to apply to units - key is unit ID, value is total damage
+  // This is needed because when unit A attacks unit B, B might not be in newUnits yet
+  // (if A is processed before B in the loop)
+  const damageToApply: Map<string, number> = new Map();
+  
+  // Track damage to apply to buildings - key is "x,y" of building origin, value is total damage
+  // This is needed because multiple units might attack the same building in one tick
+  const buildingDamageToApply: Map<string, number> = new Map();
 
   for (let unitIndex = 0; unitIndex < originalUnits.length; unitIndex++) {
     const unit = originalUnits[unitIndex];
@@ -1204,6 +1216,8 @@ function updateUnits(state: RoNGameState): RoNGameState {
           updatedUnit.isMoving = true;
           // Reset cooldown so unit can attack immediately when in range
           updatedUnit.attackCooldown = 0;
+          
+          console.log(`[AUTO-ENGAGE] ${updatedUnit.type}(${updatedUnit.id}) engaging ${closestEnemy.type}(${closestEnemy.id})`);
         }
       }
     }
@@ -1370,35 +1384,48 @@ function updateUnits(state: RoNGameState): RoNGameState {
         updatedUnit.targetY = undefined;
       } else {
         // Use pathfinding to avoid obstacles
-        // Check if unit is naval (can only move on water)
+        // Check if unit is naval (can only move on water) or air (can fly over anything)
         const unitStats = UNIT_STATS[updatedUnit.type];
         const isNavalUnit = unitStats?.isNaval === true;
+        const isAirUnit = unitStats?.category === 'air';
         
-        const nextStep = findNextStep(
-          state.grid,
-          state.gridSize,
-          updatedUnit.x,
-          updatedUnit.y,
-          updatedUnit.targetX,
-          updatedUnit.targetY,
-          isNavalUnit
-        );
-        
-        if (nextStep) {
-          // Move toward the next step
-          const stepDx = nextStep.x - updatedUnit.x;
-          const stepDy = nextStep.y - updatedUnit.y;
-          const stepDist = Math.sqrt(stepDx * stepDx + stepDy * stepDy);
+        if (isAirUnit) {
+          // Air units fly directly to target - no pathfinding needed!
+          const airDx = updatedUnit.targetX - updatedUnit.x;
+          const airDy = updatedUnit.targetY - updatedUnit.y;
+          const airDist = Math.sqrt(airDx * airDx + airDy * airDy);
           
-          if (stepDist > 0.01) {
-            updatedUnit.x += (stepDx / stepDist) * speed;
-            updatedUnit.y += (stepDy / stepDist) * speed;
+          if (airDist > 0.01) {
+            updatedUnit.x += (airDx / airDist) * speed;
+            updatedUnit.y += (airDy / airDist) * speed;
           }
         } else {
-          // No path found - stop trying to move
-          updatedUnit.isMoving = false;
-          updatedUnit.targetX = undefined;
-          updatedUnit.targetY = undefined;
+          const nextStep = findNextStep(
+            state.grid,
+            state.gridSize,
+            updatedUnit.x,
+            updatedUnit.y,
+            updatedUnit.targetX,
+            updatedUnit.targetY,
+            isNavalUnit
+          );
+          
+          if (nextStep) {
+            // Move toward the next step
+            const stepDx = nextStep.x - updatedUnit.x;
+            const stepDy = nextStep.y - updatedUnit.y;
+            const stepDist = Math.sqrt(stepDx * stepDx + stepDy * stepDy);
+            
+            if (stepDist > 0.01) {
+              updatedUnit.x += (stepDx / stepDist) * speed;
+              updatedUnit.y += (stepDy / stepDist) * speed;
+            }
+          } else {
+            // No path found - stop trying to move
+            updatedUnit.isMoving = false;
+            updatedUnit.targetX = undefined;
+            updatedUnit.targetY = undefined;
+          }
         }
       }
     }
@@ -1407,9 +1434,15 @@ function updateUnits(state: RoNGameState): RoNGameState {
     if (updatedUnit.task === 'attack' && updatedUnit.taskTarget) {
       updatedUnit.attackCooldown = Math.max(0, updatedUnit.attackCooldown - 1);
       
+      // Log when on cooldown (every 50 ticks to reduce spam)
+      if (updatedUnit.attackCooldown > 0 && state.tick % 50 === 0) {
+        console.log(`[COOLDOWN] ${updatedUnit.type}(${updatedUnit.id}) cooldown=${updatedUnit.attackCooldown}`);
+      }
+      
       if (updatedUnit.attackCooldown === 0) {
         const unitStats = UNIT_STATS[unit.type];
         const attackRange = unitStats?.range || 1;
+        const damage = unitStats?.attack || 1;
         
         // Find target
         if (typeof updatedUnit.taskTarget === 'string') {
@@ -1422,21 +1455,22 @@ function updateUnits(state: RoNGameState): RoNGameState {
             );
             
             if (dist <= attackRange) {
-              // Attack!
-              const damage = unitStats?.attack || 1;
-              const targetIndex = newUnits.findIndex(u => u.id === targetUnit.id);
-              if (targetIndex >= 0) {
-                newUnits[targetIndex] = {
-                  ...newUnits[targetIndex],
-                  health: newUnits[targetIndex].health - damage,
-                };
-              }
+              // Attack! Track damage to apply later (target might not be in newUnits yet)
+              const currentDamage = damageToApply.get(targetUnit.id) || 0;
+              damageToApply.set(targetUnit.id, currentDamage + damage);
+              
+              // Log every attack
+              console.log(`[UNIT ATTACK] ${updatedUnit.type}(${updatedUnit.id}) -> ${targetUnit.type}(${targetUnit.id}), dmg=${damage}, dist=${dist.toFixed(1)}, range=${attackRange}`);
+              
               updatedUnit.attackCooldown = ATTACK_COOLDOWN;
               updatedUnit.lastAttackTime = state.tick;
               updatedUnit.isAttacking = true; // Show attack animation
               updatedUnit.isMoving = false; // Stop moving while attacking
             } else {
               // Move toward target - must get in range first
+              if (state.tick % 100 === 0) {
+                console.log(`[MOVING TO TARGET] ${updatedUnit.type}(${updatedUnit.id}) -> ${targetUnit.type}(${targetUnit.id}), dist=${dist.toFixed(1)}, range=${attackRange}`);
+              }
               updatedUnit.targetX = targetUnit.x;
               updatedUnit.targetY = targetUnit.y;
               updatedUnit.isMoving = true;
@@ -1452,6 +1486,7 @@ function updateUnits(state: RoNGameState): RoNGameState {
               updatedUnit.targetY = newTarget.y;
               updatedUnit.isMoving = true;
               updatedUnit.attackCooldown = 0; // Can attack immediately
+              console.log(`[TARGET SWITCH] ${updatedUnit.type}(${updatedUnit.id}) switching to ${newTarget.type}(${newTarget.id})`);
             } else {
               // No more enemies nearby - go idle
               updatedUnit.task = 'idle';
@@ -1485,15 +1520,11 @@ function updateUnits(state: RoNGameState): RoNGameState {
             );
             
             if (distToEnemy <= attackRange) {
-              // Attack the enemy unit!
+              // Attack the enemy unit! Track damage to apply later
               const damage = unitStats?.attack || 1;
-              const targetIndex = newUnits.findIndex(u => u.id === targetEnemy.id);
-              if (targetIndex >= 0) {
-                newUnits[targetIndex] = {
-                  ...newUnits[targetIndex],
-                  health: newUnits[targetIndex].health - damage,
-                };
-              }
+              const currentDamage = damageToApply.get(targetEnemy.id) || 0;
+              damageToApply.set(targetEnemy.id, currentDamage + damage);
+              
               updatedUnit.attackCooldown = ATTACK_COOLDOWN;
               updatedUnit.lastAttackTime = state.tick;
               updatedUnit.isAttacking = true;
@@ -1510,6 +1541,11 @@ function updateUnits(state: RoNGameState): RoNGameState {
             const targetTileX = Math.floor(targetPos.x);
             const targetTileY = Math.floor(targetPos.y);
             const buildingCheck = isTileOccupiedByBuilding(state.grid, targetTileX, targetTileY, state.gridSize);
+            
+            // Debug: log attack attempts for air units
+            if (UNIT_STATS[updatedUnit.type]?.category === 'air' && state.tick % 30 === 0) {
+              console.log(`[AIR ATTACK] ${updatedUnit.type}(${updatedUnit.id}) at (${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}) -> target (${targetPos.x},${targetPos.y}), tileCheck=(${targetTileX},${targetTileY}), occupied=${buildingCheck.occupied}, buildingType=${buildingCheck.buildingType}, cooldown=${updatedUnit.attackCooldown}`);
+            }
             
             // Find the actual building origin if this tile is part of a multi-tile building
             let buildingOrigin: { x: number; y: number; building: RoNBuilding } | null = null;
@@ -1540,11 +1576,21 @@ function updateUnits(state: RoNGameState): RoNGameState {
               }
             }
             
+            // Debug: log when building is found but might not be attacked
+            if (buildingOrigin && state.tick % 200 === 0) {
+              console.log(`[ATTACK DEBUG] Unit ${updatedUnit.id} at (${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}) found building ${buildingOrigin.building.type} at (${buildingOrigin.x},${buildingOrigin.y}), buildingOwner=${buildingOrigin.building.ownerId}, unitOwner=${updatedUnit.ownerId}`);
+            }
+            
             if (buildingOrigin && buildingOrigin.building.ownerId !== updatedUnit.ownerId) {
               // For multi-tile buildings, check if unit is in range of ANY tile of the building
               const bStats = BUILDING_STATS[buildingOrigin.building.type as RoNBuildingType];
               const buildingWidth = bStats?.size?.width || 1;
               const buildingHeight = bStats?.size?.height || 1;
+              
+              // Debug: log when unit is attacking a building
+              if (state.tick % 20 === 0) {
+                console.log(`[BUILDING TARGET] ${updatedUnit.type}(${updatedUnit.id}) targeting ${buildingOrigin.building.type} at (${buildingOrigin.x},${buildingOrigin.y}), size=${buildingWidth}x${buildingHeight}, unitPos=(${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}), range=${attackRange}, cooldown=${updatedUnit.attackCooldown}`);
+              }
               
               // Calculate distance to nearest edge of building
               let minDistToBuilding = Infinity;
@@ -1560,31 +1606,14 @@ function updateUnits(state: RoNGameState): RoNGameState {
               }
               
               if (minDistToBuilding <= attackRange + 0.5) {
-                // Attack building
+                // Attack building - track damage to apply later (multiple units may attack same building)
                 const damage = unitStats?.attack || 1;
-                const newBuilding = {
-                  ...buildingOrigin.building,
-                  health: buildingOrigin.building.health - damage,
-                };
+                const buildingKey = `${buildingOrigin.x},${buildingOrigin.y}`;
+                const currentDamage = buildingDamageToApply.get(buildingKey) || 0;
+                buildingDamageToApply.set(buildingKey, currentDamage + damage);
                 
-                // Debug log for building attacks
-                if (state.tick % 100 === 0) {
-                  console.log(`[ATTACK] ${updatedUnit.type} attacking ${buildingOrigin.building.type} at (${buildingOrigin.x},${buildingOrigin.y}), dmg=${damage}, hp=${newBuilding.health}/${buildingOrigin.building.health + damage}`);
-                }
-                
-                // Update grid at the building's origin tile
-                newGrid = newGrid.map((row, gy) =>
-                  row.map((tile, gx) => {
-                    if (gx === buildingOrigin!.x && gy === buildingOrigin!.y) {
-                      if (newBuilding.health <= 0) {
-                        // Building destroyed - also clear all tiles it occupied
-                        return { ...tile, building: null, ownerId: null };
-                      }
-                      return { ...tile, building: newBuilding };
-                    }
-                    return tile;
-                  })
-                );
+                // Debug log for building attacks (every tick for visibility)
+                console.log(`[ATTACK] ${updatedUnit.type} attacking ${buildingOrigin.building.type} at (${buildingOrigin.x},${buildingOrigin.y}), dmg=${damage}, building hp=${buildingOrigin.building.health}`);
                 
                 updatedUnit.attackCooldown = ATTACK_COOLDOWN;
                 updatedUnit.lastAttackTime = state.tick;
@@ -1674,10 +1703,47 @@ function updateUnits(state: RoNGameState): RoNGameState {
       }
     }
     
+    // Apply any accumulated damage to this unit from attacks this tick
+    const damageTaken = damageToApply.get(updatedUnit.id) || 0;
+    if (damageTaken > 0) {
+      updatedUnit.health -= damageTaken;
+      // Debug log combat damage
+      console.log(`[COMBAT] ${updatedUnit.type} (${updatedUnit.id}) took ${damageTaken} damage, hp=${updatedUnit.health}/${updatedUnit.maxHealth}`);
+    }
+    
     // Only add if still alive
     if (updatedUnit.health > 0) {
       newUnits.push(updatedUnit);
+    } else {
+      // Unit died - log it
+      console.log(`[UNIT DIED] ${updatedUnit.type} (${updatedUnit.id}) at (${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}), ownerId=${updatedUnit.ownerId}`);
     }
+  }
+  
+  // Apply all accumulated building damage
+  if (buildingDamageToApply.size > 0) {
+    console.log(`[BUILDING DAMAGE APPLY] Applying damage to ${buildingDamageToApply.size} buildings: ${Array.from(buildingDamageToApply.entries()).map(([k, v]) => `${k}:${v}`).join(', ')}`);
+    newGrid = newGrid.map((row, gy) =>
+      row.map((tile, gx) => {
+        const key = `${gx},${gy}`;
+        const damage = buildingDamageToApply.get(key);
+        if (damage && tile.building) {
+          const newHealth = tile.building.health - damage;
+          console.log(`[BUILDING DAMAGE] ${tile.building.type} at (${gx},${gy}) took ${damage} damage, hp: ${tile.building.health} -> ${newHealth}`);
+          
+          if (newHealth <= 0) {
+            // Building destroyed - clear the tile
+            console.log(`[BUILDING DESTROYED] ${tile.building.type} at (${gx},${gy})`);
+            return { ...tile, building: null, ownerId: null };
+          }
+          return { 
+            ...tile, 
+            building: { ...tile.building, health: newHealth }
+          };
+        }
+        return tile;
+      })
+    );
   }
   
   return { ...state, units: newUnits, grid: newGrid };

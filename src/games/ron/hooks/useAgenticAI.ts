@@ -154,7 +154,8 @@ export function useAgenticAI(
       
       for (const aiPlayerId of config.aiPlayerIds) {
         const aiPlayer = gameState.players.find(p => p.id === aiPlayerId);
-        if (aiPlayer) {
+        // Skip dead/defeated players
+        if (aiPlayer && !aiPlayer.isDefeated) {
           const aiUnits = gameState.units.filter(u => u.ownerId === aiPlayerId);
           const citizens = aiUnits.filter(u => u.type === 'citizen').length;
           const military = aiUnits.filter(u => u.type !== 'citizen').length;

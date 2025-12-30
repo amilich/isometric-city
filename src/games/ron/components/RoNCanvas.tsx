@@ -795,33 +795,64 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
           const originTile = gameState.grid[buildingOrigin.originY]?.[buildingOrigin.originX];
           const buildingType = buildingOrigin.buildingType;
           
+          // Debug: log the building info
+          console.log('[RIGHT-CLICK] Building found:', {
+            buildingType,
+            originX: buildingOrigin.originX,
+            originY: buildingOrigin.originY,
+            tileOwnerId: originTile?.ownerId,
+            buildingOwnerId: originTile?.building?.ownerId,
+            currentPlayerId: gameState.currentPlayerId,
+            isEnemy: originTile?.ownerId && originTile.ownerId !== gameState.currentPlayerId,
+          });
+          
           // Check if it's an enemy building - attack
-          if (originTile?.ownerId && originTile.ownerId !== gameState.currentPlayerId) {
+          // Use building.ownerId since tile.ownerId might not be set for non-origin tiles
+          const buildingOwnerId = originTile?.building?.ownerId || originTile?.ownerId;
+          if (buildingOwnerId && buildingOwnerId !== gameState.currentPlayerId) {
+            console.log('[RIGHT-CLICK] Attacking building at', buildingOrigin.originX, buildingOrigin.originY);
             attackTarget({ x: buildingOrigin.originX, y: buildingOrigin.originY });
           } 
-          // Check if it's our own economic building - assign gather task
+          // Check if it's our own economic building - assign gather task (only for civilians!)
           else if (originTile?.ownerId === gameState.currentPlayerId) {
-            // Determine gather task based on building type
-            let gatherTask: string | null = null;
+            // Check if selected units are military - they shouldn't be assigned to gather
+            const selectedUnits = gameState.units.filter(u => state.selectedUnitIds.includes(u.id));
+            const hasMilitaryUnits = selectedUnits.some(u => {
+              const stats = UNIT_STATS[u.type];
+              return stats?.category !== 'civilian';
+            });
+            const hasCivilianUnits = selectedUnits.some(u => {
+              const stats = UNIT_STATS[u.type];
+              return stats?.category === 'civilian';
+            });
             
-            if (buildingType === 'farm') {
-              gatherTask = 'gather_food';
-            } else if (buildingType === 'woodcutters_camp' || buildingType === 'lumber_mill') {
-              gatherTask = 'gather_wood';
-            } else if (buildingType === 'mine' || buildingType === 'smelter') {
-              gatherTask = 'gather_metal';
-            } else if (buildingType === 'market') {
-              gatherTask = 'gather_gold';
-            } else if (buildingType === 'oil_well' || buildingType === 'oil_platform' || buildingType === 'refinery') {
-              gatherTask = 'gather_oil';
-            } else if (buildingType === 'library' || buildingType === 'university') {
-              gatherTask = 'gather_knowledge';
-            }
-            
-            if (gatherTask) {
-              assignTask(gatherTask as import('../types/units').UnitTask, { x: buildingOrigin.originX, y: buildingOrigin.originY });
+            // Only assign gather tasks if we have civilian units and no military units
+            if (hasCivilianUnits && !hasMilitaryUnits) {
+              // Determine gather task based on building type
+              let gatherTask: string | null = null;
+              
+              if (buildingType === 'farm') {
+                gatherTask = 'gather_food';
+              } else if (buildingType === 'woodcutters_camp' || buildingType === 'lumber_mill') {
+                gatherTask = 'gather_wood';
+              } else if (buildingType === 'mine' || buildingType === 'smelter') {
+                gatherTask = 'gather_metal';
+              } else if (buildingType === 'market') {
+                gatherTask = 'gather_gold';
+              } else if (buildingType === 'oil_well' || buildingType === 'oil_platform' || buildingType === 'refinery') {
+                gatherTask = 'gather_oil';
+              } else if (buildingType === 'library' || buildingType === 'university') {
+                gatherTask = 'gather_knowledge';
+              }
+              
+              if (gatherTask) {
+                assignTask(gatherTask as import('../types/units').UnitTask, { x: buildingOrigin.originX, y: buildingOrigin.originY });
+              } else {
+                // It's our building but not economic - just move near it
+                moveSelectedUnits(gridX, gridY);
+              }
             } else {
-              // It's our building but not economic - just move near it
+              // Military units selected - just move near own buildings, don't assign tasks
               moveSelectedUnits(gridX, gridY);
             }
           } else {

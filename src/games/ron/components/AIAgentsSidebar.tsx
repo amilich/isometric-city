@@ -34,20 +34,20 @@ function ToolCallEntry({ entry, isExpanded, onToggle }: {
     <div className="border border-slate-700 rounded overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-1.5 px-2 py-1 bg-slate-800 hover:bg-slate-700 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-800 hover:bg-slate-700 transition-colors text-left"
       >
         {isExpanded ? (
-          <ChevronDown className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
         ) : (
-          <ChevronRight className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
         )}
-        <span className="text-[11px] text-blue-400 font-mono">{entry.toolName}</span>
+        <span className="text-xs text-blue-400 font-mono">{entry.toolName}</span>
         {!hasArgs && (
-          <span className="text-[10px] text-slate-600 font-mono">()</span>
+          <span className="text-xs text-slate-600 font-mono">()</span>
         )}
       </button>
       {isExpanded && (
-        <div className="px-2 py-1.5 bg-slate-900 text-[10px] font-mono text-slate-500 border-t border-slate-700 max-h-[300px] overflow-y-auto">
+        <div className="px-2 py-2 bg-slate-900 text-xs font-mono text-slate-500 border-t border-slate-700 max-h-[300px] overflow-y-auto">
           {hasArgs ? (
             Object.entries(entry.toolArgs!).map(([key, value]) => (
               <div key={key} className="whitespace-pre-wrap break-all">
@@ -76,22 +76,22 @@ function ToolResultEntry({ entry }: { entry: AIConversationEntry }) {
     <div className={`border rounded overflow-hidden ${isSuccess ? 'border-green-800/50' : 'border-amber-800/50'}`}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full flex items-center gap-1.5 px-2 py-1 ${isSuccess ? 'bg-green-950/30' : 'bg-amber-950/30'} hover:bg-opacity-50 transition-colors text-left`}
+        className={`w-full flex items-center gap-2 px-2 py-1.5 ${isSuccess ? 'bg-green-950/30' : 'bg-amber-950/30'} hover:bg-opacity-50 transition-colors text-left`}
       >
         {isExpanded ? (
-          <ChevronDown className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
         ) : (
-          <ChevronRight className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
         )}
-        <span className={`text-[10px] font-mono flex-shrink-0 ${isSuccess ? 'text-green-500' : 'text-amber-500'}`}>
+        <span className={`text-xs font-mono flex-shrink-0 ${isSuccess ? 'text-green-500' : 'text-amber-500'}`}>
           {isSuccess ? 'ok' : 'err'}
         </span>
-        <span className="text-[10px] text-slate-400 flex-1 font-mono whitespace-pre-wrap break-words">
+        <span className="text-xs text-slate-400 flex-1 font-mono whitespace-pre-wrap break-words">
           {entry.content}
         </span>
       </button>
       {isExpanded && (
-        <div className="px-2 py-1.5 bg-slate-900 text-[10px] text-slate-400 border-t border-slate-700 whitespace-pre-wrap font-mono max-h-[400px] overflow-y-auto">
+        <div className="px-2 py-2 bg-slate-900 text-xs text-slate-400 border-t border-slate-700 whitespace-pre-wrap font-mono max-h-[400px] overflow-y-auto">
           {entry.content}
         </div>
       )}
@@ -106,20 +106,20 @@ function PromptEntry({ entry }: { entry: AIConversationEntry }) {
     <div className="border border-purple-800/50 rounded overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-1.5 px-2 py-1 bg-purple-950/30 hover:bg-purple-900/30 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-2 py-1.5 bg-purple-950/30 hover:bg-purple-900/30 transition-colors text-left"
       >
         {isExpanded ? (
-          <ChevronDown className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
         ) : (
-          <ChevronRight className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
         )}
-        <span className="text-[10px] text-purple-400 font-mono flex-shrink-0">prompt</span>
-        <span className="text-[10px] text-slate-400 flex-1 font-mono whitespace-pre-wrap break-words">
+        <span className="text-xs text-purple-400 font-mono flex-shrink-0">prompt</span>
+        <span className="text-xs text-slate-400 flex-1 font-mono whitespace-pre-wrap break-words">
           {entry.content}
         </span>
       </button>
       {isExpanded && (
-        <div className="px-2 py-1.5 bg-slate-900 text-[10px] text-slate-400 border-t border-slate-700 whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto">
+        <div className="px-2 py-2 bg-slate-900 text-xs text-slate-400 border-t border-slate-700 whitespace-pre-wrap font-mono max-h-[500px] overflow-y-auto">
           {entry.content}
         </div>
       )}
@@ -136,7 +136,7 @@ function ConversationEntry({ entry }: { entry: AIConversationEntry }) {
     
     case 'thinking':
       return (
-        <div className="text-[10px] text-slate-500 italic py-1 border-l-2 border-purple-700/50 pl-2 font-mono whitespace-pre-wrap break-words">
+        <div className="text-xs text-slate-500 italic py-1.5 border-l-2 border-purple-700/50 pl-2 font-mono whitespace-pre-wrap break-words">
           {entry.content}
         </div>
       );
@@ -155,7 +155,7 @@ function ConversationEntry({ entry }: { entry: AIConversationEntry }) {
     
     case 'message':
       return (
-        <div className="bg-blue-950/30 border border-blue-800/50 rounded px-2 py-1 text-[10px] text-blue-300 font-mono">
+        <div className="bg-blue-950/30 border border-blue-800/50 rounded px-2 py-1.5 text-xs text-blue-300 font-mono">
           {entry.content}
         </div>
       );
@@ -165,8 +165,12 @@ function ConversationEntry({ entry }: { entry: AIConversationEntry }) {
   }
 }
 
-function PlayerConversation({ conversation, player }: { conversation: AIPlayerConversation; player?: RoNPlayer }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+function PlayerConversation({ conversation, player, isExpanded, onToggle }: { 
+  conversation: AIPlayerConversation; 
+  player?: RoNPlayer;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // Auto-scroll to bottom on new entries
@@ -182,56 +186,53 @@ function PlayerConversation({ conversation, player }: { conversation: AIPlayerCo
   const formatRes = (val: number) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : Math.floor(val).toString();
   
   return (
-    <div className="flex flex-col min-h-0 flex-1">
-      {/* Header */}
+    <div className={`flex flex-col min-h-0 ${isExpanded ? 'flex-1' : 'flex-shrink-0'}`}>
+      {/* Header - name and resources inline */}
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex flex-col px-2 py-1.5 bg-slate-800 border-b border-slate-700 hover:bg-slate-700/50 transition-colors"
+        onClick={onToggle}
+        className="flex items-center gap-2 px-2 py-1.5 bg-slate-800 border-b border-slate-700 hover:bg-slate-700/50 transition-colors flex-shrink-0"
       >
-        <div className="flex items-center gap-2 w-full">
-          {isExpanded ? (
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
-          )}
-          <div 
-            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: conversation.color }}
-          />
-          <span className="text-xs font-medium text-slate-300 flex-1 text-left font-mono">
-            {conversation.playerName}
-          </span>
-          {conversation.isThinking && (
-            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-          )}
-          <span className="text-[10px] text-slate-500 font-mono">
-            {conversation.entries.length}
-          </span>
-        </div>
-        {/* Resource row */}
+        {isExpanded ? (
+          <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
+        )}
+        <div 
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+          style={{ backgroundColor: conversation.color }}
+        />
+        <span className="text-sm font-medium text-slate-300 font-mono flex-shrink-0">
+          {conversation.playerName}
+        </span>
+        {/* Resources inline */}
         {player && (
-          <div className="flex items-center gap-1.5 mt-1 ml-6 text-[9px] font-mono">
+          <div className="flex items-center gap-1 text-[10px] font-mono flex-shrink-0">
             <span className="text-green-400" title="Food">🌾{formatRes(player.resources.food)}</span>
             <span className="text-amber-600" title="Wood">🪵{formatRes(player.resources.wood)}</span>
             <span className="text-slate-400" title="Metal">⛏️{formatRes(player.resources.metal)}</span>
             <span className="text-yellow-400" title="Gold">💰{formatRes(player.resources.gold)}</span>
-            <span className="text-slate-500">|</span>
             <span className={player.population >= player.populationCap ? 'text-red-400' : 'text-blue-400'} title="Population">
               👥{player.population}/{player.populationCap}
             </span>
           </div>
         )}
+        <div className="flex-1" />
+        {conversation.isThinking && (
+          <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse flex-shrink-0" />
+        )}
+        <span className="text-xs text-slate-500 font-mono flex-shrink-0">
+          {conversation.entries.length}
+        </span>
       </button>
       
-      {/* Entries */}
+      {/* Entries - only show when expanded, takes remaining space */}
       {isExpanded && (
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto px-1.5 py-1.5 space-y-1 min-h-0"
-          style={{ maxHeight: 'calc(50vh - 40px)' }}
+          className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5 min-h-0"
         >
           {recentEntries.length === 0 ? (
-            <p className="text-slate-600 text-[10px] text-center py-3 font-mono">
+            <p className="text-slate-600 text-xs text-center py-4 font-mono">
               waiting...
             </p>
           ) : (
@@ -240,11 +241,11 @@ function PlayerConversation({ conversation, player }: { conversation: AIPlayerCo
             ))
           )}
           {conversation.isThinking && (
-            <div className="flex items-center gap-1.5 text-[10px] text-yellow-500 py-1 font-mono">
+            <div className="flex items-center gap-2 text-xs text-yellow-500 py-1 font-mono">
               <div className="flex gap-0.5">
-                <div className="w-1 h-1 bg-yellow-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-1 h-1 bg-yellow-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-1 h-1 bg-yellow-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
               <span>thinking</span>
             </div>
@@ -258,6 +259,7 @@ function PlayerConversation({ conversation, player }: { conversation: AIPlayerCo
 export function AIAgentsSidebar({ conversations, players, onClear, onWidthChange }: AIAgentsSidebarProps) {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
+  const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set());
   const sidebarRef = useRef<HTMLDivElement>(null);
   
   // Get AI players' conversations (filter out human players)
@@ -267,8 +269,27 @@ export function AIAgentsSidebar({ conversations, players, onClear, onWidthChange
     c.playerName.toLowerCase().includes('green')
   );
   
+  // Initialize expanded state for new AI players (expand first one by default)
+  useEffect(() => {
+    if (aiConversations.length > 0 && expandedPlayers.size === 0) {
+      setExpandedPlayers(new Set([aiConversations[0].playerId]));
+    }
+  }, [aiConversations.length]);
+  
   // Map player ID to player data for quick lookup
   const playerMap = new Map(players.map(p => [p.id, p]));
+  
+  const toggleExpanded = useCallback((playerId: string) => {
+    setExpandedPlayers(prev => {
+      const next = new Set(prev);
+      if (next.has(playerId)) {
+        next.delete(playerId);
+      } else {
+        next.add(playerId);
+      }
+      return next;
+    });
+  }, []);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -346,13 +367,15 @@ export function AIAgentsSidebar({ conversations, players, onClear, onWidthChange
         </button>
       </div>
       
-      {/* Conversations - split evenly between AI players */}
+      {/* Conversations - expanded ones take available space, collapsed ones shrink */}
       <div className="flex-1 flex flex-col min-h-0 divide-y divide-slate-700 overflow-hidden">
         {aiConversations.map((conv) => (
           <PlayerConversation 
             key={conv.playerId} 
             conversation={conv} 
             player={playerMap.get(conv.playerId)}
+            isExpanded={expandedPlayers.has(conv.playerId)}
+            onToggle={() => toggleExpanded(conv.playerId)}
           />
         ))}
       </div>

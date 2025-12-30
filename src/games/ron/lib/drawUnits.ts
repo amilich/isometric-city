@@ -28,6 +28,18 @@ const TOOL_COLORS: Record<string, string> = {
 };
 
 /**
+ * Get a numeric hash from a unit ID for animation and appearance
+ */
+function getUnitIdHash(unitId: string): number {
+  let hash = 0;
+  for (let i = 0; i < unitId.length; i++) {
+    hash = ((hash << 5) - hash) + unitId.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
+
+/**
  * Get deterministic values based on unit ID for consistent appearance
  */
 function getUnitAppearance(unitId: string): {
@@ -37,12 +49,7 @@ function getUnitAppearance(unitId: string): {
   hasTool: boolean;
 } {
   // Simple hash from unit ID
-  let hash = 0;
-  for (let i = 0; i < unitId.length; i++) {
-    hash = ((hash << 5) - hash) + unitId.charCodeAt(i);
-    hash = hash & hash;
-  }
-  const absHash = Math.abs(hash);
+  const absHash = getUnitIdHash(unitId);
   
   return {
     skinTone: SKIN_TONES[absHash % SKIN_TONES.length],
@@ -73,7 +80,7 @@ function drawCitizenUnit(
   
   // Animation based on task and movement
   const isWorking = unit.task && unit.task.startsWith('gather_') && !unit.isMoving;
-  const animPhase = (tick * 0.1 + parseInt(unit.id.slice(-4), 16)) % (Math.PI * 2);
+  const animPhase = (tick * 0.1 + getUnitIdHash(unit.id)) % (Math.PI * 2);
   
   // Body dimensions
   const bodyHeight = 10 * scale;
@@ -199,7 +206,7 @@ function drawMilitaryUnit(
                     stats.category === 'cavalry' ? (isTankOrVehicle ? 1.5 : 1.05) :
                     stats.category === 'siege' ? 1.2 : 0.75;
   const scale = baseScale;
-  const animPhase = (tick * 0.1 + parseInt(unit.id.slice(-4), 16)) % (Math.PI * 2);
+  const animPhase = (tick * 0.1 + getUnitIdHash(unit.id)) % (Math.PI * 2);
 
   // Darken color for shadows
   const darkerColor = shadeColor(color, -30);

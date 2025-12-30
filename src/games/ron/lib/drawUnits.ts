@@ -2659,6 +2659,31 @@ function drawGenericAircraft(
 }
 
 /**
+ * Get a deterministic offset for a unit based on its ID
+ * This spreads out units at the same location so they're all visible
+ */
+function getUnitStackOffset(unitId: string, index: number = 0): { dx: number; dy: number } {
+  // Hash the unit ID to get a deterministic but varied offset
+  let hash = 0;
+  for (let i = 0; i < unitId.length; i++) {
+    hash = ((hash << 5) - hash) + unitId.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Use hash to determine position in a spread pattern
+  // Units spread in a circular/grid pattern around the center
+  const spreadRadius = 8; // Pixels to spread
+  const angle = (hash % 12) * (Math.PI / 6); // 12 positions around circle
+  const radiusMod = ((hash >> 4) % 3) / 3; // 0, 0.33, or 0.66 of radius
+  const radius = spreadRadius * (0.4 + radiusMod * 0.6);
+  
+  return {
+    dx: Math.cos(angle) * radius,
+    dy: Math.sin(angle) * radius * 0.5 // Compressed Y for isometric look
+  };
+}
+
+/**
  * Draw a RoN unit with pedestrian-like appearance and task activities
  */
 export function drawRoNUnit(
@@ -2672,10 +2697,13 @@ export function drawRoNUnit(
 ): void {
   const { screenX, screenY } = gridToScreen(unit.x, unit.y, offsetX, offsetY);
   
-  // Unit center position (adjusted for tile)
+  // Get offset to spread out stacked units
+  const stackOffset = getUnitStackOffset(unit.id);
+  
+  // Unit center position (adjusted for tile) with stack offset
   // Note: Canvas context is already scaled, so we don't multiply by zoom here
-  const centerX = screenX + TILE_WIDTH / 2;
-  const centerY = screenY + TILE_HEIGHT * 0.3;
+  const centerX = screenX + TILE_WIDTH / 2 + stackOffset.dx;
+  const centerY = screenY + TILE_HEIGHT * 0.3 + stackOffset.dy;
   
   const stats = UNIT_STATS[unit.type];
   

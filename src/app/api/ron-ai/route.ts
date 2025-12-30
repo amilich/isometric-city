@@ -672,13 +672,6 @@ ${(() => {
     result += `   Have: ${Math.round(p.resources.wood)}w / ${Math.round(p.resources.metal)}m / ${Math.round(p.resources.gold)}g\n`;
     if (canBuildSmallCity) {
       result += `   🚨 YOU CAN BUILD small_city NOW!\n`;
-    } else {
-      const need = [];
-      if (cityCost.wood && p.resources.wood < cityCost.wood) need.push(`${Math.round(cityCost.wood - p.resources.wood)} more wood`);
-      if (cityCost.metal && p.resources.metal < cityCost.metal) need.push(`${Math.round(cityCost.metal - p.resources.metal)} more metal`);
-      if (cityCost.gold && p.resources.gold < cityCost.gold) need.push(`${Math.round(cityCost.gold - p.resources.gold)} more gold`);
-      result += `   Need: ${need.join(', ')}\n`;
-      result += `   ⚠️ DO NOT BUILD OTHER BUILDINGS! Save wood for small_city!\n`;
     }
   } else {
     result += `### TRAINING (pop ${p.population}/${p.populationCap}):\n`;

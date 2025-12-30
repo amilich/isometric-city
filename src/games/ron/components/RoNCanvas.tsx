@@ -1960,6 +1960,20 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 sx, sy, parksTileWidth, parksTileHeight,
                 drawX, drawY, destWidth, destHeight
               );
+              
+              // Fire effect and health bar collection for damaged docks
+              if (tile.building.health < tile.building.maxHealth) {
+                const healthPercent = tile.building.health / tile.building.maxHealth;
+                const fireIntensity = Math.min(1, (1 - healthPercent) * 1.5);
+                drawFireEffect(ctx, screenX, screenY - destHeight / 2, fireAnimTimeRef.current, fireIntensity);
+                damagedBuildings.push({
+                  screenX: screenX,
+                  screenY: drawY,
+                  healthPercent,
+                  buildingWidth: 2,
+                  buildingHeight: 2,
+                });
+              }
             }
             continue; // Skip regular sprite drawing for dock
           }
@@ -2023,6 +2037,23 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 drawX, drawY, destWidth, destHeight
               );
               
+              // Fire effect and health bar collection for damaged modern city centers
+              if (tile.building.health < tile.building.maxHealth) {
+                const healthPercent = tile.building.health / tile.building.maxHealth;
+                const fireIntensity = Math.min(1, (1 - healthPercent) * 1.5);
+                drawFireEffect(ctx, screenX, screenY - destHeight / 2, fireAnimTimeRef.current, fireIntensity);
+                const buildingStats = BUILDING_STATS[buildingType];
+                const bWidth = buildingStats?.size?.width || 2;
+                const bHeight = buildingStats?.size?.height || 2;
+                damagedBuildings.push({
+                  screenX: screenX,
+                  screenY: drawY,
+                  healthPercent,
+                  buildingWidth: bWidth,
+                  buildingHeight: bHeight,
+                });
+              }
+              
               continue; // Skip regular sprite drawing for modern city center
             }
           }
@@ -2074,6 +2105,20 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 sx, sy, farmTileWidth, srcHeight,
                 drawX, drawY, destWidth, destHeight
               );
+              
+              // Fire effect and health bar collection for damaged farms
+              if (tile.building.health < tile.building.maxHealth) {
+                const healthPercent = tile.building.health / tile.building.maxHealth;
+                const fireIntensity = Math.min(1, (1 - healthPercent) * 1.5);
+                drawFireEffect(ctx, screenX, screenY - destHeight / 2, fireAnimTimeRef.current, fireIntensity);
+                damagedBuildings.push({
+                  screenX: screenX,
+                  screenY: drawY,
+                  healthPercent,
+                  buildingWidth: 1,
+                  buildingHeight: 1,
+                });
+              }
             }
             continue; // Skip regular sprite drawing for farm
           }
@@ -2119,6 +2164,20 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                   0, 0, airportSprite.width, airportSprite.height,
                   drawX, drawY, destWidth, destHeight
                 );
+                
+                // Fire effect and health bar collection for damaged airbases
+                if (tile.building.health < tile.building.maxHealth) {
+                  const healthPercent = tile.building.health / tile.building.maxHealth;
+                  const fireIntensity = Math.min(1, (1 - healthPercent) * 1.5);
+                  drawFireEffect(ctx, screenX, screenY - destHeight / 2, fireAnimTimeRef.current, fireIntensity);
+                  damagedBuildings.push({
+                    screenX: screenX,
+                    screenY: drawY,
+                    healthPercent,
+                    buildingWidth: buildingSize.width,
+                    buildingHeight: buildingSize.height,
+                  });
+                }
               }
               continue; // Skip regular sprite drawing for airbase (using IsoCity)
             }
@@ -2204,6 +2263,23 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
                 sx, sy, medTileWidth, medTileHeight,
                 drawX, drawY, destWidth, destHeight
               );
+              
+              // Fire effect and health bar collection for damaged tower/fort/fortress
+              if (tile.building.health < tile.building.maxHealth) {
+                const healthPercent = tile.building.health / tile.building.maxHealth;
+                const fireIntensity = Math.min(1, (1 - healthPercent) * 1.5);
+                drawFireEffect(ctx, screenX, screenY - destHeight / 2, fireAnimTimeRef.current, fireIntensity);
+                const buildingStats = BUILDING_STATS[buildingType];
+                const bWidth = buildingStats?.size?.width || 1;
+                const bHeight = buildingStats?.size?.height || 1;
+                damagedBuildings.push({
+                  screenX: screenX,
+                  screenY: drawY,
+                  healthPercent,
+                  buildingWidth: bWidth,
+                  buildingHeight: bHeight,
+                });
+              }
               
               continue; // Skip regular sprite drawing
             }

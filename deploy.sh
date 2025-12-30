@@ -14,8 +14,8 @@ if pm2 list | grep -q "mycity"; then
     echo "✅ PM2 servisi yeniden başlatıldı."
 else
     echo "⚠️ 'mycity' adında çalışan bir PM2 servisi bulunamadı."
-    echo "Servisi başlatmak için: pm2 start npm --name 'my˜ˆcity' -- start"
-fiˆ
+    echo "Servisi başlatmak için: pm2 start npm --name 'mycity' -- start"
+fi
 
 echo "✨ İşlem başarıyla tamamlandı!"
 

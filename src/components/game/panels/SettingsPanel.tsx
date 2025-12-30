@@ -173,13 +173,15 @@ export function SettingsPanel() {
 
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-5xl bg-[#1e293b]/95 border-slate-700 text-slate-100 p-0 overflow-hidden shadow-2xl h-[600px] flex gap-0">
+      <DialogContent className="max-w-5xl bg-slate-950 border-slate-800 text-slate-100 p-0 overflow-hidden shadow-2xl h-[600px] flex flex-col md:flex-row gap-0">
         <DialogTitle className="sr-only">{t('Settings')}</DialogTitle>
         
         {/* Sidebar */}
-        <div className="w-64 bg-slate-900/50 border-r border-slate-700 flex flex-col p-4">
+        <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col p-4 shrink-0">
           <h2 className="text-xl font-bold mb-6 px-2 flex items-center gap-2 text-white">
-            <Settings className="w-5 h-5 text-blue-500" />
+            <div className="p-1.5 bg-blue-600 rounded-lg">
+              <Settings className="w-5 h-5 text-white" />
+            </div>
             {t('Settings')}
           </h2>
           
@@ -204,45 +206,46 @@ export function SettingsPanel() {
           </div>
 
           <div className="mt-auto pt-4 border-t border-slate-800">
-             <div className="text-xs text-slate-500 px-2">
-                Version 1.0.0
+             <div className="text-xs text-slate-500 px-2 flex justify-between items-center">
+                <span>Version 1.0.0</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
              </div>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-slate-950/30 overflow-y-auto p-8">
+        <div className="flex-1 bg-slate-950 overflow-y-auto p-8 custom-scrollbar">
           
           {/* Game Settings */}
           {activeTab === 'game' && (
             <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
-                <h3 className="text-lg font-medium text-white mb-1">{t('GameSettings')}</h3>
-                <p className="text-sm text-slate-400">Oyun deneyiminizi özelleştirin.</p>
+                <h3 className="text-2xl font-bold text-white mb-2">{t('GameSettings')}</h3>
+                <p className="text-slate-400">Oyun deneyiminizi ve tercihlerinizi özelleştirin.</p>
               </div>
               <Separator className="bg-slate-800" />
               
               <div className="grid gap-6">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900/50 border border-slate-800">
-                  <div className="space-y-1">
-                    <Label className="text-base text-slate-200">{t('Disasters')}</Label>
-                    <p className="text-xs text-slate-400">{t('DisastersDesc')}</p>
+                <div className="flex items-center justify-between p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">
+                  <div className="space-y-1.5">
+                    <Label className="text-base font-medium text-slate-200">{t('Disasters')}</Label>
+                    <p className="text-sm text-slate-400">{t('DisastersDesc')}</p>
                   </div>
                   <Switch checked={disastersEnabled} onCheckedChange={setDisastersEnabled} />
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900/50 border border-slate-800">
-                  <div className="space-y-1">
-                    <Label className="text-base text-slate-200">Dil / Language</Label>
-                    <p className="text-xs text-slate-400">Arayüz dilini değiştir</p>
+                <div className="flex items-center justify-between p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">
+                  <div className="space-y-1.5">
+                    <Label className="text-base font-medium text-slate-200">Dil / Language</Label>
+                    <p className="text-sm text-slate-400">Arayüz dilini değiştir</p>
                   </div>
                   <LanguageSelector variant="game" />
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
+                <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-base text-slate-200">{t('ZoomSensitivity')}</Label>
-                    <span className="px-2 py-1 rounded bg-slate-800 text-xs font-mono text-slate-300">{zoomSensitivity}</span>
+                    <Label className="text-base font-medium text-slate-200">{t('ZoomSensitivity')}</Label>
+                    <span className="px-2.5 py-1 rounded-md bg-slate-800 text-sm font-mono text-blue-400 border border-slate-700">{zoomSensitivity}</span>
                   </div>
                   <Slider
                     value={[zoomSensitivity]}
@@ -250,8 +253,9 @@ export function SettingsPanel() {
                     max={10}
                     step={1}
                     onValueChange={(vals) => setZoomSensitivity(vals[0])}
+                    className="py-4"
                   />
-                  <p className="text-xs text-slate-400">{t('ZoomSensitivityDesc')}</p>
+                  <p className="text-sm text-slate-400">{t('ZoomSensitivityDesc')}</p>
                 </div>
               </div>
             </div>
@@ -261,14 +265,14 @@ export function SettingsPanel() {
           {activeTab === 'appearance' && (
             <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
-                <h3 className="text-lg font-medium text-white mb-1">Görünüm</h3>
-                <p className="text-sm text-slate-400">Şehrinizin nasıl görüneceğini seçin.</p>
+                <h3 className="text-2xl font-bold text-white mb-2">Görünüm</h3>
+                <p className="text-slate-400">Şehrinizin görsel stilini ve temasını seçin.</p>
               </div>
               <Separator className="bg-slate-800" />
 
               <div className="space-y-6">
                  <div>
-                    <Label className="text-base text-slate-200 mb-4 block">{t('SpritePack')}</Label>
+                    <Label className="text-base font-medium text-slate-200 mb-4 block">{t('SpritePack')}</Label>
                     <div className="grid grid-cols-2 gap-4">
                       {availableSpritePacks.map((pack) => (
                         <button
@@ -277,7 +281,7 @@ export function SettingsPanel() {
                           className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all text-left ${
                             currentSpritePack.id === pack.id
                               ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/50'
-                              : 'border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-slate-700'
+                              : 'border-slate-800 bg-slate-900 hover:bg-slate-800 hover:border-slate-700'
                           }`}
                         >
                           <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-950 flex-shrink-0 relative shadow-sm border border-white/5">
@@ -295,29 +299,29 @@ export function SettingsPanel() {
                             <div className="text-xs text-slate-500 mt-1 font-mono opacity-70">{pack.id}</div>
                           </div>
                           {currentSpritePack.id === pack.id && (
-                             <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                             <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
                           )}
                         </button>
                       ))}
                     </div>
                  </div>
 
-                 <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
-                    <Label className="text-base text-slate-200 mb-3 block">{t('DayNightMode')}</Label>
-                    <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                 <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">
+                    <Label className="text-base font-medium text-slate-200 mb-4 block">{t('DayNightMode')}</Label>
+                    <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
                       {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
                         <button
                           key={mode}
                           onClick={() => setDayNightMode(mode)}
-                          className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
                             dayNightMode === mode
                               ? 'bg-slate-800 text-white shadow-sm ring-1 ring-slate-700'
                               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                           }`}
                         >
-                          {mode === 'auto' && <><Monitor size={14}/> {t('ModeAuto')}</>}
-                          {mode === 'day' && <><Eye size={14}/> {t('ModeDay')}</>}
-                          {mode === 'night' && <><Globe size={14}/> {t('ModeNight')}</>}
+                          {mode === 'auto' && <><Monitor size={16}/> {t('ModeAuto')}</>}
+                          {mode === 'day' && <><Eye size={16}/> {t('ModeDay')}</>}
+                          {mode === 'night' && <><Globe size={16}/> {t('ModeNight')}</>}
                         </button>
                       ))}
                     </div>
@@ -330,20 +334,20 @@ export function SettingsPanel() {
           {activeTab === 'city' && (
             <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
-                <h3 className="text-lg font-medium text-white mb-1">{t('CityInfo')}</h3>
-                <p className="text-sm text-slate-400">Şehrinizi yönetin, kaydedin veya yükleyin.</p>
+                <h3 className="text-2xl font-bold text-white mb-2">{t('CityInfo')}</h3>
+                <p className="text-slate-400">Şehrinizi yönetin, kaydedin veya yedekleyin.</p>
               </div>
               <Separator className="bg-slate-800" />
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 p-6 rounded-xl bg-gradient-to-br from-slate-900 to-slate-900/50 border border-slate-800 flex items-center justify-between">
+                <div className="col-span-2 p-6 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 flex items-center justify-between shadow-lg">
                    <div>
-                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('CityName')}</div>
-                      <div className="text-2xl font-bold text-white">{cityName}</div>
+                      <div className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">{t('CityName')}</div>
+                      <div className="text-3xl font-bold text-white">{cityName}</div>
                    </div>
                    <div className="text-right">
                       <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('GridSize')}</div>
-                      <div className="text-xl font-mono text-slate-300">{gridSize} x {gridSize}</div>
+                      <div className="text-xl font-mono text-slate-300 bg-slate-950/50 px-3 py-1 rounded-lg border border-slate-700/50">{gridSize} x {gridSize}</div>
                    </div>
                 </div>
 
@@ -352,7 +356,7 @@ export function SettingsPanel() {
                      <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('SavedCities')}</h4>
                      <Button
                         size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20"
                         onClick={() => {
                           saveCity();
                           setSaveCitySuccess(true);
@@ -363,30 +367,30 @@ export function SettingsPanel() {
                       </Button>
                    </div>
                    
-                   <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-2">
+                   <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                       {savedCities.length > 0 ? savedCities.map((city) => (
-                        <div key={city.id} className="group flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800 transition-all">
+                        <div key={city.id} className="group flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-900 hover:border-slate-600 hover:bg-slate-800 transition-all">
                            <div className="min-w-0 flex-1">
                               <div className="font-medium text-slate-200 truncate flex items-center gap-2">
                                 {city.cityName}
-                                {city.id === currentCityId && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Aktif</span>}
+                                {city.id === currentCityId && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">Aktif</span>}
                               </div>
                               <div className="text-xs text-slate-500 mt-1 flex gap-3">
-                                 <span>POP: {formatPopulation(city.population)}</span>
-                                 <span>{formatMoney(city.money)}</span>
+                                 <span className="flex items-center gap-1">POP: <span className="text-slate-300">{formatPopulation(city.population)}</span></span>
+                                 <span className="flex items-center gap-1"><span className="text-emerald-500">₺</span> <span className="text-emerald-400">{formatMoney(city.money).replace('₺','')}</span></span>
                               </div>
                            </div>
                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => loadSavedCity(city.id)}>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700" onClick={() => loadSavedCity(city.id)}>
                                 <Upload size={14} />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-400" onClick={() => deleteSavedCity(city.id)}>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-950/30" onClick={() => deleteSavedCity(city.id)}>
                                 <Trash2 size={14} />
                               </Button>
                            </div>
                         </div>
                       )) : (
-                        <div className="text-center py-8 text-slate-500 text-sm border-2 border-dashed border-slate-800 rounded-xl">
+                        <div className="text-center py-12 text-slate-500 text-sm border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/30">
                           {t('NoSavedCities')}
                         </div>
                       )}
@@ -395,27 +399,27 @@ export function SettingsPanel() {
 
                 <div className="col-span-2 pt-4">
                   {!showNewGameConfirm ? (
-                    <Button variant="destructive" className="w-full" onClick={() => setShowNewGameConfirm(true)}>
+                    <Button variant="destructive" className="w-full bg-red-950/50 hover:bg-red-900 text-red-200 border border-red-900" onClick={() => setShowNewGameConfirm(true)}>
                       {t('NewGame')}
                     </Button>
                   ) : (
-                    <div className="p-4 rounded-xl border border-red-900/50 bg-red-950/20 space-y-3">
-                      <p className="text-sm text-red-400 text-center">{t('NewGameConfirm')}</p>
+                    <div className="p-4 rounded-xl border border-red-900 bg-red-950/30 space-y-3 animate-in zoom-in-95 duration-200">
+                      <p className="text-sm text-red-300 text-center font-medium">{t('NewGameConfirm')}</p>
                       <div className="flex gap-2">
-                        <Button variant="ghost" className="flex-1" onClick={() => setShowNewGameConfirm(false)}>{t('Cancel')}</Button>
-                        <Button variant="destructive" className="flex-1" onClick={() => { newGame('Yeni Şehir', gridSize); setActivePanel('none'); }}>{t('Reset')}</Button>
+                        <Button variant="ghost" className="flex-1 hover:bg-red-950/50 text-red-200" onClick={() => setShowNewGameConfirm(false)}>{t('Cancel')}</Button>
+                        <Button variant="destructive" className="flex-1 bg-red-600 hover:bg-red-500" onClick={() => { newGame('Yeni Şehir', gridSize); setActivePanel('none'); }}>{t('Reset')}</Button>
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div className="col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
-                    <Button variant="outline" className="border-slate-700 hover:bg-slate-800" onClick={handleDownload}>
+                    <Button variant="outline" className="border-slate-700 bg-slate-900 hover:bg-slate-800 hover:text-white" onClick={handleDownload}>
                       <Download className="mr-2 h-4 w-4" /> İndir (.tmc)
                     </Button>
                     <div className="relative">
                       <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".tmc" className="hidden" />
-                      <Button variant="outline" className="w-full border-slate-700 hover:bg-slate-800" onClick={() => fileInputRef.current?.click()}>
+                      <Button variant="outline" className="w-full border-slate-700 bg-slate-900 hover:bg-slate-800 hover:text-white" onClick={() => fileInputRef.current?.click()}>
                         <Upload className="mr-2 h-4 w-4" /> Yükle (.tmc)
                       </Button>
                     </div>
@@ -428,20 +432,20 @@ export function SettingsPanel() {
           {activeTab === 'dev' && (
             <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
                <div>
-                <h3 className="text-lg font-medium text-white mb-1">{t('DevTools')}</h3>
-                <p className="text-sm text-slate-400">Geliştirici araçları ve örnekler.</p>
+                <h3 className="text-2xl font-bold text-white mb-2">{t('DevTools')}</h3>
+                <p className="text-slate-400">Geliştirme ve test araçları.</p>
               </div>
               <Separator className="bg-slate-800" />
               
               <div className="grid grid-cols-2 gap-3">
-                 <Button variant="secondary" onClick={() => setShowSpriteTest(true)}>
-                    Sprite Test
+                 <Button variant="secondary" onClick={() => setShowSpriteTest(true)} className="bg-slate-800 text-slate-200 hover:bg-slate-700">
+                    Sprite Test Panel
                  </Button>
                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                     <Button 
                       key={num} 
                       variant="outline" 
-                      className="border-slate-700 hover:bg-slate-800"
+                      className="border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-300"
                       onClick={async () => {
                         const module = await import(`@/resources/example_state${num === 1 ? '' : `_${num}`}.json`);
                         loadState(JSON.stringify(module.default));

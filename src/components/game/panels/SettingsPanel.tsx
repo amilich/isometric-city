@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
+import { Download, Upload } from 'lucide-react';
 
 // Format a date for display
 function formatDate(timestamp: number): string {
@@ -55,8 +56,7 @@ export function SettingsPanel() {
   const [cityToDelete, setCityToDelete] = useState<SavedCityMeta | null>(null);
   const [cityToRename, setCityToRename] = useState<SavedCityMeta | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [importValue, setImportValue] = useState('');
-  const [exportCopied, setExportCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
   const [savedCityInfo, setSavedCityInfo] = useState(getSavedCityInfo());
@@ -105,26 +105,79 @@ export function SettingsPanel() {
     }, 0);
   }, [showSpriteTest, searchParams, router]);
   
-  const handleCopyExport = async () => {
-    const exported = exportState();
-    await navigator.clipboard.writeText(exported);
-    setExportCopied(true);
-    setTimeout(() => setExportCopied(false), 2000);
-  };
-  
-  const handleImport = () => {
-    setImportError(false);
-    setImportSuccess(false);
-    if (importValue.trim()) {
-      const success = loadState(importValue.trim());
-      if (success) {
-        setImportSuccess(true);
-        setImportValue('');
-        setTimeout(() => setImportSuccess(false), 2000);
-      } else {
-        setImportError(true);
-      }
+  const handleDownload = () => {
+    const exportedString = exportState();
+    let exportedData;
+    try {
+      exportedData = JSON.parse(exportedString);
+    } catch (e) {
+      console.error("Failed to parse export state", e);
+      return;
     }
+
+    const metadata = {
+      author: "Trunçgil My City User",
+      downloadedAt: new Date().toISOString(),
+      gameVersion: "1.0",
+      source: "Trunçgil My City"
+    };
+
+    const finalData = {
+      ...exportedData,
+      metadata
+    };
+
+    const content = "/*Trunçgil My City Structure File*/\n" + JSON.stringify(finalData, null, 2);
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const fileName = (state.cityName || 'city').replace(/[^a-z0-9]/gi, '_').toLowerCase(); 
+    a.download = `${fileName}.tmc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (!content) return;
+
+      const header = "/*Trunçgil My City Structure File*/";
+      if (!content.startsWith(header)) {
+        setImportError(true);
+        setTimeout(() => setImportError(false), 3000);
+        return;
+      }
+
+      const jsonString = content.substring(header.length).trim();
+      
+      try {
+        const data = JSON.parse(jsonString);
+        const success = loadState(JSON.stringify(data));
+        if (success) {
+          setImportSuccess(true);
+          setTimeout(() => setImportSuccess(false), 2000);
+          setActivePanel('none');
+        } else {
+          setImportError(true);
+          setTimeout(() => setImportError(false), 3000);
+        }
+      } catch (err) {
+        console.error(err);
+        setImportError(true);
+        setTimeout(() => setImportError(false), 3000);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
   
   return (
@@ -487,37 +540,34 @@ export function SettingsPanel() {
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">{t('ExportGame')}</div>
                     <Button
                       variant="game-secondary"
-                      className="w-full h-auto py-2 text-xs"
-                      onClick={handleCopyExport}
+                      className="w-full h-auto py-2 text-xs flex items-center justify-center gap-2"
+                      onClick={handleDownload}
                     >
-                      {exportCopied ? '✓ Kopyalandı!' : t('CopyExport')}
+                      <Download size={14} />
+                      İndir (.tmc)
                     </Button>
                   </div>
                   <div>
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">{t('ImportGame')}</div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".tmc"
+                        className="hidden"
+                    />
                     <div className="relative">
-                        <textarea
-                          className="w-full h-[34px] min-h-[34px] bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring overflow-hidden"
-                          placeholder="..."
-                          value={importValue}
-                          onChange={(e) => {
-                            setImportValue(e.target.value);
-                            setImportError(false);
-                            setImportSuccess(false);
-                          }}
-                        />
-                         <Button
+                        <Button
                           variant="game-secondary"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full rounded-l-none"
-                          onClick={handleImport}
-                          disabled={!importValue.trim()}
+                          className="w-full h-auto py-2 text-xs flex items-center justify-center gap-2"
+                          onClick={() => fileInputRef.current?.click()}
                         >
-                          {t('LoadImport')}
+                          <Upload size={14} />
+                          Yükle (.tmc)
                         </Button>
                     </div>
                      {importError && (
-                      <p className="text-red-400 text-[10px] mt-1">Hata!</p>
+                      <p className="text-red-400 text-[10px] mt-1">Hata! Geçersiz dosya.</p>
                     )}
                     {importSuccess && (
                       <p className="text-green-400 text-[10px] mt-1">Başarılı!</p>

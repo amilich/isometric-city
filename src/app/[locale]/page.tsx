@@ -218,10 +218,21 @@ function SkyAnimation() {
 // Saved City Card Component
 function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => void }) {
   const t = useTranslations('HomePage');
+
+  // Rating rengini belirle
+  const getRatingColor = (grade?: string) => {
+    if (!grade) return 'bg-white/10 text-white/50';
+    if (grade.startsWith('A')) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+    if (grade.startsWith('B')) return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+    if (grade.startsWith('C')) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+    if (grade.startsWith('D')) return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+    return 'bg-red-500/20 text-red-400 border-red-500/30';
+  };
+
   return (
     <button
       onClick={onLoad}
-      className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200 group"
+      className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200 group relative pr-12"
     >
       <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm">
         {city.cityName}
@@ -230,6 +241,13 @@ function SavedCityCard({ city, onLoad }: { city: SavedCityMeta; onLoad: () => vo
         <span>{t('population')}: {city.population.toLocaleString()}</span>
         <span>₺{city.money.toLocaleString()}</span>
       </div>
+      
+      {/* Rating Badge */}
+      {city.rating && (
+        <div className={`absolute top-1/2 -translate-y-1/2 right-3 w-8 h-8 flex items-center justify-center rounded-lg border text-sm font-bold ${getRatingColor(city.rating)}`}>
+          {city.rating}
+        </div>
+      )}
     </button>
   );
 }

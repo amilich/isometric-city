@@ -37,3 +37,5 @@ convert "$ICONS_DIR/favicon-16x16.png" "$ICONS_DIR/favicon-32x32.png" "$SOURCE_D
 echo "Tüm icon'lar başarıyla oluşturuldu!"
 ls -la "$ICONS_DIR"
 
+
+

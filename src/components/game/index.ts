@@ -13,7 +13,6 @@ export * from './drawPedestrians';
 export * from './trafficSystem';
 export * from './incidentData';
 export * from './pedestrianSystem';
-export { OverlayModeToggle } from './OverlayModeToggle';
 export { MiniMap } from './MiniMap';
 export { CanvasIsometricGrid } from './CanvasIsometricGrid';
 export type { CanvasIsometricGridProps } from './CanvasIsometricGrid';

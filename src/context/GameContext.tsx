@@ -1056,6 +1056,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Save current city to the multi-save system
   const saveCity = useCallback(() => {
+    // Calculate rating
+    const avgRating = (state.stats.happiness + state.stats.health + state.stats.education + state.stats.safety + state.stats.environment) / 5;
+    const grade = avgRating >= 90 ? 'A+' : avgRating >= 80 ? 'A' : avgRating >= 70 ? 'B' : avgRating >= 60 ? 'C' : avgRating >= 50 ? 'D' : 'F';
+
     const cityMeta: SavedCityMeta = {
       id: state.id,
       cityName: state.cityName,
@@ -1065,6 +1069,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       month: state.month,
       gridSize: state.gridSize,
       savedAt: Date.now(),
+      rating: grade,
+      ratingScore: avgRating,
     };
     
     // Save the city state

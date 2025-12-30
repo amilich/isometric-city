@@ -352,6 +352,8 @@ export interface SavedCityMeta {
   month: number;
   gridSize: number;
   savedAt: number; // timestamp
+  rating?: string; // City grade (A+, A, B, C, D, F)
+  ratingScore?: number; // Numeric score 0-100
 }
 
 // Building evolution paths based on zone and level

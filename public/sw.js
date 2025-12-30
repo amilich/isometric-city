@@ -207,3 +207,5 @@ self.addEventListener('sync', (event) => {
 
 console.log('[Service Worker] Loaded successfully');
 
+
+

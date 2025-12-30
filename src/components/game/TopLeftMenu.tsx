@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
+  SearchIcon,
   SettingsIcon,
   ChartIcon,
   AdvisorIcon,
@@ -20,6 +21,7 @@ import {
 import { OverlayMode } from './types';
 import { ActivePanel } from '@/types/game';
 import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
+import { openCommandMenu } from '@/components/ui/CommandMenu';
 import { useTranslations } from 'next-intl';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -65,6 +67,25 @@ export const TopLeftMenu = React.memo(function TopLeftMenu({
   return (
     <div className="absolute top-4 left-4 z-40 flex flex-col gap-4">
       <div className="flex items-center gap-3">
+        {/* Search / Command Menu */}
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="w-12 h-12 rounded-full shadow-lg border-2 transition-all bg-slate-900/90 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                onClick={() => openCommandMenu()}
+              >
+                <SearchIcon size={24} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white">
+              <p>{t('Search') || 'Ara'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         {/* Overlays Toggle */}
         <div className="relative" ref={overlayRef}>
           <TooltipProvider delayDuration={0}>

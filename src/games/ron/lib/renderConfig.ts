@@ -565,15 +565,108 @@ export const AGE_VERTICAL_OFFSETS: Partial<Record<Age, Partial<Record<RoNBuildin
   },
 };
 
+// Construction sprite positions - maps building types to IsoCity construction sheet
+// Sheet: /assets/sprites_red_water_new_construction.png (5x6 grid)
+// Based on visual audit of construction sprites - December 2025
+export const CONSTRUCTION_SPRITE_MAP: Partial<Record<RoNBuildingType, { row: number; col: number }>> = {
+  // City buildings (3x3) - use large institutional construction
+  city_center: { row: 5, col: 2 },    // Government building framing
+  small_city: { row: 5, col: 2 },     // Government building framing
+  large_city: { row: 5, col: 2 },     // Government building framing  
+  major_city: { row: 5, col: 2 },     // Government building framing
+  
+  // Economic buildings (1x1) - use small/industrial construction
+  farm: { row: 0, col: 2 },           // Small house framing
+  woodcutters_camp: { row: 3, col: 0 }, // Tree with scaffolding
+  granary: { row: 4, col: 0 },        // Basement pit
+  lumber_mill: { row: 3, col: 4 },    // Industrial brick framing
+  mine: { row: 2, col: 1 },           // Large circular excavation
+  smelter: { row: 2, col: 4 },        // Industrial framework
+  market: { row: 3, col: 1 },         // Brick building framing
+  oil_well: { row: 2, col: 4 },       // Industrial framework
+  oil_platform: { row: 2, col: 4 },   // Industrial framework
+  refinery: { row: 4, col: 4 },       // Large industrial complex
+  
+  // Knowledge buildings (2x2) - use institutional construction
+  library: { row: 5, col: 3 },        // Columned building framing
+  university: { row: 2, col: 0 },     // Columns/institutional
+  temple: { row: 3, col: 2 },         // Curved/domed framing
+  senate: { row: 5, col: 2 },         // Government building framing
+  
+  // Military buildings (2x2) - use walled/fortress construction
+  barracks: { row: 0, col: 0 },       // Foundation pit with scaffolding
+  stable: { row: 1, col: 4 },         // House framing with walls
+  siege_factory: { row: 2, col: 2 },  // Steel framework
+  dock: { row: 4, col: 1 },           // Circular base/harbor
+  auto_plant: { row: 4, col: 3 },     // Industrial construction
+  factory: { row: 4, col: 3 },        // Industrial construction
+  airbase: { row: 5, col: 0 },        // Airport/runway construction
+  missile_silo: { row: 4, col: 0 },   // Deep pit
+  
+  // Defensive buildings - use fortress/castle construction
+  tower: { row: 0, col: 4 },          // Detailed framework
+  stockade: { row: 0, col: 2 },       // Small house framing
+  fort: { row: 3, col: 3 },           // Castle/fortress framework
+  fortress: { row: 3, col: 3 },       // Castle/fortress framework
+  castle: { row: 3, col: 3 },         // Castle/fortress framework
+  bunker: { row: 4, col: 0 },         // Basement pit
+  lookout: { row: 0, col: 4 },        // Detailed framework
+  observation_post: { row: 0, col: 4 }, // Detailed framework
+  redoubt: { row: 0, col: 0 },        // Foundation pit
+  
+  // Anti-air buildings
+  air_defense_gun: { row: 2, col: 2 }, // Steel framework
+  radar_air_defense: { row: 2, col: 2 }, // Steel framework
+  sam_installation: { row: 2, col: 2 }, // Steel framework
+};
+
+// Default construction positions by building size (fallback)
+export const CONSTRUCTION_SIZE_DEFAULTS = {
+  small: { row: 0, col: 2 },   // 1x1 buildings
+  medium: { row: 2, col: 0 },  // 2x2 buildings
+  large: { row: 4, col: 3 },   // 3x3+ buildings
+};
+
 // Construction-specific vertical offset adjustments
 // These are ADDITIONAL offsets for buildings under construction (scaffolding sprites)
 // Positive = shift down, Negative = shift up (crop from top)
 export const CONSTRUCTION_VERTICAL_OFFSETS: Partial<Record<RoNBuildingType, number>> = {
+  // City buildings - align with final building position
+  city_center: -0.5,
+  small_city: -0.5,
+  large_city: -0.5,
+  major_city: -0.5,
+  
+  // Economic buildings
   lumber_mill: 0.3,     // Shift down 0.3 tiles
   smelter: 0.1,         // Slight shift for construction
   market: 0.0,          // Will use cropTop instead
+  granary: 0.2,         // Shift down slightly
+  mine: 0.0,            // Neutral
+  oil_well: 0.5,        // Shift down - derrick is tall
+  refinery: 0.3,        // Shift down
+  woodcutters_camp: 0.2, // Shift down
+  
+  // Knowledge buildings
+  library: -0.3,        // Shift up for columned building
+  university: -0.2,     // Shift up
+  temple: -0.2,         // Shift up for domed building
+  senate: -0.3,         // Shift up
+  
+  // Military buildings
+  barracks: 0.0,        // Neutral
+  stable: 0.0,          // Neutral
   auto_plant: -0.3,     // Shift up 0.3 tiles
-  oil_well: 1.0,        // Shift down 1 full tile
+  factory: 0.0,         // Neutral
+  dock: 0.3,            // Shift down for harbor
+  airbase: -0.5,        // Shift up for airport
+  
+  // Defensive buildings
+  tower: 0.0,           // Neutral
+  fort: -0.3,           // Shift up
+  fortress: -0.3,       // Shift up
+  castle: -0.5,         // Shift up for large castle
+  bunker: 0.2,          // Shift down
 };
 
 // Construction-specific top cropping (fraction of sprite height to remove from top)

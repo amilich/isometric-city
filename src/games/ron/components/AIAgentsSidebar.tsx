@@ -72,7 +72,8 @@ function ToolResultEntry({ entry }: { entry: AIConversationEntry }) {
   const isSuccess = entry.content.includes('success') || entry.content.includes('Success') || 
                    entry.content.includes('Built') || entry.content.includes('Queued') ||
                    entry.content.includes('Assigned') || entry.content.includes('Reassigned') ||
-                   entry.content.startsWith('##') || entry.content.includes('## YOUR');
+                   entry.content.includes('Sent') || entry.content.includes('Trained') ||
+                   entry.content.startsWith('##') || entry.content.includes('## ');
   
   // Truncate preview to first line or first 80 chars
   const getPreview = (content: string) => {

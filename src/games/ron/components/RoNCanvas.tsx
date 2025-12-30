@@ -8,7 +8,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useRoN } from '../context/RoNContext';
-import { AGE_SPRITE_PACKS, BUILDING_SPRITE_MAP, BUILDING_VERTICAL_OFFSETS, AGE_VERTICAL_OFFSETS, BUILDING_SCALES, AGE_BUILDING_SCALES, CONSTRUCTION_VERTICAL_OFFSETS, CONSTRUCTION_CROP_TOP, CONSTRUCTION_CROP_BOTTOM, AGE_BUILDING_CROP, PLAYER_COLORS, getAgeSpritePosition } from '../lib/renderConfig';
+import { AGE_SPRITE_PACKS, BUILDING_SPRITE_MAP, BUILDING_VERTICAL_OFFSETS, AGE_VERTICAL_OFFSETS, BUILDING_SCALES, AGE_BUILDING_SCALES, CONSTRUCTION_SPRITE_MAP, CONSTRUCTION_SIZE_DEFAULTS, CONSTRUCTION_VERTICAL_OFFSETS, CONSTRUCTION_CROP_TOP, CONSTRUCTION_CROP_BOTTOM, AGE_BUILDING_CROP, PLAYER_COLORS, getAgeSpritePosition } from '../lib/renderConfig';
 import { BUILDING_STATS } from '../types/buildings';
 import { AGE_ORDER } from '../types/ages';
 import { RoNBuildingType } from '../types/buildings';
@@ -2349,34 +2349,38 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
               const constructionSprite = getCachedImage(ISOCITY_CONSTRUCTION_PATH, true);
               
               if (isUnderConstruction && constructionSprite) {
-                // Use IsoCity construction sprite sheet with FIXED positions
+                // Use IsoCity construction sprite sheet with building-specific positions
                 // The construction sheet has the same 5x6 grid layout as IsoCity sprites
-                // We use generic construction/scaffolding sprites, NOT age-sheet positions
                 const constrCols = 5;
                 const constrRows = 6;
                 const constrTileWidth = constructionSprite.width / constrCols;
                 const constrTileHeight = constructionSprite.height / constrRows;
                 
-                // Map building types to appropriate IsoCity construction sprites
-                // Based on building size and category:
-                // - Small buildings (1x1): Use row 0, col 2 (small residential)
-                // - Medium buildings (2x2): Use row 2, col 0 (medium house)
-                // - Large buildings (3x3): Use row 4, col 3 (commercial/industrial)
-                // - Military: Use row 3, col 1 (office/institutional)
+                // Use building-specific construction sprite if available, otherwise fallback to size-based defaults
                 let constrRow = 2;
                 let constrCol = 0;
                 
-                const buildingStats = BUILDING_STATS[buildingType];
-                const bSize = buildingStats?.size || { width: 1, height: 1 };
-                const isLarge = bSize.width >= 3 || bSize.height >= 3;
-                const isSmall = bSize.width <= 1 && bSize.height <= 1;
-                
-                if (isSmall) {
-                  constrRow = 0; constrCol = 2; // Small house construction
-                } else if (isLarge) {
-                  constrRow = 4; constrCol = 3; // Large building construction
+                const specificPos = CONSTRUCTION_SPRITE_MAP[buildingType];
+                if (specificPos) {
+                  constrRow = specificPos.row;
+                  constrCol = specificPos.col;
                 } else {
-                  constrRow = 2; constrCol = 0; // Medium building construction
+                  // Fallback to size-based defaults
+                  const buildingStats = BUILDING_STATS[buildingType];
+                  const bSize = buildingStats?.size || { width: 1, height: 1 };
+                  const isLarge = bSize.width >= 3 || bSize.height >= 3;
+                  const isSmall = bSize.width <= 1 && bSize.height <= 1;
+                  
+                  if (isSmall) {
+                    constrRow = CONSTRUCTION_SIZE_DEFAULTS.small.row;
+                    constrCol = CONSTRUCTION_SIZE_DEFAULTS.small.col;
+                  } else if (isLarge) {
+                    constrRow = CONSTRUCTION_SIZE_DEFAULTS.large.row;
+                    constrCol = CONSTRUCTION_SIZE_DEFAULTS.large.col;
+                  } else {
+                    constrRow = CONSTRUCTION_SIZE_DEFAULTS.medium.row;
+                    constrCol = CONSTRUCTION_SIZE_DEFAULTS.medium.col;
+                  }
                 }
                 
                 // Apply construction-specific cropping

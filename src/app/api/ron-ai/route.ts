@@ -615,154 +615,35 @@ ${(() => {
 ## YOUR MILITARY:
 ${condensed.myUnits.filter(u => u.type !== 'citizen').map(u => `${u.id}`).join(', ') || 'none'}
 
-## YOUR TERRITORY (x: ${condensed.territoryBounds.minX}-${condensed.territoryBounds.maxX}, y: ${condensed.territoryBounds.minY}-${condensed.territoryBounds.maxY}):
-⚠️ You can ONLY build within these coordinates! Building outside will FAIL.
+## TERRITORY: x ${condensed.territoryBounds.minX}-${condensed.territoryBounds.maxX}, y ${condensed.territoryBounds.minY}-${condensed.territoryBounds.maxY}
 
-## BUILDABLE TILES (all within your territory, NOT on water/forest/resources):
-General (near city): ${(condensed.emptyTerritoryTiles || []).slice(0, 5).map(t => `(${t.x},${t.y})`).join(', ') || 'NO VALID TILES'}
-🏙️ For small_city (FAR from cities!): ${(condensed.tilesForCityExpansion || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none available'}
-🌲 For woodcutters_camp (near forest): ${(condensed.tilesNearForest || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none in territory'}
-⛏️ For mine (near metal): ${(condensed.tilesNearMetal || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none in territory'}
-🛢️ For oil_well (near oil): ${(condensed.tilesNearOil || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none in territory'}
+## BUILD LOCATIONS:
+General: ${(condensed.emptyTerritoryTiles || []).slice(0, 5).map(t => `(${t.x},${t.y})`).join(', ') || 'none'}
+For city expansion: ${(condensed.tilesForCityExpansion || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none'}
+Near forest: ${(condensed.tilesNearForest || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none'}
+Near metal: ${(condensed.tilesNearMetal || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none'}
+Near oil: ${(condensed.tilesNearOil || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none'}
 
-## ENEMY INFO:
-Buildings: ${condensed.enemyBuildings.slice(0, 5).map(b => `${b.type}@(${b.x},${b.y})`).join(', ') || 'none visible'}
+## ENEMIES:
+Buildings: ${condensed.enemyBuildings.slice(0, 8).map(b => `${b.type}@(${b.x},${b.y})`).join(', ') || 'none visible'}
 Units: ${condensed.enemyUnits.slice(0, 8).map(u => `${u.type}@(${Math.round(u.x)},${Math.round(u.y)})`).join(', ') || 'none visible'}
-${(() => {
-  // Detect if enemy units are near AI buildings (attack warning)
-  const myBuildingPositions = condensed.myBuildings.map(b => ({ x: b.x, y: b.y, type: b.type }));
-  const threats: string[] = [];
-  for (const enemy of condensed.enemyUnits) {
-    for (const building of myBuildingPositions) {
-      const dist = Math.sqrt(Math.pow(enemy.x - building.x, 2) + Math.pow(enemy.y - building.y, 2));
-      if (dist < 15) {
-        threats.push(`⚠️ UNDER ATTACK! Enemy ${enemy.type} near your ${building.type} at (${building.x},${building.y})!`);
-      }
-    }
-  }
-  // Also check if enemy near AI units
-  for (const enemy of condensed.enemyUnits) {
-    for (const myUnit of condensed.myUnits) {
-      const dist = Math.sqrt(Math.pow(enemy.x - myUnit.x, 2) + Math.pow(enemy.y - myUnit.y, 2));
-      if (dist < 10 && myUnit.type === 'citizen') {
-        threats.push(`⚠️ Your worker at (${Math.round(myUnit.x)},${Math.round(myUnit.y)}) is in danger from enemy ${enemy.type}!`);
-      }
-    }
-  }
-  return threats.length > 0 ? '\n🚨 THREATS:\n' + threats.slice(0, 3).join('\n') : '';
-})()}
+Cities: ${condensed.enemyBuildings.filter(b => ['city_center', 'small_city', 'large_city', 'major_city'].includes(b.type)).map(c => `(${c.x},${c.y})`).join(', ') || 'none'}
 
-## WHAT YOU CAN DO RIGHT NOW:
+## TRAINING BUILDINGS:
 ${(() => {
-  const res = p.resources as Record<string, number>;
-  const popCapped = p.population >= p.populationCap;
-  
-  // Use canAfford helper with actual BUILDING_STATS costs
-  const canTrainCitizen = !popCapped && canAfford(res, UNIT_STATS.citizen.cost);
-  const canTrainMilitia = !popCapped && canAfford(res, UNIT_STATS.infantry.cost);
-  const canBuildFarm = canAfford(res, BUILDING_STATS.farm.cost);
-  const canBuildWoodcutter = canAfford(res, BUILDING_STATS.woodcutters_camp.cost);
-  const canBuildMine = canAfford(res, BUILDING_STATS.mine.cost);
-  const canBuildMarket = canAfford(res, BUILDING_STATS.market.cost);
-  const canBuildBarracks = canAfford(res, BUILDING_STATS.barracks.cost);
-  const canBuildLibrary = canAfford(res, BUILDING_STATS.library.cost);
-  const canBuildSmelter = canAfford(res, BUILDING_STATS.smelter.cost);
-  const canBuildSmallCity = canAfford(res, BUILDING_STATS.small_city.cost);
-  
   const cityTypes = ['city_center', 'small_city', 'large_city', 'major_city'];
   const cities = condensed.myBuildings.filter(b => cityTypes.includes(b.type));
-  const barracksBuildings = condensed.myBuildings.filter(b => b.type === 'barracks');
+  const barracks = condensed.myBuildings.filter(b => b.type === 'barracks');
+  const stables = condensed.myBuildings.filter(b => b.type === 'stable');
+  const docks = condensed.myBuildings.filter(b => b.type === 'dock');
   
-  // Get small_city cost for display
-  const cityCost = BUILDING_STATS.small_city.cost;
+  const locs: string[] = [];
+  if (cities.length > 0) locs.push(`Citizens: ${cities.map(c => `(${c.x},${c.y})`).join(', ')}`);
+  if (barracks.length > 0) locs.push(`Infantry/Ranged: ${barracks.map(b => `(${b.x},${b.y})`).join(', ')}`);
+  if (stables.length > 0) locs.push(`Cavalry: ${stables.map(b => `(${b.x},${b.y})`).join(', ')}`);
+  if (docks.length > 0) locs.push(`Naval: ${docks.map(b => `(${b.x},${b.y})`).join(', ')}`);
   
-  let result = '';
-  
-  if (popCapped) {
-    result += `⛔ POPULATION CAPPED (${p.population}/${p.populationCap}) - CANNOT TRAIN UNITS!\n`;
-    if (canBuildSmallCity) {
-      // CRITICAL: AI can build city NOW - use expansion tiles (far from existing cities!)
-      const expansionSpot = condensed.tilesForCityExpansion?.[0] || condensed.emptyTerritoryTiles?.[0];
-      result += `\n`;
-      result += `   BUILD small_city RIGHT NOW!\n`;
-      result += `   You have: ${Math.round(p.resources.wood)}w / ${Math.round(p.resources.metal)}m / ${Math.round(p.resources.gold)}g\n`;
-      result += `   Cost: ${BUILDING_COSTS.small_city} - YOU CAN AFFORD IT!\n`;
-      if (expansionSpot) {
-        result += `   >>> CALL: build(building_type="small_city", x=${expansionSpot.x}, y=${expansionSpot.y}) <<<\n`;
-        result += `   (This location is FAR from your existing cities for optimal territory spread)\n`;
-      }
-      result += `\n`;
-    } else {
-      result += `   Your ONLY goal: Build small_city (need ${BUILDING_COSTS.small_city})\n`;
-      result += `   Have: ${Math.round(p.resources.wood)}w / ${Math.round(p.resources.metal)}m / ${Math.round(p.resources.gold)}g\n`;
-      const needWood = Math.max(0, (cityCost.wood || 0) - p.resources.wood);
-      const needMetal = Math.max(0, (cityCost.metal || 0) - p.resources.metal);
-      const needGold = Math.max(0, (cityCost.gold || 0) - p.resources.gold);
-      const needs = [];
-      if (needWood > 0) needs.push(`${Math.round(needWood)}w`);
-      if (needMetal > 0) needs.push(`${Math.round(needMetal)}m`);
-      if (needGold > 0) needs.push(`${Math.round(needGold)}g`);
-      if (needs.length > 0) {
-        result += `   Still need: ${needs.join(' + ')}\n`;
-      }
-      result += `   DO NOT BUILD ANYTHING ELSE - save for city!\n`;
-    }
-  } else {
-    result += `### TRAINING (pop ${p.population}/${p.populationCap}):\n`;
-    if (canTrainCitizen && cities.length > 0) {
-      result += `  ✅ Can train citizens (${UNIT_COSTS.citizen}) at: ${cities.map(c => `(${c.x},${c.y})`).join(', ')}\n`;
-    }
-    if (canTrainMilitia && barracksBuildings.length > 0) {
-      result += `  ✅ Can train infantry (${UNIT_COSTS.infantry}) at: ${barracksBuildings.map(b => `(${b.x},${b.y})`).join(', ')}\n`;
-    }
-    if (!canTrainCitizen) result += `  ❌ Cannot train citizen (need ${UNIT_COSTS.citizen})\n`;
-    if (!canTrainMilitia && barracksBuildings.length > 0) result += `  ❌ Cannot train infantry (need ${UNIT_COSTS.infantry})\n`;
-  }
-  
-  result += `\n### BUILDINGS YOU CAN AFFORD:\n`;
-  if (canBuildSmallCity) result += `  ✅ small_city (${BUILDING_COSTS.small_city}) - PRIORITY IF POP CAPPED!\n`;
-  if (canBuildFarm) result += `  ✅ farm (${BUILDING_COSTS.farm})\n`;
-  if (canBuildWoodcutter) result += `  ✅ woodcutters_camp (${BUILDING_COSTS.woodcutters_camp})\n`;
-  if (canBuildMine) result += `  ✅ mine (${BUILDING_COSTS.mine})\n`;
-  if (canBuildMarket) result += `  ✅ market (${BUILDING_COSTS.market}) - for gold income\n`;
-  if (canBuildBarracks) result += `  ✅ barracks (${BUILDING_COSTS.barracks})\n`;
-  if (canBuildLibrary) result += `  ✅ library (${BUILDING_COSTS.library}) - for knowledge/age advancement\n`;
-  if (canBuildSmelter) result += `  ✅ smelter (${BUILDING_COSTS.smelter}) - boosts metal gathering\n`;
-  
-  // Industrial Age+ Oil buildings
-  const isIndustrialPlus = ['industrial', 'modern'].includes(p.age);
-  if (isIndustrialPlus) {
-    const canBuildOilWell = canAfford(res, BUILDING_STATS.oil_well.cost);
-    const canBuildRefinery = canAfford(res, BUILDING_STATS.refinery.cost);
-    const oilWells = condensed.myBuildings.filter(b => b.type === 'oil_well');
-    const refineries = condensed.myBuildings.filter(b => b.type === 'refinery');
-    const oilDeposits = condensed.resourceTiles.oilDeposits;
-    
-    result += `\n### 🛢️ OIL ECONOMY (Industrial Age+):\n`;
-    result += `  Current oil: ${Math.round(p.resources.oil)} (rate: ${p.resourceRates.oil.toFixed(1)}/s)\n`;
-    result += `  Oil wells: ${oilWells.length} | Refineries: ${refineries.length}\n`;
-    
-    if (oilWells.length === 0 && oilDeposits.length > 0) {
-      result += `  ⚠️ NO OIL WELLS! Build oil_well NEAR oil deposits!\n`;
-      result += `  📍 Oil deposits at: ${oilDeposits.map((d: { x: number; y: number }) => `(${d.x},${d.y})`).join(', ')}\n`;
-    }
-    if (refineries.length === 0 && oilWells.length > 0) {
-      result += `  ⚠️ NO REFINERY! Build refinery to boost oil +50%!\n`;
-    }
-    
-    if (canBuildOilWell) result += `  ✅ oil_well (${BUILDING_COSTS.oil_well}) - build near oil deposit!\n`;
-    if (canBuildRefinery) result += `  ✅ refinery (${BUILDING_COSTS.refinery}) - boosts oil gathering!\n`;
-    
-    if (oilWells.length > 0) {
-      result += `  👷 Assign workers to oil_wells for oil income!\n`;
-    }
-  }
-  
-  if (!canBuildFarm && !canBuildWoodcutter) {
-    result += `  ❌ Not enough resources for any buildings!\n`;
-  }
-  
-  return result;
+  return locs.join('\n') || 'none';
 })()}
 
 ## MILITARY STATUS:
@@ -788,47 +669,6 @@ ${(() => {
   }
   
   return lines.join('\n');
-})()}
-
-## AVAILABLE BUILD LOCATIONS (guaranteed valid - NOT on water/forest/resources):
-${(() => {
-  const cityTile = condensed.emptyTerritoryTiles?.[0];
-  const forestTile = condensed.tilesNearForest?.[0];
-  const metalTile = condensed.tilesNearMetal?.[0];
-  const oilTile = condensed.tilesNearOil?.[0];
-  const oilDeposits = condensed.resourceTiles?.oilDeposits || [];
-  
-  const locations: string[] = [];
-  if (cityTile) locations.push(`General: (${cityTile.x},${cityTile.y})`);
-  if (forestTile) locations.push(`Near forest: (${forestTile.x},${forestTile.y})`);
-  if (metalTile) locations.push(`Near metal: (${metalTile.x},${metalTile.y})`);
-  if (oilTile) locations.push(`Near oil: (${oilTile.x},${oilTile.y})`);
-  if (oilDeposits.length > 0) locations.push(`Oil deposit locations: ${oilDeposits.slice(0,3).map((t: {x: number, y: number}) => `(${t.x},${t.y})`).join(', ')}`);
-  
-  return locations.join('\n') || 'No valid build locations in territory';
-})()}
-
-## TRAINING LOCATIONS:
-${(() => {
-  const cities = condensed.myBuildings.filter(b => ['city_center', 'small_city', 'large_city', 'major_city'].includes(b.type));
-  const barracks = condensed.myBuildings.filter(b => b.type === 'barracks');
-  
-  const locs: string[] = [];
-  if (cities.length > 0) locs.push(`Citizens at: ${cities.slice(0,5).map(c => `(${c.x},${c.y})`).join(', ')}`);
-  if (barracks.length > 0) locs.push(`Militia at: ${barracks.slice(0,5).map(b => `(${b.x},${b.y})`).join(', ')}`);
-  
-  return locs.join('\n') || 'No training buildings';
-})()}
-
-## RESOURCE RATES:
-Food: ${p.resourceRates.food.toFixed(1)}/s | Wood: ${p.resourceRates.wood.toFixed(1)}/s | Metal: ${p.resourceRates.metal.toFixed(1)}/s | Gold: ${p.resourceRates.gold.toFixed(1)}/s
-${(() => {
-  const warnings: string[] = [];
-  if (p.resourceRates.food === 0) warnings.push('No food income');
-  if (p.resourceRates.wood === 0) warnings.push('No wood income');
-  if (p.resourceRates.metal === 0) warnings.push('No metal income');
-  if (p.resourceRates.gold === 0) warnings.push('No gold income');
-  return warnings.length > 0 ? `Note: ${warnings.join(', ')}` : '';
 })()}
 
 `;

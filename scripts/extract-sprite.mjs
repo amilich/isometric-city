@@ -46,61 +46,76 @@ const AGE_SPRITE_PACKS = {
 };
 
 // Age-specific building sprite overrides (matching renderConfig.ts AGE_BUILDING_OVERRIDES)
+// Updated December 2025 based on comprehensive sprite audit
 const AGE_OVERRIDES = {
   classical: {
     city_center: { row: 5, col: 2 },
-    market: { row: 3, col: 2 },
+    market: { row: 3, col: 3 },  // Fixed: actual market stalls (was 3,2 villa)
     library: { row: 0, col: 1 },
     university: { row: 2, col: 0 },
     temple: { row: 2, col: 2 },
     senate: { row: 1, col: 4 },
-    barracks: { row: 1, col: 3 },  // Walled military compound with watchtowers
-    stable: { row: 3, col: 4 },
+    barracks: { row: 1, col: 3 },
+    stable: { row: 3, col: 1 },   // Fixed: house with garden (was 3,4 shop)
     dock: { row: 4, col: 4 },
     mine: { row: 4, col: 2 },
     smelter: { row: 4, col: 3 },
     granary: { row: 5, col: 0 },
-    lumber_mill: { row: 4, col: 1 },
+    lumber_mill: { row: 4, col: 0 },  // Fixed: workshop (was 4,1 industrial)
     factory: { row: 4, col: 0 },
+    siege_factory: { row: 4, col: 0 },  // Fixed: workshop (was 4,1 industrial)
     tower: { row: 2, col: 1 },
-    fort: { row: 2, col: 4 },
-    fortress: { row: 3, col: 0 },
+    fort: { row: 1, col: 3 },     // Fixed: walled compound (was 2,4 lighthouse)
+    fortress: { row: 1, col: 3 }, // Fixed: walled compound (was 3,0 Pantheon)
+    stockade: { row: 4, col: 0 }, // Fixed: basic fortification
+    woodcutters_camp: { row: 4, col: 0 }, // Fixed: rustic workshop
     castle: { row: 0, col: 0 },
   },
   medieval: {
     city_center: { row: 1, col: 0 },
+    small_city: { row: 1, col: 0 },
+    large_city: { row: 1, col: 0 },
+    major_city: { row: 0, col: 0 },
     market: { row: 2, col: 0 },
     library: { row: 0, col: 4 },
     university: { row: 3, col: 2 },
     temple: { row: 5, col: 3 },
-    senate: { row: 5, col: 2 },
+    senate: { row: 1, col: 4 },   // Fixed: Gothic abbey (was 5,2 dome)
     barracks: { row: 1, col: 3 },
     stable: { row: 1, col: 2 },
     dock: { row: 5, col: 0 },
-    mine: { row: 4, col: 2 },
+    mine: { row: 4, col: 3 },     // Fixed: mining complex (was 4,2 forge)
     smelter: { row: 0, col: 2 },
     granary: { row: 4, col: 1 },
-    lumber_mill: { row: 0, col: 3 },
+    lumber_mill: { row: 3, col: 3 }, // Fixed: barn/workshop (was 0,3 watchtower)
     tower: { row: 0, col: 1 },
     fort: { row: 5, col: 1 },
+    fortress: { row: 5, col: 1 }, // Fixed: distinct from barracks
+    stockade: { row: 3, col: 1 }, // Added: Tudor building
     castle: { row: 0, col: 0 },
+    siege_factory: { row: 4, col: 2 }, // Fixed: forge (was 3,4 barn)
   },
   enlightenment: {
     city_center: { row: 0, col: 0 },
-    market: { row: 0, col: 3 },
+    market: { row: 4, col: 0 },   // Fixed: shop (was 0,3 fire station)
     library: { row: 0, col: 4 },
     university: { row: 2, col: 0 },
     temple: { row: 5, col: 3 },
     senate: { row: 5, col: 2 },
-    barracks: { row: 1, col: 4 },
+    barracks: { row: 1, col: 3 }, // Fixed: compound (was 1,4 civic)
     stable: { row: 5, col: 0 },
     dock: { row: 2, col: 4 },
     mine: { row: 4, col: 3 },
-    smelter: { row: 3, col: 3 },
+    smelter: { row: 4, col: 2 },  // Fixed: factory (was 3,3 cottage!)
     granary: { row: 4, col: 1 },
     lumber_mill: { row: 2, col: 2 },
     factory: { row: 0, col: 2 },
-    fort: { row: 5, col: 1 },
+    fort: { row: 1, col: 3 },     // Fixed: compound (was 5,1 bridge!)
+    tower: { row: 1, col: 3 },    // Fixed: compound (was 2,1 water tower)
+    fortress: { row: 1, col: 3 },
+    stockade: { row: 1, col: 3 },
+    bunker: { row: 4, col: 2 },   // Fixed: industrial (was 4,0 shop)
+    castle: { row: 5, col: 2 },   // Fixed: capitol (was 0,0 mansion)
   },
   industrial: {
     city_center: { row: 5, col: 2 },
@@ -110,7 +125,7 @@ const AGE_OVERRIDES = {
     temple: { row: 1, col: 4 },
     senate: { row: 5, col: 3 },
     barracks: { row: 5, col: 1 },
-    stable: { row: 3, col: 1 },
+    stable: { row: 5, col: 1 },   // Fixed: transport depot (was 3,1 with bleeding)
     dock: { row: 5, col: 0 },
     mine: { row: 4, col: 2 },
     smelter: { row: 4, col: 3 },
@@ -119,31 +134,42 @@ const AGE_OVERRIDES = {
     factory: { row: 0, col: 1 },
     oil_well: { row: 2, col: 4 },
     refinery: { row: 4, col: 4 },
-    bunker: { row: 4, col: 0 },
+    bunker: { row: 0, col: 3 },   // Fixed: fortified brick (was 4,0 warehouse)
     fort: { row: 0, col: 3 },
+    fortress: { row: 0, col: 3 },
+    castle: { row: 0, col: 3 },   // Fixed: institutional (was 0,0 brownstones)
+    auto_plant: { row: 4, col: 2 },
   },
   modern: {
     city_center: { row: 0, col: 1 },
     small_city: { row: 0, col: 0 },
     large_city: { row: 0, col: 1 },
+    major_city: { row: 5, col: 2 },
     market: { row: 3, col: 4 },
     library: { row: 5, col: 3 },
     university: { row: 2, col: 0 },
-    temple: { row: 0, col: 4 },
+    temple: { row: 5, col: 3 },   // Fixed: classical (was 0,4 hospital!)
     senate: { row: 5, col: 2 },
-    barracks: { row: 0, col: 3 },  // Fire station (institutional building)
+    barracks: { row: 1, col: 3 }, // Fixed: police compound (was 0,3 fire station)
     airbase: { row: 5, col: 0 },
-    dock: { row: 5, col: 0 },
-    smelter: { row: 0, col: 2 },
+    dock: { row: 4, col: 1 },     // Fixed: warehouse
+    smelter: { row: 4, col: 3 },
     factory: { row: 4, col: 2 },
-    oil_well: { row: 4, col: 4 },
-    refinery: { row: 4, col: 3 },
-    auto_plant: { row: 1, col: 4 },
+    oil_well: { row: 4, col: 4 }, // Fixed: refinery (was 2,4 rocket!)
+    refinery: { row: 4, col: 4 },
+    auto_plant: { row: 4, col: 2 },
     bunker: { row: 1, col: 3 },
-    // fort/fortress use Medieval fallback in game - not in Modern overrides
-    stable: { row: 4, col: 1 },  // Warehouse/logistics with trucks
+    tower: { row: 1, col: 3 },    // Fixed: security (was 2,1 water tower)
+    fort: { row: 1, col: 3 },
+    fortress: { row: 1, col: 3 },
+    stockade: { row: 1, col: 3 },
+    castle: { row: 1, col: 3 },
+    stable: { row: 4, col: 1 },
     granary: { row: 4, col: 1 },
     siege_factory: { row: 4, col: 1 },
+    lumber_mill: { row: 4, col: 1 },
+    woodcutters_camp: { row: 4, col: 1 },
+    mine: { row: 4, col: 2 },
   },
 };
 

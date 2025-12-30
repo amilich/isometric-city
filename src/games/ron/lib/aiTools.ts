@@ -11,6 +11,42 @@ import { UnitType, UNIT_STATS, Unit, getUnitStatsForAge } from '../types/units';
 import { AGE_ORDER, AGE_REQUIREMENTS } from '../types/ages';
 import { ResourceType } from '../types/resources';
 import { getTerritoryOwner, extractCityCenters } from './simulation';
+
+/**
+ * Check if a tile is occupied by a multi-tile building.
+ * Buildings are stored on the origin tile, so we search backward to find footprints.
+ */
+function isTileOccupiedByBuilding(grid: RoNTile[][], gridX: number, gridY: number, gridSize: number): boolean {
+  // Check if this tile itself has a building
+  const tile = grid[gridY]?.[gridX];
+  if (tile?.building) return true;
+  
+  // Check if this tile is part of a larger building's footprint
+  // Search in a 4x4 area backward (to catch 3x3 and 4x4 buildings)
+  for (let dy = 0; dy < 4; dy++) {
+    for (let dx = 0; dx < 4; dx++) {
+      const checkY = gridY - dy;
+      const checkX = gridX - dx;
+      if (checkX < 0 || checkY < 0 || checkX >= gridSize || checkY >= gridSize) continue;
+      
+      const checkTile = grid[checkY]?.[checkX];
+      if (checkTile?.building) {
+        const buildingType = checkTile.building.type as RoNBuildingType;
+        const stats = BUILDING_STATS[buildingType];
+        if (stats) {
+          const width = stats.size?.width || 1;
+          const height = stats.size?.height || 1;
+          // Check if (gridX, gridY) falls within this building's footprint
+          if (gridX >= checkX && gridX < checkX + width &&
+              gridY >= checkY && gridY < checkY + height) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
 import type OpenAI from 'openai';
 
 // Tool definitions for OpenAI Responses SDK
@@ -462,12 +498,14 @@ export function generateCondensedGameState(
       };
     })(),
     // Filter empty tiles that can fit a 2x2 building (barracks, etc.)
-    // SORT BY DISTANCE TO CITY CENTER - prefer building near your base!
+    // Find buildable tiles spread throughout territory (with randomization)
     emptyTerritoryTiles: (() => {
-      // Check if a tile can be built on - must match executeBuildBuilding validation!
-      const canBuildable = (tile: typeof state.grid[0][0] | undefined): boolean => {
+      // Check if a tile can be built on - uses isTileOccupiedByBuilding for multi-tile buildings!
+      const canBuildable = (x: number, y: number): boolean => {
+        const tile = state.grid[y]?.[x];
         if (!tile) return false;
-        if (tile.building) return false;
+        // Use multi-tile aware check
+        if (isTileOccupiedByBuilding(state.grid, x, y, state.gridSize)) return false;
         if (tile.terrain === 'water' || tile.terrain === 'forest' || tile.terrain === 'mountain') return false;
         if (tile.forestDensity > 0) return false; // Trees block building
         if (tile.hasMetalDeposit) return false; // Metal deposits block building
@@ -482,33 +520,38 @@ export function generateCondensedGameState(
       const primaryCity = myCityCenters[0] || { x: state.gridSize / 2, y: state.gridSize / 2 };
       
       const empty = territoryTiles.filter(t => {
-        const tile = state.grid[t.y]?.[t.x];
-        if (!canBuildable(tile)) return false;
+        if (!canBuildable(t.x, t.y)) return false;
         
-        // Check if a 2x2 building can fit here (barracks is 2x2)
-        // All 4 tiles must be buildable
-        const right = state.grid[t.y]?.[t.x + 1];
-        const down = state.grid[t.y + 1]?.[t.x];
-        const diag = state.grid[t.y + 1]?.[t.x + 1];
-        
-        const has2x2Space = canBuildable(right) && canBuildable(down) && canBuildable(diag);
-        return has2x2Space;
+        // Check if a 3x3 building can fit here (small_city is 3x3)
+        // All 9 tiles must be buildable for maximum flexibility
+        for (let dy = 0; dy < 3; dy++) {
+          for (let dx = 0; dx < 3; dx++) {
+            if (!canBuildable(t.x + dx, t.y + dy)) return false;
+          }
+        }
+        return true;
       });
       
-      // SORT by distance to primary city center - closer tiles first!
-      empty.sort((a, b) => {
+      // Shuffle for randomization, then sort by distance (keeps variety but prefers closer)
+      // Use tick-based seed for deterministic but varying results each turn
+      const shuffled = [...empty].sort(() => Math.sin(state.tick * 0.1 + empty.length) - 0.5);
+      
+      // Take tiles from different areas of territory by spacing them out significantly
+      const spaced: typeof empty = [];
+      for (const t of shuffled) {
+        // Require at least 5 tiles apart to spread buildings throughout territory
+        const tooClose = spaced.some(s => Math.abs(s.x - t.x) < 5 && Math.abs(s.y - t.y) < 5);
+        if (!tooClose) spaced.push(t);
+        if (spaced.length >= 8) break;
+      }
+      
+      // Sort final results by distance to city for display
+      spaced.sort((a, b) => {
         const distA = Math.sqrt((a.x - primaryCity.x) ** 2 + (a.y - primaryCity.y) ** 2);
         const distB = Math.sqrt((b.x - primaryCity.x) ** 2 + (b.y - primaryCity.y) ** 2);
         return distA - distB;
       });
       
-      // Space out tiles to avoid suggesting clustered locations, but keep close ones
-      const spaced: typeof empty = [];
-      for (const t of empty) {
-        const tooClose = spaced.some(s => Math.abs(s.x - t.x) < 3 && Math.abs(s.y - t.y) < 3);
-        if (!tooClose) spaced.push(t);
-        if (spaced.length >= 10) break;
-      }
       return spaced;
     })(),
     // Find tiles ADJACENT to forests (good for woodcutters_camp)
@@ -521,7 +564,9 @@ export function generateCondensedGameState(
       
       const filtered = territoryTiles.filter(t => {
         const tile = state.grid[t.y]?.[t.x];
-        if (!tile || tile.building) return false;
+        if (!tile) return false;
+        // Use multi-tile aware building check
+        if (isTileOccupiedByBuilding(state.grid, t.x, t.y, state.gridSize)) return false;
         if (tile.terrain === 'water' || tile.terrain === 'forest' || tile.terrain === 'mountain') return false;
         if (tile.forestDensity > 0) return false;
         if (tile.hasMetalDeposit || tile.hasOilDeposit) return false;
@@ -561,7 +606,9 @@ export function generateCondensedGameState(
       
       const filtered = territoryTiles.filter(t => {
         const tile = state.grid[t.y]?.[t.x];
-        if (!tile || tile.building) return false;
+        if (!tile) return false;
+        // Use multi-tile aware building check
+        if (isTileOccupiedByBuilding(state.grid, t.x, t.y, state.gridSize)) return false;
         if (tile.terrain === 'water' || tile.terrain === 'forest' || tile.terrain === 'mountain') return false;
         if (tile.forestDensity > 0 || tile.hasMetalDeposit || tile.hasOilDeposit) return false;
         for (let dy = -1; dy <= 1; dy++) {
@@ -600,7 +647,9 @@ export function generateCondensedGameState(
       
       const filtered = territoryTiles.filter(t => {
         const tile = state.grid[t.y]?.[t.x];
-        if (!tile || tile.building) return false;
+        if (!tile) return false;
+        // Use multi-tile aware building check
+        if (isTileOccupiedByBuilding(state.grid, t.x, t.y, state.gridSize)) return false;
         if (tile.terrain === 'water' || tile.terrain === 'forest' || tile.terrain === 'mountain') return false;
         if (tile.forestDensity > 0 || tile.hasMetalDeposit || tile.hasOilDeposit) return false;
         for (let dy = -1; dy <= 1; dy++) {

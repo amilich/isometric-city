@@ -1233,6 +1233,9 @@ function updateUnits(state: RoNGameState): RoNGameState {
           updatedUnit.attackCooldown = 0;
           
           console.log(`[AUTO-ENGAGE] ${updatedUnit.type}(${updatedUnit.id}) engaging ${closestEnemy.type}(${closestEnemy.id})`);
+        } else if (state.tick % 100 === 0) {
+          // Debug: why didn't we auto-engage?
+          console.log(`[NO AUTO-ENGAGE] ${updatedUnit.type}(${updatedUnit.id}) task=${updatedUnit.task}, hasNearbyEnemies=true, isAlreadyAttackingUnit=${!!isAlreadyAttackingUnit}, isAlreadyAttackingBuilding=${isAlreadyAttackingBuilding}, isMovingByPlayerCommand=${isMovingByPlayerCommand}`);
         }
       }
     }
@@ -1482,7 +1485,7 @@ function updateUnits(state: RoNGameState): RoNGameState {
               damageToApply.set(targetUnit.id, currentDamage + damage);
               
               // Log every attack
-              console.log(`[UNIT ATTACK] ${updatedUnit.type}(${updatedUnit.id}) -> ${targetUnit.type}(${targetUnit.id}), dmg=${damage}, dist=${dist.toFixed(1)}, range=${attackRange}`);
+              // console.log(`[UNIT ATTACK] ${updatedUnit.type}(${updatedUnit.id}) -> ${targetUnit.type}(${targetUnit.id}), dmg=${damage}, dist=${dist.toFixed(1)}, range=${attackRange}`);
               
               updatedUnit.attackCooldown = ATTACK_COOLDOWN;
               updatedUnit.lastAttackTime = state.tick;
@@ -1490,8 +1493,8 @@ function updateUnits(state: RoNGameState): RoNGameState {
               updatedUnit.isMoving = false; // Stop moving while attacking
             } else {
               // Move toward target - must get in range first
-              if (state.tick % 100 === 0) {
-                console.log(`[MOVING TO TARGET] ${updatedUnit.type}(${updatedUnit.id}) -> ${targetUnit.type}(${targetUnit.id}), dist=${dist.toFixed(1)}, range=${attackRange}`);
+              if (state.tick % 50 === 0) {
+                console.log(`[CHASING] ${updatedUnit.type}(${updatedUnit.id}) -> ${targetUnit.type}(${targetUnit.id}), dist=${dist.toFixed(1)}, need range=${attackRange}, unitPos=(${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}), targetPos=(${targetUnit.x.toFixed(1)},${targetUnit.y.toFixed(1)})`);
               }
               updatedUnit.targetX = targetUnit.x;
               updatedUnit.targetY = targetUnit.y;
@@ -1696,21 +1699,30 @@ function updateUnits(state: RoNGameState): RoNGameState {
       }
     }
     
-    // Apply any accumulated damage to this unit from attacks this tick
-    const damageTaken = damageToApply.get(updatedUnit.id) || 0;
+    // Add to temp array - damage will be applied AFTER all attacks are processed
+    // This fixes the bug where unit A attacks B but if A is processed first,
+    // B's counter-attack damage was never applied to A
+    newUnits.push(updatedUnit);
+  }
+  
+  // SECOND PASS: Apply all accumulated damage to units
+  // This must happen AFTER all attacks are processed so damage is symmetric
+  const finalUnits: Unit[] = [];
+  for (const unit of newUnits) {
+    const damageTaken = damageToApply.get(unit.id) || 0;
     if (damageTaken > 0) {
-      updatedUnit.health -= damageTaken;
+      unit.health -= damageTaken;
       // Debug log combat damage
-      console.log(`[COMBAT] ${updatedUnit.type} (${updatedUnit.id}) took ${damageTaken} damage, hp=${updatedUnit.health}/${updatedUnit.maxHealth}`);
+      console.log(`[COMBAT] ${unit.type} (${unit.id}) took ${damageTaken} damage, hp=${unit.health}/${unit.maxHealth}`);
     }
     
     // Only add if still alive
-    if (updatedUnit.health > 0) {
-      newUnits.push(updatedUnit);
+    if (unit.health > 0) {
+      finalUnits.push(unit);
     } else {
       // Unit died - log it and track for population decrease
-      console.log(`[UNIT DIED] ${updatedUnit.type} (${updatedUnit.id}) at (${updatedUnit.x.toFixed(1)},${updatedUnit.y.toFixed(1)}), ownerId=${updatedUnit.ownerId}`);
-      deadUnitOwners.push(updatedUnit.ownerId);
+      console.log(`[UNIT DIED] ${unit.type} (${unit.id}) at (${unit.x.toFixed(1)},${unit.y.toFixed(1)}), ownerId=${unit.ownerId}`);
+      deadUnitOwners.push(unit.ownerId);
     }
   }
   
@@ -1759,7 +1771,7 @@ function updateUnits(state: RoNGameState): RoNGameState {
     );
   }
   
-  return { ...state, units: newUnits, grid: newGrid, players: newPlayers };
+  return { ...state, units: finalUnits, grid: newGrid, players: newPlayers };
 }
 
 /**

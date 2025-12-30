@@ -129,19 +129,19 @@ export const BUILDING_STATS: Record<RoNBuildingType, BuildingStats> = {
   city_center: { 
     cost: { wood: 200, gold: 100 }, 
     maxHealth: 2000, 
-    buildTime: 50, 
-    minAge: 'classical', 
+    buildTime: 50,
+    minAge: 'classical',
     size: { width: 3, height: 3 },
-    providesHousing: 20,  // Doubled!
+    providesHousing: 10,  // Reduced by 50%
     visionRange: 8,
   },
-  small_city: { 
+  small_city: {
     cost: { wood: 400, gold: 200, metal: 100 }, 
     maxHealth: 3000, 
     buildTime: 75, 
     minAge: 'classical', 
     size: { width: 3, height: 3 },
-    providesHousing: 40,  // Doubled!
+    providesHousing: 20,  // Reduced by 50%
     visionRange: 10,
   },
   large_city: { 
@@ -150,7 +150,7 @@ export const BUILDING_STATS: Record<RoNBuildingType, BuildingStats> = {
     buildTime: 100, 
     minAge: 'medieval', 
     size: { width: 3, height: 3 },
-    providesHousing: 70,  // Doubled!
+    providesHousing: 35,  // Reduced by 50%
     visionRange: 12,
   },
   major_city: { 
@@ -159,7 +159,7 @@ export const BUILDING_STATS: Record<RoNBuildingType, BuildingStats> = {
     buildTime: 125, 
     minAge: 'enlightenment', 
     size: { width: 3, height: 3 },
-    providesHousing: 100,  // Doubled!
+    providesHousing: 50,  // Reduced by 50%
     visionRange: 15,
   },
   

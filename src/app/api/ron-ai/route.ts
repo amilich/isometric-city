@@ -300,16 +300,17 @@ CITY DEVELOPMENT (PRIORITY!):
 
 ECONOMY PRIORITY:
 1. Build farm + woodcutters_camp near each city
-2. Train citizens continuously from ALL your cities
-3. Build mine near metal, market for gold, library for knowledge
-4. BUILD BARRACKS at each city! More barracks = faster army production
+2. Build mine near metal, market for gold, library for knowledge
+3. BUILD military facilities at each city
+4. Make sure each city is well rounded and laid out with farms, mines, woodcutting facilities, markets, libraries, etc.
 
-MILITARY:
-- BUILD MORE BARRACKS if enemy has more military! Each barracks trains 1 unit at a time.
-- Have 10+ military? ATTACK enemy cities!
+MILITARY (CRITICAL!):
+- BALANCE: Make sure you have some of your population as military
+- BUILD barracks units if enemy has more military! Each barracks trains 1 unit at a time.
+- Have 10+ military? Start attacking enemy buildings!
 - DEFENSE: If Threat Level is HIGH/CRITICAL, send military to intercept enemies!
 
-TURN ORDER: get_game_state → build small_city if affordable → build economy buildings → build barracks → train citizens/infantry → attack → assign_workers
+TURN ORDER: get_game_state → assign_workers, build small_city if affordable → build economy buildings → build barracks → train citizens/infantry → attack
 EXPAND with cities! ATTACK enemies! DEFEND when threatened!`;
 
 interface AIAction {

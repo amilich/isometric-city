@@ -177,8 +177,8 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
   classical: {
     // City - Row 5, Col 2 is temple (good city center)
     city_center: { row: 5, col: 2 },
-    // Market - Row 3, Col 2 is open-air market with stalls
-    market: { row: 3, col: 2 },
+    // Market - Row 3, Col 3 is actual market stalls with awnings (was 3,2 villa)
+    market: { row: 3, col: 3 },
     // Library - Row 0, Col 1 is Parthenon-style temple - impressive!
     library: { row: 0, col: 1 },
     // University - Row 2, Col 0 is theater/amphitheater (cultural/education)
@@ -189,8 +189,8 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
     senate: { row: 1, col: 4 },
     // Barracks - Row 1, Col 3 is WALLED MILITARY COMPOUND with watchtowers!
     barracks: { row: 1, col: 3 },
-    // Stable - Row 3, Col 4 is small temple/cart area
-    stable: { row: 3, col: 4 },
+    // Stable - Row 3, Col 1 is house with garden (was 3,4 shop - inappropriate)
+    stable: { row: 3, col: 1 },
     // Dock - Row 4, Col 4 is dock with crane
     dock: { row: 4, col: 4 },
     // Mine - Row 4, Col 2 is quarry
@@ -199,24 +199,34 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
     smelter: { row: 4, col: 3 },
     // Granary - Row 5, Col 0 is warehouse
     granary: { row: 5, col: 0 },
-    // Lumber mill - Row 4, Col 1 is industrial complex
-    lumber_mill: { row: 4, col: 1 },
+    // Lumber mill - Row 4, Col 0 is period-appropriate workshop (was 4,1 industrial)
+    lumber_mill: { row: 4, col: 0 },
     // Factory - Row 4, Col 0 is workshop
     factory: { row: 4, col: 0 },
-    // Siege factory - Row 4, Col 1 is industrial complex
-    siege_factory: { row: 4, col: 1 },
+    // Siege factory - Row 4, Col 0 is artisan workshop (was 4,1 industrial)
+    siege_factory: { row: 4, col: 0 },
     // Tower - Row 2, Col 1 is watchtower
     tower: { row: 2, col: 1 },
-    // Fort - Row 2, Col 4 is lighthouse/tower
-    fort: { row: 2, col: 4 },
-    // Fortress - Row 3, Col 0 is Pantheon-style rotunda
-    fortress: { row: 3, col: 0 },
+    // Fort - Row 1, Col 3 is walled compound (was 2,4 lighthouse)
+    fort: { row: 1, col: 3 },
+    // Fortress - Row 1, Col 3 is walled compound (was 3,0 Pantheon)
+    fortress: { row: 1, col: 3 },
+    // Stockade - Row 4, Col 0 is basic fortification (was 0,1 Parthenon)
+    stockade: { row: 4, col: 0 },
+    // Woodcutters camp - Row 4, Col 0 is rustic workshop (was 3,0 Pantheon)
+    woodcutters_camp: { row: 4, col: 0 },
     // Castle - Row 0, Col 0 is large palace
     castle: { row: 0, col: 0 },
   },
   medieval: {
     // City - Row 1, Col 0 is walled courtyard/garden
     city_center: { row: 1, col: 0 },
+    // Small city - same as city_center
+    small_city: { row: 1, col: 0 },
+    // Large city - same as city_center
+    large_city: { row: 1, col: 0 },
+    // Major city - castle for progression
+    major_city: { row: 0, col: 0 },
     // Market - Row 2, Col 0 is market square with stalls
     market: { row: 2, col: 0 },
     // Library - Row 0, Col: 4 is church/chapel
@@ -225,36 +235,40 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
     university: { row: 3, col: 2 },
     // Temple - Row 5, Col 3 is gothic cathedral
     temple: { row: 5, col: 3 },
-    // Senate - Row 5, Col: 2 is classical dome building
-    senate: { row: 5, col: 2 },
+    // Senate - Row 1, Col 4 is Gothic abbey (was 5,2 anachronistic dome)
+    senate: { row: 1, col: 4 },
     // Barracks - Row 1, Col 3 is walled fortress compound
     barracks: { row: 1, col: 3 },
     // Stable - Row 1, Col 2 is horse paddock - PERFECT!
     stable: { row: 1, col: 2 },
     // Dock - Row 5, Col 0 is waterfront building
     dock: { row: 5, col: 0 },
-    // Mine - Row 4, Col 2 is mining complex with hoist
-    mine: { row: 4, col: 2 },
+    // Mine - Row 4, Col 3 is mining complex with hoist (was 4,2 forge)
+    mine: { row: 4, col: 3 },
     // Smelter - Row 0, Col 2 is windmill + forge
     smelter: { row: 0, col: 2 },
     // Granary - Row 4, Col 1 is large barn
     granary: { row: 4, col: 1 },
-    // Lumber mill - Row 0, Col 3 is windmill
-    lumber_mill: { row: 0, col: 3 },
+    // Lumber mill - Row 3, Col 3 is barn/workshop (was 0,3 watchtower)
+    lumber_mill: { row: 3, col: 3 },
     // Tower - Row 0, Col 1 is stone keep
     tower: { row: 0, col: 1 },
     // Fort - Row 5, Col 1 is stone fortress
     fort: { row: 5, col: 1 },
+    // Fortress - Row 5, Col 1 is stone fortress (distinct from barracks)
+    fortress: { row: 5, col: 1 },
+    // Stockade - Row 3, Col 1 is Tudor building with fenced area
+    stockade: { row: 3, col: 1 },
     // Castle - Row 0, Col 0 is gray stone castle
     castle: { row: 0, col: 0 },
-    // Siege factory - Row 3, Col 4 is workshop
-    siege_factory: { row: 3, col: 4 },
+    // Siege factory - Row 4, Col 2 is forge (was 3,4 barn)
+    siege_factory: { row: 4, col: 2 },
   },
   enlightenment: {
     // City - Row 0, Col 0 is Georgian mansion
     city_center: { row: 0, col: 0 },
-    // Market - Row 0, Col 3 is colonnade building
-    market: { row: 0, col: 3 },
+    // Market - Row 4, Col 0 is shop building (was 0,3 fire station)
+    market: { row: 4, col: 0 },
     // Library - Row 0, Col 4 is classical columns building
     library: { row: 0, col: 4 },
     // University - Row 2, Col 0 is OBSERVATORY - perfect for Age of Science!
@@ -263,24 +277,34 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
     temple: { row: 5, col: 3 },
     // Senate - Row 5, Col 2 is domed capitol
     senate: { row: 5, col: 2 },
-    // Barracks - Row 1, Col 4 is civic building with courtyard
-    barracks: { row: 1, col: 4 },
+    // Barracks - Row 1, Col 3 is brick compound (was 1,4 civic/museum)
+    barracks: { row: 1, col: 3 },
     // Stable - Row 5, Col 0 is stagecoach station - PERFECT!
     stable: { row: 5, col: 0 },
-    // Dock - Row 2, Col 4 is amphitheater with harbor
+    // Dock - Row 2, Col 4 is lighthouse with harbor
     dock: { row: 2, col: 4 },
     // Mine - Row 4, Col 3 is stone mill
     mine: { row: 4, col: 3 },
-    // Smelter - Row 3, Col 3 is blacksmith forge
-    smelter: { row: 3, col: 3 },
+    // Smelter - Row 4, Col 2 is factory building (was 3,3 cottage!)
+    smelter: { row: 4, col: 2 },
     // Granary - Row 4, Col 1 is warehouse with cart
     granary: { row: 4, col: 1 },
     // Lumber mill - Row 2, Col 2 is watermill
     lumber_mill: { row: 2, col: 2 },
     // Factory - Row 0, Col 2 is early factory with waterwheel
     factory: { row: 0, col: 2 },
-    // Fort - Row 5, Col 1 is stone arch/tunnel
-    fort: { row: 5, col: 1 },
+    // Fort - Row 1, Col 3 is compound (was 5,1 bridge!)
+    fort: { row: 1, col: 3 },
+    // Tower - Row 1, Col 3 is compound (was 2,1 water tower)
+    tower: { row: 1, col: 3 },
+    // Fortress - Row 1, Col 3 is compound (or use medieval fallback)
+    fortress: { row: 1, col: 3 },
+    // Stockade - Row 1, Col 3 is compound (was 0,1 townhouse)
+    stockade: { row: 1, col: 3 },
+    // Bunker - Row 4, Col 2 is industrial building (was 4,0 shop)
+    bunker: { row: 4, col: 2 },
+    // Castle - Row 5, Col 2 is grand capitol (was 0,0 same as city_center)
+    castle: { row: 5, col: 2 },
   },
   industrial: {
     // City - Row 5, Col 2 is grand city hall with clock tower
@@ -297,8 +321,8 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
     senate: { row: 5, col: 3 },
     // Barracks - Row 5, Col 1 is large hangar/military depot
     barracks: { row: 5, col: 1 },
-    // Stable - Row 3, Col 1 is Victorian house (carriage house feel)
-    stable: { row: 3, col: 1 },
+    // Stable - Row 5, Col 1 is transport depot (was 3,1 with bleeding)
+    stable: { row: 5, col: 1 },
     // Dock - Row 5, Col 0 is train station
     dock: { row: 5, col: 0 },
     // Mine - Row 4, Col 2 is mining complex
@@ -317,12 +341,16 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
     refinery: { row: 4, col: 4 },
     // Siege factory - Row 4, Col 1 is factory
     siege_factory: { row: 4, col: 1 },
-    // Bunker - Row 4, Col 0 is warehouse/fortified
-    bunker: { row: 4, col: 0 },
+    // Bunker - Row 0, Col 3 is gray brick fortified building (was 4,0 warehouse)
+    bunker: { row: 0, col: 3 },
     // Fort - Row 0, Col 3 is gray brick building (fortified look)
     fort: { row: 0, col: 3 },
-    // Auto plant - Row 4, Col 0 is large industrial facility
-    auto_plant: { row: 4, col: 0 },
+    // Fortress - Row 0, Col 3 is gray brick building
+    fortress: { row: 0, col: 3 },
+    // Castle - Row 0, Col 3 is gray brick institutional building (was 0,0 brownstones)
+    castle: { row: 0, col: 3 },
+    // Auto plant - Row 4, Col 2 is industrial manufacturing facility
+    auto_plant: { row: 4, col: 2 },
   },
   modern: {
     // City - Row 0, Col 1 is tall skyscraper
@@ -331,26 +359,58 @@ export const AGE_BUILDING_OVERRIDES: Record<Age, Partial<Record<RoNBuildingType,
     small_city: { row: 0, col: 0 },
     // Large city - Row 0, Col 1 dark skyscraper
     large_city: { row: 0, col: 1 },
+    // Major city - Row 5, Col 2 is capitol building
+    major_city: { row: 5, col: 2 },
     // Market - Row 3, Col 4 is shop building
     market: { row: 3, col: 4 },
-    // Library - Row 5, Col: 3 is classical columns building
+    // Library - Row 5, Col 3 is classical columns building
     library: { row: 5, col: 3 },
     // University - Row 2, Col 0 is government/campus complex
     university: { row: 2, col: 0 },
-    // Temple - Row 0, Col 4 is modern church
-    temple: { row: 0, col: 4 },
+    // Temple - Row 5, Col 3 is classical columns building (was 0,4 hospital!)
+    temple: { row: 5, col: 3 },
     // Senate - Row 5, Col 2 is domed capitol - PERFECT!
     senate: { row: 5, col: 2 },
-    // Barracks - Row 0, Col 3 is FIRE STATION (institutional brick building)
-    barracks: { row: 0, col: 3 },
+    // Barracks - Row 1, Col 3 is police compound (was 0,3 fire station)
+    barracks: { row: 1, col: 3 },
     // Airbase - Row 5, Col 0 is AIRPORT with runway! Use native sprite
     airbase: { row: 5, col: 0 },
     // Auto plant - Row 4, Col 2 is industrial manufacturing facility
     auto_plant: { row: 4, col: 2 },
+    // Smelter - Row 4, Col 3 is industrial steel facility
+    smelter: { row: 4, col: 3 },
+    // Factory - Row 4, Col 2 is industrial factory
+    factory: { row: 4, col: 2 },
     // Granary - Row 4, Col 1 is warehouse/logistics
     granary: { row: 4, col: 1 },
     // Stable - Row 4, Col 1 is warehouse/logistics depot
     stable: { row: 4, col: 1 },
+    // Dock - Row 4, Col 1 is warehouse for modern port logistics
+    dock: { row: 4, col: 1 },
+    // Lumber mill - Row 4, Col 1 is warehouse for lumber logistics
+    lumber_mill: { row: 4, col: 1 },
+    // Woodcutters camp - Row 4, Col 1 is warehouse for lumber logistics
+    woodcutters_camp: { row: 4, col: 1 },
+    // Tower - Row 1, Col 3 is security compound (was 2,1 water tower)
+    tower: { row: 1, col: 3 },
+    // Fort - Row 1, Col 3 is security/police compound
+    fort: { row: 1, col: 3 },
+    // Fortress - Row 1, Col 3 is security compound
+    fortress: { row: 1, col: 3 },
+    // Stockade - Row 1, Col 3 is security compound
+    stockade: { row: 1, col: 3 },
+    // Castle - Row 1, Col 3 is security compound
+    castle: { row: 1, col: 3 },
+    // Bunker - Row 1, Col 3 is security compound
+    bunker: { row: 1, col: 3 },
+    // Oil well - Row 4, Col 4 is refinery complex (was 2,4 rocket!)
+    oil_well: { row: 4, col: 4 },
+    // Refinery - Row 4, Col 4 is refinery complex
+    refinery: { row: 4, col: 4 },
+    // Mine - Row 4, Col 2 is industrial facility
+    mine: { row: 4, col: 2 },
+    // Siege factory - Row 4, Col 1 is warehouse
+    siege_factory: { row: 4, col: 1 },
   },
 };
 
@@ -498,12 +558,45 @@ export const CONSTRUCTION_CROP_BOTTOM: Partial<Record<RoNBuildingType, number>> 
 
 // Age-specific cropping for FINISHED buildings (not construction)
 // Format: { age: { building: { cropTop: fraction, cropBottom: fraction } } }
+// Based on comprehensive sprite audit - December 2025
 export const AGE_BUILDING_CROP: Partial<Record<Age, Partial<Record<RoNBuildingType, { cropTop?: number; cropBottom?: number }>>>> = {
+  classical: {
+    university: { cropTop: 0.05 },      // Minor bleeding at top
+    barracks: { cropTop: 0.05 },        // Minor bleeding at top
+    tower: { cropTop: 0.05 },           // Minor bleeding at top
+    market: { cropTop: 0.10 },          // Bleeding from above
+  },
+  medieval: {
+    market: { cropTop: 0.12 },          // Bleeding from above
+    university: { cropTop: 0.10 },      // Bleeding from above
+    barracks: { cropTop: 0.05 },        // Minor bleeding
+    granary: { cropTop: 0.05 },         // Minor bleeding
+  },
+  enlightenment: {
+    university: { cropTop: 0.05 },      // Minor bleeding at top
+    dock: { cropTop: 0.05 },            // Minor bleeding at top
+    mine: { cropTop: 0.05 },            // Minor bleeding at top
+    granary: { cropTop: 0.05 },         // Minor bleeding at top
+    lumber_mill: { cropTop: 0.08 },     // Bleeding at top
+    woodcutters_camp: { cropTop: 0.10 }, // Bleeding at top
+  },
   industrial: {
-    market: { cropTop: 0.25, cropBottom: 0.1 },  // 0.5 tiles lower at top (~25%), 0.2 lower at bottom (~10%)
-    library: { cropTop: 0.15, cropBottom: 0.15 }, // 0.3 tiles lower at top and bottom (~15% each)
-    university: { cropTop: 0.15, cropBottom: 0.15 }, // 0.3 tiles lower at top and bottom (~15% each)
-    oil_well: { cropTop: 0.2, cropBottom: 0.2 }, // 0.4 tiles lower at top and bottom (~20% each)
+    market: { cropTop: 0.30, cropBottom: 0.1 },  // Severe bleeding (increased from 0.25)
+    library: { cropTop: 0.15, cropBottom: 0.15 }, // Bleeding at top and bottom
+    university: { cropTop: 0.15, cropBottom: 0.15 }, // Bleeding at top and bottom
+    oil_well: { cropTop: 0.25, cropBottom: 0.2 }, // Increased for severe bleeding
+    stable: { cropTop: 0.25, cropBottom: 0.05 },  // Severe bleeding at top
+    mine: { cropTop: 0.15, cropBottom: 0.10 },    // Bleeding at top and bottom
+    siege_factory: { cropTop: 0.15 },             // Bleeding at top
+    tower: { cropTop: 0.10 },                     // Bleeding at top
+    woodcutters_camp: { cropTop: 0.25 },          // Severe bleeding at top
+    temple: { cropTop: 0.08 },                    // Minor bleeding at top
+    fortress: { cropTop: 0.15 },                  // Bleeding at top
+    granary: { cropTop: 0.08 },                   // Minor bleeding at top
+  },
+  modern: {
+    university: { cropTop: 0.05 },      // Minor bleeding at top
+    market: { cropTop: 0.10 },          // Minor bleeding at top and bottom
   },
 };
 

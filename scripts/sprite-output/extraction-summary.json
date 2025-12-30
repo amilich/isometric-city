@@ -180,12 +180,6 @@
     "status": "ok"
   },
   {
-    "building": "amphitheater",
-    "age": "classical",
-    "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/amphitheater_classical.png",
-    "status": "ok"
-  },
-  {
     "building": "road",
     "age": "classical",
     "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/road_classical.png",
@@ -369,12 +363,6 @@
     "building": "bunker",
     "age": "medieval",
     "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/bunker_medieval.png",
-    "status": "ok"
-  },
-  {
-    "building": "amphitheater",
-    "age": "medieval",
-    "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/amphitheater_medieval.png",
     "status": "ok"
   },
   {
@@ -564,12 +552,6 @@
     "status": "ok"
   },
   {
-    "building": "amphitheater",
-    "age": "enlightenment",
-    "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/amphitheater_enlightenment.png",
-    "status": "ok"
-  },
-  {
     "building": "road",
     "age": "enlightenment",
     "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/road_enlightenment.png",
@@ -756,12 +738,6 @@
     "status": "ok"
   },
   {
-    "building": "amphitheater",
-    "age": "industrial",
-    "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/amphitheater_industrial.png",
-    "status": "ok"
-  },
-  {
     "building": "road",
     "age": "industrial",
     "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/road_industrial.png",
@@ -945,12 +921,6 @@
     "building": "bunker",
     "age": "modern",
     "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/bunker_modern.png",
-    "status": "ok"
-  },
-  {
-    "building": "amphitheater",
-    "age": "modern",
-    "path": "/Users/andrewmilich/Documents/GitHub/isometric-city/scripts/sprite-output/amphitheater_modern.png",
     "status": "ok"
   },
   {

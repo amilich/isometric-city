@@ -3,28 +3,59 @@
  * 
  * Renders units with pedestrian-like sprites and task-based activities.
  * Inspired by IsoCity's pedestrian system but simplified for RTS units.
+ * 
+ * ENHANCED: Uses muted, era-appropriate color palettes for realistic appearance.
  */
 
 import { Unit, UnitTask, UNIT_STATS } from '../types/units';
 import { TILE_WIDTH, TILE_HEIGHT, gridToScreen } from '@/components/game/shared';
 
-// Skin tone colors (similar to IsoCity)
-const SKIN_TONES = ['#f5d0c5', '#e8beac', '#d4a574', '#c68642', '#8d5524', '#5c3317'];
+// Realistic skin tone colors - muted, natural tones
+const SKIN_TONES = [
+  '#e8d4c4', // Fair
+  '#d4b8a0', // Light
+  '#c49a6c', // Medium
+  '#a67c52', // Tan
+  '#7a5838', // Brown
+  '#4a3628', // Dark
+];
 
-// Clothing colors for civilians
-const CIVILIAN_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+// Hair colors - natural tones
+const HAIR_COLORS = [
+  '#1a1512', // Black
+  '#3a2a1e', // Dark brown
+  '#5c4033', // Brown
+  '#8b6040', // Light brown
+  '#c4a070', // Blonde
+  '#6a4535', // Auburn
+];
 
-// Hair colors
-const HAIR_COLORS = ['#2c1810', '#4a3728', '#8b4513', '#d4a574', '#f5deb3', '#1a1a1a'];
-
-// Tool colors for different tasks
+// Tool colors for different tasks - realistic wood/metal tones
 const TOOL_COLORS: Record<string, string> = {
-  gather_wood: '#8b4513',   // Brown axe
-  gather_metal: '#6b7280',  // Grey pickaxe
-  gather_food: '#f59e0b',   // Golden scythe
-  gather_gold: '#fbbf24',   // Gold pan
-  gather_oil: '#1f2937',    // Dark oil tool
-  build: '#a16207',         // Hammer
+  gather_wood: '#5c4033',   // Dark wood axe handle
+  gather_metal: '#52525b',  // Steel grey pickaxe
+  gather_food: '#a8a29e',   // Iron scythe
+  gather_gold: '#b8860b',   // Dark gold pan
+  gather_oil: '#27272a',    // Dark metal tool
+  build: '#78716c',         // Steel hammer
+};
+
+// Muted metal colors for weapons and armor
+const METAL_COLORS = {
+  iron: '#6b7280',
+  steel: '#78716c',
+  bronze: '#a67c52',
+  gold: '#b8860b',
+  dark: '#3f3f46',
+};
+
+// Wood and leather colors
+const MATERIAL_COLORS = {
+  woodLight: '#8b7355',
+  woodDark: '#5c4033',
+  leather: '#6b5344',
+  leatherDark: '#4a3728',
+  cloth: '#a8a29e',
 };
 
 /**
@@ -44,7 +75,6 @@ function getUnitIdHash(unitId: string): number {
  */
 function getUnitAppearance(unitId: string): {
   skinTone: string;
-  clothingColor: string;
   hairColor: string;
   hasTool: boolean;
 } {
@@ -53,7 +83,6 @@ function getUnitAppearance(unitId: string): {
   
   return {
     skinTone: SKIN_TONES[absHash % SKIN_TONES.length],
-    clothingColor: CIVILIAN_COLORS[(absHash >> 4) % CIVILIAN_COLORS.length],
     hairColor: HAIR_COLORS[(absHash >> 8) % HAIR_COLORS.length],
     hasTool: true,
   };
@@ -1837,8 +1866,8 @@ function drawDestroyer(ctx: CanvasRenderingContext2D, cx: number, cy: number, co
   ctx.closePath();
   ctx.fill();
   
-  // Main hull - sleek destroyer shape with player color accent
-  ctx.fillStyle = '#5a6270';
+  // Main hull - sleek destroyer shape with realistic navy grey
+  ctx.fillStyle = '#4b5563'; // Naval grey
   ctx.beginPath();
   ctx.moveTo(cx - w * 0.4, cy + bob + h * 0.15);
   ctx.lineTo(cx + w * 0.5, cy + bob - h * 0.1);

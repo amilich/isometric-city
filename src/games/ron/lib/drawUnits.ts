@@ -2,29 +2,68 @@
  * Rise of Nations - Unit Drawing
  * 
  * Renders units with pedestrian-like sprites and task-based activities.
+ * Enhanced with realistic, muted era-appropriate colors and improved effects.
  * Inspired by IsoCity's pedestrian system but simplified for RTS units.
  */
 
 import { Unit, UnitTask, UNIT_STATS } from '../types/units';
 import { TILE_WIDTH, TILE_HEIGHT, gridToScreen } from '@/components/game/shared';
 
-// Skin tone colors (similar to IsoCity)
-const SKIN_TONES = ['#f5d0c5', '#e8beac', '#d4a574', '#c68642', '#8d5524', '#5c3317'];
+// ============================================================================
+// ENHANCED COLOR PALETTES - Realistic, muted, era-appropriate tones
+// ============================================================================
 
-// Clothing colors for civilians
-const CIVILIAN_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+// Skin tone colors - slightly more realistic range
+const SKIN_TONES = ['#f0d5c4', '#e4c4a8', '#c8a882', '#a87850', '#805030', '#503020'];
 
-// Hair colors
-const HAIR_COLORS = ['#2c1810', '#4a3728', '#8b4513', '#d4a574', '#f5deb3', '#1a1a1a'];
+// Clothing colors for civilians - muted, natural-looking tones
+const CIVILIAN_COLORS = ['#4a6a8a', '#5a7a5a', '#8a7a4a', '#8a5a5a', '#6a5a7a', '#7a5a6a'];
 
-// Tool colors for different tasks
+// Hair colors - more natural
+const HAIR_COLORS = ['#2a1a14', '#3a2a20', '#6a4a30', '#8a6a50', '#b8a080', '#1a1a18'];
+
+// Tool colors for different tasks - weathered, used look
 const TOOL_COLORS: Record<string, string> = {
-  gather_wood: '#8b4513',   // Brown axe
-  gather_metal: '#6b7280',  // Grey pickaxe
-  gather_food: '#f59e0b',   // Golden scythe
-  gather_gold: '#fbbf24',   // Gold pan
-  gather_oil: '#1f2937',    // Dark oil tool
-  build: '#a16207',         // Hammer
+  gather_wood: '#6a4020',   // Worn wood axe
+  gather_metal: '#5a5a60',  // Tarnished pickaxe
+  gather_food: '#8a7a40',   // Weathered scythe
+  gather_gold: '#9a8a50',   // Used gold pan
+  gather_oil: '#2a2830',    // Dark oil tool
+  build: '#7a5020',         // Used hammer
+};
+
+// Era-appropriate unit palette modifiers
+export const ERA_PALETTES = {
+  classical: {
+    metal: '#9a8a70',      // Bronze
+    leather: '#7a5a40',    // Leather brown
+    cloth: '#8a8070',      // Linen/wool
+    wood: '#6a5040',       // Natural wood
+  },
+  medieval: {
+    metal: '#7a7a80',      // Iron/steel
+    leather: '#5a4030',    // Darker leather
+    cloth: '#6a6a70',      // Wool/cotton
+    wood: '#5a4535',       // Aged wood
+  },
+  enlightenment: {
+    metal: '#6a6a70',      // Polished steel
+    leather: '#4a3a30',    // Black leather
+    cloth: '#5a5a60',      // Military wool
+    wood: '#4a3a2a',       // Dark walnut
+  },
+  industrial: {
+    metal: '#5a5a60',      // Industrial steel
+    leather: '#3a3030',    // Dark leather
+    cloth: '#4a4a50',      // Khaki/olive
+    wood: '#3a3025',       // Dark wood
+  },
+  modern: {
+    metal: '#4a4a50',      // Modern alloys
+    leather: '#2a2a28',    // Tactical black
+    cloth: '#4a5040',      // OD green/camo
+    wood: '#3a3020',       // Polymer/composite
+  },
 };
 
 /**
@@ -1374,6 +1413,86 @@ function drawSiegeUnit(
 }
 
 /**
+ * Draw enhanced water wake and spray effects for naval units
+ * Creates a V-shaped wake behind the ship with foam particles
+ */
+function drawEnhancedWake(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  scale: number,
+  animPhase: number,
+  isMoving: boolean,
+  size: 'small' | 'medium' | 'large' = 'medium'
+): void {
+  const sizes = {
+    small: { wakeLength: 12, wakeWidth: 6, foamCount: 3 },
+    medium: { wakeLength: 18, wakeWidth: 10, foamCount: 5 },
+    large: { wakeLength: 28, wakeWidth: 16, foamCount: 8 },
+  };
+  const { wakeLength, wakeWidth, foamCount } = sizes[size];
+  
+  // Only draw full wake effects when moving
+  if (!isMoving) {
+    // Still water ripples when stationary
+    ctx.strokeStyle = 'rgba(180, 210, 230, 0.3)';
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i < 2; i++) {
+      const rippleRadius = (6 + i * 4) * scale;
+      const ripplePhase = Math.sin(animPhase * 2 + i * 0.5);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 4 * scale, rippleRadius + ripplePhase, rippleRadius * 0.3 + ripplePhase * 0.3, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    return;
+  }
+  
+  // Wake V-shape (stern waves)
+  ctx.strokeStyle = 'rgba(200, 230, 245, 0.5)';
+  ctx.lineWidth = 1.5 * scale;
+  ctx.lineCap = 'round';
+  
+  // Left wake line
+  ctx.beginPath();
+  ctx.moveTo(cx - 2 * scale, cy + 3 * scale);
+  ctx.lineTo(cx - wakeWidth * scale, cy + wakeLength * scale);
+  ctx.stroke();
+  
+  // Right wake line
+  ctx.beginPath();
+  ctx.moveTo(cx + 2 * scale, cy + 3 * scale);
+  ctx.lineTo(cx + wakeWidth * scale, cy + wakeLength * scale);
+  ctx.stroke();
+  
+  // Foam particles in wake
+  ctx.fillStyle = 'rgba(220, 240, 250, 0.6)';
+  for (let i = 0; i < foamCount; i++) {
+    const t = i / foamCount;
+    const foamPhase = (animPhase * 3 + i * 0.7) % (Math.PI * 2);
+    const foamX = cx + Math.sin(foamPhase) * wakeWidth * t * 0.8 * scale;
+    const foamY = cy + 5 * scale + t * wakeLength * scale * 0.8;
+    const foamSize = (1 + Math.sin(foamPhase) * 0.5) * scale;
+    
+    ctx.beginPath();
+    ctx.arc(foamX, foamY, foamSize, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Bow wave spray (front of ship)
+  ctx.fillStyle = 'rgba(220, 240, 255, 0.4)';
+  for (let i = 0; i < 3; i++) {
+    const sprayPhase = (animPhase * 4 + i * 1.2) % (Math.PI * 2);
+    const sprayX = cx + (Math.sin(sprayPhase) * 3 - 0.5) * scale * (i % 2 === 0 ? 1 : -1);
+    const sprayY = cy - 2 * scale - Math.abs(Math.sin(sprayPhase * 2)) * 2 * scale;
+    const spraySize = (0.8 + Math.sin(sprayPhase) * 0.3) * scale;
+    
+    ctx.beginPath();
+    ctx.arc(sprayX, sprayY, spraySize, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/**
  * Draw naval unit (ship/boat)
  */
 function drawNavalUnit(
@@ -1388,6 +1507,10 @@ function drawNavalUnit(
   animPhase: number
 ): void {
   const bob = Math.sin(animPhase * 2) * 1 * scale;
+  
+  // Draw enhanced wake effects for moving ships
+  const wakeSize = scale > 1.3 ? 'large' : scale > 1.0 ? 'medium' : 'small';
+  drawEnhancedWake(ctx, centerX, centerY + 2, scale, animPhase, unit.isMoving || false, wakeSize);
   
   // Draw based on specific ship type
   switch (unit.type) {
@@ -2081,6 +2204,49 @@ function drawGenericSailboat(ctx: CanvasRenderingContext2D, cx: number, cy: numb
 }
 
 /**
+ * Draw enhanced propeller blur effect
+ */
+function drawPropellerBlur(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  scale: number,
+  animPhase: number,
+  propRadius: number = 4
+): void {
+  // Spinning propeller blur disc
+  ctx.fillStyle = 'rgba(100, 100, 100, 0.4)';
+  ctx.beginPath();
+  ctx.arc(x, y, propRadius * scale, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Propeller blade highlights (fast spinning effect)
+  const bladeCount = 2;
+  const bladeAngle = animPhase * 15; // Very fast rotation
+  
+  ctx.strokeStyle = 'rgba(60, 60, 60, 0.6)';
+  ctx.lineWidth = 1.5 * scale;
+  ctx.lineCap = 'round';
+  
+  for (let i = 0; i < bladeCount; i++) {
+    const angle = bladeAngle + (i * Math.PI / bladeCount);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(
+      x + Math.cos(angle) * propRadius * scale * 0.9,
+      y + Math.sin(angle) * propRadius * scale * 0.9
+    );
+    ctx.stroke();
+  }
+  
+  // Center hub
+  ctx.fillStyle = '#333';
+  ctx.beginPath();
+  ctx.arc(x, y, propRadius * scale * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
  * Draw air unit (plane/helicopter) - dispatches to specific aircraft type
  */
 function drawAirUnit(
@@ -2109,25 +2275,34 @@ function drawAirUnit(
   const drawX = centerX + circleX;
   const drawY = centerY + circleY + altitude;
   
-  // Draw shadow on ground (at base position)
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  // Draw dynamic shadow on ground (wobbles slightly with flight)
+  const shadowWobble = Math.sin(animPhase * 3) * 0.5;
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.beginPath();
-  ctx.ellipse(centerX + circleX, centerY + circleY + 10, 8 * scale, 3 * scale, 0, 0, Math.PI * 2);
+  ctx.ellipse(
+    centerX + circleX + shadowWobble, 
+    centerY + circleY + 10 + shadowWobble * 0.3, 
+    8 * scale, 
+    3 * scale, 
+    heading * 0.3, // Shadow rotates slightly with plane
+    0, 
+    Math.PI * 2
+  );
   ctx.fill();
   
-  // Dispatch to specific aircraft type
+  // Dispatch to specific aircraft type - pass animPhase for propeller effects
   switch (unit.type) {
     case 'biplane':
-      drawBiplane(ctx, drawX, drawY, color, darkerColor, scale, heading);
+      drawBiplane(ctx, drawX, drawY, color, darkerColor, scale, heading, animPhase);
       break;
     case 'bomber_early':
-      drawBomberEarly(ctx, drawX, drawY, color, darkerColor, scale, heading);
+      drawBomberEarly(ctx, drawX, drawY, color, darkerColor, scale, heading, animPhase);
       break;
     case 'fighter':
-      drawFighter(ctx, drawX, drawY, color, darkerColor, lighterColor, scale, heading);
+      drawFighter(ctx, drawX, drawY, color, darkerColor, lighterColor, scale, heading, animPhase);
       break;
     case 'bomber':
-      drawBomber(ctx, drawX, drawY, color, darkerColor, scale, heading);
+      drawBomber(ctx, drawX, drawY, color, darkerColor, scale, heading, animPhase);
       break;
     case 'helicopter':
       drawHelicopter(ctx, drawX, drawY, color, darkerColor, scale, animPhase);
@@ -2136,12 +2311,12 @@ function drawAirUnit(
       drawStealthBomber(ctx, drawX, drawY, color, darkerColor, scale, heading);
       break;
     default:
-      drawGenericAircraft(ctx, drawX, drawY, color, darkerColor, scale, heading);
+      drawGenericAircraft(ctx, drawX, drawY, color, darkerColor, scale, heading, animPhase);
   }
 }
 
 /**
- * Draw WWI-era biplane
+ * Draw WWI-era biplane with enhanced propeller
  */
 function drawBiplane(
   ctx: CanvasRenderingContext2D,
@@ -2150,7 +2325,8 @@ function drawBiplane(
   color: string,
   darkerColor: string,
   scale: number,
-  heading: number
+  heading: number,
+  animPhase: number = 0
 ): void {
   const size = 20 * scale;
   
@@ -2158,7 +2334,7 @@ function drawBiplane(
   ctx.translate(x, y);
   ctx.rotate(heading);
   
-  // Fuselage (wood/canvas body)
+  // Fuselage (wood/canvas body) - era-appropriate muted tone
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.ellipse(0, 0, size * 0.5, size * 0.12, 0, 0, Math.PI * 2);
@@ -2167,7 +2343,17 @@ function drawBiplane(
   ctx.lineWidth = 1;
   ctx.stroke();
   
-  // Upper wing
+  // Fabric panel lines on fuselage
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 0.5;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * size * 0.1, -size * 0.1);
+    ctx.lineTo(i * size * 0.1, size * 0.1);
+    ctx.stroke();
+  }
+  
+  // Upper wing with fabric texture
   ctx.fillStyle = darkerColor;
   ctx.fillRect(-size * 0.15, -size * 0.4, size * 0.3, size * 0.08);
   ctx.strokeStyle = '#000';
@@ -2178,8 +2364,8 @@ function drawBiplane(
   ctx.fillRect(-size * 0.12, -size * 0.15, size * 0.24, size * 0.06);
   ctx.strokeRect(-size * 0.12, -size * 0.15, size * 0.24, size * 0.06);
   
-  // Wing struts
-  ctx.strokeStyle = '#5c4033';
+  // Wing struts (weathered wood)
+  ctx.strokeStyle = '#4a3025';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(-size * 0.1, -size * 0.15);
@@ -2188,11 +2374,16 @@ function drawBiplane(
   ctx.lineTo(size * 0.12, -size * 0.4);
   ctx.stroke();
   
-  // Propeller (spinning blur)
-  ctx.fillStyle = '#333';
-  ctx.beginPath();
-  ctx.ellipse(size * 0.5, 0, size * 0.04, size * 0.15, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Enhanced propeller with spinning blur
+  ctx.restore();
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(heading);
+  drawPropellerBlur(ctx, size * 0.52, 0, scale, animPhase, 3);
+  ctx.restore();
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(heading);
   
   // Tail
   ctx.fillStyle = color;
@@ -2231,7 +2422,8 @@ function drawBomberEarly(
   color: string,
   darkerColor: string,
   scale: number,
-  heading: number
+  heading: number,
+  animPhase: number = 0
 ): void {
   const size = 28 * scale;
   
@@ -2312,7 +2504,7 @@ function drawBomberEarly(
 }
 
 /**
- * Draw modern jet fighter
+ * Draw modern jet fighter with afterburner effect
  */
 function drawFighter(
   ctx: CanvasRenderingContext2D,
@@ -2322,7 +2514,8 @@ function drawFighter(
   darkerColor: string,
   lighterColor: string,
   scale: number,
-  heading: number
+  heading: number,
+  animPhase: number = 0
 ): void {
   const size = 24 * scale;
   
@@ -2403,7 +2596,7 @@ function drawFighter(
 }
 
 /**
- * Draw modern heavy bomber
+ * Draw modern heavy bomber with engine exhaust
  */
 function drawBomber(
   ctx: CanvasRenderingContext2D,
@@ -2412,7 +2605,8 @@ function drawBomber(
   color: string,
   darkerColor: string,
   scale: number,
-  heading: number
+  heading: number,
+  animPhase: number = 0
 ): void {
   const size = 32 * scale;
   
@@ -2623,7 +2817,7 @@ function drawStealthBomber(
 }
 
 /**
- * Draw generic aircraft (fallback)
+ * Draw generic aircraft (fallback) with propeller
  */
 function drawGenericAircraft(
   ctx: CanvasRenderingContext2D,
@@ -2632,7 +2826,8 @@ function drawGenericAircraft(
   color: string,
   darkerColor: string,
   scale: number,
-  heading: number
+  heading: number,
+  animPhase: number = 0
 ): void {
   const size = 18 * scale;
   

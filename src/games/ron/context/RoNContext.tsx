@@ -180,6 +180,7 @@ interface RoNContextValue {
   moveSelectedUnits: (x: number, y: number) => void;
   assignTask: (task: UnitTask, target?: { x: number; y: number } | string) => void;
   attackTarget: (targetId: string | { x: number; y: number }) => void;
+  killSelectedUnits: () => void;
   
   // Building actions
   selectBuilding: (pos: { x: number; y: number } | null) => void;
@@ -250,7 +251,7 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
       { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
       { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },
       { name: 'AI Purple', type: 'ai', difficulty: 'medium', color: '#a855f7' },
-      { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
+      // { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
     ])
   );
 
@@ -361,7 +362,7 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
                   { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
                   { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },
                   { name: 'AI Purple', type: 'ai', difficulty: 'medium', color: '#a855f7' },
-                  { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
+                  // { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
                 ]);
                 setState(newState);
                 latestStateRef.current = newState;
@@ -433,13 +434,13 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
     if (!isStateReady) return;
     if (state.gameSpeed === 0) return;
     
-    // Fast simulation for 40-minute game across all ages
-    // At speed 1: 200ms tick = 5 ticks/second = 300 ticks/minute
-    // 40 min game = 12000 ticks at speed 1
+    // Fast simulation for ~30-minute game across all ages
+    // At speed 1: 150ms tick = 6.7 ticks/second = 400 ticks/minute
+    // 30 min game = 12000 ticks at speed 1
     const intervals = {
-      1: 200,  // Normal
-      2: 100,  // Fast
-      3: 50,   // Very fast
+      1: 150,  // Normal (30% faster than before)
+      2: 75,   // Fast
+      3: 35,   // Very fast
     };
     
     const interval = intervals[state.gameSpeed as 1 | 2 | 3];
@@ -762,6 +763,44 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
       });
       
       return { ...prev, units: updatedUnits };
+    });
+  }, []);
+  
+  // Kill selected units (for population management)
+  const killSelectedUnits = useCallback(() => {
+    setState(prev => {
+      const currentPlayer = prev.players.find(p => p.id === prev.currentPlayerId);
+      if (!currentPlayer) return prev;
+      
+      const selectedIds = new Set(prev.selectedUnitIds);
+      const unitsToKill = prev.units.filter(
+        u => selectedIds.has(u.id) && u.ownerId === currentPlayer.id
+      );
+      
+      if (unitsToKill.length === 0) return prev;
+      
+      // Count citizens being killed for population adjustment
+      const citizensKilled = unitsToKill.filter(u => u.type === 'citizen').length;
+      
+      // Remove killed units
+      const newUnits = prev.units.filter(u => !selectedIds.has(u.id) || u.ownerId !== currentPlayer.id);
+      
+      // Update population
+      const newPlayers = prev.players.map(p => {
+        if (p.id === currentPlayer.id) {
+          return { ...p, population: Math.max(0, p.population - citizensKilled) };
+        }
+        return p;
+      });
+      
+      console.log(`[KILL UNITS] Player killed ${unitsToKill.length} units (${citizensKilled} citizens)`);
+      
+      return {
+        ...prev,
+        units: newUnits,
+        players: newPlayers,
+        selectedUnitIds: [],
+      };
     });
   }, []);
   
@@ -1136,6 +1175,7 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
     moveSelectedUnits,
     assignTask,
     attackTarget,
+    killSelectedUnits,
     selectBuilding,
     placeBuilding,
     queueUnit,

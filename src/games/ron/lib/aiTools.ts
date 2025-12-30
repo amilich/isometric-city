@@ -1109,277 +1109,6 @@ function countWorkersAtBuilding(units: Unit[], x: number, y: number, ownerId: st
   }).length;
 }
 
-// Dead code removed - executeAssignIdleWorkers and executeReassignWorker were 400+ lines 
-// of over-specified logic. The AI should use assign_worker tool to make its own decisions.
-// Only executeReassignWorkerToResource is kept (used by route.ts)
-
-/**
-
-    // SMART rebalancing: protect food if low, prioritize by actual need
-    let workersToReassign: typeof farmWorkers = [];
-    let rebalanceTarget: 'food' | 'wood' | 'metal' | 'gold' | null = null;
-    const foodIsLow = player.resources.food < 80; // Less than cost of 1 citizen
-    const woodIsLow = player.resources.wood < 50;
-    
-    const woodWorkers = state.units.filter(u =>
-      u.ownerId === aiPlayerId &&
-      u.type === 'citizen' &&
-      u.task === 'gather_wood'
-    );
-    
-    const goldWorkers = state.units.filter(u =>
-      u.ownerId === aiPlayerId &&
-      u.type === 'citizen' &&
-      u.task === 'gather_gold'
-    );
-    
-    console.log(`[assign_workers] Resource status: food=${Math.round(player.resources.food)} (rate=${foodRate.toFixed(2)}), wood=${Math.round(player.resources.wood)} (rate=${woodRate.toFixed(2)}), gold=${Math.round(player.resources.gold)} (rate=${goldRate.toFixed(2)}), workers: food=${farmWorkers.length}, wood=${woodWorkers.length}, metal=${metalWorkers.length}, gold=${goldWorkers.length}`);
-    
-    // Priority: 
-    // 1. WOOD FOR CITY - if pop-capped and need wood with excess food, aggressively move to wood!
-    // 2. GOLD FOR CITY - if pop-capped and need gold, move workers to market!
-    // 3. FOOD IS MOST IMPORTANT - if food rate is 0 and we have farms, move workers TO food
-    // 4. Take from metal first for other needs
-    // 5. Only take from food if food is abundant
-    
-    if (needsWoodForCity && hasWoodBuilding && hasExcessFood && farmWorkers.length >= 2) {
-      // CRITICAL: Pop-capped, need WOOD for city, have excess food - move half of food workers to wood!
-      const workersToMove = Math.ceil(farmWorkers.length / 2);
-      workersToReassign = farmWorkers.slice(0, workersToMove);
-      rebalanceTarget = 'wood';
-      console.log(`[assign_workers] CRITICAL: Need WOOD for city (have ${Math.round(player.resources.wood)}/400)! Moving ${workersToReassign.length}/${farmWorkers.length} food workers to wood (food=${Math.round(player.resources.food)})`);
-    } else if (needsGoldForCity && hasMarketBuilding && goldWorkers.length === 0) {
-      // CRITICAL: Need gold for city but no gold workers! Move to market
-      if (metalWorkers.length >= 1) {
-        workersToReassign = metalWorkers.slice(0, Math.max(1, Math.ceil(metalWorkers.length / 2)));
-        rebalanceTarget = 'gold';
-        console.log(`[assign_workers] CRITICAL: Need gold for city! Moving ${workersToReassign.length} workers from METAL to gold`);
-      } else if (farmWorkers.length >= 2 && !foodIsLow) {
-        workersToReassign = farmWorkers.slice(0, 1);
-        rebalanceTarget = 'gold';
-        console.log(`[assign_workers] CRITICAL: Need gold for city! Moving 1 worker from FOOD to gold`);
-      } else if (woodWorkers.length >= 2 && !woodIsLow) {
-        workersToReassign = woodWorkers.slice(0, 1);
-        rebalanceTarget = 'gold';
-        console.log(`[assign_workers] CRITICAL: Need gold for city! Moving 1 worker from WOOD to gold`);
-      }
-    } else if (foodRate === 0 && hasFarmBuilding && farmWorkers.length === 0) {
-      // CRITICAL: No food income! Move workers TO food from wood or metal
-      if (woodWorkers.length >= 1) {
-        workersToReassign = woodWorkers.slice(0, Math.max(1, Math.ceil(woodWorkers.length / 2)));
-        rebalanceTarget = 'food';
-        console.log(`[assign_workers] CRITICAL: No food income! Moving ${workersToReassign.length} workers from WOOD to food`);
-      } else if (metalWorkers.length >= 1) {
-        workersToReassign = metalWorkers.slice(0, Math.max(1, Math.ceil(metalWorkers.length / 2)));
-        rebalanceTarget = 'food';
-        console.log(`[assign_workers] CRITICAL: No food income! Moving ${workersToReassign.length} workers from METAL to food`);
-      }
-    } else if (woodRate === 0 && metalWorkers.length >= 1) {
-      // Need wood, take from metal first
-      workersToReassign = metalWorkers.slice(0, Math.max(1, Math.ceil(metalWorkers.length / 2)));
-      console.log(`[assign_workers] Rebalancing: moving ${workersToReassign.length} workers from METAL to wood`);
-    } else if (metalRate === 0 && hasMineBuilding && metalWorkers.length === 0 && farmWorkers.length >= 2 && !foodIsLow) {
-      // Need metal, have mine but no metal workers, and food is ok - take from food
-      workersToReassign = farmWorkers.slice(0, 1);
-      console.log(`[assign_workers] Rebalancing: moving 1 worker from FOOD to metal (food ok: ${Math.round(player.resources.food)})`);
-    } else if (woodRate === 0 && hasWoodBuilding && farmWorkers.length >= 3 && !foodIsLow) {
-      // Need wood badly, have woodcutters but no income, food is ok - take from food
-      workersToReassign = farmWorkers.slice(0, 1);
-      console.log(`[assign_workers] Rebalancing: moving 1 worker from FOOD to wood (food ok: ${Math.round(player.resources.food)})`);
-    } else if (foodIsLow && foodRate === 0) {
-      // Food is critically low - DON'T rebalance, let priority system handle it
-      console.log(`[assign_workers] NOT rebalancing - food is critically low (${Math.round(player.resources.food)}) and no income!`);
-    }
-
-    if (workersToReassign.length > 0) {
-      // Convert them to "idle" temporarily so they get assigned to wood/metal
-      idleCitizens = workersToReassign.map(u => ({ ...u, task: 'idle' as const, taskTarget: undefined }));
-    } else {
-      console.log(`[assign_workers] No workers to rebalance (farmWorkers: ${farmWorkers.length}, metalWorkers: ${metalWorkers.length})`);
-    }
-  }
-
-  if (idleCitizens.length === 0) {
-    return { newState: state, result: { success: true, message: 'No idle workers to assign', data: { assigned: 0 } } };
-  }
-
-  // Find economic buildings with capacity
-  const economicBuildings: Array<{
-    type: RoNBuildingType;
-    x: number;
-    y: number;
-    task: string;
-    priority: number; // Higher = more important
-    currentWorkers: number;
-    maxWorkers: number;
-  }> = [];
-
-  // DYNAMIC resource priority based on current rates and game state
-  // If a resource rate is 0, that resource gets HIGHEST priority
-  const baseResourcePriority: Record<string, number> = {
-    'gather_food': 100,
-    'gather_wood': 80,
-    'gather_metal': 60,
-    'gather_gold': 40,
-    'gather_knowledge': 20,
-    'gather_oil': 10,
-  };
-  
-  // Boost priority for resources with 0 production rate
-  const resourcePriority: Record<string, number> = { ...baseResourcePriority };
-  if (player.resourceRates.wood === 0) {
-    resourcePriority['gather_wood'] = 200; // Highest priority!
-  }
-  if (player.resourceRates.metal === 0) {
-    resourcePriority['gather_metal'] = 150;
-  }
-  if (player.resourceRates.food === 0) {
-    resourcePriority['gather_food'] = 200;
-  }
-  
-  // CRITICAL: Boost wood priority when pop-capped and need wood for small_city!
-  if (popCapped && needsWoodForCity) {
-    resourcePriority['gather_wood'] = 300; // HIGHEST priority when saving for city!
-    console.log(`[assign_workers] BOOSTING WOOD PRIORITY - pop capped and need 400 wood (have ${Math.round(player.resources.wood)})`);
-  }
-  
-  // CRITICAL: Boost gold priority when pop-capped and need gold for small_city!
-  if (popCapped && needsGoldForCity) {
-    resourcePriority['gather_gold'] = 250; // High priority when saving for city!
-    console.log(`[assign_workers] BOOSTING GOLD PRIORITY - pop capped and need 200 gold (have ${Math.round(player.resources.gold)})`);
-  } else if (player.resourceRates.gold === 0) {
-    resourcePriority['gather_gold'] = 120; // Boost if no gold income
-  }
-  
-  // INDUSTRIAL AGE+: Boost oil priority when we have oil wells
-  const isIndustrialPlus = ['industrial', 'modern'].includes(player.age);
-  if (isIndustrialPlus) {
-    // Check if we have any oil infrastructure
-    let hasOilBuildings = false;
-    for (let y = 0; y < state.gridSize; y++) {
-      for (let x = 0; x < state.gridSize; x++) {
-        const tile = state.grid[y]?.[x];
-        if (tile?.building?.ownerId === aiPlayerId && 
-            ['oil_well', 'oil_platform', 'refinery'].includes(tile.building.type)) {
-          hasOilBuildings = true;
-          break;
-        }
-      }
-      if (hasOilBuildings) break;
-    }
-    
-    if (hasOilBuildings) {
-      // Boost oil gathering priority at Industrial age
-      if (player.resourceRates.oil === 0) {
-        resourcePriority['gather_oil'] = 180; // High priority if no oil income but have buildings
-        console.log(`[assign_workers] BOOSTING OIL PRIORITY - Industrial age with oil buildings but 0 rate`);
-      } else {
-        resourcePriority['gather_oil'] = 80; // Normal boost at Industrial age
-      }
-    }
-  }
-
-  // Scan for economic buildings
-  for (let y = 0; y < state.gridSize; y++) {
-    for (let x = 0; x < state.gridSize; x++) {
-      const tile = state.grid[y]?.[x];
-      if (!tile?.building || tile.building.ownerId !== aiPlayerId) continue;
-      if (tile.building.constructionProgress < 100) continue;
-
-      const buildingType = tile.building.type as RoNBuildingType;
-      if (!ECONOMIC_BUILDINGS.includes(buildingType)) continue;
-
-      const task = getTaskForBuilding(buildingType);
-      if (!task) continue;
-
-      const stats = BUILDING_STATS[buildingType];
-      const maxWorkers = stats?.maxWorkers ?? 5;
-      const currentWorkers = countWorkersAtBuilding(state.units, x, y, aiPlayerId);
-
-      if (currentWorkers < maxWorkers) {
-        economicBuildings.push({
-          type: buildingType,
-          x,
-          y,
-          task,
-          priority: resourcePriority[task] || 0,
-          currentWorkers,
-          maxWorkers,
-        });
-      }
-    }
-  }
-
-  if (economicBuildings.length === 0) {
-    return { newState: state, result: { success: true, message: 'No economic buildings with capacity', data: { assigned: 0 } } };
-  }
-
-  // Sort buildings by priority (food first) and then by how empty they are
-  economicBuildings.sort((a, b) => {
-    const aPct = a.currentWorkers / a.maxWorkers;
-    const bPct = b.currentWorkers / b.maxWorkers;
-    // Prioritize by resource type first, then by emptiness
-    if (a.priority !== b.priority) return b.priority - a.priority;
-    return aPct - bPct;
-  });
-
-  // Assign workers
-  let assigned = 0;
-  const newUnits = [...state.units];
-  
-  // Sort buildings by priority (highest first) before assigning
-  economicBuildings.sort((a, b) => b.priority - a.priority);
-  
-  for (const citizen of idleCitizens) {
-    // Find highest priority building with capacity
-    const bestBuilding = economicBuildings.find(b => b.currentWorkers < b.maxWorkers);
-    
-    if (!bestBuilding) break;
-
-    // Update the unit
-    const unitIndex = newUnits.findIndex(u => u.id === citizen.id);
-    if (unitIndex >= 0) {
-      newUnits[unitIndex] = {
-        ...newUnits[unitIndex],
-        task: bestBuilding.task as Unit['task'],
-        taskTarget: { x: bestBuilding.x, y: bestBuilding.y },
-        targetX: bestBuilding.x + (Math.random() - 0.5) * 0.5,
-        targetY: bestBuilding.y + (Math.random() - 0.5) * 0.5,
-        isMoving: true,
-        idleSince: undefined,
-      };
-      bestBuilding.currentWorkers++;
-      assigned++;
-    }
-  }
-
-  const tasksSummary = economicBuildings
-    .filter(b => b.currentWorkers > 0)
-    .slice(0, 5)
-    .map(b => `${b.task.replace('gather_', '')}@${b.x},${b.y}`)
-    .join(', ');
-
-  // Log unit task changes for debugging - only show THIS player's units
-  if (assigned > 0) {
-    console.log(`[assign_workers] Updated ${assigned} units for player ${aiPlayerId}:`);
-    newUnits
-      .filter(u => u.ownerId === aiPlayerId && u.task?.startsWith('gather_'))
-      .slice(0, 5)
-      .forEach(u => {
-        console.log(`  - Unit ${u.id.slice(0,8)}: task=${u.task}, isMoving=${u.isMoving}, target=(${u.targetX?.toFixed(1)},${u.targetY?.toFixed(1)})`);
-      });
-  }
-
-  return {
-    newState: { ...state, units: newUnits },
-    result: {
-      success: true,
-      message: `Assigned ${assigned} workers. Tasks: ${tasksSummary || 'none'}`,
-      data: { assigned, buildings: economicBuildings.length },
-    },
-  };
-}
-
 /**
  * Reassign a specific worker to gather a resource type.
  * Finds an appropriate building for that resource automatically.
@@ -1497,6 +1226,50 @@ export function executeReassignWorkerToResource(
     result: {
       success: true,
       message: `Reassigned ${unitId} from ${prevTask.replace('gather_', '')} to ${resourceType} at ${targetBuilding.type}`,
+    },
+  };
+}
+
+/**
+ * Kill one of your own units (to reduce population or manage resources)
+ */
+export function executeKillUnit(
+  state: RoNGameState,
+  playerId: string,
+  unitId: string
+): { newState: RoNGameState; result: ToolResult } {
+  // Find the unit
+  const unit = state.units.find(u => u.id === unitId || u.id.endsWith(unitId));
+  
+  if (!unit) {
+    return { newState: state, result: { success: false, message: `Unit ${unitId} not found` } };
+  }
+  
+  if (unit.ownerId !== playerId) {
+    return { newState: state, result: { success: false, message: `Unit ${unitId} is not yours` } };
+  }
+  
+  // Remove the unit from the game
+  const newUnits = state.units.filter(u => u.id !== unit.id);
+  
+  // Decrease population if it's a citizen
+  let newPlayers = state.players;
+  if (unit.type === 'citizen') {
+    newPlayers = state.players.map(p => {
+      if (p.id === playerId) {
+        return { ...p, population: Math.max(0, p.population - 1) };
+      }
+      return p;
+    });
+  }
+  
+  console.log(`[kill_unit] ${playerId} killed their own ${unit.type} (${unit.id})`);
+  
+  return {
+    newState: { ...state, units: newUnits, players: newPlayers },
+    result: {
+      success: true,
+      message: `Killed your ${unit.type}. ${unit.type === 'citizen' ? 'Population decreased by 1.' : ''}`,
     },
   };
 }

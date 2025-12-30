@@ -18,9 +18,10 @@ interface RoNMiniMapProps {
     zoom: number; 
     canvasSize: { width: number; height: number } 
   } | null;
+  rightOffset?: number; // Offset from right edge (for AI sidebar)
 }
 
-export function RoNMiniMap({ onNavigate, viewport }: RoNMiniMapProps) {
+export function RoNMiniMap({ onNavigate, viewport, rightOffset = 16 }: RoNMiniMapProps) {
   const { state } = useRoN();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -55,7 +56,7 @@ export function RoNMiniMap({ onNavigate, viewport }: RoNMiniMapProps) {
         } else if (tile.hasOilDeposit) {
           ctx.fillStyle = '#1f2937'; // Dark for oil
         } else {
-          ctx.fillStyle = '#4ade80';
+          ctx.fillStyle = '#3d5a47'; // Muted green for grass
         }
         ctx.fillRect(px, py, scale + 0.5, scale + 0.5);
         
@@ -208,7 +209,7 @@ export function RoNMiniMap({ onNavigate, viewport }: RoNMiniMapProps) {
   }, []);
   
   return (
-    <div className="absolute bottom-4 right-4 z-30">
+    <div className="absolute bottom-4 z-30" style={{ right: rightOffset }}>
       <div className="bg-slate-800 p-2 rounded-lg shadow-lg border border-slate-600">
         <canvas
           ref={canvasRef}

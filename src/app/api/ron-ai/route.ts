@@ -19,6 +19,7 @@ import {
   executeSendUnits,
   executeAdvanceAge,
   executeReassignWorkerToResource,
+  executeKillUnit,
   CondensedGameState,
 } from '@/games/ron/lib/aiTools';
 
@@ -309,7 +310,7 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
   {
     type: 'function',
     name: 'build',
-    description: 'Build a building. Costs: farm(50w), woodcutters_camp(30w), mine(80w+50g), barracks(100w), library(80w+50g), market(60w+30g), university(150w+100g), stable(150w+50m), small_city(400w+200g+100m,pop+20), large_city(600w+400g+200m,pop+35). Use tiles from game state!',
+    description: 'Build a building. Costs: farm(50w), woodcutters_camp(30w), mine(80w+50g), barracks(100w), library(80w+50g), market(60w+30g), university(150w+100g), stable(150w+50m), small_city(200w+100g+50m,pop+20), large_city(600w+400g+200m,pop+35). Use tiles from game state!',
     strict: true,
     parameters: {
       type: 'object',
@@ -392,6 +393,23 @@ const AI_TOOLS: OpenAI.Responses.Tool[] = [
       additionalProperties: false,
     },
   },
+  {
+    type: 'function',
+    name: 'kill_unit',
+    description: 'Kill one of your own units. Useful for: (1) Freeing population cap when at limit, (2) Removing excess citizens to reduce food consumption, (3) Clearing garrisoned units. Killing a citizen decreases population by 1.',
+    strict: true,
+    parameters: {
+      type: 'object',
+      properties: {
+        unit_id: {
+          type: 'string',
+          description: 'ID of your unit to kill (from your units list)',
+        },
+      },
+      required: ['unit_id'],
+      additionalProperties: false,
+    },
+  },
 ];
 
 // System prompt - let the SMART AI make its own strategic decisions!
@@ -426,12 +444,24 @@ UNITS:
 - cavalry @ stable (fast & deadly)
 - siege @ siege_factory
 
+ELIMINATION REWARD:
+When you eliminate an enemy (destroy all their cities and they stay eliminated for 2 min), YOU GET ALL THEIR STUFF:
+- All their resources
+- All their buildings
+- All their units (including citizens)
+This is HUGE - eliminating a player can double your empire!
+
+CRITICAL - KNOWLEDGE & AGES:
+- Libraries don't generate knowledge automatically! You MUST assign workers to library using assign_worker!
+- Check your knowledge rate - if it's 0, you need more workers at libraries
+- Age advancement is key to winning! Each age = much stronger units
+- Prioritize: library → assign 1-2 workers to it → accumulate knowledge → advance_age when ready
+
 TIPS:
-- Build a library early for knowledge → age advancement
-- Use granary/lumber_mill/smelter to upgrade production
-- Stable + cavalry is a powerful combo
+- Balance workers: food + wood for economy, gold for cities, KNOWLEDGE for ages
+- Build a stable for cavalry - they're faster and stronger than infantry
 - Assign workers with assign_worker (works on ANY citizen, idle or not)
-- Rebalance workers when you need different resources
+- Use kill_unit to free population cap when at limit
 
 Think strategically. Adapt. Dominate.`;
 
@@ -826,20 +856,42 @@ Take actions now based on the state above. You can call get_game_state later if 
             break;
           }
 
+          case 'kill_unit': {
+            const { unit_id } = args as { unit_id: string };
+            const res = executeKillUnit(currentState, aiPlayerId, unit_id);
+            currentState = res.newState;
+            result = res.result;
+            console.log(`  → ${result.message}`);
+            break;
+          }
+
           default:
             result = { success: false, message: `Unknown tool: ${toolCall.name}` };
         }
 
-        const outputStr = JSON.stringify(result);
-        console.log(`[TOOL RESULT] ${toolCall.name}: ${result.success ? '✓' : '✗'} ${result.message.substring(0, 100)}${result.message.length > 100 ? '...' : ''}`);
+        // Append current resources to every tool result (except get_game_state which already has full state)
+        const player = currentState.players.find((p: RoNPlayer) => p.id === aiPlayerId);
+        let resourceSuffix = '';
+        if (player && toolCall.name !== 'get_game_state') {
+          const r = player.resources;
+          resourceSuffix = ` | Resources: ${Math.floor(r.food)}f ${Math.floor(r.wood)}w ${Math.floor(r.metal)}m ${Math.floor(r.gold)}g ${Math.floor(r.knowledge)}k ${Math.floor(r.oil)}oil`;
+        }
         
+        const resultWithResources = {
+          ...result,
+          message: result.message + resourceSuffix,
+        };
+        
+        const outputStr = JSON.stringify(resultWithResources);
+        console.log(`[TOOL RESULT] ${toolCall.name}: ${result.success ? '✓' : '✗'} ${result.message.substring(0, 100)}${result.message.length > 100 ? '...' : ''}`);
+
         // Track tool call for frontend
         allToolCalls.push({
           name: toolCall.name,
           args: args,
-          result: result.message,
+          result: resultWithResources.message,
         });
-        
+
         toolResults.push({
           call_id: toolCall.call_id,
           output: outputStr,

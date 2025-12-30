@@ -29,5 +29,6 @@ export {
   executeSendUnits,
   executeAdvanceAge,
   executeReassignWorkerToResource,
+  executeKillUnit,
 } from './lib/aiTools';
 export type { CondensedGameState, ToolResult } from './lib/aiTools';

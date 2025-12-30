@@ -474,8 +474,8 @@ export function AIAgentsSidebar({ conversations, players, onClear, onWidthChange
     return (
       <div 
         ref={sidebarRef}
-        className="bg-gradient-to-b from-slate-900 to-slate-950 border-l border-slate-700/50 flex flex-col h-full relative"
-        style={{ width }}
+        className="fixed right-0 top-0 h-screen bg-slate-900 border-l border-slate-700/50 flex flex-col z-40"
+        style={{ width: `${width}px`, minWidth: `${width}px` }}
       >
         {/* Resize handle */}
         <div
@@ -501,8 +501,8 @@ export function AIAgentsSidebar({ conversations, players, onClear, onWidthChange
   return (
     <div 
       ref={sidebarRef}
-      className="bg-gradient-to-b from-slate-900 to-slate-950 border-l border-slate-700/50 flex flex-col h-full overflow-hidden relative"
-      style={{ width }}
+      className="fixed right-0 top-0 h-screen bg-slate-900 border-l border-slate-700/50 flex flex-col overflow-hidden z-40"
+      style={{ width: `${width}px`, minWidth: `${width}px` }}
     >
       {/* Resize handle */}
       <div
@@ -524,7 +524,7 @@ export function AIAgentsSidebar({ conversations, players, onClear, onWidthChange
       </div>
       
       {/* Conversations */}
-      <div className="flex-1 flex flex-col min-h-0 divide-y divide-slate-700/30 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 divide-y divide-slate-700/30 overflow-hidden bg-slate-900">
         {aiConversations.map((conv) => (
           <PlayerConversation 
             key={conv.playerId} 

@@ -11,6 +11,7 @@ import { RoNCanvas } from './RoNCanvas';
 import { RoNSidebar } from './RoNSidebar';
 import { RoNMiniMap } from './RoNMiniMap';
 import { RoNBuildingPanel } from './RoNBuildingPanel';
+import { RoNSelectedUnitsPanel } from './RoNSelectedUnitsPanel';
 import { AIMessagePanel } from './AIMessagePanel';
 import { AIAgentsSidebar, AI_SIDEBAR_DEFAULT_WIDTH } from './AIAgentsSidebar';
 import { Button } from '@/components/ui/button';
@@ -264,7 +265,11 @@ function GameContent({ onExit }: { onExit?: () => void }) {
           />
           
           {/* MiniMap with viewport indicator */}
-          <RoNMiniMap onNavigate={handleNavigate} viewport={viewport} />
+          <RoNMiniMap 
+            onNavigate={handleNavigate} 
+            viewport={viewport} 
+            rightOffset={agenticAI.enabled ? aiSidebarWidth + 16 : 16}
+          />
           
           {/* Agentic AI Message Panel - positioned left of minimap */}
           {agenticAI.enabled && (
@@ -280,19 +285,20 @@ function GameContent({ onExit }: { onExit?: () => void }) {
           {selectedBuildingPos && (
             <RoNBuildingPanel onClose={() => {}} />
           )}
+          
+          {/* Selected Units Panel - shows when units are selected */}
+          <RoNSelectedUnitsPanel />
         </div>
       </div>
       
       {/* Right Sidebar - AI Agents (only when AI is enabled) */}
       {agenticAI.enabled && (
-        <div className="fixed right-0 top-0 h-screen z-40">
-          <AIAgentsSidebar 
-            conversations={agenticAI.conversations}
-            players={state.players}
-            onClear={clearAIConversations}
-            onWidthChange={setAiSidebarWidth}
-          />
-        </div>
+        <AIAgentsSidebar 
+          conversations={agenticAI.conversations}
+          players={state.players}
+          onClear={clearAIConversations}
+          onWidthChange={setAiSidebarWidth}
+        />
       )}
     </div>
   );

@@ -84,6 +84,7 @@ export interface RoNBuilding {
   queuedUnits: string[];  // Unit types being produced
   productionProgress: number; // Progress on current unit
   garrisonedUnits: string[]; // Unit IDs inside
+  lastAttackerId?: string; // Player ID who last attacked this building (for elimination rewards)
 }
 
 // Building costs and stats
@@ -136,12 +137,12 @@ export const BUILDING_STATS: Record<RoNBuildingType, BuildingStats> = {
     visionRange: 8,
   },
   small_city: {
-    cost: { wood: 400, gold: 200, metal: 100 }, 
+    cost: { wood: 200, gold: 100, metal: 50 }, 
     maxHealth: 3000, 
     buildTime: 75, 
     minAge: 'classical', 
     size: { width: 3, height: 3 },
-    providesHousing: 20,  // Reduced by 50%
+    providesHousing: 20,
     visionRange: 10,
   },
   large_city: { 

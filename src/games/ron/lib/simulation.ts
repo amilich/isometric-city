@@ -1076,9 +1076,9 @@ function updateUnits(state: RoNGameState): RoNGameState {
   // (if A is processed before B in the loop)
   const damageToApply: Map<string, number> = new Map();
   
-  // Track damage to apply to buildings - key is "x,y" of building origin, value is total damage
-  // This is needed because multiple units might attack the same building in one tick
-  const buildingDamageToApply: Map<string, number> = new Map();
+  // Track damage to apply to buildings - key is "x,y" of building origin
+  // Value includes total damage and the last attacker ID (for elimination rewards)
+  const buildingDamageToApply: Map<string, { damage: number; attackerId: string }> = new Map();
   
   // Track units that died this tick (for population decrease)
   const deadUnitOwners: string[] = [];
@@ -1607,8 +1607,11 @@ function updateUnits(state: RoNGameState): RoNGameState {
               // Attack building - track damage to apply later (multiple units may attack same building)
               const damage = unitStats?.attack || 1;
               const buildingKey = `${buildingOrigin.x},${buildingOrigin.y}`;
-              const currentDamage = buildingDamageToApply.get(buildingKey) || 0;
-              buildingDamageToApply.set(buildingKey, currentDamage + damage);
+              const existing = buildingDamageToApply.get(buildingKey);
+              buildingDamageToApply.set(buildingKey, {
+                damage: (existing?.damage || 0) + damage,
+                attackerId: updatedUnit.ownerId, // Track attacker for elimination rewards
+              });
               
               // Debug log for building attacks (every tick for visibility)
               console.log(`[ATTACK] ${updatedUnit.type} attacking ${buildingOrigin.building.type} at (${buildingOrigin.x},${buildingOrigin.y}), dmg=${damage}, building hp=${buildingOrigin.building.health}`);
@@ -1747,23 +1750,27 @@ function updateUnits(state: RoNGameState): RoNGameState {
   
   // Apply all accumulated building damage
   if (buildingDamageToApply.size > 0) {
-    console.log(`[BUILDING DAMAGE APPLY] Applying damage to ${buildingDamageToApply.size} buildings: ${Array.from(buildingDamageToApply.entries()).map(([k, v]) => `${k}:${v}`).join(', ')}`);
+    console.log(`[BUILDING DAMAGE APPLY] Applying damage to ${buildingDamageToApply.size} buildings: ${Array.from(buildingDamageToApply.entries()).map(([k, v]) => `${k}:${v.damage}`).join(', ')}`);
     newGrid = newGrid.map((row, gy) =>
       row.map((tile, gx) => {
         const key = `${gx},${gy}`;
-        const damage = buildingDamageToApply.get(key);
-        if (damage && tile.building) {
-          const newHealth = tile.building.health - damage;
-          console.log(`[BUILDING DAMAGE] ${tile.building.type} at (${gx},${gy}) took ${damage} damage, hp: ${tile.building.health} -> ${newHealth}`);
+        const damageInfo = buildingDamageToApply.get(key);
+        if (damageInfo && tile.building) {
+          const newHealth = tile.building.health - damageInfo.damage;
+          console.log(`[BUILDING DAMAGE] ${tile.building.type} at (${gx},${gy}) took ${damageInfo.damage} damage from ${damageInfo.attackerId}, hp: ${tile.building.health} -> ${newHealth}`);
           
           if (newHealth <= 0) {
             // Building destroyed - clear the tile
-            console.log(`[BUILDING DESTROYED] ${tile.building.type} at (${gx},${gy})`);
+            console.log(`[BUILDING DESTROYED] ${tile.building.type} at (${gx},${gy}) by ${damageInfo.attackerId}`);
             return { ...tile, building: null, ownerId: null };
           }
           return { 
             ...tile, 
-            building: { ...tile.building, health: newHealth }
+            building: { 
+              ...tile.building, 
+              health: newHealth,
+              lastAttackerId: damageInfo.attackerId, // Track who attacked for elimination rewards
+            }
           };
         }
         return tile;
@@ -1777,11 +1784,15 @@ function updateUnits(state: RoNGameState): RoNGameState {
 /**
  * Check victory conditions
  * Players are eliminated if they have no cities for 2 minutes (~1200 ticks at speed 1)
+ * When eliminated, all assets transfer to the player who destroyed their last city!
  */
 const ELIMINATION_TICKS = 1200; // ~2 minutes at normal speed (10 ticks/sec)
 
 function checkVictoryConditions(state: RoNGameState): RoNGameState {
   const cityTypes = ['city_center', 'small_city', 'large_city', 'major_city'];
+  
+  // Track players that get eliminated this tick and who killed them
+  const eliminatedPlayers: Array<{ playerId: string; killerId: string | null }> = [];
   
   const newPlayers = state.players.map(player => {
     if (player.isDefeated) return player;
@@ -1812,7 +1823,29 @@ function checkVictoryConditions(state: RoNGameState): RoNGameState {
         // Check if elimination timer expired
         const ticksWithoutCity = state.tick - noCitySinceTick;
         if (ticksWithoutCity >= ELIMINATION_TICKS) {
-          console.log(`[ELIMINATION] ${player.name} eliminated! No cities for ${ticksWithoutCity} ticks`);
+          // Find who killed this player (look for lastAttackerId on their buildings or territory)
+          let killerId: string | null = null;
+          
+          // Check buildings that were attacked
+          state.grid.forEach(row => {
+            row.forEach(tile => {
+              if (tile.building?.ownerId === player.id && tile.building?.lastAttackerId) {
+                killerId = tile.building.lastAttackerId;
+              }
+            });
+          });
+          
+          // If no buildings with attacker, check units that attacked this player's stuff
+          if (!killerId) {
+            // Find any enemy player that's still active
+            const enemies = state.players.filter(p => p.id !== player.id && !p.isDefeated);
+            if (enemies.length > 0) {
+              killerId = enemies[0].id; // Default to first enemy
+            }
+          }
+          
+          console.log(`[ELIMINATION] ${player.name} eliminated! No cities for ${ticksWithoutCity} ticks. Killed by: ${killerId}`);
+          eliminatedPlayers.push({ playerId: player.id, killerId });
           return { ...player, isDefeated: true, noCitySinceTick };
         }
       }
@@ -1821,8 +1854,77 @@ function checkVictoryConditions(state: RoNGameState): RoNGameState {
     return { ...player, noCitySinceTick };
   });
   
+  // Transfer assets from eliminated players to their killers
+  let updatedGrid = state.grid;
+  let updatedUnits = state.units;
+  let updatedPlayers = newPlayers;
+  
+  for (const { playerId, killerId } of eliminatedPlayers) {
+    if (!killerId) continue;
+    
+    const eliminatedPlayer = state.players.find(p => p.id === playerId);
+    const killerPlayerIndex = updatedPlayers.findIndex(p => p.id === killerId);
+    
+    if (!eliminatedPlayer || killerPlayerIndex === -1) continue;
+    
+    console.log(`[ASSET TRANSFER] Transferring ${eliminatedPlayer.name}'s assets to ${updatedPlayers[killerPlayerIndex].name}`);
+    
+    // Transfer resources
+    const killerPlayer = updatedPlayers[killerPlayerIndex];
+    const newResources = { ...killerPlayer.resources };
+    newResources.food += eliminatedPlayer.resources.food;
+    newResources.wood += eliminatedPlayer.resources.wood;
+    newResources.metal += eliminatedPlayer.resources.metal;
+    newResources.gold += eliminatedPlayer.resources.gold;
+    newResources.knowledge += eliminatedPlayer.resources.knowledge;
+    newResources.oil += eliminatedPlayer.resources.oil;
+    
+    console.log(`[ASSET TRANSFER] Resources: +${Math.round(eliminatedPlayer.resources.food)}f, +${Math.round(eliminatedPlayer.resources.wood)}w, +${Math.round(eliminatedPlayer.resources.metal)}m, +${Math.round(eliminatedPlayer.resources.gold)}g`);
+    
+    updatedPlayers = updatedPlayers.map((p, i) => 
+      i === killerPlayerIndex ? { ...p, resources: newResources } : p
+    );
+    
+    // Transfer buildings
+    updatedGrid = updatedGrid.map(row =>
+      row.map(tile => {
+        if (tile.ownerId === playerId || tile.building?.ownerId === playerId) {
+          const newTile = { ...tile, ownerId: killerId };
+          if (tile.building) {
+            newTile.building = { ...tile.building, ownerId: killerId, lastAttackerId: undefined };
+          }
+          return newTile;
+        }
+        return tile;
+      })
+    );
+    
+    // Count transferred buildings
+    let buildingCount = 0;
+    state.grid.forEach(row => {
+      row.forEach(tile => {
+        if (tile.building?.ownerId === playerId) buildingCount++;
+      });
+    });
+    console.log(`[ASSET TRANSFER] ${buildingCount} buildings transferred`);
+    
+    // Transfer units (including citizens)
+    const transferredUnits = updatedUnits.filter(u => u.ownerId === playerId);
+    console.log(`[ASSET TRANSFER] ${transferredUnits.length} units transferred (${transferredUnits.filter(u => u.type === 'citizen').length} citizens)`);
+    
+    updatedUnits = updatedUnits.map(unit => 
+      unit.ownerId === playerId ? { ...unit, ownerId: killerId } : unit
+    );
+    
+    // Update population for killer (add eliminated player's population)
+    const citizenCount = transferredUnits.filter(u => u.type === 'citizen').length;
+    updatedPlayers = updatedPlayers.map((p, i) => 
+      i === killerPlayerIndex ? { ...p, population: p.population + citizenCount } : p
+    );
+  }
+  
   // Check for winner
-  const activePlayers = newPlayers.filter(p => !p.isDefeated);
+  const activePlayers = updatedPlayers.filter(p => !p.isDefeated);
   let winnerId: string | null = null;
   let gameOver = false;
   
@@ -1833,5 +1935,5 @@ function checkVictoryConditions(state: RoNGameState): RoNGameState {
     gameOver = true; // Draw
   }
   
-  return { ...state, players: newPlayers, gameOver, winnerId };
+  return { ...state, players: updatedPlayers, units: updatedUnits, grid: updatedGrid, gameOver, winnerId };
 }

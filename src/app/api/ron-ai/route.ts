@@ -49,6 +49,22 @@ Oil: ${Math.round(p.resources.oil || 0)} (+${(p.resourceRates.oil || 0).toFixed(
 
 ## POPULATION: ${p.population}/${p.populationCap} | Age: ${p.age}
 
+## NEXT AGE:
+${(() => {
+  if (!condensed.nextAgeRequirements) return 'At max age!';
+  const reqs = condensed.nextAgeRequirements;
+  const canAfford = condensed.canAdvanceAge;
+  const reqStrs = Object.entries(reqs).map(([res, amt]) => {
+    const have = Math.floor(p.resources[res as keyof typeof p.resources] || 0);
+    const need = amt as number;
+    const ok = have >= need;
+    return `${res}: ${have}/${need}${ok ? ' ✓' : ' ✗'}`;
+  });
+  return canAfford 
+    ? `READY TO ADVANCE! Requirements met: ${reqStrs.join(', ')}`
+    : `Need: ${reqStrs.join(', ')}`;
+})()}
+
 ## YOUR BUILDINGS:
 ${condensed.myBuildings.map(b => `- ${b.type} at (${b.x},${b.y})`).join('\n') || '(none)'}
 
@@ -455,7 +471,9 @@ CRITICAL - KNOWLEDGE & AGES:
 - Libraries don't generate knowledge automatically! You MUST assign workers to library using assign_worker!
 - Check your knowledge rate - if it's 0, you need more workers at libraries
 - Age advancement is key to winning! Each age = much stronger units
-- Prioritize: library → assign 1-2 workers to it → accumulate knowledge → advance_age when ready
+- Check "NEXT AGE" in your state - it shows EXACTLY what you need and whether you can afford it
+- ONLY call advance_age when ALL requirements show ✓ - don't waste turns trying when you can't afford it!
+- While waiting for age resources: train citizens, build economy, or start military production
 
 TIPS:
 - Balance workers: food + wood for economy, gold for cities, KNOWLEDGE for ages
@@ -463,7 +481,12 @@ TIPS:
 - Assign workers with assign_worker (works on ANY citizen, idle or not)
 - Use kill_unit to free population cap when at limit
 
-Think strategically. Adapt. Dominate.`;
+MAXIMIZE EACH TURN:
+- Every turn, do MULTIPLE actions: train citizens AND build AND assign workers
+- Don't wait around - if you can't afford something, do other productive things
+- Having 0 military while enemies have 25 units is DANGEROUS - start training troops!
+
+Act decisively. No wasted turns.`;
 
 interface AIAction {
   type: 'build' | 'unit_task' | 'train' | 'resource_update';

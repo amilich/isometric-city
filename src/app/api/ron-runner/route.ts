@@ -141,7 +141,7 @@ async function processAITurn(playerId: string): Promise<{ success: boolean; acti
       const actions = result.actions || [];
       for (const action of actions) {
         recentActions.push({
-          tick: gameState.tick,
+          tick: gameState?.tick ?? 0,
           playerId,
           type: action.type,
           args: action.data || {},

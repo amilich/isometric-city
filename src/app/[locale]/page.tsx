@@ -9,7 +9,7 @@ import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/re
 import { SavedCityMeta } from '@/types/game';
 import { useTranslations } from 'next-intl';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
-import { SettingsPanel } from '@/components/game/panels';
+import { SettingsPanel, ScenarioSelectPanel } from '@/components/game/panels';
 import { 
   Play, 
   Hammer, 
@@ -631,6 +631,11 @@ function HomePageContent() {
               onClick={() => setShowLoadGame(true)}
             />
             <MenuButton 
+              icon={Target} 
+              label="Senaryolar" 
+              onClick={() => setActivePanel('scenarios')}
+            />
+            <MenuButton 
               icon={ShoppingBag} 
               label={t('shop')} 
             />
@@ -695,6 +700,7 @@ function HomePageContent() {
       </Dialog>
       
       {state.activePanel === 'settings' && <SettingsPanel />}
+      {state.activePanel === 'scenarios' && <ScenarioSelectPanel />}
 
     </main>
   );

@@ -5,8 +5,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useGame, DayNightMode } from '@/context/GameContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -16,28 +15,28 @@ import { Separator } from '@/components/ui/separator';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
-import { Download, Upload } from 'lucide-react';
+import { 
+  Download, 
+  Upload, 
+  Settings, 
+  Palette, 
+  Building2, 
+  Code2, 
+  Save, 
+  Trash2, 
+  RefreshCw,
+  Eye,
+  Globe,
+  Monitor
+} from 'lucide-react';
 
-// Format a date for display
-function formatDate(timestamp: number): string {
-  const date = new Date(timestamp);
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-// Format population for display
+// Formatters...
 function formatPopulation(pop: number): string {
   if (pop >= 1000000) return `${(pop / 1000000).toFixed(1)}M`;
   if (pop >= 1000) return `${(pop / 1000).toFixed(1)}K`;
   return pop.toString();
 }
 
-// Format money for display
 function formatMoney(money: number): string {
   if (money >= 1000000) return `₺${(money / 1000000).toFixed(1)}M`;
   if (money >= 1000) return `₺${(money / 1000).toFixed(1)}K`;
@@ -46,10 +45,33 @@ function formatMoney(money: number): string {
 
 export function SettingsPanel() {
   const t = useTranslations('Game.Panels');
-  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, zoomSensitivity, setZoomSensitivity, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
+  const { 
+    state, 
+    setActivePanel, 
+    setDisastersEnabled, 
+    newGame, 
+    loadState, 
+    exportState, 
+    currentSpritePack, 
+    availableSpritePacks, 
+    setSpritePack, 
+    dayNightMode, 
+    setDayNightMode, 
+    zoomSensitivity, 
+    setZoomSensitivity, 
+    getSavedCityInfo, 
+    restoreSavedCity, 
+    savedCities, 
+    saveCity, 
+    loadSavedCity, 
+    deleteSavedCity, 
+    renameSavedCity 
+  } = useGame();
+
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'game' | 'appearance' | 'city' | 'dev'>('game');
+  
+  // State management for modals/inputs
   const [newCityName, setNewCityName] = useState(cityName);
   const [showNewGameConfirm, setShowNewGameConfirm] = useState(false);
   const [saveCitySuccess, setSaveCitySuccess] = useState(false);
@@ -60,51 +82,19 @@ export function SettingsPanel() {
   const [importError, setImportError] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
   const [savedCityInfo, setSavedCityInfo] = useState(getSavedCityInfo());
-  
-  // Refresh saved city info when panel opens
-  React.useEffect(() => {
-    setSavedCityInfo(getSavedCityInfo());
-  }, [getSavedCityInfo]);
-  
-  // Initialize showSpriteTest from query parameter
+
+  // URL State management for SpriteTest
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const spriteTestFromUrl = searchParams?.get('spriteTest') === 'true';
   const [showSpriteTest, setShowSpriteTest] = useState(spriteTestFromUrl);
-  const lastUrlValueRef = useRef(spriteTestFromUrl);
-  const isUpdatingFromStateRef = useRef(false);
-  
-  // Sync state with query parameter when URL changes externally
+
+  // Sync saved city info
   useEffect(() => {
-    const spriteTestParam = searchParams?.get('spriteTest') === 'true';
-    // Only update if URL value actually changed and we're not updating from state
-    if (spriteTestParam !== lastUrlValueRef.current && !isUpdatingFromStateRef.current) {
-      lastUrlValueRef.current = spriteTestParam;
-      setTimeout(() => setShowSpriteTest(spriteTestParam), 0);
-    }
-  }, [searchParams]);
-  
-  // Sync query parameter when showSpriteTest changes (but avoid loops)
-  useEffect(() => {
-    const currentParam = searchParams?.get('spriteTest') === 'true';
-    if (currentParam === showSpriteTest) return; // Already in sync
-    
-    isUpdatingFromStateRef.current = true;
-    lastUrlValueRef.current = showSpriteTest;
-    
-    const params = new URLSearchParams(searchParams?.toString() || '');
-    if (showSpriteTest) {
-      params.set('spriteTest', 'true');
-    } else {
-      params.delete('spriteTest');
-    }
-    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-    router.replace(newUrl, { scroll: false });
-    
-    // Reset flag after URL update
-    setTimeout(() => {
-      isUpdatingFromStateRef.current = false;
-    }, 0);
-  }, [showSpriteTest, searchParams, router]);
-  
+    setSavedCityInfo(getSavedCityInfo());
+  }, [getSavedCityInfo]);
+
+  // Handle file operations
   const handleDownload = () => {
     const exportedString = exportState();
     let exportedData;
@@ -122,13 +112,8 @@ export function SettingsPanel() {
       source: "Trunçgil My City"
     };
 
-    const finalData = {
-      ...exportedData,
-      metadata
-    };
-
+    const finalData = { ...exportedData, metadata };
     const content = "/*Trunçgil My City Structure File*/\n" + JSON.stringify(finalData, null, 2);
-    
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -158,7 +143,6 @@ export function SettingsPanel() {
       }
 
       const jsonString = content.substring(header.length).trim();
-      
       try {
         const data = JSON.parse(jsonString);
         const success = loadState(JSON.stringify(data));
@@ -179,526 +163,303 @@ export function SettingsPanel() {
     reader.readAsText(file);
     e.target.value = '';
   };
-  
+
+  const menuItems = [
+    { id: 'game', label: t('GameSettings'), icon: Settings },
+    { id: 'appearance', label: 'Görünüm', icon: Palette },
+    { id: 'city', label: t('CityInfo'), icon: Building2 },
+    { id: 'dev', label: t('DevTools'), icon: Code2 },
+  ] as const;
+
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[800px] w-full max-h-[85vh] overflow-y-auto flex flex-col p-6">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-2xl">{t('Settings')}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-5xl bg-[#1e293b]/95 border-slate-700 text-slate-100 p-0 overflow-hidden shadow-2xl h-[600px] flex gap-0">
+        <DialogTitle className="sr-only">{t('Settings')}</DialogTitle>
         
-        <Tabs defaultValue="game" className="w-full flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="game">{t('GameSettings')}</TabsTrigger>
-            <TabsTrigger value="appearance">Görünüm</TabsTrigger>
-            <TabsTrigger value="city">{t('CityInfo')}</TabsTrigger>
-            <TabsTrigger value="dev">{t('DevTools')}</TabsTrigger>
-          </TabsList>
-
-          <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-2">
-            
-            {/* Game Settings Tab */}
-            <TabsContent value="game" className="mt-0 space-y-6">
-              <div className="flex items-center justify-between py-2 gap-4 border-b border-border/50 pb-4">
-                <div className="flex-1 min-w-0">
-                  <Label className="text-base">{t('Disasters')}</Label>
-                  <p className="text-muted-foreground text-sm">{t('DisastersDesc')}</p>
-                </div>
-                <Switch
-                  checked={disastersEnabled}
-                  onCheckedChange={setDisastersEnabled}
-                />
-              </div>
-
-              <div className="flex items-center justify-between py-2 gap-4 border-b border-border/50 pb-4">
-                <div className="flex-1 min-w-0">
-                  <Label className="text-base">Dil / Language</Label>
-                  <p className="text-muted-foreground text-sm">Arayüz dilini değiştir / Change interface language</p>
-                </div>
-                <LanguageSelector variant="game" />
-              </div>
-
-              <div className="py-2">
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-base">{t('ZoomSensitivity')}</Label>
-                  <span className="text-sm text-muted-foreground">{zoomSensitivity}</span>
-                </div>
-                <Slider
-                  value={[zoomSensitivity]}
-                  min={1}
-                  max={10}
-                  step={1}
-                  onValueChange={(vals) => setZoomSensitivity(vals[0])}
-                  className="py-4"
-                />
-                <p className="text-muted-foreground text-sm">{t('ZoomSensitivityDesc')}</p>
-              </div>
-            </TabsContent>
-            
-            {/* Appearance Tab */}
-            <TabsContent value="appearance" className="mt-0 space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base">{t('SpritePack')}</Label>
-                  <p className="text-muted-foreground text-sm mb-3">{t('SpritePackDesc')}</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {availableSpritePacks.map((pack) => (
-                      <button
-                        key={pack.id}
-                        onClick={() => setSpritePack(pack.id)}
-                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                          currentSpritePack.id === pack.id
-                            ? 'border-primary bg-primary/10 text-foreground ring-1 ring-primary'
-                            : 'border-border hover:border-muted-foreground/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                      >
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 relative shadow-sm">
-                          <Image 
-                            src={pack.src} 
-                            alt={pack.name}
-                            fill
-                            className="object-cover object-top"
-                            style={{ imageRendering: 'pixelated' }}
-                            unoptimized
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">{pack.name}</div>
-                          <div className="text-xs text-muted-foreground truncate opacity-70">{pack.src.split('/').pop()}</div>
-                        </div>
-                        {currentSpritePack.id === pack.id && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0 shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-border">
-                  <Label className="text-base">{t('DayNightMode')}</Label>
-                  <p className="text-muted-foreground text-sm mb-3">{t('DayNightModeDesc')}</p>
-                  <div className="flex rounded-lg border border-border overflow-hidden bg-muted/20 p-1">
-                    {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
-                      <button
-                        key={mode}
-                        onClick={() => setDayNightMode(mode)}
-                        className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                          dayNightMode === mode
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                      >
-                        {mode === 'auto' && t('ModeAuto')}
-                        {mode === 'day' && t('ModeDay')}
-                        {mode === 'night' && t('ModeNight')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* City & Save Tab */}
-            <TabsContent value="city" className="mt-0 space-y-6">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-border/50">
-                <div className="space-y-1">
-                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('CityName')}</span>
-                  <div className="text-lg font-semibold">{cityName}</div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('GridSize')}</span>
-                  <div className="text-lg font-semibold">{gridSize} x {gridSize}</div>
-                </div>
-                <div className="space-y-1 col-span-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">{t('AutoSave')}</span>
-                    <span className="text-sm font-medium text-emerald-500 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
-                      {t('AutoSaveEnabled')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                   <div>
-                     <div className="text-sm font-medium uppercase tracking-wider text-muted-foreground">{t('SavedCities')}</div>
-                     <p className="text-xs text-muted-foreground">{t('SavedCitiesDesc')}</p>
-                   </div>
-                   <Button
-                      variant="game"
-                      size="sm"
-                      onClick={() => {
-                        saveCity();
-                        setSaveCitySuccess(true);
-                        setTimeout(() => setSaveCitySuccess(false), 2000);
-                      }}
-                    >
-                      {saveCitySuccess ? '✓' : t('SaveCity')}
-                    </Button>
-                </div>
-                
-                {savedCities.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-2 max-h-[250px] overflow-y-auto pr-2">
-                    {savedCities.map((city) => (
-                      <div
-                        key={city.id}
-                        className={`p-3 rounded-lg border transition-all ${
-                          city.id === currentCityId
-                            ? 'border-primary/50 bg-primary/5'
-                            : 'border-border hover:border-muted-foreground/30 hover:bg-muted/30'
-                        }`}
-                      >
-                         {cityToRename?.id === city.id ? (
-                            <div className="space-y-2">
-                              <Input
-                                value={renameValue}
-                                onChange={(e) => setRenameValue(e.target.value)}
-                                placeholder={t('NewCityNamePlaceholder')}
-                                className="h-8 text-sm"
-                                autoFocus
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="game-secondary"
-                                  size="sm"
-                                  className="flex-1 h-7 text-xs"
-                                  onClick={() => {
-                                    setCityToRename(null);
-                                    setRenameValue('');
-                                  }}
-                                >
-                                  {t('Cancel')}
-                                </Button>
-                                <Button
-                                  variant="game"
-                                  size="sm"
-                                  className="flex-1 h-7 text-xs"
-                                  onClick={() => {
-                                    if (renameValue.trim()) {
-                                      renameSavedCity(city.id, renameValue.trim());
-                                    }
-                                    setCityToRename(null);
-                                    setRenameValue('');
-                                  }}
-                                >
-                                  {t('SaveCity')}
-                                </Button>
-                              </div>
-                            </div>
-                          ) : cityToDelete?.id === city.id ? (
-                            <div className="space-y-2">
-                              <p className="text-xs text-muted-foreground text-center">{t('DeleteCityConfirm')}</p>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="game-secondary"
-                                  size="sm"
-                                  className="flex-1 h-7 text-xs"
-                                  onClick={() => setCityToDelete(null)}
-                                >
-                                  {t('Cancel')}
-                                </Button>
-                                <Button
-                                  variant="game-danger"
-                                  size="sm"
-                                  className="flex-1 h-7 text-xs"
-                                  onClick={() => {
-                                    deleteSavedCity(city.id);
-                                    setCityToDelete(null);
-                                  }}
-                                >
-                                  {t('Delete')}
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-start justify-between mb-1">
-                                <div className="font-medium text-sm truncate flex-1">
-                                  {city.cityName}
-                                  {city.id === currentCityId && (
-                                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">{t('Current')}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                                <span className="flex items-center gap-1">👥 {formatPopulation(city.population)}</span>
-                                <span className="flex items-center gap-1">💰 {formatMoney(city.money)}</span>
-                                <span className="flex items-center gap-1">📐 {city.gridSize}×{city.gridSize}</span>
-                              </div>
-                              <div className="flex gap-2">
-                                {city.id !== currentCityId && (
-                                  <Button
-                                    variant="game"
-                                    size="sm"
-                                    className="flex-1 h-7 text-xs"
-                                    onClick={() => {
-                                      loadSavedCity(city.id);
-                                      setActivePanel('none');
-                                    }}
-                                  >
-                                    {t('Load')}
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="game-secondary"
-                                  size="sm"
-                                  className="flex-1 h-7 text-xs"
-                                  onClick={() => {
-                                    setCityToRename(city);
-                                    setRenameValue(city.cityName);
-                                  }}
-                                >
-                                  {t('Rename')}
-                                </Button>
-                                <Button
-                                  variant="game-secondary"
-                                  size="sm"
-                                  className="flex-1 h-7 text-xs hover:bg-destructive hover:text-destructive-foreground"
-                                  onClick={() => setCityToDelete(city)}
-                                >
-                                  {t('Delete')}
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-xs text-center py-8 border border-dashed rounded-lg bg-muted/20">
-                    {t('NoSavedCities')}
-                  </p>
-                )}
-              </div>
-
-               {savedCityInfo && (
-                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                  <h4 className="text-sm font-medium text-orange-500 mb-2">Önceki Kayıt</h4>
-                  <Button
-                    variant="game"
-                    className="w-full"
-                    onClick={() => {
-                      restoreSavedCity();
-                      setSavedCityInfo(null);
-                      setActivePanel('none');
-                    }}
-                  >
-                    {t('Restore')} {savedCityInfo.cityName}
-                  </Button>
-                  <p className="text-muted-foreground text-xs text-center mt-2">
-                    {t('RestoreDesc')}
-                  </p>
-                </div>
-              )}
-              
-              {!showNewGameConfirm ? (
-                <Button
-                  variant="game-danger"
-                  className="w-full py-6 text-base"
-                  onClick={() => setShowNewGameConfirm(true)}
+        {/* Sidebar */}
+        <div className="w-64 bg-slate-900/50 border-r border-slate-700 flex flex-col p-4">
+          <h2 className="text-xl font-bold mb-6 px-2 flex items-center gap-2 text-white">
+            <Settings className="w-5 h-5 text-blue-500" />
+            {t('Settings')}
+          </h2>
+          
+          <div className="space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${
+                    activeTab === item.id 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`}
                 >
-                  {t('NewGame')}
-                </Button>
-              ) : (
-                <div className="p-4 border border-destructive/30 bg-destructive/5 rounded-lg space-y-3">
-                  <p className="text-destructive font-medium text-sm text-center">{t('NewGameConfirm')}</p>
-                  <Input
-                    value={newCityName}
-                    onChange={(e) => setNewCityName(e.target.value)}
-                    placeholder={t('NewCityNamePlaceholder')}
+                  <Icon size={18} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-auto pt-4 border-t border-slate-800">
+             <div className="text-xs text-slate-500 px-2">
+                Version 1.0.0
+             </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 bg-slate-950/30 overflow-y-auto p-8">
+          
+          {/* Game Settings */}
+          {activeTab === 'game' && (
+            <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h3 className="text-lg font-medium text-white mb-1">{t('GameSettings')}</h3>
+                <p className="text-sm text-slate-400">Oyun deneyiminizi özelleştirin.</p>
+              </div>
+              <Separator className="bg-slate-800" />
+              
+              <div className="grid gap-6">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+                  <div className="space-y-1">
+                    <Label className="text-base text-slate-200">{t('Disasters')}</Label>
+                    <p className="text-xs text-slate-400">{t('DisastersDesc')}</p>
+                  </div>
+                  <Switch checked={disastersEnabled} onCheckedChange={setDisastersEnabled} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+                  <div className="space-y-1">
+                    <Label className="text-base text-slate-200">Dil / Language</Label>
+                    <p className="text-xs text-slate-400">Arayüz dilini değiştir</p>
+                  </div>
+                  <LanguageSelector variant="game" />
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base text-slate-200">{t('ZoomSensitivity')}</Label>
+                    <span className="px-2 py-1 rounded bg-slate-800 text-xs font-mono text-slate-300">{zoomSensitivity}</span>
+                  </div>
+                  <Slider
+                    value={[zoomSensitivity]}
+                    min={1}
+                    max={10}
+                    step={1}
+                    onValueChange={(vals) => setZoomSensitivity(vals[0])}
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="game-secondary"
-                      className="flex-1"
-                      onClick={() => setShowNewGameConfirm(false)}
-                    >
-                      {t('Cancel')}
+                  <p className="text-xs text-slate-400">{t('ZoomSensitivityDesc')}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Appearance Settings */}
+          {activeTab === 'appearance' && (
+            <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h3 className="text-lg font-medium text-white mb-1">Görünüm</h3>
+                <p className="text-sm text-slate-400">Şehrinizin nasıl görüneceğini seçin.</p>
+              </div>
+              <Separator className="bg-slate-800" />
+
+              <div className="space-y-6">
+                 <div>
+                    <Label className="text-base text-slate-200 mb-4 block">{t('SpritePack')}</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      {availableSpritePacks.map((pack) => (
+                        <button
+                          key={pack.id}
+                          onClick={() => setSpritePack(pack.id)}
+                          className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all text-left ${
+                            currentSpritePack.id === pack.id
+                              ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/50'
+                              : 'border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-950 flex-shrink-0 relative shadow-sm border border-white/5">
+                            <Image 
+                              src={pack.src} 
+                              alt={pack.name}
+                              fill
+                              className="object-cover object-top"
+                              style={{ imageRendering: 'pixelated' }}
+                              unoptimized
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm text-slate-200 group-hover:text-white">{pack.name}</div>
+                            <div className="text-xs text-slate-500 mt-1 font-mono opacity-70">{pack.id}</div>
+                          </div>
+                          {currentSpritePack.id === pack.id && (
+                             <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                 </div>
+
+                 <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+                    <Label className="text-base text-slate-200 mb-3 block">{t('DayNightMode')}</Label>
+                    <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                      {(['auto', 'day', 'night'] as DayNightMode[]).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => setDayNightMode(mode)}
+                          className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                            dayNightMode === mode
+                              ? 'bg-slate-800 text-white shadow-sm ring-1 ring-slate-700'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                          }`}
+                        >
+                          {mode === 'auto' && <><Monitor size={14}/> {t('ModeAuto')}</>}
+                          {mode === 'day' && <><Eye size={14}/> {t('ModeDay')}</>}
+                          {mode === 'night' && <><Globe size={14}/> {t('ModeNight')}</>}
+                        </button>
+                      ))}
+                    </div>
+                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* City Settings */}
+          {activeTab === 'city' && (
+            <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h3 className="text-lg font-medium text-white mb-1">{t('CityInfo')}</h3>
+                <p className="text-sm text-slate-400">Şehrinizi yönetin, kaydedin veya yükleyin.</p>
+              </div>
+              <Separator className="bg-slate-800" />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 p-6 rounded-xl bg-gradient-to-br from-slate-900 to-slate-900/50 border border-slate-800 flex items-center justify-between">
+                   <div>
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('CityName')}</div>
+                      <div className="text-2xl font-bold text-white">{cityName}</div>
+                   </div>
+                   <div className="text-right">
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('GridSize')}</div>
+                      <div className="text-xl font-mono text-slate-300">{gridSize} x {gridSize}</div>
+                   </div>
+                </div>
+
+                <div className="col-span-2 space-y-4">
+                   <div className="flex items-center justify-between">
+                     <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('SavedCities')}</h4>
+                     <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                        onClick={() => {
+                          saveCity();
+                          setSaveCitySuccess(true);
+                          setTimeout(() => setSaveCitySuccess(false), 2000);
+                        }}
+                      >
+                        {saveCitySuccess ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Kaydedildi</> : <><Save className="mr-2 h-4 w-4" /> {t('SaveCity')}</>}
+                      </Button>
+                   </div>
+                   
+                   <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-2">
+                      {savedCities.length > 0 ? savedCities.map((city) => (
+                        <div key={city.id} className="group flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800 transition-all">
+                           <div className="min-w-0 flex-1">
+                              <div className="font-medium text-slate-200 truncate flex items-center gap-2">
+                                {city.cityName}
+                                {city.id === currentCityId && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Aktif</span>}
+                              </div>
+                              <div className="text-xs text-slate-500 mt-1 flex gap-3">
+                                 <span>POP: {formatPopulation(city.population)}</span>
+                                 <span>{formatMoney(city.money)}</span>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => loadSavedCity(city.id)}>
+                                <Upload size={14} />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-400" onClick={() => deleteSavedCity(city.id)}>
+                                <Trash2 size={14} />
+                              </Button>
+                           </div>
+                        </div>
+                      )) : (
+                        <div className="text-center py-8 text-slate-500 text-sm border-2 border-dashed border-slate-800 rounded-xl">
+                          {t('NoSavedCities')}
+                        </div>
+                      )}
+                   </div>
+                </div>
+
+                <div className="col-span-2 pt-4">
+                  {!showNewGameConfirm ? (
+                    <Button variant="destructive" className="w-full" onClick={() => setShowNewGameConfirm(true)}>
+                      {t('NewGame')}
                     </Button>
-                    <Button
-                      variant="game-danger"
-                      className="flex-1"
-                      onClick={() => {
-                        newGame(newCityName || 'Yeni Şehir', gridSize);
+                  ) : (
+                    <div className="p-4 rounded-xl border border-red-900/50 bg-red-950/20 space-y-3">
+                      <p className="text-sm text-red-400 text-center">{t('NewGameConfirm')}</p>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" className="flex-1" onClick={() => setShowNewGameConfirm(false)}>{t('Cancel')}</Button>
+                        <Button variant="destructive" className="flex-1" onClick={() => { newGame('Yeni Şehir', gridSize); setActivePanel('none'); }}>{t('Reset')}</Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                    <Button variant="outline" className="border-slate-700 hover:bg-slate-800" onClick={handleDownload}>
+                      <Download className="mr-2 h-4 w-4" /> İndir (.tmc)
+                    </Button>
+                    <div className="relative">
+                      <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".tmc" className="hidden" />
+                      <Button variant="outline" className="w-full border-slate-700 hover:bg-slate-800" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-4 w-4" /> Yükle (.tmc)
+                      </Button>
+                    </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Dev Tools */}
+          {activeTab === 'dev' && (
+            <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-300">
+               <div>
+                <h3 className="text-lg font-medium text-white mb-1">{t('DevTools')}</h3>
+                <p className="text-sm text-slate-400">Geliştirici araçları ve örnekler.</p>
+              </div>
+              <Separator className="bg-slate-800" />
+              
+              <div className="grid grid-cols-2 gap-3">
+                 <Button variant="secondary" onClick={() => setShowSpriteTest(true)}>
+                    Sprite Test
+                 </Button>
+                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                    <Button 
+                      key={num} 
+                      variant="outline" 
+                      className="border-slate-700 hover:bg-slate-800"
+                      onClick={async () => {
+                        const module = await import(`@/resources/example_state${num === 1 ? '' : `_${num}`}.json`);
+                        loadState(JSON.stringify(module.default));
                         setActivePanel('none');
                       }}
                     >
-                      {t('Reset')}
+                      Örnek Şehir {num}
                     </Button>
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">{t('ExportGame')}</div>
-                    <Button
-                      variant="game-secondary"
-                      className="w-full h-auto py-2 text-xs flex items-center justify-center gap-2"
-                      onClick={handleDownload}
-                    >
-                      <Download size={14} />
-                      İndir (.tmc)
-                    </Button>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">{t('ImportGame')}</div>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileUpload}
-                        accept=".tmc"
-                        className="hidden"
-                    />
-                    <div className="relative">
-                        <Button
-                          variant="game-secondary"
-                          className="w-full h-auto py-2 text-xs flex items-center justify-center gap-2"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <Upload size={14} />
-                          Yükle (.tmc)
-                        </Button>
-                    </div>
-                     {importError && (
-                      <p className="text-red-400 text-[10px] mt-1">Hata! Geçersiz dosya.</p>
-                    )}
-                    {importSuccess && (
-                      <p className="text-green-400 text-[10px] mt-1">Başarılı!</p>
-                    )}
-                  </div>
+                 ))}
               </div>
+            </div>
+          )}
 
-            </TabsContent>
-
-            {/* Dev Tools Tab */}
-            <TabsContent value="dev" className="mt-0 space-y-4">
-               <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={() => setShowSpriteTest(true)}
-                >
-                  {t('OpenSpriteTest')}
-                </Button>
-                {/* Example Loaders */}
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState } = await import('@/resources/example_state.json');
-                    loadState(JSON.stringify(exampleState));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')}
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState2 } = await import('@/resources/example_state_2.json');
-                    loadState(JSON.stringify(exampleState2));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 2
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState3 } = await import('@/resources/example_state_3.json');
-                    loadState(JSON.stringify(exampleState3));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 3
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState4 } = await import('@/resources/example_state_4.json');
-                    loadState(JSON.stringify(exampleState4));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 4
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState5 } = await import('@/resources/example_state_5.json');
-                    loadState(JSON.stringify(exampleState5));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 5
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState6 } = await import('@/resources/example_state_6.json');
-                    loadState(JSON.stringify(exampleState6));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 6
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState7 } = await import('@/resources/example_state_7.json');
-                    loadState(JSON.stringify(exampleState7));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 7
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState8 } = await import('@/resources/example_state_8.json');
-                    loadState(JSON.stringify(exampleState8));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 8
-                </Button>
-                <Button
-                  variant="game-secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    const { default: exampleState9 } = await import('@/resources/example_state_9.json');
-                    loadState(JSON.stringify(exampleState9));
-                    setActivePanel('none');
-                  }}
-                >
-                  {t('LoadExample')} 9
-                </Button>
-               </div>
-            </TabsContent>
-
-          </div>
-        </Tabs>
+        </div>
       </DialogContent>
       
       {showSpriteTest && (
-        <SpriteTestPanel onClose={() => {
-          setShowSpriteTest(false);
-          // Query param will be cleared by useEffect above
-        }} />
+        <SpriteTestPanel onClose={() => setShowSpriteTest(false)} />
       )}
     </Dialog>
   );

@@ -12,6 +12,8 @@ import {
   TOOL_INFO,
   ZoneType,
 } from '@/types/game';
+import { SCENARIOS } from '@/data/scenarios';
+import { Objective } from '@/types/scenario';
 import {
   bulldozeTile,
   createInitialGameState,
@@ -90,6 +92,9 @@ type GameContextValue = {
   loadSavedCity: (cityId: string) => boolean;
   deleteSavedCity: (cityId: string) => void;
   renameSavedCity: (cityId: string, newName: string) => void;
+  // Scenario System
+  startScenario: (scenarioId: string) => void;
+  checkObjectives: () => void;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -919,9 +924,209 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Increment gameVersion from current state to ensure vehicles/entities are cleared
     setState((prev) => ({
       ...fresh,
+      gameMode: 'sandbox', // Explicitly set sandbox
       gameVersion: (prev.gameVersion ?? 0) + 1,
     }));
   }, []);
+
+  const addNotification = useCallback((title: string, description: string, icon: string) => {
+    setState((prev) => {
+      const newNotifications = [
+        {
+          id: `cheat-${Date.now()}-${Math.random()}`,
+          title,
+          description,
+          icon,
+          timestamp: Date.now(),
+        },
+        ...prev.notifications,
+      ];
+      // Keep only recent notifications
+      while (newNotifications.length > 10) {
+        newNotifications.pop();
+      }
+      return {
+        ...prev,
+        notifications: newNotifications,
+      };
+    });
+  }, []);
+
+  const startScenario = useCallback((scenarioId: string) => {
+    const scenario = SCENARIOS.find(s => s.id === scenarioId);
+    if (!scenario) return;
+
+    clearGameState();
+    const fresh = createInitialGameState(scenario.mapConfig?.size ?? DEFAULT_GRID_SIZE, scenario.name);
+    
+    // Override defaults
+    fresh.gameMode = 'scenario';
+    fresh.activeScenarioId = scenarioId;
+    fresh.scenarioObjectives = JSON.parse(JSON.stringify(scenario.objectives)); // Deep copy
+    if (scenario.initialMoney !== undefined) fresh.stats.money = scenario.initialMoney;
+    
+    // Initial objective value check
+    fresh.scenarioObjectives?.forEach(obj => {
+       obj.currentValue = 0;
+       obj.isCompleted = false;
+    });
+
+    setState((prev) => ({
+      ...fresh,
+      gameVersion: (prev.gameVersion ?? 0) + 1,
+    }));
+    
+    // Close any open panels
+    setActivePanel('none');
+    
+    // Notify player
+    setTimeout(() => {
+        addNotification(
+            'Senaryo Başladı!',
+            `${scenario.name}: ${scenario.description}`,
+            'trophy'
+        );
+    }, 500);
+  }, [addNotification]);
+
+  // Check scenario objectives
+  useEffect(() => {
+    if (state.gameMode !== 'scenario' || !state.scenarioObjectives) return;
+
+    const checkInterval = setInterval(() => {
+      setState(prev => {
+        if (prev.gameMode !== 'scenario' || !prev.scenarioObjectives) return prev;
+
+        // Check Time Limit
+        const scenario = SCENARIOS.find(s => s.id === prev.activeScenarioId);
+        if (scenario?.timeLimit) {
+            const currentTotalMonths = prev.year * 12 + prev.month;
+            const limitTotalMonths = scenario.timeLimit.year * 12 + scenario.timeLimit.month;
+            
+            // Adjust for start year (usually 2024)
+            // Assuming timeLimit.year is relative (e.g. year 3 means 3 years from start)
+            // Or absolute year? Let's assume relative for now, or check createInitialGameState
+            // createInitialGameState starts at year 2024.
+            // If scenario says "year 3", does it mean 2027?
+            // Let's assume timeLimit year is the target year (e.g. 2030) if > 2000, else relative
+            
+            let targetYear = scenario.timeLimit.year;
+            if (targetYear < 2000) targetYear += 2024; // Base year
+            
+            if (prev.year > targetYear || (prev.year === targetYear && prev.month > scenario.timeLimit.month)) {
+                // Time's up! Check if all objectives are met
+                const allCompleted = prev.scenarioObjectives?.every(o => o.isCompleted);
+                
+                if (!allCompleted && !prev.notifications.some(n => n.title === 'Senaryo Başarısız!')) {
+                     return {
+                        ...prev,
+                        notifications: [
+                            {
+                                id: `scen-fail-${Date.now()}`,
+                                title: 'Senaryo Başarısız!',
+                                description: 'Süre doldu ve hedefler tamamlanamadı.',
+                                icon: 'alert-triangle',
+                                timestamp: Date.now(),
+                            },
+                            ...prev.notifications
+                        ]
+                     };
+                }
+            }
+        }
+
+        let objectivesChanged = false;
+        let justCompletedObjective = false;
+        
+        const newObjectives = prev.scenarioObjectives.map(obj => {
+          if (obj.isCompleted) return obj;
+
+          let isMet = false;
+          let currentVal = 0;
+
+          switch (obj.type) {
+            case 'population':
+              currentVal = prev.stats.population;
+              isMet = prev.stats.population >= obj.targetValue;
+              break;
+            case 'money':
+              currentVal = prev.stats.money;
+              isMet = prev.stats.money >= obj.targetValue;
+              break;
+            case 'happiness':
+              currentVal = prev.stats.happiness;
+              isMet = prev.stats.happiness >= obj.targetValue;
+              break;
+            case 'building_count':
+               let count = 0;
+               if (obj.targetId) {
+                 // Simple grid scan - can be optimized if needed
+                 prev.grid.forEach(row => row.forEach(tile => {
+                   if (tile.building.type === obj.targetId) count++;
+                 }));
+               }
+               currentVal = count;
+               isMet = count >= obj.targetValue;
+               break;
+          }
+
+          if (isMet) {
+             objectivesChanged = true;
+             justCompletedObjective = true;
+             return { ...obj, isCompleted: true, currentValue: currentVal };
+          }
+          
+          if (currentVal !== obj.currentValue) {
+             objectivesChanged = true;
+             return { ...obj, currentValue: currentVal };
+          }
+
+          return obj;
+        });
+
+        if (!objectivesChanged) return prev;
+
+        let newNotifications = prev.notifications;
+        if (justCompletedObjective) {
+             newNotifications = [
+                {
+                  id: `obj-comp-${Date.now()}`,
+                  title: 'Hedef Tamamlandı!',
+                  description: 'Tebrikler, bir senaryo hedefini tamamladınız.',
+                  icon: 'check',
+                  timestamp: Date.now(),
+                },
+                ...prev.notifications
+             ];
+        }
+
+        // Check if ALL completed
+        const allCompleted = newObjectives.every(o => o.isCompleted);
+        if (allCompleted && !prev.notifications.some(n => n.title === 'Senaryo Tamamlandı!')) {
+             const scenario = SCENARIOS.find(s => s.id === prev.activeScenarioId);
+             newNotifications = [
+                {
+                  id: `scen-comp-${Date.now()}`,
+                  title: 'Senaryo Tamamlandı!',
+                  description: scenario?.winMessage || 'Tüm hedefleri başardınız!',
+                  icon: 'trophy',
+                  timestamp: Date.now(),
+                },
+                ...newNotifications
+             ];
+        }
+        
+        return {
+          ...prev,
+          scenarioObjectives: newObjectives,
+          notifications: newNotifications
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(checkInterval);
+  }, [state.gameMode, state.scenarioObjectives?.length]); // Re-run if mode changes
+
 
   const loadState = useCallback((stateString: string): boolean => {
     try {
@@ -1002,29 +1207,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         money: prev.stats.money + amount,
       },
     }));
-  }, []);
-
-  const addNotification = useCallback((title: string, description: string, icon: string) => {
-    setState((prev) => {
-      const newNotifications = [
-        {
-          id: `cheat-${Date.now()}-${Math.random()}`,
-          title,
-          description,
-          icon,
-          timestamp: Date.now(),
-        },
-        ...prev.notifications,
-      ];
-      // Keep only recent notifications
-      while (newNotifications.length > 10) {
-        newNotifications.pop();
-      }
-      return {
-        ...prev,
-        notifications: newNotifications,
-      };
-    });
   }, []);
 
   // Save current city for restore (when viewing shared cities)
@@ -1230,6 +1412,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     loadSavedCity,
     deleteSavedCity,
     renameSavedCity,
+    startScenario,
+    checkObjectives: () => {}, // Handled by effect
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

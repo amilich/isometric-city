@@ -25,6 +25,7 @@ import {
   SettingsPanel,
   AdvisorsPanel,
 } from '@/components/game/panels';
+import { ScenarioHUD } from '@/components/game/panels/ScenarioHUD';
 import { MiniMap } from '@/components/game/MiniMap';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
 
@@ -227,6 +228,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               isMobile={true}
               onBargeDelivery={handleBargeDelivery}
             />
+            <ScenarioHUD />
           </div>
           
           {/* Mobile Bottom Toolbar */}
@@ -272,6 +274,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               overlayMode={overlayMode}
               setOverlayMode={setOverlayMode}
             />
+            <ScenarioHUD />
         </div>
 
         <BottomHUD onExit={onExit} />

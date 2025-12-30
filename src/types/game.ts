@@ -313,10 +313,15 @@ export interface WaterBody {
   centerY: number;
 }
 
-export type ActivePanel = 'none' | 'budget' | 'statistics' | 'advisors' | 'settings';
+export type ActivePanel = 'none' | 'budget' | 'statistics' | 'advisors' | 'settings' | 'scenarios';
+
+import { Objective } from './scenario';
 
 export interface GameState {
   id: string; // Unique UUID for this game
+  gameMode: 'sandbox' | 'scenario'; // New field
+  activeScenarioId?: string; // New field
+  scenarioObjectives?: Objective[]; // New field
   grid: Tile[][];
   gridSize: number;
   cityName: string;

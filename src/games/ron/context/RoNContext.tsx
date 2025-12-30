@@ -243,8 +243,9 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
   const [agenticAIEnabled, setAgenticAIEnabled] = useState(true);
 
   // Initialize with a default 5-player game (1 human vs 4 AIs)
+  // Map size 130 = 30% bigger than original 100
   const [state, setState] = useState<RoNGameState>(() =>
-    createInitialRoNGameState(100, [
+    createInitialRoNGameState(130, [
       { name: 'Player', type: 'human', color: '#3b82f6' },
       { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
       { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },
@@ -354,7 +355,7 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
             switch (cmd.action) {
               case 'reset':
                 // Reset game to fresh state (1 human + 4 AIs)
-                const newState = createInitialRoNGameState(100, [
+                const newState = createInitialRoNGameState(130, [
                   { name: 'Player', type: 'human', color: '#3b82f6' },
                   { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
                   { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },
@@ -1077,7 +1078,7 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
 
   // Reset game to initial state (1 human + 4 AIs)
   const resetGame = useCallback(() => {
-    const newState = createInitialRoNGameState(100, [
+    const newState = createInitialRoNGameState(130, [
       { name: 'Player', type: 'human', color: '#3b82f6' },
       { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
       { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },

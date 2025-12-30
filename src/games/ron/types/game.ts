@@ -460,7 +460,7 @@ export function createInitialRoNGameState(
   }
 
   // Add forests in clumps (not scattered random tiles) - lots of forests for RoN style maps
-  const numForests = 18 + Math.floor(Math.random() * 10); // 18-28 forest clumps
+  const numForests = 36 + Math.floor(Math.random() * 20); // 36-56 forest clumps (2x more)
   for (let i = 0; i < numForests; i++) {
     const fx = Math.floor(gridSize * 0.05) + Math.floor(Math.random() * (gridSize * 0.90));
     const fy = Math.floor(gridSize * 0.05) + Math.floor(Math.random() * (gridSize * 0.90));
@@ -484,8 +484,8 @@ export function createInitialRoNGameState(
     }
   }
   
-  // Generate 10-16 metal deposit clusters (mountain ranges) - lots of mountains for RoN style maps
-  const numMetalClusters = 10 + Math.floor(Math.random() * 7);
+  // Generate 15-25 metal deposit clusters (mountain ranges) - lots of mountains for RoN style maps
+  const numMetalClusters = 15 + Math.floor(Math.random() * 11); // 50% more metal
   for (let c = 0; c < numMetalClusters; c++) {
     // Find a valid starting point for metal cluster
     let attempts = 0;
@@ -572,12 +572,15 @@ export function createInitialRoNGameState(
   }
 
   // Place starting positions for each player (supports up to 5 players)
+  // Positions are set so territory radius (24 tiles) doesn't clip at map edges
+  // With radius 24, positions should be at least 25 tiles from edges
+  const margin = 0.27; // ~27 tiles from edge ensures full territory
   const startPositions = [
-    { x: Math.floor(gridSize * 0.2), y: Math.floor(gridSize * 0.2) },  // Top-left
-    { x: Math.floor(gridSize * 0.8), y: Math.floor(gridSize * 0.8) },  // Bottom-right
-    { x: Math.floor(gridSize * 0.2), y: Math.floor(gridSize * 0.8) },  // Bottom-left
-    { x: Math.floor(gridSize * 0.8), y: Math.floor(gridSize * 0.2) },  // Top-right
-    { x: Math.floor(gridSize * 0.5), y: Math.floor(gridSize * 0.5) },  // Center
+    { x: Math.floor(gridSize * margin), y: Math.floor(gridSize * margin) },           // Top-left
+    { x: Math.floor(gridSize * (1 - margin)), y: Math.floor(gridSize * (1 - margin)) }, // Bottom-right
+    { x: Math.floor(gridSize * margin), y: Math.floor(gridSize * (1 - margin)) },       // Bottom-left
+    { x: Math.floor(gridSize * (1 - margin)), y: Math.floor(gridSize * margin) },       // Top-right
+    { x: Math.floor(gridSize * 0.5), y: Math.floor(gridSize * 0.5) },                   // Center
   ];
 
   const units: Unit[] = [];
@@ -652,6 +655,38 @@ export function createInitialRoNGameState(
             };
             grid[farmY][farmX].ownerId = player.id;
             break; // Found valid spot, stop searching
+          }
+        }
+      }
+
+      // GUARANTEE resources near each starting position so all players have equal opportunity
+      // Place a small forest cluster nearby
+      const forestOffsets = [
+        { dx: -6, dy: -4 }, { dx: -5, dy: -4 }, { dx: -6, dy: -3 },
+        { dx: -5, dy: -3 }, { dx: -4, dy: -3 },
+      ];
+      for (const offset of forestOffsets) {
+        const fx = pos.x + offset.dx;
+        const fy = pos.y + offset.dy;
+        if (fx >= 0 && fx < gridSize && fy >= 0 && fy < gridSize) {
+          const tile = grid[fy][fx];
+          if (tile.terrain === 'grass' && !tile.building && !tile.hasMetalDeposit) {
+            tile.forestDensity = 60 + Math.random() * 40;
+          }
+        }
+      }
+      
+      // Place a metal deposit nearby
+      const metalOffsets = [
+        { dx: 6, dy: -4 }, { dx: 7, dy: -4 }, { dx: 6, dy: -3 },
+      ];
+      for (const offset of metalOffsets) {
+        const mx = pos.x + offset.dx;
+        const my = pos.y + offset.dy;
+        if (mx >= 0 && mx < gridSize && my >= 0 && my < gridSize) {
+          const tile = grid[my][mx];
+          if (tile.terrain === 'grass' && !tile.building && tile.forestDensity === 0) {
+            tile.hasMetalDeposit = true;
           }
         }
       }

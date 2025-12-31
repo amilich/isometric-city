@@ -8,7 +8,7 @@
 import React, { useMemo } from 'react';
 import { useRoN } from '../context/RoNContext';
 import { Button } from '@/components/ui/button';
-import { UNIT_STATS } from '../types/units';
+import { UnitType, UNIT_AGE_NAMES } from '../types/units';
 
 export function RoNSelectedUnitsPanel() {
   const { state, getCurrentPlayer, killSelectedUnits } = useRoN();
@@ -21,11 +21,8 @@ export function RoNSelectedUnitsPanel() {
       u => state.selectedUnitIds.includes(u.id) && u.ownerId === currentPlayer.id
     );
   }, [state.units, state.selectedUnitIds, currentPlayer]);
-  
-  // If no units selected, don't render
-  if (selectedUnits.length === 0) return null;
-  
-  // Count unit types
+
+  // Count unit types (must not be conditional: hooks order must be stable)
   const unitCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const unit of selectedUnits) {
@@ -34,11 +31,13 @@ export function RoNSelectedUnitsPanel() {
     return counts;
   }, [selectedUnits]);
   
+  // If no units selected, don't render
+  if (selectedUnits.length === 0) return null;
+  
   // Format unit summary
   const unitSummary = Object.entries(unitCounts)
     .map(([type, count]) => {
-      const stats = UNIT_STATS[type as keyof typeof UNIT_STATS];
-      const displayName = stats?.name || type;
+      const displayName = UNIT_AGE_NAMES[type as UnitType]?.[currentPlayer?.age ?? 'classical'] || type;
       return count > 1 ? `${count}x ${displayName}` : displayName;
     })
     .join(', ');

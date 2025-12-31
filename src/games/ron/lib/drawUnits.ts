@@ -8,6 +8,8 @@
 import { Unit, UnitTask, UNIT_STATS } from '../types/units';
 import { TILE_WIDTH, TILE_HEIGHT, gridToScreen } from '@/components/game/shared';
 
+type Rgb = { r: number; g: number; b: number };
+
 // Skin tone colors (similar to IsoCity)
 const SKIN_TONES = ['#f5d0c5', '#e8beac', '#d4a574', '#c68642', '#8d5524', '#5c3317'];
 
@@ -26,6 +28,87 @@ const TOOL_COLORS: Record<string, string> = {
   gather_oil: '#1f2937',    // Dark oil tool
   build: '#a16207',         // Hammer
 };
+
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v));
+}
+
+function hexToRgb(hex: string): Rgb {
+  const h = hex.replace('#', '').trim();
+  const n = parseInt(h.length === 3 ? h.split('').map(ch => ch + ch).join('') : h, 16);
+  return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
+}
+
+function rgbToHex({ r, g, b }: Rgb): string {
+  const rr = Math.max(0, Math.min(255, Math.round(r)));
+  const gg = Math.max(0, Math.min(255, Math.round(g)));
+  const bb = Math.max(0, Math.min(255, Math.round(b)));
+  return `#${((1 << 24) + (rr << 16) + (gg << 8) + bb).toString(16).slice(1)}`;
+}
+
+function mixHex(a: string, b: string, t: number): string {
+  const aa = hexToRgb(a);
+  const bb = hexToRgb(b);
+  const tt = clamp01(t);
+  return rgbToHex({
+    r: aa.r + (bb.r - aa.r) * tt,
+    g: aa.g + (bb.g - aa.g) * tt,
+    b: aa.b + (bb.b - aa.b) * tt,
+  });
+}
+
+function rgbToHsl({ r, g, b }: Rgb): { h: number; s: number; l: number } {
+  const rr = r / 255;
+  const gg = g / 255;
+  const bb = b / 255;
+  const max = Math.max(rr, gg, bb);
+  const min = Math.min(rr, gg, bb);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === rr) h = ((gg - bb) / d) % 6;
+    else if (max === gg) h = (bb - rr) / d + 2;
+    else h = (rr - gg) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  const l = (max + min) / 2;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  return { h, s, l };
+}
+
+function hslToRgb({ h, s, l }: { h: number; s: number; l: number }): Rgb {
+  const hh = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((hh / 60) % 2) - 1));
+  const m = l - c / 2;
+  let rr = 0;
+  let gg = 0;
+  let bb = 0;
+  if (hh < 60) [rr, gg, bb] = [c, x, 0];
+  else if (hh < 120) [rr, gg, bb] = [x, c, 0];
+  else if (hh < 180) [rr, gg, bb] = [0, c, x];
+  else if (hh < 240) [rr, gg, bb] = [0, x, c];
+  else if (hh < 300) [rr, gg, bb] = [x, 0, c];
+  else [rr, gg, bb] = [c, 0, x];
+  return { r: (rr + m) * 255, g: (gg + m) * 255, b: (bb + m) * 255 };
+}
+
+function adjustHex(
+  hex: string,
+  opts: { saturationMul?: number; lightnessAdd?: number }
+): string {
+  const { h, s, l } = rgbToHsl(hexToRgb(hex));
+  const saturationMul = opts.saturationMul ?? 1;
+  const lightnessAdd = opts.lightnessAdd ?? 0;
+  return rgbToHex(hslToRgb({ h, s: clamp01(s * saturationMul), l: clamp01(l + lightnessAdd) }));
+}
+
+function toMutedTeamColor(playerColor: string): string {
+  // Pull saturated UI colors toward plausible cloth/paint tones.
+  const desat = adjustHex(playerColor, { saturationMul: 0.55 });
+  return mixHex(desat, '#4b5563', 0.28); // blend with slate for realism
+}
 
 /**
  * Get a numeric hash from a unit ID for animation and appearance
@@ -440,46 +523,44 @@ function drawMilitaryUnit(
   const scale = baseScale;
   const animPhase = (tick * 0.1 + getUnitIdHash(unit.id)) % (Math.PI * 2);
 
-  // Darken color for shadows
-  const darkerColor = shadeColor(color, -30);
-  const lighterColor = shadeColor(color, 30);
+  // Convert bright player color into a more realistic "paint/uniform" tone.
+  const baseTeam = toMutedTeamColor(color);
+  const darkerColor = adjustHex(baseTeam, { lightnessAdd: -0.10 });
+  const lighterColor = adjustHex(baseTeam, { lightnessAdd: 0.08 });
+  const accentColor = color; // keep original for tiny accents where used
   
   if (stats.category === 'cavalry') {
     // Draw horse/mount with rider
-    drawCavalryUnit(ctx, centerX, centerY, unit, color, darkerColor, lighterColor, scale, animPhase);
+    drawCavalryUnit(ctx, centerX, centerY, unit, baseTeam, darkerColor, lighterColor, scale, animPhase);
   } else if (stats.category === 'siege') {
     // Draw siege weapon (catapult, cannon, etc.)
-    drawSiegeUnit(ctx, centerX, centerY, unit, color, darkerColor, scale, animPhase);
+    drawSiegeUnit(ctx, centerX, centerY, unit, baseTeam, darkerColor, scale, animPhase);
   } else if (stats.category === 'ranged') {
     // Draw ranged soldier with bow/gun
-    drawRangedUnit(ctx, centerX, centerY, unit, color, darkerColor, scale, animPhase);
+    drawRangedUnit(ctx, centerX, centerY, unit, baseTeam, darkerColor, scale, animPhase);
   } else if (stats.category === 'naval') {
     // Draw ship/boat
-    drawNavalUnit(ctx, centerX, centerY, unit, color, darkerColor, lighterColor, scale, animPhase);
+    drawNavalUnit(ctx, centerX, centerY, unit, baseTeam, darkerColor, lighterColor, scale, animPhase);
   } else if (stats.category === 'air') {
     // Draw aircraft
-    drawAirUnit(ctx, centerX, centerY, unit, color, darkerColor, lighterColor, scale, animPhase);
+    drawAirUnit(ctx, centerX, centerY, unit, baseTeam, darkerColor, lighterColor, scale, animPhase);
   } else {
     // Infantry - draw soldier with weapon and shield
-    drawInfantryUnit(ctx, centerX, centerY, unit, color, darkerColor, scale, animPhase);
+    drawInfantryUnit(ctx, centerX, centerY, unit, baseTeam, darkerColor, scale, animPhase);
   }
+
+  // Tiny accent mark so players remain identifiable even with muted bodies.
+  // (Drawn last so it reads at any zoom.)
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = accentColor;
+  ctx.beginPath();
+  ctx.arc(centerX + 3 * scale, centerY - 6 * scale, 1.6 * scale, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
-/**
- * Shade a hex color lighter or darker
- */
-function shadeColor(color: string, percent: number): string {
-  const num = parseInt(color.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = (num >> 16) + amt;
-  const G = (num >> 8 & 0x00FF) + amt;
-  const B = (num & 0x0000FF) + amt;
-  return '#' + (0x1000000 + 
-    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 + 
-    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 + 
-    (B < 255 ? (B < 1 ? 0 : B) : 255)
-  ).toString(16).slice(1);
-}
+// (legacy) shadeColor was replaced with HSL-based adjustments above to avoid "neon" artifacts.
 
 /**
  * Draw infantry soldier with unique appearance per unit type
@@ -2939,7 +3020,7 @@ export function drawRoNUnit(
   
   // Draw unit based on type
   if (stats.category === 'civilian') {
-    drawCitizenUnit(ctx, centerX, centerY, unit, zoom, tick, playerColor);
+    drawCitizenUnit(ctx, centerX, centerY, unit, zoom, tick, toMutedTeamColor(playerColor));
   } else {
     drawMilitaryUnit(ctx, centerX, centerY, unit, playerColor, zoom, tick);
   }

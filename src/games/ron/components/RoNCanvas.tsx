@@ -1232,14 +1232,39 @@ export function RoNCanvas({ navigationTarget, onNavigationComplete, onViewportCh
     }
   }, [selectionBox, selectUnits, selectUnitsInArea, selectBuilding, latestStateRef]);
   
-  // Handle wheel zoom (matching IsoCity's smoother zoom)
+  // Handle wheel zoom - zoom towards cursor position (matching IsoCity)
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    // Use smaller base delta and scale by current zoom for consistent feel
-    const baseZoomDelta = 0.02;
-    const scaledDelta = baseZoomDelta * Math.max(0.5, zoomRef.current);
+    
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    // Mouse position relative to canvas (in screen pixels)
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Calculate new zoom with proportional scaling for smoother feel
+    const currentZoom = zoomRef.current;
+    const baseZoomDelta = 0.05;
+    const scaledDelta = baseZoomDelta * Math.max(0.5, currentZoom);
     const zoomDelta = e.deltaY > 0 ? -scaledDelta : scaledDelta;
-    setZoom(prev => Math.max(0.3, Math.min(3, prev + zoomDelta)));
+    const newZoom = Math.max(0.3, Math.min(3, currentZoom + zoomDelta));
+    
+    if (newZoom === currentZoom) return;
+    
+    // World position under the mouse BEFORE zoom
+    // screen = world * zoom + offset → world = (screen - offset) / zoom
+    const currentOffset = offsetRef.current;
+    const worldX = (mouseX - currentOffset.x) / currentZoom;
+    const worldY = (mouseY - currentOffset.y) / currentZoom;
+    
+    // After zoom, keep the same world position under the mouse
+    // mouseX = worldX * newZoom + newOffset.x → newOffset.x = mouseX - worldX * newZoom
+    const newOffsetX = mouseX - worldX * newZoom;
+    const newOffsetY = mouseY - worldY * newZoom;
+    
+    setOffset({ x: newOffsetX, y: newOffsetY });
+    setZoom(newZoom);
   }, []);
   
   // Handle context menu (prevent default)

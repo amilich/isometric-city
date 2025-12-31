@@ -82,7 +82,10 @@ export function useAgenticAI(
   
   // Per-AI state refs (keyed by player ID)
   const aiStatesRef = useRef<Map<string, AIPlayerState>>(new Map());
+  // IMPORTANT: Use a ref that's updated SYNCHRONOUSLY, not via useEffect
   const latestStateRef = useRef(gameState);
+  // Update immediately on every render, not just in useEffect
+  latestStateRef.current = gameState;
   
   // Helper to add conversation entry
   const addConversationEntry = useCallback((entry: Omit<AIConversationEntry, 'id'>) => {
@@ -114,9 +117,7 @@ export function useAgenticAI(
     });
   }, []);
   
-  useEffect(() => {
-    latestStateRef.current = gameState;
-  }, [gameState]);
+  // Note: latestStateRef is now updated synchronously during render, not in useEffect
 
   // Initialize/update AI states when player IDs change
   useEffect(() => {

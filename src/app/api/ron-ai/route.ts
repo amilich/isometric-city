@@ -101,7 +101,6 @@ Near metal: ${(condensed.tilesNearMetal || []).slice(0, 4).map(t => `(${t.x},${t
 Near oil: ${(condensed.tilesNearOil || []).slice(0, 4).map(t => `(${t.x},${t.y})`).join(', ') || 'none'}
 
 ## ENEMIES:
-Buildings: ${condensed.enemyBuildings.slice(0, 8).map(b => `${b.type}@(${b.x},${b.y})`).join(', ') || 'none visible'}
 Units: ${condensed.enemyUnits.slice(0, 8).map(u => `${u.type}@(${Math.round(u.x)},${Math.round(u.y)})`).join(', ') || 'none visible'}
 Cities: ${condensed.enemyBuildings.filter(b => ['city_center', 'small_city', 'large_city', 'major_city'].includes(b.type)).map(c => `(${c.x},${c.y})`).join(', ') || 'none'}
 

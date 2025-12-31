@@ -8,7 +8,6 @@
 import React, { useMemo } from 'react';
 import { useRoN } from '../context/RoNContext';
 import { Button } from '@/components/ui/button';
-import { UNIT_STATS } from '../types/units';
 
 export function RoNSelectedUnitsPanel() {
   const { state, getCurrentPlayer, killSelectedUnits } = useRoN();
@@ -37,8 +36,8 @@ export function RoNSelectedUnitsPanel() {
   // Format unit summary
   const unitSummary = Object.entries(unitCounts)
     .map(([type, count]) => {
-      const stats = UNIT_STATS[type as keyof typeof UNIT_STATS];
-      const displayName = stats?.name || type;
+      // Format type as display name (e.g., "infantry" -> "Infantry", "fishing_boat" -> "Fishing Boat")
+      const displayName = type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       return count > 1 ? `${count}x ${displayName}` : displayName;
     })
     .join(', ');

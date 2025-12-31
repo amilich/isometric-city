@@ -171,8 +171,7 @@ const UNIT_COSTS = {
 // ============================================================================
 // AI MODEL CONFIGURATION
 // ============================================================================
-// Change this to switch AI models (e.g., 'gpt-4.1', 'gpt-4o', 'gpt-5.1-2025-11-13')
-export const AI_MODEL = 'gpt-5.1';
+export const AI_MODEL = 'gpt-5.2';
 
 // ============================================================================
 // AGENT LOGGING SYSTEM
@@ -439,7 +438,7 @@ ECONOMY BUILDINGS:
 - library ${BUILDING_COSTS.library} → knowledge (REQUIRED for age advancement!)
 - oil_well (Industrial age) → oil
 
-RESOURCE BUILDING SPACING: You cannot place two buildings of the SAME type within 3 tiles of each other (e.g., no two farms within 3 tiles, no two mines within 3 tiles). Different types CAN be adjacent (farm next to woodcutters_camp is fine).
+RESOURCE BUILDING SPACING: Mines, woodcutters_camps, and oil_wells cannot be placed within 3 tiles of another building of the same type. Farms can be placed anywhere.
 
 MILITARY BUILDINGS:
 - barracks ${BUILDING_COSTS.barracks} → infantry, ranged

@@ -11,6 +11,50 @@ export type RoNPlayerType = 'human' | 'ai';
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
 
+/** Configuration for creating a player */
+export interface PlayerConfig {
+  name: string;
+  type: RoNPlayerType;
+  difficulty?: AIDifficulty;
+  color: string;
+}
+
+// ============================================================================
+// GAME CONFIGURATION CONSTANTS
+// ============================================================================
+
+/** Number of AI players to include in new games */
+export const NUM_AI_PLAYERS = 1;
+
+/** Number of citizens each player starts with */
+export const STARTING_CITIZENS = 1;
+
+// AI player color palette
+const AI_COLORS = [
+  { name: 'AI Red', color: '#ef4444' },
+  { name: 'AI Green', color: '#22c55e' },
+  { name: 'AI Purple', color: '#a855f7' },
+  { name: 'AI Orange', color: '#f97316' },
+];
+
+/** Generate default player configs (1 human + NUM_AI_PLAYERS AIs) */
+export function generateDefaultPlayerConfigs(): PlayerConfig[] {
+  const configs: PlayerConfig[] = [
+    { name: 'Player', type: 'human', color: '#3b82f6' },
+  ];
+  for (let i = 0; i < NUM_AI_PLAYERS && i < AI_COLORS.length; i++) {
+    configs.push({
+      name: AI_COLORS[i].name,
+      type: 'ai',
+      difficulty: 'medium',
+      color: AI_COLORS[i].color,
+    });
+  }
+  return configs;
+}
+
+// ============================================================================
+
 export interface RoNPlayer {
   id: string;
   name: string;
@@ -693,7 +737,7 @@ export function createInitialRoNGameState(
       }
 
       // Give starting citizens
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < STARTING_CITIZENS; i++) {
         units.push({
           id: `${player.id}-citizen-${i}`,
           type: 'citizen',
@@ -710,7 +754,7 @@ export function createInitialRoNGameState(
           isAttacking: false,
         });
       }
-      player.population = 3;
+      player.population = STARTING_CITIZENS;
     }
   });
 

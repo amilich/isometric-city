@@ -826,11 +826,11 @@ export function executeBuildBuilding(
     }
   }
 
-  // Check minimum distance between SAME TYPE of resource gathering buildings (3 tiles)
-  // Different types can be adjacent (e.g., farm next to woodcutters_camp is fine)
+  // Check minimum distance between SAME TYPE of resource extraction buildings (3 tiles)
+  // Only applies to mines, forests, and oil - farms can be placed anywhere
   const RESOURCE_GATHERING_BUILDINGS: RoNBuildingType[] = [
-    'farm', 'woodcutters_camp', 'lumber_mill', 'mine', 'smelter',
-    'oil_well', 'oil_platform', 'refinery', 'granary', 'market'
+    'woodcutters_camp', 'lumber_mill', 'mine', 'smelter',
+    'oil_well', 'oil_platform', 'refinery'
   ];
   const RESOURCE_BUILDING_MIN_DISTANCE = 3;
   

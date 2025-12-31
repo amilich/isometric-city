@@ -207,10 +207,11 @@ function isAdjacentToOil(
 // Type for pre-computed city centers (matches TerritorySource from simulation.ts)
 type CityCenter = { x: number; y: number; ownerId: string; radius: number };
 
-// Resource gathering buildings that require minimum spacing of 3 tiles from each other
+// Resource extraction buildings that require minimum spacing of 3 tiles from same type
+// Only applies to mines, forests, and oil - farms can be placed anywhere
 const RESOURCE_GATHERING_BUILDINGS: RoNBuildingType[] = [
-  'farm', 'woodcutters_camp', 'lumber_mill', 'mine', 'smelter',
-  'oil_well', 'oil_platform', 'refinery', 'granary', 'market'
+  'woodcutters_camp', 'lumber_mill', 'mine', 'smelter',
+  'oil_well', 'oil_platform', 'refinery'
 ];
 
 // Minimum distance required between resource gathering buildings (in tiles)

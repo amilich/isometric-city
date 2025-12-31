@@ -16,6 +16,7 @@ import { AIMessagePanel } from './AIMessagePanel';
 import { AIAgentsSidebar, AI_SIDEBAR_DEFAULT_WIDTH } from './AIAgentsSidebar';
 import { Button } from '@/components/ui/button';
 import { AGE_INFO } from '../types/ages';
+import { generateDefaultPlayerConfigs } from '../types/game';
 import { PLAYER_COLORS } from '../lib/renderConfig';
 import { SpeedControl } from '@/components/game/shared';
 import { StatBadge } from '@/components/game/TopBar';
@@ -82,13 +83,7 @@ function GameContent({ onExit }: { onExit?: () => void }) {
             <Button
               onClick={() => newGame({
                 gridSize: 160,
-                playerConfigs: [
-                  { name: 'Player', type: 'human', color: '#3b82f6' },
-                  { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
-                  { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },
-                  { name: 'AI Purple', type: 'ai', difficulty: 'medium', color: '#a855f7' },
-                  { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
-                ]
+                playerConfigs: generateDefaultPlayerConfigs(),
               })}
               className="bg-blue-600 hover:bg-blue-700"
             >
@@ -236,15 +231,9 @@ function GameContent({ onExit }: { onExit?: () => void }) {
               variant="outline"
               onClick={() => newGame({
                 gridSize: 160,
-                playerConfigs: [
-                  { name: 'Player', type: 'human', color: '#3b82f6' },
-                  { name: 'AI Red', type: 'ai', difficulty: 'medium', color: '#ef4444' },
-                  { name: 'AI Green', type: 'ai', difficulty: 'medium', color: '#22c55e' },
-                  { name: 'AI Purple', type: 'ai', difficulty: 'medium', color: '#a855f7' },
-                  // { name: 'AI Orange', type: 'ai', difficulty: 'medium', color: '#f97316' },
-                ],
+                playerConfigs: generateDefaultPlayerConfigs(),
               })}
-              title="Start new game (1 human + 4 AIs)"
+              title="Start new game"
             >
               New Game
             </Button>

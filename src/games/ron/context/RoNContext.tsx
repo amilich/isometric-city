@@ -166,6 +166,13 @@ interface RoNContextValue {
   state: RoNGameState;
   latestStateRef: React.RefObject<RoNGameState>;
   
+  // Graphics (RoN-only, not part of saved game state)
+  graphics: {
+    quality: 'standard' | 'high';
+    timeOfDay: 'day' | 'dusk' | 'night' | 'dynamic';
+  };
+  setGraphics: (next: Partial<RoNContextValue['graphics']>) => void;
+
   // SEPARATE building selection state (not affected by simulation)
   selectedBuildingPos: { x: number; y: number } | null;
   
@@ -232,6 +239,45 @@ interface RoNContextValue {
 const RoNContext = createContext<RoNContextValue | null>(null);
 
 export function RoNProvider({ children }: { children: React.ReactNode }) {
+
+  // Graphics settings are stored separately from game saves to avoid bloating state exports.
+  const GRAPHICS_STORAGE_KEY = 'ron-graphics-settings';
+  const [graphics, setGraphicsState] = useState<RoNContextValue['graphics']>(() => {
+    if (typeof window === 'undefined') {
+      return { quality: 'high', timeOfDay: 'dynamic' };
+    }
+    try {
+      const raw = localStorage.getItem(GRAPHICS_STORAGE_KEY);
+      if (!raw) return { quality: 'high', timeOfDay: 'dynamic' };
+      const parsed = JSON.parse(raw) as Partial<RoNContextValue['graphics']>;
+      return {
+        quality: parsed.quality === 'standard' ? 'standard' : 'high',
+        timeOfDay:
+          parsed.timeOfDay === 'day' || parsed.timeOfDay === 'dusk' || parsed.timeOfDay === 'night'
+            ? parsed.timeOfDay
+            : 'dynamic',
+      };
+    } catch {
+      return { quality: 'high', timeOfDay: 'dynamic' };
+    }
+  });
+
+  const setGraphics = useCallback((next: Partial<RoNContextValue['graphics']>) => {
+    setGraphicsState(prev => {
+      const merged: RoNContextValue['graphics'] = {
+        quality: next.quality ?? prev.quality,
+        timeOfDay: next.timeOfDay ?? prev.timeOfDay,
+      };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(GRAPHICS_STORAGE_KEY, JSON.stringify(merged));
+        } catch {
+          // ignore quota / private mode
+        }
+      }
+      return merged;
+    });
+  }, []);
 
   // SEPARATE state for building selection - NOT touched by simulation at all
   const [selectedBuildingPos, setSelectedBuildingPos] = useState<{ x: number; y: number } | null>(null);
@@ -1166,6 +1212,8 @@ export function RoNProvider({ children }: { children: React.ReactNode }) {
   const value: RoNContextValue = {
     state,
     latestStateRef,
+    graphics,
+    setGraphics,
     selectedBuildingPos,  // SEPARATE state for building selection
     setTool,
     setSpeed,

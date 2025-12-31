@@ -10,6 +10,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { AGE_ORDER, Age, AGE_INFO } from '../types/ages';
 import { AGE_SPRITE_PACKS, BUILDING_SPRITE_MAP } from '../lib/renderConfig';
 import { loadSpriteImage, getCachedImage } from '@/components/game/shared';
@@ -38,7 +40,7 @@ const BUILDING_CATEGORIES: Record<string, RoNBuildingType[]> = {
 };
 
 export function RoNSettingsPanel({ onClose }: RoNSettingsPanelProps) {
-  const { state, exportState, loadState, resetGame } = useRoN();
+  const { state, exportState, loadState, resetGame, graphics, setGraphics } = useRoN();
   const [activeTab, setActiveTab] = useState<'settings' | 'sprites' | 'buildings'>('settings');
   const [loadedAges, setLoadedAges] = useState<Set<Age>>(new Set());
   const canvasRefs = useRef<Map<Age, HTMLCanvasElement>>(new Map());
@@ -291,6 +293,45 @@ export function RoNSettingsPanel({ onClose }: RoNSettingsPanelProps) {
                   <div className="flex justify-between text-muted-foreground">
                     <span>Auto-Save</span>
                     <span className="text-green-400">Enabled</span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Graphics */}
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Graphics</div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">High fidelity terrain</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Procedural textures, animated water/foam, richer lighting.
+                      </div>
+                    </div>
+                    <Switch
+                      checked={graphics.quality === 'high'}
+                      onCheckedChange={(checked) => setGraphics({ quality: checked ? 'high' : 'standard' })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Time of day</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Changes sky + lighting; water reflects the sky.
+                      </div>
+                    </div>
+                    <select
+                      className="bg-background border border-border rounded-md px-2 py-1 text-xs"
+                      value={graphics.timeOfDay}
+                      onChange={(e) => setGraphics({ timeOfDay: e.target.value as typeof graphics.timeOfDay })}
+                    >
+                      <option value="dynamic">Dynamic</option>
+                      <option value="day">Day</option>
+                      <option value="dusk">Dusk</option>
+                      <option value="night">Night</option>
+                    </select>
                   </div>
                 </div>
               </div>

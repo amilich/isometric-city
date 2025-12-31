@@ -444,6 +444,7 @@ MILITARY BUILDINGS:
 - stable ${BUILDING_COSTS.stable} → cavalry (fast, powerful attackers)
 - dock (if water) → naval units
 - siege_factory → siege weapons
+- airbase (Modern age, 400w+500m+400g+200oil) → air units (powerful, fast)
 
 CITIES:
 - small_city ${BUILDING_COSTS.small_city} → +20 pop cap
@@ -459,6 +460,7 @@ UNITS:
 - ranged @ barracks (archers/gunners)
 - cavalry @ stable (fast & deadly)
 - siege @ siege_factory
+- air @ airbase (Modern age - very powerful)
 
 ELIMINATION REWARD:
 When you eliminate an enemy (destroy all their cities and they stay eliminated for 2 min), YOU GET ALL THEIR STUFF:

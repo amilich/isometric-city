@@ -283,6 +283,7 @@ function ResourceBar({ player }: { player: RoNPlayer }) {
     { key: 'wood', icon: '🪵', value: player.resources.wood, color: 'text-amber-500' },
     { key: 'metal', icon: '⛏️', value: player.resources.metal, color: 'text-slate-300' },
     { key: 'gold', icon: '💰', value: player.resources.gold, color: 'text-yellow-400' },
+    { key: 'oil', icon: '🛢️', value: player.resources.oil, color: 'text-stone-400' },
   ];
   
   const popColor = player.population >= player.populationCap ? 'text-rose-400' : 'text-sky-400';

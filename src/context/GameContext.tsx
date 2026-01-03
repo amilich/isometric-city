@@ -27,6 +27,7 @@ import {
   checkForDiscoverableCities,
   generateRandomAdvancedCity,
   createBridgesOnPath,
+  upgradeServiceBuilding,
 } from '@/lib/simulation';
 import {
   SPRITE_PACKS,
@@ -63,6 +64,7 @@ type GameContextValue = {
   setTaxRate: (rate: number) => void;
   setActivePanel: (panel: GameState['activePanel']) => void;
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
+  upgradeServiceBuilding: (x: number, y: number) => boolean; // Returns true if upgrade succeeded
   placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
   setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => void;
   finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void; // Create bridges after road/rail drag
@@ -972,6 +974,19 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }
   }, []);
 
+  const upgradeServiceBuildingHandler = useCallback((x: number, y: number) => {
+    let upgradeSucceeded = false;
+    setState((prev) => {
+      const upgradedState = upgradeServiceBuilding(prev, x, y);
+      if (upgradedState) {
+        upgradeSucceeded = true;
+        return upgradedState;
+      }
+      return prev;
+    });
+    return upgradeSucceeded;
+  }, []);
+
   // Called after a road/rail drag operation to create bridges for water crossings
   const finishTrackDrag = useCallback((pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote = false) => {
     setState((prev) => createBridgesOnPath(prev, pathTiles, trackType));
@@ -1622,6 +1637,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     setActivePanel,
     setBudgetFunding,
     placeAtTile,
+    upgradeServiceBuilding: upgradeServiceBuildingHandler,
     setPlaceCallback,
     finishTrackDrag,
     setBridgeCallback,

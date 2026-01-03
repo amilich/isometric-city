@@ -18,6 +18,8 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
     modern: null,
     parks: null,
     parksConstruction: null,
+    services: null,
+    infrastructure: null,
   });
   
   // Load all sprite sheets from current pack
@@ -49,6 +51,8 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
       loadSheet(currentSpritePack.modernSrc, 'modern'),
       loadSheet(currentSpritePack.parksSrc, 'parks'),
       loadSheet(currentSpritePack.parksConstructionSrc, 'parksConstruction'),
+      loadSheet(currentSpritePack.servicesSrc, 'services'),
+      loadSheet(currentSpritePack.infrastructureSrc, 'infrastructure'),
     ]);
   }, [currentSpritePack]);
   
@@ -60,6 +64,8 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
     { id: 'modern', label: 'Modern', available: !!spriteSheets.modern },
     { id: 'parks', label: 'Parks', available: !!spriteSheets.parks },
     { id: 'parksConstruction', label: 'Parks Construction', available: !!spriteSheets.parksConstruction },
+    { id: 'services', label: 'Services', available: !!spriteSheets.services },
+    { id: 'infrastructure', label: 'Infrastructure', available: !!spriteSheets.infrastructure },
   ].filter(tab => tab.available), [spriteSheets]);
   
   // Derive the actual active tab - fall back to first available if selected is not available
@@ -198,6 +204,40 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           coords: { sx, sy, sw: tileWidth, sh: tileHeight },
         });
       });
+    } else if (activeTab === 'services' && currentSpritePack.servicesSrc && currentSpritePack.servicesVariants) {
+      // Services sprite sheet - use servicesVariants mapping (level progression)
+      sheetCols = currentSpritePack.servicesCols || currentSpritePack.cols;
+      sheetRows = currentSpritePack.servicesRows || currentSpritePack.rows;
+      const tileWidth = Math.floor(sheetWidth / sheetCols);
+      const tileHeight = Math.floor(sheetHeight / sheetRows);
+      
+      Object.entries(currentSpritePack.servicesVariants).forEach(([buildingType, variants]) => {
+        variants.forEach((variant, variantIndex) => {
+          const sx = variant.col * tileWidth;
+          const sy = variant.row * tileHeight;
+          itemsToRender.push({
+            label: `${buildingType} (level ${variantIndex + 1})`,
+            coords: { sx, sy, sw: tileWidth, sh: tileHeight },
+          });
+        });
+      });
+    } else if (activeTab === 'infrastructure' && currentSpritePack.infrastructureSrc && currentSpritePack.infrastructureVariants) {
+      // Infrastructure sprite sheet - use infrastructureVariants mapping (level progression)
+      sheetCols = currentSpritePack.infrastructureCols || 5;
+      sheetRows = currentSpritePack.infrastructureRows || 6;
+      const tileWidth = Math.floor(sheetWidth / sheetCols);
+      const tileHeight = Math.floor(sheetHeight / sheetRows);
+      
+      Object.entries(currentSpritePack.infrastructureVariants).forEach(([buildingType, variants]) => {
+        variants.forEach((variant, variantIndex) => {
+          const sx = variant.col * tileWidth;
+          const sy = variant.row * tileHeight;
+          itemsToRender.push({
+            label: `${buildingType} (level ${variantIndex + 1})`,
+            coords: { sx, sy, sw: tileWidth, sh: tileHeight },
+          });
+        });
+      });
     }
     
     const rows = Math.ceil(itemsToRender.length / cols);
@@ -284,15 +324,21 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
                           activeTab === 'dense' ? currentSpritePack.denseSrc :
                           activeTab === 'modern' ? currentSpritePack.modernSrc :
                           activeTab === 'parksConstruction' ? currentSpritePack.parksConstructionSrc :
+                          activeTab === 'services' ? currentSpritePack.servicesSrc :
+                          activeTab === 'infrastructure' ? currentSpritePack.infrastructureSrc :
                           currentSpritePack.parksSrc;
   
   const gridInfo = (activeTab === 'parks' || activeTab === 'parksConstruction') && currentSpritePack.parksCols && currentSpritePack.parksRows
     ? `${currentSpritePack.parksCols}x${currentSpritePack.parksRows}`
+    : activeTab === 'services' && currentSpritePack.servicesCols && currentSpritePack.servicesRows
+    ? `${currentSpritePack.servicesCols}x${currentSpritePack.servicesRows}`
+    : activeTab === 'infrastructure' && currentSpritePack.infrastructureCols && currentSpritePack.infrastructureRows
+    ? `${currentSpritePack.infrastructureCols}x${currentSpritePack.infrastructureRows}`
     : `${currentSpritePack.cols}x${currentSpritePack.rows}`;
   
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-[700px] max-h-[90vh]">
+      <DialogContent className="max-w-[900px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Sprite Test View</DialogTitle>
           <DialogDescription>
@@ -301,9 +347,9 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
+          <TabsList className="flex flex-wrap gap-1 w-full">
             {availableTabs.map(tab => (
-              <TabsTrigger key={tab.id} value={tab.id} className="text-xs">
+              <TabsTrigger key={tab.id} value={tab.id} className="flex-shrink-0 text-xs">
                 {tab.label}
               </TabsTrigger>
             ))}
@@ -318,9 +364,9 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
           />
         </div>
         
-        <div className="text-xs text-muted-foreground space-y-1">
+        <div className="space-y-1 text-xs text-muted-foreground">
           <p>Sprite sheet: {currentSheetInfo} ({gridInfo} grid)</p>
-          <p>Edit offsets in <code className="bg-muted px-1 rounded">src/lib/renderConfig.ts</code> → each sprite pack&apos;s verticalOffsets</p>
+          <p>Edit offsets in <code className="px-1 rounded bg-muted">src/lib/renderConfig.ts</code> → each sprite pack&apos;s verticalOffsets</p>
         </div>
       </DialogContent>
     </Dialog>

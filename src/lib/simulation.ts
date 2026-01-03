@@ -20,6 +20,7 @@ import {
   RESIDENTIAL_BUILDINGS,
   COMMERCIAL_BUILDINGS,
   INDUSTRIAL_BUILDINGS,
+  TOOL_INFO,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
 import { isMobile } from 'react-device-detect';
@@ -1198,17 +1199,22 @@ export const SERVICE_CONFIG = {
 } as const;
 
 // Building types that provide services
-const SERVICE_BUILDING_TYPES = new Set([
+export const SERVICE_BUILDING_TYPES = new Set([
   'police_station', 'fire_station', 'hospital', 'school', 'university',
   'power_plant', 'water_tower'
 ]);
+
+// Service building upgrade constants
+export const SERVICE_MAX_LEVEL = 5;
+export const SERVICE_RANGE_INCREASE_PER_LEVEL = 0.5; // 50% per level
+export const SERVICE_UPGRADE_COST_BASE = 10; // Cost = baseCost * (10 ^ currentLevel)
 
 // Calculate service coverage from service buildings - optimized version
 function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage {
   const services = createServiceCoverage(size);
   
   // First pass: collect all service building positions (much faster than checking every tile)
-  const serviceBuildings: Array<{ x: number; y: number; type: BuildingType }> = [];
+  const serviceBuildings: Array<{ x: number; y: number; type: BuildingType; level: number }> = [];
   
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -1228,18 +1234,22 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
         continue;
       }
       
-      serviceBuildings.push({ x, y, type: buildingType });
+      serviceBuildings.push({ x, y, type: buildingType, level: tile.building.level });
     }
   }
   
   // Second pass: apply coverage for each service building
   for (const building of serviceBuildings) {
-    const { x, y, type } = building;
+    const { x, y, type, level } = building;
     const config = SERVICE_CONFIG[type as keyof typeof SERVICE_CONFIG];
     if (!config) continue;
     
-    const range = config.range;
-    const rangeSquared = config.rangeSquared;
+    // Calculate effective range based on building level
+    // Level 1: 100%, Level 2: 120%, Level 3: 140%, Level 4: 160%, Level 5: 180%
+    const baseRange = config.range;
+    const effectiveRange = baseRange * (1 + (level - 1) * SERVICE_RANGE_INCREASE_PER_LEVEL);
+    const range = Math.floor(effectiveRange);
+    const rangeSquared = range * range;
     
     // Calculate bounds to avoid checking tiles outside the grid
     const minY = Math.max(0, y - range);
@@ -1292,6 +1302,60 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
   }
 
   return services;
+}
+
+// Upgrade a service building by increasing its level (increases coverage range)
+// Returns updated state if successful, null if upgrade fails
+export function upgradeServiceBuilding(state: GameState, x: number, y: number): GameState | null {
+  const tile = state.grid[y]?.[x];
+  if (!tile) return null;
+  
+  const building = tile.building;
+  const buildingType = building.type;
+  
+  // Check if this is a service building
+  if (!SERVICE_BUILDING_TYPES.has(buildingType)) return null;
+  
+  // Check if building is at max level
+  if (building.level >= SERVICE_MAX_LEVEL) return null;
+  
+  // Check if building construction is complete
+  if (building.constructionProgress !== undefined && building.constructionProgress < 100) {
+    return null;
+  }
+  
+  // Check if building is abandoned
+  if (building.abandoned) return null;
+  
+  // Get base cost from TOOL_INFO
+  const baseCost = TOOL_INFO[buildingType as keyof typeof TOOL_INFO]?.cost;
+  if (!baseCost) return null;
+  
+  // Calculate upgrade cost: baseCost * (SERVICE_UPGRADE_COST_BASE ^ currentLevel)
+  const upgradeCost = baseCost * Math.pow(SERVICE_UPGRADE_COST_BASE, building.level);
+  
+  // Check if player has enough money
+  if (state.stats.money < upgradeCost) return null;
+  
+  // Create updated state with upgraded building
+  const newGrid = state.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+  newGrid[y][x].building.level = building.level + 1;
+  
+  // Deduct money
+  const newStats = {
+    ...state.stats,
+    money: state.stats.money - upgradeCost,
+  };
+  
+  // Recalculate service coverage with new level
+  const services = calculateServiceCoverage(newGrid, state.gridSize);
+  
+  return {
+    ...state,
+    grid: newGrid,
+    stats: newStats,
+    services,
+  };
 }
 
 // Check if a multi-tile building can be SPAWNED at the given position

@@ -877,6 +877,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       if (currentSpritePack.modernSrc) {
         loadSpriteImage(currentSpritePack.modernSrc, true).catch(console.error);
       }
+      if (currentSpritePack.servicesSrc) {
+        loadSpriteImage(currentSpritePack.servicesSrc, true).catch(console.error);
+      }
+      if (currentSpritePack.infrastructureSrc) {
+        loadSpriteImage(currentSpritePack.infrastructureSrc, true).catch(console.error);
+      }
       if (currentSpritePack.mansionsSrc) {
         loadSpriteImage(currentSpritePack.mansionsSrc, true).catch(console.error);
       }
@@ -2036,7 +2042,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               const config = SERVICE_CONFIG[tile.building.type as keyof typeof SERVICE_CONFIG];
               if (!config || !('range' in config)) continue;
               
-              const range = config.range;
+              // Calculate effective range based on building level (linear 20% increase per level)
+              // Level 1: 100%, Level 2: 120%, Level 3: 140%, Level 4: 160%, Level 5: 180%
+              const baseRange = config.range;
+              const effectiveRange = baseRange * (1 + (tile.building.level - 1) * 0.2);
+              const range = Math.floor(effectiveRange);
               
               // NOTE: For multi-tile service buildings (e.g. 2x2 hospital, 3x3 university),
               // coverage is computed from the building's anchor tile (top-left of footprint)
@@ -2997,7 +3007,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden touch-none"
+      className="overflow-hidden relative w-full h-full touch-none"
       style={{ 
         cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
       }}
@@ -3089,7 +3099,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
                 <T>
                   <div className="text-sm text-muted-foreground">
                     Connecting to <Var>{city.name}</Var> will establish a trade route, providing:
-                    <ul className="list-disc list-inside mt-2 space-y-1">
+                    <ul className="mt-2 space-y-1 list-disc list-inside">
                       <li>$5,000 one-time bonus</li>
                       <li>$200/month additional income</li>
                     </ul>
@@ -3146,8 +3156,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         return (
           <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-sm ${
             isWaterfrontPlacementInvalid
-              ? 'bg-destructive/90 border border-destructive-foreground/30 text-destructive-foreground'
-              : 'bg-card/90 border border-border'
+              ? 'border bg-destructive/90 border-destructive-foreground/30 text-destructive-foreground'
+              : 'border bg-card/90 border-border'
           }`}>
             {isDragging && dragStartTile && dragEndTile && showsDragGrid ? (
               <>
@@ -3199,7 +3209,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           >
             <div className="bg-sidebar border border-sidebar-border rounded-md shadow-lg px-3 py-2 w-[220px]">
               {/* Header */}
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex gap-2 items-center mb-1">
                 {hoveredIncident.type === 'fire' ? (
                   <FireIcon size={14} className="text-red-400" />
                 ) : (

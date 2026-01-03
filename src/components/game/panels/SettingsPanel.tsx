@@ -65,7 +65,9 @@ export function SettingsPanel() {
     saveCity, 
     loadSavedCity, 
     deleteSavedCity, 
-    renameSavedCity 
+    renameSavedCity,
+    toastNotificationsEnabled,
+    setToastNotificationsEnabled
   } = useGame();
 
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
@@ -232,6 +234,14 @@ export function SettingsPanel() {
                     <p className="text-sm text-slate-400">{t('DisastersDesc')}</p>
                   </div>
                   <Switch checked={disastersEnabled} onCheckedChange={setDisastersEnabled} />
+                </div>
+
+                <div className="flex items-center justify-between p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">
+                  <div className="space-y-1.5">
+                    <Label className="text-base font-medium text-slate-200">{t('ToastNotifications')}</Label>
+                    <p className="text-sm text-slate-400">{t('ToastNotificationsDesc')}</p>
+                  </div>
+                  <Switch checked={toastNotificationsEnabled} onCheckedChange={setToastNotificationsEnabled} />
                 </div>
 
                 <div className="flex items-center justify-between p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">

@@ -27,6 +27,7 @@ import {
 } from '@/components/game/panels';
 import { ScenarioHUD } from '@/components/game/panels/ScenarioHUD';
 import { MiniMap } from '@/components/game/MiniMap';
+import { ToastNotification } from '@/components/game/ToastNotification';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
 
 // Cargo type names for notifications
@@ -279,10 +280,13 @@ export default function Game({ onExit }: { onExit?: () => void }) {
 
         <BottomHUD onExit={onExit} />
         
+        {/* MiniMap - Position handled internally via fixed positioning */}
         <MiniMap 
           onNavigate={(x, y) => setNavigationTarget({ x, y })} 
           viewport={viewport} 
         />
+
+        <ToastNotification onNavigate={(x, y) => setNavigationTarget({ x, y })} />
         
         {state.activePanel === 'budget' && <BudgetPanel />}
         {state.activePanel === 'statistics' && <StatisticsPanel />}

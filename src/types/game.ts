@@ -279,6 +279,7 @@ export interface Notification {
   description: string;
   icon: string;
   timestamp: number;
+  coordinates?: { x: number; y: number };
 }
 
 export interface AdvisorMessage {

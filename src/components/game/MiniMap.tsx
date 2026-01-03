@@ -136,6 +136,67 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport, embed
 
   const [isDragging, setIsDragging] = useState(false);
   
+  // Panel dragging state
+  const [position, setPosition] = useState({ x: 20, y: 144 }); // Default position (top-right area)
+  const [isPanelDragging, setIsPanelDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const positionRef = useRef({ x: 20, y: 144 });
+  
+  // Load saved position
+  useEffect(() => {
+    const saved = localStorage.getItem('minimap-position');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setPosition(parsed);
+        positionRef.current = parsed;
+      } catch (e) {
+        // Ignore error
+      }
+    }
+  }, []);
+
+  const handlePanelDragStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    setIsPanelDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handlePanelDrag = useCallback((e: MouseEvent) => {
+    if (isPanelDragging) {
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      
+      const newPos = {
+        x: positionRef.current.x - dx, // Moving left increases right offset (since we use right/top)
+        y: positionRef.current.y + dy  // Moving down increases top offset
+      };
+      
+      // Update refs for next calculation
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+      positionRef.current = newPos;
+      
+      setPosition(newPos);
+    }
+  }, [isPanelDragging]);
+
+  const handlePanelDragEnd = useCallback(() => {
+    if (isPanelDragging) {
+      setIsPanelDragging(false);
+      localStorage.setItem('minimap-position', JSON.stringify(positionRef.current));
+    }
+  }, [isPanelDragging]);
+
+  useEffect(() => {
+    if (isPanelDragging) {
+      window.addEventListener('mousemove', handlePanelDrag);
+      window.addEventListener('mouseup', handlePanelDragEnd);
+      return () => {
+        window.removeEventListener('mousemove', handlePanelDrag);
+        window.removeEventListener('mouseup', handlePanelDragEnd);
+      };
+    }
+  }, [isPanelDragging, handlePanelDrag, handlePanelDragEnd]);
+
   const navigateToPosition = useCallback((e: React.MouseEvent<HTMLCanvasElement> | MouseEvent) => {
     if (!onNavigate) return;
     
@@ -233,8 +294,18 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport, embed
   );
 
   return (
-    <Card className="absolute top-4 right-4 p-3 shadow-lg bg-card/90 border-border/70 z-[60]">
-      <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
+    <Card 
+      className="fixed z-[60] p-3 shadow-lg bg-card/90 border-border/70 backdrop-blur-sm transition-shadow hover:shadow-xl"
+      style={{ 
+        top: `${position.y}px`, 
+        right: `${position.x}px`,
+        cursor: isPanelDragging ? 'grabbing' : 'default'
+      }}
+    >
+      <div 
+        className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2 cursor-grab active:cursor-grabbing select-none w-full"
+        onMouseDown={handlePanelDragStart}
+      >
         Minimap
       </div>
       <canvas

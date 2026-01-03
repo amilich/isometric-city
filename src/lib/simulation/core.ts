@@ -52,6 +52,7 @@ export function simulateTick(state: GameState): GameState {
   const size = state.gridSize;
   
   const services = calculateServiceCoverage(state.grid, size);
+  const notificationsToAdd: any[] = []; // Temporary array for new notifications in this tick
   
   const modifiedRows = new Set<number>();
   const newGrid: Tile[][] = new Array(size);
@@ -194,6 +195,24 @@ export function simulateTick(state: GameState): GameState {
           Math.random() < 0.00003) {
         tile.building.onFire = true;
         tile.building.fireProgress = 0;
+
+        // Add notification for fire
+        notificationsToAdd.push({
+          id: `fire-${Date.now()}-${x}-${y}`,
+          title: 'YANGIN ALARMI!',
+          description: `(${x}, ${y}) konumunda yangın çıktı! İtfaiye ekipleri müdahale etmeli.`,
+          icon: 'fire',
+          timestamp: Date.now(),
+          coordinates: { x, y }
+        });
+        // Add to notifications queue (avoid duplicates if possible, but timestamp makes unique)
+        // We need to modify the notifications array which is defined outside the loop
+        // But since we are inside a loop, we should be careful not to spam.
+        // Let's assume one fire per tick is rare enough or just push it.
+        // However, we can't easily modify 'newNotifications' here if it's not in scope or mutable in this way easily.
+        // Let's check where newNotifications is defined.
+        // It is defined AFTER the loop: const newNotifications = [...state.notifications];
+        // So we need to collect notifications during the loop.
       }
     }
   }
@@ -235,7 +254,7 @@ export function simulateTick(state: GameState): GameState {
 
   const advisorMessages = generateAdvisorMessages(newStats, services, newGrid);
 
-  const newNotifications = [...state.notifications];
+  const newNotifications = [...notificationsToAdd, ...state.notifications];
 
   while (newNotifications.length > 10) {
     newNotifications.pop();

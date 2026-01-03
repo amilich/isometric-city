@@ -117,6 +117,8 @@
       "DevTools": "Geliştirici Araçları",
       "Disasters": "Afetler",
       "DisastersDesc": "Rastgele yangınları ve afetleri etkinleştir",
+      "ToastNotifications": "Toast Bildirimler",
+      "ToastNotificationsDesc": "Önemli olayları ekranın sağ üst köşesinde hızlı bildirim olarak göster",
       "ZoomSensitivity": "Yakınlaştırma Hassasiyeti",
       "ZoomSensitivityDesc": "Mouse tekerleği ile yakınlaştırma hızını ayarlar",
       "SpritePack": "Görünüm Paketi",

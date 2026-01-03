@@ -41,6 +41,7 @@ const SAVED_CITY_PREFIX = 'isocity-city-'; // Prefix for individual saved city s
 const SPRITE_PACK_STORAGE_KEY = 'isocity-sprite-pack';
 const DAY_NIGHT_MODE_STORAGE_KEY = 'isocity-day-night-mode';
 const ZOOM_SENSITIVITY_STORAGE_KEY = 'isocity-zoom-sensitivity';
+const TOAST_NOTIFICATIONS_STORAGE_KEY = 'isocity-toast-notifications';
 
 export type DayNightMode = 'auto' | 'day' | 'night';
 
@@ -83,6 +84,9 @@ type GameContextValue = {
   // Zoom sensitivity
   zoomSensitivity: number;
   setZoomSensitivity: (sensitivity: number) => void;
+  // Toast Notification Settings
+  toastNotificationsEnabled: boolean;
+  setToastNotificationsEnabled: (enabled: boolean) => void;
   // Save/restore city for shared links
   saveCurrentCityForRestore: () => void;
   restoreSavedCity: () => boolean;
@@ -385,6 +389,30 @@ function saveZoomSensitivity(sensitivity: number): void {
   }
 }
 
+// Load toast notifications preference
+function loadToastNotificationsEnabled(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const saved = localStorage.getItem(TOAST_NOTIFICATIONS_STORAGE_KEY);
+    if (saved !== null) {
+      return saved === 'true';
+    }
+  } catch (e) {
+    console.error('Failed to load toast notifications preference:', e);
+  }
+  return true;
+}
+
+// Save toast notifications preference
+function saveToastNotificationsEnabled(enabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(TOAST_NOTIFICATIONS_STORAGE_KEY, enabled.toString());
+  } catch (e) {
+    console.error('Failed to save toast notifications preference:', e);
+  }
+}
+
 // Save current city for later restoration (when viewing shared cities)
 function saveCityForRestore(state: GameState): void {
   if (typeof window === 'undefined') return;
@@ -556,6 +584,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Zoom sensitivity state
   const [zoomSensitivity, setZoomSensitivityState] = useState<number>(5);
 
+  // Toast notifications state
+  const [toastNotificationsEnabled, setToastNotificationsEnabledState] = useState<boolean>(true);
+
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   
@@ -574,6 +605,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Load zoom sensitivity preference
     const savedZoomSensitivity = loadZoomSensitivity();
     setZoomSensitivityState(savedZoomSensitivity);
+
+    // Load toast notifications preference
+    const savedToastNotifications = loadToastNotificationsEnabled();
+    setToastNotificationsEnabledState(savedToastNotifications);
 
     // Load saved cities index
     const cities = loadSavedCitiesIndex();
@@ -910,6 +945,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const clamped = clamp(sensitivity, 1, 10);
     setZoomSensitivityState(clamped);
     saveZoomSensitivity(clamped);
+  }, []);
+
+  const setToastNotificationsEnabled = useCallback((enabled: boolean) => {
+    setToastNotificationsEnabledState(enabled);
+    saveToastNotificationsEnabled(enabled);
   }, []);
 
   // Compute the visual hour based on the day/night mode override
@@ -1403,6 +1443,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Zoom sensitivity
     zoomSensitivity,
     setZoomSensitivity,
+    toastNotificationsEnabled,
+    setToastNotificationsEnabled,
     // Save/restore city for shared links
     saveCurrentCityForRestore,
     restoreSavedCity,

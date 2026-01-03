@@ -3655,9 +3655,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     };
   }, [getMapBounds, canvasSize.width, canvasSize.height]);
 
-  // Handle minimap navigation - center the view on the target tile
+  // Handle minimap navigation - animate view to target tile
   useEffect(() => {
     if (!navigationTarget) return;
+    
+    // Target zoom level - closer zoom for better visibility
+    const targetZoom = Math.max(zoom, 1.5); 
     
     // Convert grid coordinates to screen coordinates
     const { screenX, screenY } = gridToScreen(navigationTarget.x, navigationTarget.y, 0, 0);
@@ -3666,21 +3669,61 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const centerX = canvasSize.width / 2;
     const centerY = canvasSize.height / 2;
     
-    const newOffset = {
-      x: centerX - screenX * zoom,
-      y: centerY - screenY * zoom,
+    // Calculate target offset based on target zoom
+    // Note: gridToScreen returns coordinates relative to 0,0 based on TILE_WIDTH/HEIGHT
+    // We need to account for the zoom scaling manually for the target position calculation
+    const targetOffsetUnclamped = {
+      x: centerX - screenX * targetZoom,
+      y: centerY - screenY * targetZoom,
     };
     
-    // Clamp and set the new offset - this is a legitimate use case for responding to navigation requests
-    const bounds = getMapBounds(zoom, canvasSize.width, canvasSize.height);
-    setOffset({ // eslint-disable-line
-      x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, newOffset.x)),
-      y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
-    });
+    // Clamp the target offset
+    const bounds = getMapBounds(targetZoom, canvasSize.width, canvasSize.height);
+    const targetOffset = {
+      x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, targetOffsetUnclamped.x)),
+      y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, targetOffsetUnclamped.y)),
+    };
     
-    // Signal that navigation is complete
-    onNavigationComplete?.();
-  }, [navigationTarget, zoom, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete]);
+    // Animation setup
+    const duration = 1500; // 1.5 seconds for smooth transition
+    const startTime = performance.now();
+    const startOffset = { ...offset };
+    const startZoom = zoom;
+    
+    let animationFrameId: number;
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function (easeInOutCubic)
+      const ease = progress < 0.5 
+        ? 4 * progress * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      
+      const currentZoom = startZoom + (targetZoom - startZoom) * ease;
+      const currentOffset = {
+        x: startOffset.x + (targetOffset.x - startOffset.x) * ease,
+        y: startOffset.y + (targetOffset.y - startOffset.y) * ease,
+      };
+      
+      setZoom(currentZoom);
+      setOffset(currentOffset);
+      
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animate);
+      } else {
+        // Signal that navigation is complete
+        onNavigationComplete?.();
+      }
+    };
+    
+    animationFrameId = requestAnimationFrame(animate);
+    
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [navigationTarget, canvasSize.width, canvasSize.height, getMapBounds]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning && panCandidateRef.current) {

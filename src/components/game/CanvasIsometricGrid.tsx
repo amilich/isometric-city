@@ -227,6 +227,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const cachedPopulationRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
   const gridVersionRef = useRef(0);
   
+  // Navigation animation frame ref
+  const navigationAnimFrameRef = useRef<number | null>(null);
+  
   // Performance: Cache road merge analysis (expensive calculation done per-road-tile)
   const roadAnalysisCacheRef = useRef<Map<string, ReturnType<typeof analyzeMergedRoad>>>(new Map());
   const roadAnalysisCacheVersionRef = useRef(-1);
@@ -3561,6 +3564,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   }, [grid, gridSize, visualHour, offset, zoom, canvasSize.width, canvasSize.height, isMobile, isPanning]);
   
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Stop any active navigation animation
+    if (navigationAnimFrameRef.current) {
+      cancelAnimationFrame(navigationAnimFrameRef.current);
+      navigationAnimFrameRef.current = null;
+    }
+
     if (e.button === 1 || (e.button === 0 && e.altKey) || (e.button === 0 && isSpacePressed)) {
       setIsPanning(true);
       setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
@@ -3660,7 +3669,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!navigationTarget) return;
     
     // Target zoom level - closer zoom for better visibility
-    const targetZoom = Math.max(zoom, 1.5); 
+    const targetZoom = Math.max(zoomRef.current, 1.5); 
     
     // Convert grid coordinates to screen coordinates
     const { screenX, screenY } = gridToScreen(navigationTarget.x, navigationTarget.y, 0, 0);
@@ -3670,8 +3679,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const centerY = canvasSize.height / 2;
     
     // Calculate target offset based on target zoom
-    // Note: gridToScreen returns coordinates relative to 0,0 based on TILE_WIDTH/HEIGHT
-    // We need to account for the zoom scaling manually for the target position calculation
     const targetOffsetUnclamped = {
       x: centerX - screenX * targetZoom,
       y: centerY - screenY * targetZoom,
@@ -3688,9 +3695,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const duration = 1500; // 1.5 seconds for smooth transition
     const startTime = performance.now();
     const startOffset = { ...offset };
-    const startZoom = zoom;
-    
-    let animationFrameId: number;
+    const startZoom = zoomRef.current;
     
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
@@ -3711,19 +3716,25 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       setOffset(currentOffset);
       
       if (progress < 1) {
-        animationFrameId = requestAnimationFrame(animate);
+        navigationAnimFrameRef.current = requestAnimationFrame(animate);
       } else {
         // Signal that navigation is complete
         onNavigationComplete?.();
+        navigationAnimFrameRef.current = null;
       }
     };
     
-    animationFrameId = requestAnimationFrame(animate);
+    if (navigationAnimFrameRef.current) {
+      cancelAnimationFrame(navigationAnimFrameRef.current);
+    }
+    navigationAnimFrameRef.current = requestAnimationFrame(animate);
     
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (navigationAnimFrameRef.current) {
+        cancelAnimationFrame(navigationAnimFrameRef.current);
+      }
     };
-  }, [navigationTarget, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete, zoom]);
+  }, [navigationTarget, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete]); // Removed zoom dependency
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning && panCandidateRef.current) {
@@ -3899,6 +3910,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     
+    // Stop any active navigation animation
+    if (navigationAnimFrameRef.current) {
+      cancelAnimationFrame(navigationAnimFrameRef.current);
+      navigationAnimFrameRef.current = null;
+    }
+    
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
     
@@ -3949,6 +3966,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Stop any active navigation animation
+    if (navigationAnimFrameRef.current) {
+      cancelAnimationFrame(navigationAnimFrameRef.current);
+      navigationAnimFrameRef.current = null;
+    }
+
     if (e.touches.length === 1) {
       // Single touch - could be pan or tap
       const touch = e.touches[0];

@@ -3639,7 +3639,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
     const n = gridSize;
-    const padding = 100; // Allow some over-scroll
+    // Allow much more over-scroll to prevent getting stuck
+    // Use a large percentage of the screen size as padding
+    const paddingX = Math.max(100, canvasW * 0.8);
+    const paddingY = Math.max(100, canvasH * 0.8);
     
     // Map bounds in world coordinates
     const mapLeft = -(n - 1) * TILE_WIDTH / 2;
@@ -3647,10 +3650,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const mapTop = 0;
     const mapBottom = (n - 1) * TILE_HEIGHT;
     
-    const minOffsetX = padding - mapRight * currentZoom;
-    const maxOffsetX = canvasW - padding - mapLeft * currentZoom;
-    const minOffsetY = padding - mapBottom * currentZoom;
-    const maxOffsetY = canvasH - padding - mapTop * currentZoom;
+    const minOffsetX = paddingX - mapRight * currentZoom;
+    const maxOffsetX = canvasW - paddingX - mapLeft * currentZoom;
+    const minOffsetY = paddingY - mapBottom * currentZoom;
+    const maxOffsetY = canvasH - paddingY - mapTop * currentZoom;
     
     return { minOffsetX, maxOffsetX, minOffsetY, maxOffsetY };
   }, [gridSize]);

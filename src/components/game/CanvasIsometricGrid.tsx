@@ -3723,7 +3723,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [navigationTarget, canvasSize.width, canvasSize.height, getMapBounds]);
+  }, [navigationTarget, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete, zoom]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning && panCandidateRef.current) {

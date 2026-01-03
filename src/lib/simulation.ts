@@ -1203,11 +1203,350 @@ const SERVICE_BUILDING_TYPES = new Set([
   'power_plant', 'water_tower'
 ]);
 
+// Find all utility sources (power plants or water towers) that are ready to provide utilities
+function findUtilitySources(
+  grid: Tile[][],
+  size: number,
+  sourceType: 'power_plant' | 'water_tower'
+): Array<{ x: number; y: number }> {
+  const sources: Array<{ x: number; y: number }> = [];
+  
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const tile = grid[y][x];
+      const building = tile.building;
+      
+      // Check if this is the correct source type
+      if (building.type !== sourceType) continue;
+      
+      // Skip buildings under construction
+      if (building.constructionProgress !== undefined && building.constructionProgress < 100) {
+        continue;
+      }
+      
+      // Skip abandoned buildings
+      if (building.abandoned) {
+        continue;
+      }
+      
+      // For power plants (2x2 multi-tile), add all 4 tiles as sources
+      if (sourceType === 'power_plant') {
+        // Check bounds to ensure all 4 tiles are within grid
+        if (x + 1 < size && y + 1 < size) {
+          // Add all 4 tiles of the 2x2 power plant
+          sources.push({ x, y });                    // Top-left
+          sources.push({ x: x + 1, y });            // Top-right
+          sources.push({ x, y: y + 1 });             // Bottom-left
+          sources.push({ x: x + 1, y: y + 1 });      // Bottom-right
+        } else {
+          // If at grid edge, just add the top-left tile
+          sources.push({ x, y });
+        }
+      } else {
+        // Water towers are single-tile, just add the coordinate
+        sources.push({ x, y });
+      }
+    }
+  }
+  
+  return sources;
+}
+
+// Calculate network-based utility coverage using BFS along road network
+function calculateNetworkUtilityCoverage(options: {
+  grid: Tile[][];
+  gridSize: number;
+  sources: Array<{ x: number; y: number }>;
+  maxDistance: number;
+  utilityType: 'power' | 'water';
+}): boolean[][] {
+  const { grid, gridSize, sources, maxDistance } = options;
+  
+  // Initialize 2D boolean array (all false)
+  const powered = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
+  
+  // Early exit if no sources
+  if (sources.length === 0) {
+    return powered;
+  }
+  
+  // Initialize BFS data structures
+  const visited = new Set<string>();
+  const queue: Array<[number, number, number]> = []; // [x, y, distance]
+  
+  // Initialize queue with all sources
+  for (const source of sources) {
+    const key = `${source.x},${source.y}`;
+    if (!visited.has(key)) {
+      queue.push([source.x, source.y, 0]);
+      visited.add(key);
+      powered[source.y][source.x] = true;
+    }
+  }
+  
+  // Direction offsets: N, S, W, E
+  const DX = [0, 0, -1, 1];
+  const DY = [-1, 1, 0, 0];
+  
+  // BFS propagation along roads
+  while (queue.length > 0) {
+    const [x, y, distance] = queue.shift()!;
+    
+    // Early termination if we've exceeded max distance
+    // maxDistance = 50 means we want coverage up to 50 tiles away
+    // Source at distance 0 + roads at distance 1-50 = 51 tiles total
+    // So we stop processing when distance > maxDistance
+    if (distance > maxDistance) {
+      continue;
+    }
+    
+    // Check all 4 cardinal neighbors
+    for (let i = 0; i < 4; i++) {
+      const nx = x + DX[i];
+      const ny = y + DY[i];
+      
+      // Bounds check
+      if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) {
+        continue;
+      }
+      
+      const neighborKey = `${nx},${ny}`;
+      
+      // Skip if already visited
+      if (visited.has(neighborKey)) {
+        continue;
+      }
+      
+      const neighborTile = grid[ny]?.[nx];
+      if (!neighborTile || !neighborTile.building) {
+        continue;
+      }
+      
+      const isRoad = neighborTile.building.type === 'road' || 
+                     neighborTile.building.type === 'bridge' ||
+                     neighborTile.hasSubway;
+      
+      // Only propagate along roads, bridges, and subways
+      if (isRoad) {
+        const nextDistance = distance + 1;
+        // Add if next distance is less than or equal to maxDistance
+        // This ensures we get coverage up to maxDistance tiles away:
+        // - Source at distance 0 (1 tile)
+        // - Roads at distance 1 to maxDistance (maxDistance tiles)
+        // - Total: maxDistance + 1 tiles, covering up to maxDistance tiles away
+        if (nextDistance <= maxDistance) {
+          visited.add(neighborKey);
+          powered[ny][nx] = true;
+          queue.push([nx, ny, nextDistance]);
+        }
+      }
+    }
+  }
+  
+  // Helper function to find the anchor tile (top-left) of a multi-tile building
+  // Returns { anchorX, anchorY, buildingType, size } or null if not part of a multi-tile building
+  const findBuildingAnchor = (x: number, y: number): { anchorX: number; anchorY: number; buildingType: BuildingType; size: { width: number; height: number } } | null => {
+    const tile = grid[y]?.[x];
+    if (!tile || !tile.building) return null;
+    
+    const buildingType = tile.building.type;
+    
+    // If this is already the anchor (not 'empty'), check if it's multi-tile
+    if (buildingType !== 'empty') {
+      const size = getBuildingSize(buildingType);
+      if (size.width > 1 || size.height > 1) {
+        return { anchorX: x, anchorY: y, buildingType, size };
+      }
+      // Single-tile building
+      return null;
+    }
+    
+    // This is an 'empty' tile - search backwards to find the anchor
+    // Multi-tile buildings can be up to 4x4, so search up to 3 tiles back
+    for (let dy = 0; dy < 4; dy++) {
+      for (let dx = 0; dx < 4; dx++) {
+        const anchorX = x - dx;
+        const anchorY = y - dy;
+        
+        if (anchorX < 0 || anchorY < 0) continue;
+        
+        const anchorTile = grid[anchorY]?.[anchorX];
+        if (!anchorTile || !anchorTile.building) continue;
+        
+        const anchorType = anchorTile.building.type;
+        if (anchorType === 'empty') continue;
+        
+        const size = getBuildingSize(anchorType);
+        if (size.width > 1 || size.height > 1) {
+          // Check if (x, y) is within this building's footprint
+          if (x >= anchorX && x < anchorX + size.width &&
+              y >= anchorY && y < anchorY + size.height) {
+            return { anchorX, anchorY, buildingType: anchorType, size };
+          }
+        }
+      }
+    }
+    
+    return null;
+  };
+  
+  // Track which buildings we've already processed (by anchor coordinates)
+  const processedBuildings = new Set<string>();
+  
+  // Second pass: Power all buildings adjacent to powered roads
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      // Skip if already powered (road or source)
+      if (powered[y][x]) {
+        continue;
+      }
+      
+      const tile = grid[y][x];
+      if (!tile || !tile.building) {
+        continue;
+      }
+      
+      const buildingType = tile.building.type;
+      
+      // Check if this is a building (exclude terrain, roads, empty tiles)
+      // Note: subway is a tile property (hasSubway), not a building type
+      const isBuilding = buildingType !== 'grass' && 
+                         buildingType !== 'water' &&
+                         buildingType !== 'road' &&
+                         buildingType !== 'bridge' &&
+                         buildingType !== 'empty';
+      
+      if (isBuilding) {
+        // Check if this is part of a multi-tile building
+        const buildingInfo = findBuildingAnchor(x, y);
+        
+        if (buildingInfo) {
+          // Multi-tile building - check if we've already processed it
+          const anchorKey = `${buildingInfo.anchorX},${buildingInfo.anchorY}`;
+          if (processedBuildings.has(anchorKey)) {
+            continue; // Already processed this building
+          }
+          processedBuildings.add(anchorKey);
+          
+          // Check all edge tiles of the building for road adjacency
+          let hasRoadAccess = false;
+          const { anchorX, anchorY, size } = buildingInfo;
+          
+          // Check all tiles in the building's footprint
+          for (let dy = 0; dy < size.height && !hasRoadAccess; dy++) {
+            for (let dx = 0; dx < size.width && !hasRoadAccess; dx++) {
+              const tileX = anchorX + dx;
+              const tileY = anchorY + dy;
+              
+              // Check 4 neighbors of this tile
+              for (let i = 0; i < 4; i++) {
+                const nx = tileX + DX[i];
+                const ny = tileY + DY[i];
+                
+                // Bounds check
+                if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) {
+                  continue;
+                }
+                
+                // Only power if neighbor is powered AND is actually a road/bridge/subway/source
+                // This prevents power from cascading through chains of buildings
+                if (powered[ny][nx]) {
+                  const neighborTile = grid[ny]?.[nx];
+                  if (neighborTile && neighborTile.building) {
+                    const neighborType = neighborTile.building.type;
+                    const isNeighborRoad = neighborType === 'road' || 
+                                           neighborType === 'bridge' ||
+                                           neighborTile.hasSubway ||
+                                           neighborType === 'power_plant' ||
+                                           neighborType === 'water_tower';
+                    
+                    if (isNeighborRoad) {
+                      hasRoadAccess = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          // If any edge tile has road access, power the entire building footprint
+          if (hasRoadAccess) {
+            for (let dy = 0; dy < size.height; dy++) {
+              for (let dx = 0; dx < size.width; dx++) {
+                const tileX = anchorX + dx;
+                const tileY = anchorY + dy;
+                if (tileX >= 0 && tileX < gridSize && tileY >= 0 && tileY < gridSize) {
+                  powered[tileY][tileX] = true;
+                }
+              }
+            }
+          }
+        } else {
+          // Single-tile building - use original logic
+          for (let i = 0; i < 4; i++) {
+            const nx = x + DX[i];
+            const ny = y + DY[i];
+            
+            // Bounds check
+            if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) {
+              continue;
+            }
+            
+            // Only power this building if neighbor is powered AND is actually a road/bridge/subway/source
+            // This prevents power from cascading through chains of buildings
+            if (powered[ny][nx]) {
+              const neighborTile = grid[ny]?.[nx];
+              if (neighborTile && neighborTile.building) {
+                const neighborType = neighborTile.building.type;
+                const isNeighborRoad = neighborType === 'road' || 
+                                       neighborType === 'bridge' ||
+                                       neighborTile.hasSubway ||
+                                       neighborType === 'power_plant' ||
+                                       neighborType === 'water_tower';
+                
+                if (isNeighborRoad) {
+                  powered[y][x] = true;
+                  break; // No need to check other neighbors
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return powered;
+}
+
 // Calculate service coverage from service buildings - optimized version
 function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage {
   const services = createServiceCoverage(size);
   
+  // Network-based power coverage (50 tile limit along roads)
+  const powerPlants = findUtilitySources(grid, size, 'power_plant');
+  services.power = calculateNetworkUtilityCoverage({
+    grid,
+    gridSize: size,
+    sources: powerPlants,
+    maxDistance: 50,
+    utilityType: 'power',
+  });
+  
+  // Network-based water coverage (25 tile limit along roads)
+  const waterTowers = findUtilitySources(grid, size, 'water_tower');
+  services.water = calculateNetworkUtilityCoverage({
+    grid,
+    gridSize: size,
+    sources: waterTowers,
+    maxDistance: 25,
+    utilityType: 'water',
+  });
+  
   // First pass: collect all service building positions (much faster than checking every tile)
+  // Note: power_plant and water_tower are now handled above, but we still collect them
+  // for other services that use radius-based coverage
   const serviceBuildings: Array<{ x: number; y: number; type: BuildingType }> = [];
   
   for (let y = 0; y < size; y++) {
@@ -1233,8 +1572,15 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
   }
   
   // Second pass: apply coverage for each service building
+  // Note: power_plant and water_tower are skipped here (handled above with network-based)
   for (const building of serviceBuildings) {
     const { x, y, type } = building;
+    
+    // Skip power plants and water towers (handled above with network-based coverage)
+    if (type === 'power_plant' || type === 'water_tower') {
+      continue;
+    }
+    
     const config = SERVICE_CONFIG[type as keyof typeof SERVICE_CONFIG];
     if (!config) continue;
     
@@ -1247,45 +1593,21 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
     const minX = Math.max(0, x - range);
     const maxX = Math.min(size - 1, x + range);
     
-    // Handle power and water (boolean coverage)
-    if (type === 'power_plant') {
-      for (let ny = minY; ny <= maxY; ny++) {
-        for (let nx = minX; nx <= maxX; nx++) {
-          const dx = nx - x;
-          const dy = ny - y;
-          // Use squared distance comparison (avoid Math.sqrt)
-          if (dx * dx + dy * dy <= rangeSquared) {
-            services.power[ny][nx] = true;
-          }
-        }
-      }
-    } else if (type === 'water_tower') {
-      for (let ny = minY; ny <= maxY; ny++) {
-        for (let nx = minX; nx <= maxX; nx++) {
-          const dx = nx - x;
-          const dy = ny - y;
-          if (dx * dx + dy * dy <= rangeSquared) {
-            services.water[ny][nx] = true;
-          }
-        }
-      }
-    } else {
-      // Handle percentage-based coverage (police, fire, health, education)
-      const serviceType = (config as { type: 'police' | 'fire' | 'health' | 'education' }).type;
-      const currentCoverage = services[serviceType] as number[][];
-      
-      for (let ny = minY; ny <= maxY; ny++) {
-        for (let nx = minX; nx <= maxX; nx++) {
-          const dx = nx - x;
-          const dy = ny - y;
-          const distSquared = dx * dx + dy * dy;
-          
-          if (distSquared <= rangeSquared) {
-            // Only compute sqrt when we need the actual distance for coverage falloff
-            const distance = Math.sqrt(distSquared);
-            const coverage = Math.max(0, (1 - distance / range) * 100);
-            currentCoverage[ny][nx] = Math.min(100, currentCoverage[ny][nx] + coverage);
-          }
+    // Handle percentage-based coverage (police, fire, health, education)
+    const serviceType = (config as { type: 'police' | 'fire' | 'health' | 'education' }).type;
+    const currentCoverage = services[serviceType] as number[][];
+    
+    for (let ny = minY; ny <= maxY; ny++) {
+      for (let nx = minX; nx <= maxX; nx++) {
+        const dx = nx - x;
+        const dy = ny - y;
+        const distSquared = dx * dx + dy * dy;
+        
+        if (distSquared <= rangeSquared) {
+          // Only compute sqrt when we need the actual distance for coverage falloff
+          const distance = Math.sqrt(distSquared);
+          const coverage = Math.max(0, (1 - distance / range) * 100);
+          currentCoverage[ny][nx] = Math.min(100, currentCoverage[ny][nx] + coverage);
         }
       }
     }

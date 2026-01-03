@@ -1207,7 +1207,7 @@ export const SERVICE_BUILDING_TYPES = new Set([
 // Service building upgrade constants
 export const SERVICE_MAX_LEVEL = 5;
 export const SERVICE_RANGE_INCREASE_PER_LEVEL = 0.5; // 50% per level
-export const SERVICE_UPGRADE_COST_BASE = 10; // Cost = baseCost * (2 ^ currentLevel)
+export const SERVICE_UPGRADE_COST_BASE = 10; // Cost = baseCost * (10 ^ currentLevel)
 
 // Calculate service coverage from service buildings - optimized version
 function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage {

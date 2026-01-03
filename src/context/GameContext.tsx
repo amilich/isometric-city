@@ -14,16 +14,18 @@ import {
 } from '@/types/game';
 import { SCENARIOS } from '@/data/scenarios';
 import { Objective } from '@/types/scenario';
-import {
-  bulldozeTile,
-  createInitialGameState,
-  DEFAULT_GRID_SIZE,
-  placeBuilding,
-  placeSubway,
-  simulateTick,
-  checkForDiscoverableCities,
-  generateRandomAdvancedCity,
-} from '@/lib/simulation';
+import { DEFAULT_GRID_SIZE } from '@/lib/simulation/constants';
+import { 
+  createInitialGameState, 
+  simulateTick, 
+  generateRandomAdvancedCity 
+} from '@/lib/simulation/core';
+import { 
+  bulldozeTile, 
+  placeBuilding, 
+  placeSubway 
+} from '@/lib/simulation/actions';
+import { checkForDiscoverableCities } from '@/lib/simulation/terrain';
 import {
   SPRITE_PACKS,
   DEFAULT_SPRITE_PACK_ID,

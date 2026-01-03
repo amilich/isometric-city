@@ -32,7 +32,12 @@ import {
   Smile,
   Leaf,
   Building2,
-  Anchor
+  Anchor,
+  ChevronDown,
+  ChevronUp,
+  Activity,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openCommandMenu } from '@/components/ui/CommandMenu';
@@ -275,6 +280,38 @@ export const BottomHUD = React.memo(function BottomHUD({
   const date = useMemo(() => new Date(year, month - 1, day), [year, month, day]);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false); // Default open
+  
+  // Instant profit/loss tracking
+  const prevMoneyRef = useRef(stats.money);
+  const [moneyDiff, setMoneyDiff] = useState(0);
+
+  // Instant population tracking
+  const prevPopRef = useRef(stats.population);
+  const [popDiff, setPopDiff] = useState(0);
+
+  useEffect(() => {
+    const diff = stats.money - prevMoneyRef.current;
+    if (diff !== 0) {
+       setMoneyDiff(diff);
+       prevMoneyRef.current = stats.money;
+       // Reset diff after 2 seconds
+       const timer = setTimeout(() => setMoneyDiff(0), 2000);
+       return () => clearTimeout(timer);
+    }
+  }, [stats.money]);
+
+  useEffect(() => {
+    const diff = stats.population - prevPopRef.current;
+    if (diff !== 0) {
+       setPopDiff(diff);
+       prevPopRef.current = stats.population;
+       // Reset diff after 2 seconds
+       const timer = setTimeout(() => setPopDiff(0), 2000);
+       return () => clearTimeout(timer);
+    }
+  }, [stats.population]);
+
   const t = useTranslations('Game');
   
   const avgRating = (stats.happiness + stats.health + stats.education + stats.safety + stats.environment) / 5;
@@ -563,10 +600,30 @@ export const BottomHUD = React.memo(function BottomHUD({
         </div>
 
         {/* RIGHT: Status & Systems */}
-        <div className="pointer-events-auto flex flex-col w-[280px] bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-4 shadow-2xl mb-1 ml-auto lg:ml-0 mt-2 lg:mt-0">
+        {isCollapsed ? (
+          <div className="pointer-events-auto flex flex-col justify-end items-end ml-auto lg:ml-0 mt-2 lg:mt-0">
+             <Button 
+                variant="secondary"
+                className="w-12 h-12 rounded-full shadow-lg border-2 border-slate-700 bg-slate-900/90 text-slate-300 hover:bg-slate-800 hover:text-white flex items-center justify-center p-0"
+                onClick={() => setIsCollapsed(false)}
+             >
+                <Activity size={24} />
+             </Button>
+          </div>
+        ) : (
+        <div className="pointer-events-auto flex flex-col w-[280px] bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-4 shadow-2xl mb-1 ml-auto lg:ml-0 mt-2 lg:mt-0 relative group">
           
+          {/* Collapse Button */}
+          <button 
+            onClick={() => setIsCollapsed(true)}
+            className="absolute top-2 right-2 text-slate-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
+            title="Panel'i Küçült"
+          >
+            <ChevronDown size={16} />
+          </button>
+
           {/* City Name & Date */}
-          <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10">
+          <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10 pr-6">
             <div className="font-bold text-white text-sm truncate max-w-[150px]" title={cityName}>
               {cityName || "My City"}
             </div>
@@ -581,13 +638,33 @@ export const BottomHUD = React.memo(function BottomHUD({
                <div className={`text-4xl font-black ${gradeColor} drop-shadow-md bg-black/20 px-2 rounded`}>
                   {grade}
                </div>
-               <div className="text-emerald-400 font-mono text-3xl font-bold text-right drop-shadow-md tracking-tight">
-                  ₺{formatNumber(stats.money)}
+               <div className="flex flex-col items-end">
+                 <div className="text-emerald-400 font-mono text-3xl font-bold text-right drop-shadow-md tracking-tight">
+                    ₺{formatNumber(stats.money)}
+                 </div>
+                 {/* Instant Profit/Loss Indicator */}
+                 <div className="h-4 flex items-center justify-end">
+                    {moneyDiff !== 0 && (
+                      <div className={`text-xs font-mono font-bold flex items-center gap-1 animate-in fade-in slide-in-from-bottom-1 duration-300 ${moneyDiff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {moneyDiff > 0 ? <ArrowUp size={12} strokeWidth={3} /> : <ArrowDown size={12} strokeWidth={3} />}
+                        <span>₺{formatNumber(Math.abs(moneyDiff))}</span>
+                      </div>
+                    )}
+                 </div>
                </div>
             </div>
             <div className="flex justify-between items-center text-slate-400 text-[10px] uppercase font-bold tracking-wider border-t border-white/10 pt-2">
                <span>Population</span>
-               <span className="text-white text-base">{formatNumber(stats.population)}</span>
+               <div className="flex items-center gap-2">
+                 {/* Instant Population Indicator */}
+                 {popDiff !== 0 && (
+                    <div className={`text-[10px] font-mono font-bold flex items-center gap-0.5 animate-in fade-in slide-in-from-bottom-1 duration-300 ${popDiff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {popDiff > 0 ? <ArrowUp size={10} strokeWidth={3} /> : <ArrowDown size={10} strokeWidth={3} />}
+                      <span>{formatNumber(Math.abs(popDiff))}</span>
+                    </div>
+                 )}
+                 <span className="text-white text-base">{formatNumber(stats.population)}</span>
+               </div>
             </div>
              <div className="flex justify-between items-center text-slate-500 text-[10px] font-mono">
                <span className={speed === 0 ? 'text-amber-500' : 'text-slate-400'}>{speed === 0 ? 'PAUSED' : speed === 1 ? 'NORMAL' : 'FAST'}</span>
@@ -628,6 +705,7 @@ export const BottomHUD = React.memo(function BottomHUD({
           </div>
 
         </div>
+        )}
 
         <ExitDialog
           open={showExitDialog}

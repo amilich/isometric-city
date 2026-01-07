@@ -151,6 +151,7 @@ export function useBargeSystem(
     const updatedBarges: Barge[] = [];
     
     for (const barge of bargesRef.current) {
+      // eslint-disable-next-line react-hooks/immutability -- intentional mutation for game animation performance
       barge.age += delta;
       
       // Update wake particles

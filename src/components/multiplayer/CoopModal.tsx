@@ -77,6 +77,7 @@ export function CoopModal({
           setAutoJoinError(errorMessage);
         });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gt is stable and doesn't need to be a dependency
   }, [open, pendingRoomCode, autoJoinAttempted, joinRoom]);
 
   // Reset state when modal closes - cleanup any pending connection

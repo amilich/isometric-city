@@ -710,6 +710,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // PERF: Just mark that state has changed - defer expensive deep copy to actual save time
   const stateChangedRef = useRef(false);
   const latestStateRef = useRef(state);
+  // eslint-disable-next-line react-hooks/refs -- intentional: keeping latest state ref for async save operations
   latestStateRef.current = state;
   
   useEffect(() => {

@@ -12,6 +12,7 @@ import { msg, useMessages, useGT } from 'gt-next';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useCheatCodes } from '@/hooks/useCheatCodes';
 import { VinnieDialog } from '@/components/VinnieDialog';
+import { AdminMenu } from '@/components/AdminMenu';
 import { CommandMenu } from '@/components/ui/CommandMenu';
 import { TipToast } from '@/components/ui/TipToast';
 import { useTipSystem } from '@/hooks/useTipSystem';
@@ -57,6 +58,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     triggeredCheat,
     showVinnieDialog,
     setShowVinnieDialog,
+    showAdminMenu,
+    setShowAdminMenu,
     clearTriggeredCheat,
   } = useCheatCodes();
   
@@ -219,8 +222,23 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         clearTriggeredCheat();
         break;
 
+      case 'fund':
+        addMoney(triggeredCheat.amount);
+        addNotification(
+          gt('Emergency Fund!'),
+          gt('Emergency funding approved! You received $10,000!'),
+          'trophy'
+        );
+        clearTriggeredCheat();
+        break;
+
       case 'vinnie':
         // Vinnie dialog is handled by VinnieDialog component
+        clearTriggeredCheat();
+        break;
+
+      case 'admin':
+        // Admin menu is handled by AdminMenu component
         clearTriggeredCheat();
         break;
     }
@@ -328,6 +346,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === 'settings' && <SettingsPanel />}
           
           <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
+          <AdminMenu open={showAdminMenu} onOpenChange={setShowAdminMenu} overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
           
           {/* Tip Toast for helping new players */}
           <TipToast
@@ -407,6 +426,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         {state.activePanel === 'settings' && <SettingsPanel />}
         
         <VinnieDialog open={showVinnieDialog} onOpenChange={setShowVinnieDialog} />
+        <AdminMenu open={showAdminMenu} onOpenChange={setShowAdminMenu} overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
         <CommandMenu />
         
         {/* Tip Toast for helping new players */}

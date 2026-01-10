@@ -224,6 +224,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         clearTriggeredCheat();
         break;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gt is stable and doesn't need to be a dependency
   }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
   
   // Track barge deliveries to show occasional notifications

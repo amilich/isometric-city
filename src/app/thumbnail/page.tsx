@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element -- OG preview cards require native img for external URLs */
+
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 

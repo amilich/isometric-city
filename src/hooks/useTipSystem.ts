@@ -173,6 +173,7 @@ export function useTipSystem(state: GameState): UseTipSystemReturn {
   
   // Use a ref to always have the latest state without causing effect re-runs
   const stateRef = useRef(state);
+  // eslint-disable-next-line react-hooks/refs -- intentional: keeping latest state ref for interval callback
   stateRef.current = state;
 
   // Load preferences from localStorage

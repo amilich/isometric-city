@@ -22,6 +22,7 @@ function TipToastContent({ message, isVisible, onContinue, onSkipAll }: TipToast
 
   useEffect(() => {
     if (isVisible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: synchronizing render state with visibility prop
       setShouldRender(true);
       // Small delay to trigger animation
       const frame = requestAnimationFrame(() => {
@@ -123,6 +124,7 @@ export function TipToast(props: TipToastProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: tracking client-side mounting for SSR hydration
     setMounted(true);
   }, []);
 

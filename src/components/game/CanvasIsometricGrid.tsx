@@ -1417,7 +1417,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             // Ultra-simple: solid color only (fastest, for very zoomed out views)
             // Simple: single-pass texture (fast, for moderately zoomed out views)
             // Full: multi-pass blending (detailed, for zoomed in views)
-            if (zoom < WATER_ULTRA_SIMPLE_ZOOM) {
+            if (zoom <= WATER_ULTRA_SIMPLE_ZOOM) {
               // Ultra-simple: skip texture entirely, just fill with solid color
               // This is the fastest path for very zoomed out views
               ctx.globalAlpha = 1;

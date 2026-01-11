@@ -1420,9 +1420,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             if (zoom <= WATER_ULTRA_SIMPLE_ZOOM) {
               // Ultra-simple: skip texture entirely, just fill with solid color
               // This is the fastest path for very zoomed out views
+              // Note: We need to recreate the path since clip() consumed it
               ctx.globalAlpha = 1;
               ctx.fillStyle = '#2563eb';
-              ctx.fill(); // Fill the already-defined clipping path
+              ctx.beginPath();
+              ctx.moveTo(x + w / 2, topY - topExpand);
+              ctx.lineTo(rightX + rightExpand, y + h / 2);
+              ctx.lineTo(x + w / 2, bottomY + bottomExpand);
+              ctx.lineTo(leftX - leftExpand, y + h / 2);
+              ctx.closePath();
+              ctx.fill();
             } else if (zoom < WATER_SIMPLE_RENDER_ZOOM) {
               // Simplified single-pass water at low zoom
               const destWidth = w * 1.15;

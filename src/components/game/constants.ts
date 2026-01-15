@@ -68,6 +68,15 @@ export const CAR_MIN_ZOOM_MOBILE = 0.45;          // Mobile car threshold (sligh
 export const PEDESTRIAN_MIN_ZOOM = 0.5;           // Desktop pedestrian threshold
 export const PEDESTRIAN_MIN_ZOOM_MOBILE = 0.55;   // Mobile pedestrian threshold (slightly higher for perf)
 
+// Water rendering LOD thresholds
+export const WATER_SIMPLE_RENDER_ZOOM = 0.45;     // Below this zoom, use simplified single-pass water rendering
+export const WATER_ULTRA_SIMPLE_ZOOM = 0.3;       // Below this zoom, use solid color water (no texture)
+
+// Beach and detail rendering thresholds
+export const BEACH_MIN_ZOOM = 0.4;                // Below this zoom, skip beach rendering
+export const GRID_LINES_MIN_ZOOM = 0.6;           // Below this zoom, skip grid line rendering
+export const ZONE_BORDER_MIN_ZOOM = 0.95;         // Below this zoom, skip zone border dashed lines
+
 // Vehicle rendering thresholds - hide at very zoomed out levels for performance
 export const VEHICLE_FAR_ZOOM_THRESHOLD = 0.25;   // Below this zoom: hide ALL vehicles/pedestrians on desktop too
 export const TRAIN_MIN_ZOOM_FAR = 0.20;           // Trains visible slightly further out than cars

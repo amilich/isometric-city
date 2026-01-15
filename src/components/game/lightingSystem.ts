@@ -168,15 +168,26 @@ export function collectLightSources(
 // RENDERING FUNCTIONS
 // ============================================================================
 
+// Zoom thresholds for lighting LOD
+const LIGHTING_SIMPLE_ZOOM = 0.5;      // Below this, use simplified lighting (no window lights)
+const LIGHTING_ULTRA_SIMPLE_ZOOM = 0.35; // Below this, use solid circles instead of gradients
+
 /**
  * Draw light cutouts to remove darkness around light sources
+ * Uses LOD based on zoom level to reduce gradient creation at low zoom
  */
 export function drawLightCutouts(
   ctx: CanvasRenderingContext2D,
   lightCutouts: LightCutout[],
   lightIntensity: number,
-  isMobile: boolean
+  isMobile: boolean,
+  zoom: number = 1
 ): void {
+  // PERF: At very low zoom, use ultra-simple solid circles instead of gradients
+  const useUltraSimple = zoom < LIGHTING_ULTRA_SIMPLE_ZOOM;
+  // PERF: At low zoom, skip window lights even on desktop
+  const skipWindowLights = isMobile || zoom < LIGHTING_SIMPLE_ZOOM;
+  
   for (const light of lightCutouts) {
     const { screenX, screenY } = gridToScreen(light.x, light.y, 0, 0);
     const tileCenterX = screenX + TILE_WIDTH / 2;
@@ -184,22 +195,31 @@ export function drawLightCutouts(
     
     if (light.type === 'road') {
       const lightRadius = 28;
-      const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, lightRadius);
-      gradient.addColorStop(0, `rgba(255, 255, 255, ${0.75 * lightIntensity})`);
-      gradient.addColorStop(0.4, `rgba(255, 255, 255, ${0.4 * lightIntensity})`);
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(tileCenterX, tileCenterY, lightRadius, 0, Math.PI * 2);
-      ctx.fill();
+      
+      if (useUltraSimple) {
+        // Ultra-simple: solid circle with fixed alpha (no gradient)
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * lightIntensity})`;
+        ctx.beginPath();
+        ctx.arc(tileCenterX, tileCenterY, lightRadius * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, lightRadius);
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${0.75 * lightIntensity})`);
+        gradient.addColorStop(0.4, `rgba(255, 255, 255, ${0.4 * lightIntensity})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(tileCenterX, tileCenterY, lightRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
     } else if (light.type === 'building' && light.buildingType && light.seed !== undefined) {
       const buildingType = light.buildingType;
       const isResidential = RESIDENTIAL_BUILDING_TYPES.has(buildingType);
       const isCommercial = COMMERCIAL_BUILDING_TYPES.has(buildingType);
       const glowStrength = isCommercial ? 0.9 : isResidential ? 0.65 : 0.75;
       
-      // PERF: On mobile, skip individual window lights - just use ground glow
-      if (!isMobile) {
+      // PERF: Skip individual window lights at low zoom or on mobile
+      if (!skipWindowLights) {
         // Draw window lights
         let numWindows = 2;
         if (buildingType.includes('medium') || buildingType.includes('low')) numWindows = 3;
@@ -227,19 +247,28 @@ export function drawLightCutouts(
         }
       }
       
-      // Ground glow (on mobile, use a simpler/stronger single gradient)
+      // Ground glow
       const groundGlowRadius = isMobile ? TILE_WIDTH * 0.5 : TILE_WIDTH * 0.6;
       const groundGlowAlpha = isMobile ? 0.4 : 0.28;
-      const groundGlow = ctx.createRadialGradient(
-        tileCenterX, tileCenterY + TILE_HEIGHT / 4, 0,
-        tileCenterX, tileCenterY + TILE_HEIGHT / 4, groundGlowRadius
-      );
-      groundGlow.addColorStop(0, `rgba(255, 255, 255, ${groundGlowAlpha * lightIntensity})`);
-      groundGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = groundGlow;
-      ctx.beginPath();
-      ctx.ellipse(tileCenterX, tileCenterY + TILE_HEIGHT / 4, groundGlowRadius, TILE_HEIGHT / 2.5, 0, 0, Math.PI * 2);
-      ctx.fill();
+      
+      if (useUltraSimple) {
+        // Ultra-simple: solid ellipse with fixed alpha (no gradient)
+        ctx.fillStyle = `rgba(255, 255, 255, ${groundGlowAlpha * 0.7 * lightIntensity})`;
+        ctx.beginPath();
+        ctx.ellipse(tileCenterX, tileCenterY + TILE_HEIGHT / 4, groundGlowRadius * 0.6, TILE_HEIGHT / 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const groundGlow = ctx.createRadialGradient(
+          tileCenterX, tileCenterY + TILE_HEIGHT / 4, 0,
+          tileCenterX, tileCenterY + TILE_HEIGHT / 4, groundGlowRadius
+        );
+        groundGlow.addColorStop(0, `rgba(255, 255, 255, ${groundGlowAlpha * lightIntensity})`);
+        groundGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = groundGlow;
+        ctx.beginPath();
+        ctx.ellipse(tileCenterX, tileCenterY + TILE_HEIGHT / 4, groundGlowRadius, TILE_HEIGHT / 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 }
@@ -394,7 +423,7 @@ export function useLightingSystem(config: LightingSystemConfig): void {
     ctx.scale(dpr * zoom, dpr * zoom);
     ctx.translate(offset.x / zoom, offset.y / zoom);
     
-    drawLightCutouts(ctx, lightCutouts, lightIntensity, isMobile);
+    drawLightCutouts(ctx, lightCutouts, lightIntensity, isMobile, zoom);
     
     ctx.restore();
     

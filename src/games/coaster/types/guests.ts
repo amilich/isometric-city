@@ -59,6 +59,7 @@ export type Guest = {
   progress: number;
   state: GuestState;
   stateTimer: number;
+  queueJoinTick: number | null;
   needs: GuestNeeds;
   happiness: number;
   energy: number;

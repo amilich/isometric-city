@@ -67,6 +67,7 @@ function createGuest(id: number, tileX: number, tileY: number): Guest {
     progress: 0,
     state: 'wandering',
     stateTimer: 0,
+    queueJoinTick: null,
     needs: {
       hunger: 200,
       thirst: 200,
@@ -184,6 +185,7 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
         stateTimer: 0,
         targetRideId: null,
         currentRideId: null,
+        queueJoinTick: null,
         path: [],
         pathIndex: 0,
         tileX: exitTile.x,
@@ -205,6 +207,7 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
         state: 'wandering',
         stateTimer: 0,
         targetShop: null,
+        queueJoinTick: null,
         path: [],
         pathIndex: 0,
         progress: 0,
@@ -212,6 +215,10 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
       };
     }
     return { ...guest, stateTimer: nextTimer, age: nextAge };
+  }
+
+  if (guest.state === 'queuing') {
+    return { ...guest, age: nextAge };
   }
 
   if (guest.path.length > 1 && guest.pathIndex < guest.path.length - 1) {
@@ -225,7 +232,7 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
     }
     const reachedEnd = guest.pathIndex + 1 >= guest.path.length - 1;
     const nextState = reachedEnd && guest.targetRideId
-      ? 'on_ride'
+      ? 'queuing'
       : reachedEnd && guest.targetShop
         ? 'at_shop'
         : guest.state;
@@ -237,8 +244,9 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
       progress: 0,
       pathIndex: guest.pathIndex + 1,
       state: nextState,
-      stateTimer: nextState === 'on_ride' ? 6 : nextState === 'at_shop' ? 4 : guest.stateTimer,
-      currentRideId: nextState === 'on_ride' ? guest.targetRideId : guest.currentRideId,
+      stateTimer: nextState === 'at_shop' ? 4 : guest.stateTimer,
+      queueJoinTick: nextState === 'queuing' ? state.tick : guest.queueJoinTick,
+      path: reachedEnd ? [] : guest.path,
       age: nextAge,
     };
   }
@@ -377,6 +385,23 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   nextGuests = nextGuests.filter((guest) => guest.age < guest.maxAge);
   let totalGuests = state.stats.totalGuests;
 
+  nextGuests = nextGuests.map((guest) => {
+    if ((guest.state === 'queuing' || guest.state === 'heading_to_ride') && guest.targetRideId) {
+      const rideExists = state.rides.some((ride) => ride.id === guest.targetRideId);
+      if (!rideExists) {
+        return {
+          ...guest,
+          state: 'wandering',
+          targetRideId: null,
+          queueJoinTick: null,
+          path: [],
+          pathIndex: 0,
+        };
+      }
+    }
+    return guest;
+  });
+
   const shopTargets = findShopTargets(state.grid);
   if (shopTargets.length > 0) {
     nextGuests = nextGuests.map((guest) => {
@@ -436,9 +461,12 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   const availableRides = state.rides.filter((ride) => ride.status === 'open');
   if (availableRides.length > 0) {
     nextGuests = nextGuests.map((guest) => {
-      if (guest.state !== 'wandering' || guest.targetRideId) return guest;
+      if (guest.state !== 'wandering' || guest.targetRideId || guest.targetShop) return guest;
       const ride = availableRides[Math.floor(Math.random() * availableRides.length)];
-      const path = findPath({ x: guest.tileX, y: guest.tileY }, ride.entrance, state.grid);
+      const queueEntry = ride.queue.entry;
+      const queuePath = state.grid[queueEntry.y]?.[queueEntry.x]?.path;
+      const target = queuePath && queuePath.isQueue ? queueEntry : ride.entrance;
+      const path = findPath({ x: guest.tileX, y: guest.tileY }, target, state.grid);
       if (!path || path.length < 2) return guest;
       return {
         ...guest,
@@ -451,25 +479,75 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
     });
   }
 
-  const rideEntries = nextGuests.filter(
-    (guest) => guest.state === 'on_ride' && guest.stateTimer === 6 && guest.currentRideId
-  );
-  let updatedRides = state.rides;
+  const queueMap = new Map<string, Guest[]>();
+  nextGuests.forEach((guest) => {
+    if (guest.state !== 'queuing' || !guest.targetRideId) return;
+    const queueGuests = queueMap.get(guest.targetRideId) ?? [];
+    queueGuests.push(guest);
+    queueMap.set(guest.targetRideId, queueGuests);
+  });
+  queueMap.forEach((queueGuests, rideId) => {
+    queueGuests.sort((a, b) => (a.queueJoinTick ?? 0) - (b.queueJoinTick ?? 0));
+    queueMap.set(rideId, queueGuests);
+  });
+
+  let updatedRides = state.rides.map((ride) => ({
+    ...ride,
+    queue: { ...ride.queue, guestIds: (queueMap.get(ride.id) ?? []).map((guest) => guest.id) },
+  }));
   let rideRevenue = 0;
-  if (rideEntries.length > 0) {
-    updatedRides = state.rides.map((ride) => {
-      const entries = rideEntries.filter((guest) => guest.currentRideId === ride.id).length;
-      if (entries === 0) return ride;
-      const revenue = entries * ride.price;
-      rideRevenue += revenue;
-      return {
-        ...ride,
-        stats: {
-          ...ride.stats,
-          totalRiders: ride.stats.totalRiders + entries,
-          totalRevenue: ride.stats.totalRevenue + revenue,
+
+  const guestUpdates = new Map<number, Partial<Guest>>();
+  updatedRides = updatedRides.map((ride) => {
+    const queueGuests = queueMap.get(ride.id) ?? [];
+    const cycleTicks = Math.max(4, Math.round(ride.stats.rideTime / 10));
+    const nextTimer = Math.max(0, ride.cycleTimer - 1);
+    if (nextTimer > 0 || queueGuests.length === 0) {
+      return { ...ride, cycleTimer: nextTimer };
+    }
+
+    const dispatchCount = Math.min(ride.stats.capacity, queueGuests.length);
+    const boardingGuests = queueGuests.slice(0, dispatchCount);
+    if (dispatchCount === 0) {
+      return { ...ride, cycleTimer: nextTimer };
+    }
+
+    const revenue = dispatchCount * ride.price;
+    rideRevenue += revenue;
+    boardingGuests.forEach((guest) => {
+      guestUpdates.set(guest.id, {
+        state: 'on_ride',
+        stateTimer: cycleTicks,
+        currentRideId: ride.id,
+        targetRideId: null,
+        queueJoinTick: null,
+        path: [],
+        pathIndex: 0,
+        progress: 0,
+        money: Math.max(0, guest.money - ride.price),
+        happiness: Math.min(255, guest.happiness + Math.round(ride.excitement / 12)),
+        needs: {
+          ...guest.needs,
+          nausea: clamp(guest.needs.nausea + Math.round(ride.nausea / 8)),
         },
-      };
+      });
+    });
+
+    return {
+      ...ride,
+      cycleTimer: cycleTicks,
+      stats: {
+        ...ride.stats,
+        totalRiders: ride.stats.totalRiders + dispatchCount,
+        totalRevenue: ride.stats.totalRevenue + revenue,
+      },
+    };
+  });
+
+  if (guestUpdates.size > 0) {
+    nextGuests = nextGuests.map((guest) => {
+      const update = guestUpdates.get(guest.id);
+      return update ? { ...guest, ...update } : guest;
     });
   }
 
@@ -481,23 +559,6 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
     shopEntries.forEach((guest) => {
       const effect = SHOP_EFFECTS[guest.targetShop?.type ?? 'food_stall'];
       shopRevenue += effect?.cost ?? 0;
-    });
-  }
-
-  if (rideEntries.length > 0) {
-    nextGuests = nextGuests.map((guest) => {
-      if (guest.state !== 'on_ride' || guest.stateTimer !== 6 || !guest.currentRideId) return guest;
-      const ride = state.rides.find((item) => item.id === guest.currentRideId);
-      if (!ride) return guest;
-      return {
-        ...guest,
-        money: Math.max(0, guest.money - ride.price),
-        happiness: Math.min(255, guest.happiness + Math.round(ride.excitement / 12)),
-        needs: {
-          ...guest.needs,
-          nausea: clamp(guest.needs.nausea + Math.round(ride.nausea / 8)),
-        },
-      };
     });
   }
 

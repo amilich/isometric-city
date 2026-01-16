@@ -62,6 +62,10 @@ function normalizeCoasterState(state: CoasterParkState): CoasterParkState {
   return {
     ...state,
     coasterTrains: state.coasterTrains ?? [],
+    rides: state.rides.map((ride) => ({
+      ...ride,
+      cycleTimer: ride.cycleTimer ?? 0,
+    })),
   };
 }
 
@@ -287,6 +291,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       nausea: definition.nausea,
       age: 0,
       color: definition.color,
+      cycleTimer: 0,
     };
 
     return {
@@ -359,6 +364,20 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         });
       };
 
+      const findAdjacentRideId = (tileX: number, tileY: number) => {
+        const neighbors = [
+          { x: tileX, y: tileY - 1 },
+          { x: tileX + 1, y: tileY },
+          { x: tileX, y: tileY + 1 },
+          { x: tileX - 1, y: tileY },
+        ];
+        for (const neighbor of neighbors) {
+          const rideId = grid[neighbor.y]?.[neighbor.x]?.rideId;
+          if (rideId) return rideId;
+        }
+        return null;
+      };
+
       const syncNeighborTracks = (tileX: number, tileY: number, connections: ReturnType<typeof getTrackConnections>) => {
         (Object.keys(connections) as Array<keyof PathInfo['edges']>).forEach((direction) => {
           const delta = direction === 'north' ? { dx: 0, dy: -1 }
@@ -377,10 +396,10 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         });
       };
 
-      const createPath = (style: PathStyle, isQueue: boolean): PathInfo => ({
+      const createPath = (style: PathStyle, isQueue: boolean, queueRideId: string | null): PathInfo => ({
         style,
         isQueue,
-        queueRideId: null,
+        queueRideId,
         edges: getPathEdges(x, y),
         slope: 'flat',
         railing: false,
@@ -400,7 +419,8 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       );
 
       if (selectedTool === 'path' || selectedTool === 'queue_path') {
-        const newPath = createPath(selectedTool === 'queue_path' ? 'queue' : 'concrete', selectedTool === 'queue_path');
+        const queueRideId = selectedTool === 'queue_path' ? findAdjacentRideId(x, y) : null;
+        const newPath = createPath(selectedTool === 'queue_path' ? 'queue' : 'concrete', selectedTool === 'queue_path', queueRideId);
         if (tile.terrain === 'water' || tile.rideId || tile.building) {
           return prev;
         }
@@ -409,7 +429,12 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         }
         updateTile(x, y, { path: newPath });
         syncNeighborEdges(x, y, newPath.edges);
-        return applyCost({ ...prev, grid });
+        const rides = queueRideId
+          ? prev.rides.map((ride) =>
+            ride.id === queueRideId ? { ...ride, queue: { ...ride.queue, entry: { x, y } } } : ride
+          )
+          : prev.rides;
+        return applyCost({ ...prev, grid, rides });
       }
 
       if (selectedTool === 'coaster_track') {
@@ -504,6 +529,11 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         syncNeighborEdges(x, y, { north: false, east: false, south: false, west: false });
         if (tile.track) {
           syncNeighborTracks(x, y, { north: false, east: false, south: false, west: false });
+        }
+        if (tile.path?.queueRideId) {
+          rides = rides.map((ride) =>
+            ride.id === tile.path?.queueRideId ? { ...ride, queue: { ...ride.queue, entry: ride.entrance } } : ride
+          );
         }
         return applyCost({ ...prev, grid, rides });
       }

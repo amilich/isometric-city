@@ -50,6 +50,7 @@ export type Ride = {
   nausea: number;
   age: number;
   color: string;
+  cycleTimer: number;
   trackPieces?: TrackPiece[];
   trains?: CoasterTrain[];
 };

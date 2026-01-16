@@ -144,6 +144,40 @@ function drawBuilding(
   ctx.fill();
 }
 
+function drawTrack(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  connections: { north: boolean; east: boolean; south: boolean; west: boolean }
+) {
+  const center = { x: x + width / 2, y: y + height / 2 };
+  const anchors = {
+    north: { x: x + width / 2, y: y + height * 0.1 },
+    east: { x: x + width * 0.9, y: y + height / 2 },
+    south: { x: x + width / 2, y: y + height * 0.9 },
+    west: { x: x + width * 0.1, y: y + height / 2 },
+  };
+
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let hasConnection = false;
+  (Object.keys(connections) as Array<keyof typeof connections>).forEach((direction) => {
+    if (!connections[direction]) return;
+    hasConnection = true;
+    const anchor = anchors[direction];
+    ctx.moveTo(center.x, center.y);
+    ctx.lineTo(anchor.x, anchor.y);
+  });
+  if (!hasConnection) {
+    ctx.moveTo(center.x - 2, center.y);
+    ctx.lineTo(center.x + 2, center.y);
+  }
+  ctx.stroke();
+}
+
 const GUEST_VECTORS: Record<CardinalDirection, { dx: number; dy: number }> = {
   north: { dx: 0, dy: -1 },
   east: { dx: 1, dy: 0 },
@@ -164,6 +198,21 @@ function drawGuest(
   ctx.fill();
 }
 
+function drawTrain(
+  ctx: CanvasRenderingContext2D,
+  screenX: number,
+  screenY: number,
+  size: number
+) {
+  ctx.fillStyle = '#f97316';
+  ctx.beginPath();
+  ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
 export type CoasterCanvasProps = {
   navigationTarget?: { x: number; y: number } | null;
   onNavigationComplete?: () => void;
@@ -172,7 +221,7 @@ export type CoasterCanvasProps = {
 
 export default function CoasterCanvas({ navigationTarget, onNavigationComplete, onViewportChange }: CoasterCanvasProps) {
   const { state, placeAtTile } = useCoaster();
-  const { grid, gridSize, rides, guests } = state;
+  const { grid, gridSize, rides, guests, coasterTrains } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
@@ -249,6 +298,9 @@ export default function CoasterCanvas({ navigationTarget, onNavigationComplete, 
           const pathColor = tile.path.style === 'queue' ? '#f4b400' : '#8b9099';
           drawPathOverlay(ctx, screenX, screenY, tileWidth, tileHeight, pathColor);
         }
+        if (tile.track) {
+          drawTrack(ctx, screenX, screenY, tileWidth, tileHeight, tile.track.connections);
+        }
         if (tile.rideId && rideColors.has(tile.rideId)) {
           ctx.save();
           ctx.globalAlpha = 0.6;
@@ -280,7 +332,18 @@ export default function CoasterCanvas({ navigationTarget, onNavigationComplete, 
       const centerY = baseY + tileHeight / 2 - tileHeight * 0.12;
       drawGuest(ctx, centerX, centerY, tileWidth * 0.08, guest.colors.shirt);
     });
-  }, [canvasSize, grid, gridSize, offset, rideColors, guests, tileHeight, tileWidth, zoom]);
+    coasterTrains.forEach((train) => {
+      const vector = GUEST_VECTORS[train.direction];
+      const trainX = train.tileX + vector.dx * train.progress;
+      const trainY = train.tileY + vector.dy * train.progress;
+      const iso = gridToScreen(trainX, trainY, TILE_WIDTH, TILE_HEIGHT);
+      const baseX = offset.x + iso.x * zoom;
+      const baseY = offset.y + iso.y * zoom;
+      const centerX = baseX + tileWidth / 2;
+      const centerY = baseY + tileHeight / 2 - tileHeight * 0.2;
+      drawTrain(ctx, centerX, centerY, tileWidth * 0.1);
+    });
+  }, [canvasSize, grid, gridSize, offset, rideColors, guests, coasterTrains, tileHeight, tileWidth, zoom]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true);

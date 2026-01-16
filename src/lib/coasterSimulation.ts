@@ -308,6 +308,69 @@ function findClosestShop(guest: Guest, targets: ShopTarget[], types: CoasterBuil
   return closest;
 }
 
+function updateTrains(state: CoasterParkState): CoasterParkState {
+  const trackTiles: { x: number; y: number }[] = [];
+  for (let y = 0; y < state.grid.length; y++) {
+    for (let x = 0; x < state.grid[y].length; x++) {
+      if (state.grid[y][x].track) {
+        trackTiles.push({ x, y });
+      }
+    }
+  }
+
+  if (trackTiles.length === 0) {
+    return { ...state, coasterTrains: [] };
+  }
+
+  let trains = state.coasterTrains;
+  if (trains.length === 0 && trackTiles.length >= 4) {
+    const spawn = trackTiles[0];
+    trains = [{
+      id: 1,
+      tileX: spawn.x,
+      tileY: spawn.y,
+      direction: 'east',
+      progress: 0,
+      speed: 0.5,
+    }];
+  }
+
+  const updatedTrains = trains.map((train) => {
+    const currentTrack = state.grid[train.tileY]?.[train.tileX]?.track;
+    if (!currentTrack) return train;
+    const nextProgress = train.progress + train.speed;
+    if (nextProgress < 1) {
+      return { ...train, progress: nextProgress };
+    }
+    const connections = currentTrack.connections;
+    const options = (Object.keys(connections) as CardinalDirection[]).filter((dir) => connections[dir]);
+    if (options.length === 0) {
+      return { ...train, progress: 0 };
+    }
+    const preferred = options.filter((dir) => dir !== OPPOSITE_DIRECTION[train.direction]);
+    const choices = preferred.length > 0 ? preferred : options;
+    const nextDirection = choices[Math.floor(Math.random() * choices.length)];
+    const vector = DIRECTION_VECTORS[nextDirection];
+    const nextX = train.tileX + vector.dx;
+    const nextY = train.tileY + vector.dy;
+    if (!state.grid[nextY]?.[nextX]?.track) {
+      return { ...train, progress: 0 };
+    }
+    return {
+      ...train,
+      tileX: nextX,
+      tileY: nextY,
+      direction: nextDirection,
+      progress: 0,
+    };
+  });
+
+  return {
+    ...state,
+    coasterTrains: updatedTrains,
+  };
+}
+
 function updateGuests(state: CoasterParkState): CoasterParkState {
   let nextGuests = state.guests.map((guest) => updateGuestNeeds(guest));
   nextGuests = nextGuests.map((guest) => updateGuestMovement(guest, state));
@@ -569,6 +632,7 @@ export function createInitialCoasterState(
     rides: [],
     guests: [],
     staff: [],
+    coasterTrains: [],
     research: createDefaultResearch(),
     weather: createDefaultWeather(),
     activePanel: 'none',
@@ -606,5 +670,6 @@ export function simulateCoasterTick(state: CoasterParkState): CoasterParkState {
     year,
   };
 
-  return updateGuests(nextState);
+  const withGuests = updateGuests(nextState);
+  return updateTrains(withGuests);
 }

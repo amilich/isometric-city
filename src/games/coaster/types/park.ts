@@ -4,6 +4,7 @@ import { Guest } from './guests';
 import { Ride } from './rides';
 import { Staff } from './staff';
 import { CoasterTile } from './tiles';
+import { TrackTrain } from './tracks';
 
 export type PanelType =
   | 'none'
@@ -42,6 +43,7 @@ export type CoasterTool =
   | 'terrain_lower'
   | 'terrain_smooth'
   | 'water'
+  | 'coaster_track'
   | 'scenery_tree'
   | 'scenery_flower'
   | 'ride_carousel'
@@ -75,6 +77,7 @@ export const TOOL_INFO: Record<CoasterTool, ToolInfo> = {
   terrain_lower: { name: 'Lower Land', cost: 20, description: 'Decrease terrain height' },
   terrain_smooth: { name: 'Smooth Land', cost: 5, description: 'Smooth terrain slopes' },
   water: { name: 'Water', cost: 30, description: 'Place or remove water tiles' },
+  coaster_track: { name: 'Coaster Track', cost: 15, description: 'Lay coaster track segments', size: 1 },
   scenery_tree: { name: 'Tree', cost: 15, description: 'Plant a tree for scenery', size: 1 },
   scenery_flower: { name: 'Flowers', cost: 10, description: 'Place flower beds', size: 1 },
   ride_carousel: { name: 'Carousel', cost: 800, description: 'Gentle carousel ride', size: 2 },
@@ -121,6 +124,7 @@ export type CoasterParkState = {
   rides: Ride[];
   guests: Guest[];
   staff: Staff[];
+  coasterTrains: TrackTrain[];
   research: Research;
   weather: WeatherState;
   activePanel: PanelType;

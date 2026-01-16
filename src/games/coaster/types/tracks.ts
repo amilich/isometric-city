@@ -34,6 +34,12 @@ export type TrackSegment = {
   slope: number;
   banked: boolean;
   chainLift: boolean;
+  connections: {
+    north: boolean;
+    east: boolean;
+    south: boolean;
+    west: boolean;
+  };
 };
 
 export type TrackPiece = TrackSegment & {
@@ -59,4 +65,13 @@ export type CoasterTrain = {
   velocity: number;
   passengers: number[];
   lastDispatchTick: number;
+};
+
+export type TrackTrain = {
+  id: number;
+  tileX: number;
+  tileY: number;
+  direction: CardinalDirection;
+  progress: number;
+  speed: number;
 };

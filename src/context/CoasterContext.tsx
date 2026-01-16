@@ -58,6 +58,13 @@ const SHOP_DEFAULTS: Record<CoasterBuildingType, { name: string; price: number; 
   staff_room: { name: 'Staff Room', price: 0, capacity: 4 },
 };
 
+function normalizeCoasterState(state: CoasterParkState): CoasterParkState {
+  return {
+    ...state,
+    coasterTrains: state.coasterTrains ?? [],
+  };
+}
+
 function createRideStats(rideType: RideType): RideStats {
   const definition = RIDE_DEFINITIONS[rideType];
   return {
@@ -119,7 +126,7 @@ function loadCoasterState(): CoasterParkState | null {
     }
     const parsed = JSON.parse(jsonString);
     if (parsed?.grid && parsed?.gridSize) {
-      return parsed as CoasterParkState;
+      return normalizeCoasterState(parsed as CoasterParkState);
     }
     return null;
   } catch {
@@ -327,6 +334,13 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         west: Boolean(grid[tileY]?.[tileX - 1]?.path),
       });
 
+      const getTrackConnections = (tileX: number, tileY: number) => ({
+        north: Boolean(grid[tileY - 1]?.[tileX]?.track),
+        east: Boolean(grid[tileY]?.[tileX + 1]?.track),
+        south: Boolean(grid[tileY + 1]?.[tileX]?.track),
+        west: Boolean(grid[tileY]?.[tileX - 1]?.track),
+      });
+
       const syncNeighborEdges = (tileX: number, tileY: number, edges: PathInfo['edges']) => {
         (Object.keys(edges) as Array<keyof PathInfo['edges']>).forEach((direction) => {
           const delta = direction === 'north' ? { dx: 0, dy: -1 }
@@ -342,6 +356,24 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
             [opposite[direction]]: edges[direction],
           };
           updateTile(nx, ny, { path: { ...neighbor.path, edges: neighborEdges } });
+        });
+      };
+
+      const syncNeighborTracks = (tileX: number, tileY: number, connections: ReturnType<typeof getTrackConnections>) => {
+        (Object.keys(connections) as Array<keyof PathInfo['edges']>).forEach((direction) => {
+          const delta = direction === 'north' ? { dx: 0, dy: -1 }
+            : direction === 'east' ? { dx: 1, dy: 0 }
+            : direction === 'south' ? { dx: 0, dy: 1 }
+            : { dx: -1, dy: 0 };
+          const nx = tileX + delta.dx;
+          const ny = tileY + delta.dy;
+          const neighbor = grid[ny]?.[nx];
+          if (!neighbor?.track) return;
+          const neighborConnections = {
+            ...neighbor.track.connections,
+            [opposite[direction]]: connections[direction],
+          };
+          updateTile(nx, ny, { track: { ...neighbor.track, connections: neighborConnections } });
         });
       };
 
@@ -377,6 +409,29 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         }
         updateTile(x, y, { path: newPath });
         syncNeighborEdges(x, y, newPath.edges);
+        return applyCost({ ...prev, grid });
+      }
+
+      if (selectedTool === 'coaster_track') {
+        if (tile.terrain === 'water' || tile.path || tile.rideId || tile.building || tile.scenery) {
+          return prev;
+        }
+        if (tile.track) return prev;
+        const connections = getTrackConnections(x, y);
+        const track = {
+          id: `track-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          type: 'straight' as const,
+          trackType: 'wooden' as const,
+          position: { x, y },
+          direction: 'north' as const,
+          height: tile.height,
+          slope: 0,
+          banked: false,
+          chainLift: false,
+          connections,
+        };
+        updateTile(x, y, { track });
+        syncNeighborTracks(x, y, connections);
         return applyCost({ ...prev, grid });
       }
 
@@ -447,6 +502,9 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
           track: null,
         });
         syncNeighborEdges(x, y, { north: false, east: false, south: false, west: false });
+        if (tile.track) {
+          syncNeighborTracks(x, y, { north: false, east: false, south: false, west: false });
+        }
         return applyCost({ ...prev, grid, rides });
       }
 
@@ -488,7 +546,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       const parsed = JSON.parse(stateString);
       if (parsed?.grid && parsed?.gridSize) {
         skipNextSaveRef.current = true;
-        setState(parsed as CoasterParkState);
+        setState(normalizeCoasterState(parsed as CoasterParkState));
         return true;
       }
       return false;
@@ -548,7 +606,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       const parsed = JSON.parse(jsonString);
       if (parsed?.grid && parsed?.gridSize) {
         skipNextSaveRef.current = true;
-        setState(parsed as CoasterParkState);
+        setState(normalizeCoasterState(parsed as CoasterParkState));
         return true;
       }
     } catch {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { T, Var, Num, useGT } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { useCoaster } from '@/context/CoasterContext';
 import CoasterCanvas from './CoasterCanvas';
@@ -10,6 +11,7 @@ import FinancePanel from './panels/FinancePanel';
 import RidePanel from './panels/RidePanel';
 
 export default function CoasterGame() {
+  const gt = useGT();
   const { state, setSpeed, newGame, setRidePrice, toggleRideStatus, setActivePanel } = useCoaster();
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null>(null);
@@ -34,18 +36,20 @@ export default function CoasterGame() {
           <div className="flex items-center gap-4">
             <div className="text-lg font-semibold tracking-wide">{state.parkName}</div>
             <div className="text-xs text-muted-foreground">
-              Year {state.year} · Day {state.day} · {state.hour.toString().padStart(2, '0')}:00
+              {gt('Year {year} · Day {day} · {hour}:00', { year: state.year, day: state.day, hour: state.hour.toString().padStart(2, '0') })}
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <div>Guests: {state.stats.guestsInPark}</div>
-            <div>Rating: {state.stats.rating}</div>
-            <div className="font-medium">${state.finance.cash.toLocaleString()}</div>
+            <T><div><Var>{gt('Guests:')}</Var> <Num>{state.stats.guestsInPark}</Num></div></T>
+            <T><div><Var>{gt('Rating:')}</Var> <Num>{state.stats.rating}</Num></div></T>
+            <T><div className="font-medium">$<Num>{state.finance.cash}</Num></div></T>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant={state.speed === 0 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(0)}>
-              Pause
-            </Button>
+            <T>
+              <Button variant={state.speed === 0 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(0)}>
+                Pause
+              </Button>
+            </T>
             <Button variant={state.speed === 1 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(1)}>
               1x
             </Button>
@@ -55,9 +59,11 @@ export default function CoasterGame() {
             <Button variant={state.speed === 3 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(3)}>
               3x
             </Button>
-            <Button variant="outline" size="sm" onClick={() => newGame()}>
-              New Park
-            </Button>
+            <T>
+              <Button variant="outline" size="sm" onClick={() => newGame()}>
+                New Park
+              </Button>
+            </T>
           </div>
         </div>
         <div className="flex-1 relative">

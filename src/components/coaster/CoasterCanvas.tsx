@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
-import { gridToScreen, isInGrid, screenToGrid } from '@/core/types';
+import { CardinalDirection, gridToScreen, isInGrid, screenToGrid } from '@/core/types';
 import { TILE_HEIGHT, TILE_WIDTH } from '@/components/game/types';
 
 const ZOOM_MIN = 0.45;
@@ -144,6 +144,26 @@ function drawBuilding(
   ctx.fill();
 }
 
+const GUEST_VECTORS: Record<CardinalDirection, { dx: number; dy: number }> = {
+  north: { dx: 0, dy: -1 },
+  east: { dx: 1, dy: 0 },
+  south: { dx: 0, dy: 1 },
+  west: { dx: -1, dy: 0 },
+};
+
+function drawGuest(
+  ctx: CanvasRenderingContext2D,
+  screenX: number,
+  screenY: number,
+  size: number,
+  color: string
+) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 export type CoasterCanvasProps = {
   navigationTarget?: { x: number; y: number } | null;
   onNavigationComplete?: () => void;
@@ -152,7 +172,7 @@ export type CoasterCanvasProps = {
 
 export default function CoasterCanvas({ navigationTarget, onNavigationComplete, onViewportChange }: CoasterCanvasProps) {
   const { state, placeAtTile } = useCoaster();
-  const { grid, gridSize, rides } = state;
+  const { grid, gridSize, rides, guests } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
@@ -248,7 +268,19 @@ export default function CoasterCanvas({ navigationTarget, onNavigationComplete, 
         }
       }
     }
-  }, [canvasSize, grid, gridSize, offset, tileHeight, tileWidth, zoom]);
+
+    guests.forEach((guest) => {
+      const vector = GUEST_VECTORS[guest.direction];
+      const guestX = guest.tileX + vector.dx * guest.progress;
+      const guestY = guest.tileY + vector.dy * guest.progress;
+      const iso = gridToScreen(guestX, guestY, TILE_WIDTH, TILE_HEIGHT);
+      const baseX = offset.x + iso.x * zoom;
+      const baseY = offset.y + iso.y * zoom;
+      const centerX = baseX + tileWidth / 2;
+      const centerY = baseY + tileHeight / 2 - tileHeight * 0.12;
+      drawGuest(ctx, centerX, centerY, tileWidth * 0.08, guest.colors.shirt);
+    });
+  }, [canvasSize, grid, gridSize, offset, rideColors, guests, tileHeight, tileWidth, zoom]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true);

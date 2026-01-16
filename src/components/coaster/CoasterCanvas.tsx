@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
-import { gridToScreen } from '@/core/types';
+import { gridToScreen, isInGrid, screenToGrid } from '@/core/types';
 import { TILE_HEIGHT, TILE_WIDTH } from '@/components/game/types';
 
 const ZOOM_MIN = 0.45;
@@ -86,7 +86,7 @@ function drawPathOverlay(
 }
 
 export default function CoasterCanvas() {
-  const { state } = useCoaster();
+  const { state, placeAtTile } = useCoaster();
   const { grid, gridSize } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -95,6 +95,7 @@ export default function CoasterCanvas() {
   const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, offsetX: 0, offsetY: 0 });
+  const dragMovedRef = useRef(false);
 
   const tileWidth = useMemo(() => TILE_WIDTH * zoom, [zoom]);
   const tileHeight = useMemo(() => TILE_HEIGHT * zoom, [zoom]);
@@ -152,6 +153,7 @@ export default function CoasterCanvas() {
 
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true);
+    dragMovedRef.current = false;
     dragRef.current = {
       startX: event.clientX,
       startY: event.clientY,
@@ -164,15 +166,29 @@ export default function CoasterCanvas() {
     if (!isDragging) return;
     const dx = event.clientX - dragRef.current.startX;
     const dy = event.clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      dragMovedRef.current = true;
+    }
     setOffset({
       x: dragRef.current.offsetX + dx,
       y: dragRef.current.offsetY + dy,
     });
   }, [isDragging]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(false);
-  }, []);
+    if (!dragMovedRef.current) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const screenX = (event.clientX - rect.left - offset.x) / zoom;
+      const screenY = (event.clientY - rect.top - offset.y) / zoom;
+      const gridPos = screenToGrid(screenX, screenY, TILE_WIDTH, TILE_HEIGHT);
+      if (isInGrid(gridPos, gridSize)) {
+        placeAtTile(gridPos.x, gridPos.y);
+      }
+    }
+  }, [gridSize, offset, placeAtTile, zoom]);
 
   const handleWheel = useCallback((event: React.WheelEvent<HTMLCanvasElement>) => {
     event.preventDefault();
@@ -188,7 +204,7 @@ export default function CoasterCanvas() {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={() => setIsDragging(false)}
         onWheel={handleWheel}
       />
     </div>

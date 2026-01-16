@@ -7,9 +7,14 @@ import {
   CoasterParkState,
   CoasterTool,
   PanelType,
+  PathInfo,
+  PathStyle,
   RideType,
   SavedParkMeta,
+  Scenery,
+  SceneryType,
 } from '@/games/coaster/types';
+import { isInGrid } from '@/core/types';
 import {
   createInitialCoasterState,
   DEFAULT_COASTER_GRID_SIZE,
@@ -164,8 +169,97 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
     setState((prev) => ({ ...prev, activePanel: panel }));
   }, []);
 
-  const placeAtTile = useCallback((_x: number, _y: number) => {
-    // Placeholder - placement logic will be added in Phase 2
+  const placeAtTile = useCallback((x: number, y: number) => {
+    setState((prev) => {
+      if (!isInGrid({ x, y }, prev.gridSize)) return prev;
+
+      const selectedTool = prev.selectedTool;
+      const tile = prev.grid[y][x];
+      if (!tile) return prev;
+
+      const grid = prev.grid.map((row) => row.slice());
+
+      const updateTile = (tileX: number, tileY: number, next: Partial<typeof tile>) => {
+        if (!grid[tileY] || !grid[tileY][tileX]) return;
+        const row = grid[tileY].slice();
+        row[tileX] = { ...grid[tileY][tileX], ...next };
+        grid[tileY] = row;
+      };
+
+      const opposite: Record<keyof PathInfo['edges'], keyof PathInfo['edges']> = {
+        north: 'south',
+        east: 'west',
+        south: 'north',
+        west: 'east',
+      };
+
+      const getPathEdges = (tileX: number, tileY: number) => ({
+        north: Boolean(grid[tileY - 1]?.[tileX]?.path),
+        east: Boolean(grid[tileY]?.[tileX + 1]?.path),
+        south: Boolean(grid[tileY + 1]?.[tileX]?.path),
+        west: Boolean(grid[tileY]?.[tileX - 1]?.path),
+      });
+
+      const syncNeighborEdges = (tileX: number, tileY: number, edges: PathInfo['edges']) => {
+        (Object.keys(edges) as Array<keyof PathInfo['edges']>).forEach((direction) => {
+          const delta = direction === 'north' ? { dx: 0, dy: -1 }
+            : direction === 'east' ? { dx: 1, dy: 0 }
+            : direction === 'south' ? { dx: 0, dy: 1 }
+            : { dx: -1, dy: 0 };
+          const nx = tileX + delta.dx;
+          const ny = tileY + delta.dy;
+          const neighbor = grid[ny]?.[nx];
+          if (!neighbor?.path) return;
+          const neighborEdges = {
+            ...neighbor.path.edges,
+            [opposite[direction]]: edges[direction],
+          };
+          updateTile(nx, ny, { path: { ...neighbor.path, edges: neighborEdges } });
+        });
+      };
+
+      const createPath = (style: PathStyle, isQueue: boolean): PathInfo => ({
+        style,
+        isQueue,
+        queueRideId: null,
+        edges: getPathEdges(x, y),
+        slope: 'flat',
+        railing: false,
+        isBridge: false,
+      });
+
+      if (selectedTool === 'path' || selectedTool === 'queue_path') {
+        const newPath = createPath(selectedTool === 'queue_path' ? 'queue' : 'concrete', selectedTool === 'queue_path');
+        updateTile(x, y, { path: newPath });
+        syncNeighborEdges(x, y, newPath.edges);
+        return { ...prev, grid };
+      }
+
+      if (selectedTool === 'scenery_tree' || selectedTool === 'scenery_flower') {
+        const sceneryType: SceneryType = selectedTool === 'scenery_tree' ? 'tree' : 'flower';
+        const scenery: Scenery = { type: sceneryType, variant: 0, rotation: 0 };
+        updateTile(x, y, { scenery });
+        return { ...prev, grid };
+      }
+
+      if (selectedTool === 'water') {
+        updateTile(x, y, { terrain: tile.terrain === 'water' ? 'grass' : 'water' });
+        return { ...prev, grid };
+      }
+
+      if (selectedTool === 'bulldoze') {
+        updateTile(x, y, {
+          path: null,
+          scenery: null,
+          building: null,
+          track: null,
+        });
+        syncNeighborEdges(x, y, { north: false, east: false, south: false, west: false });
+        return { ...prev, grid };
+      }
+
+      return prev;
+    });
   }, []);
 
   const buildRide = useCallback((_rideType: RideType, _x: number, _y: number) => {

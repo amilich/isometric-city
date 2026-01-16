@@ -1,3 +1,4 @@
+import { msg } from 'gt-next';
 import { StaffType } from '@/games/coaster/types';
 
 export type StaffDefinition = {
@@ -11,30 +12,30 @@ export type StaffDefinition = {
 export const STAFF_DEFINITIONS: StaffDefinition[] = [
   {
     type: 'handyman',
-    name: 'Handyman',
+    name: msg('Handyman'),
     hiringFee: 100,
     wage: 50,
-    description: 'Keeps paths clean and guests happy.',
+    description: msg('Keeps paths clean and guests happy.'),
   },
   {
     type: 'mechanic',
-    name: 'Mechanic',
+    name: msg('Mechanic'),
     hiringFee: 150,
     wage: 70,
-    description: 'Inspects and repairs rides.',
+    description: msg('Inspects and repairs rides.'),
   },
   {
     type: 'security',
-    name: 'Security',
+    name: msg('Security'),
     hiringFee: 120,
     wage: 60,
-    description: 'Maintains safety and order.',
+    description: msg('Maintains safety and order.'),
   },
   {
     type: 'entertainer',
-    name: 'Entertainer',
+    name: msg('Entertainer'),
     hiringFee: 80,
     wage: 40,
-    description: 'Boosts guest morale around the park.',
+    description: msg('Boosts guest morale around the park.'),
   },
 ];

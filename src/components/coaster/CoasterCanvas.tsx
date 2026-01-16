@@ -274,6 +274,7 @@ export default function CoasterCanvas({ navigationTarget, onNavigationComplete, 
   useEffect(() => {
     if (canvasSize.width === 0 || canvasSize.height === 0) return;
     const gridCenter = gridToScreen(gridSize / 2, gridSize / 2, TILE_WIDTH, TILE_HEIGHT);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing offset with canvas size changes
     setOffset({
       x: canvasSize.width / 2 - gridCenter.x * zoom,
       y: canvasSize.height / 2 - gridCenter.y * zoom,
@@ -283,6 +284,7 @@ export default function CoasterCanvas({ navigationTarget, onNavigationComplete, 
   useEffect(() => {
     if (!navigationTarget) return;
     const targetIso = gridToScreen(navigationTarget.x, navigationTarget.y, TILE_WIDTH, TILE_HEIGHT);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing offset with navigation target
     setOffset({
       x: canvasSize.width / 2 - targetIso.x * zoom,
       y: canvasSize.height / 2 - targetIso.y * zoom,

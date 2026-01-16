@@ -1,3 +1,5 @@
+import { msg } from 'gt-next';
+
 import { GridPosition } from '@/core/types';
 import { Finance, Research } from './economy';
 import { Guest } from './guests';
@@ -68,31 +70,31 @@ export type ToolInfo = {
 };
 
 export const TOOL_INFO: Record<CoasterTool, ToolInfo> = {
-  select: { name: 'Select', cost: 0, description: 'Inspect rides, guests, and scenery' },
-  pan: { name: 'Pan', cost: 0, description: 'Move the camera around the park' },
-  path: { name: 'Path', cost: 10, description: 'Build footpaths for guests', size: 1 },
-  queue_path: { name: 'Queue', cost: 10, description: 'Build queue paths for rides', size: 1 },
-  bulldoze: { name: 'Bulldoze', cost: 5, description: 'Remove paths and objects' },
-  terrain_raise: { name: 'Raise Land', cost: 20, description: 'Increase terrain height' },
-  terrain_lower: { name: 'Lower Land', cost: 20, description: 'Decrease terrain height' },
-  terrain_smooth: { name: 'Smooth Land', cost: 5, description: 'Smooth terrain slopes' },
-  water: { name: 'Water', cost: 30, description: 'Place or remove water tiles' },
-  coaster_track: { name: 'Coaster Track', cost: 15, description: 'Lay coaster track segments', size: 1 },
-  scenery_tree: { name: 'Tree', cost: 15, description: 'Plant a tree for scenery', size: 1 },
-  scenery_flower: { name: 'Flowers', cost: 10, description: 'Place flower beds', size: 1 },
-  ride_carousel: { name: 'Carousel', cost: 800, description: 'Gentle carousel ride', size: 2 },
-  ride_ferris_wheel: { name: 'Ferris Wheel', cost: 1200, description: 'Observation wheel', size: 2 },
-  ride_bumper_cars: { name: 'Bumper Cars', cost: 1600, description: 'Bumper cars pavilion', size: 2 },
-  ride_swing: { name: 'Swing Ride', cost: 900, description: 'Classic swing ride', size: 1 },
-  ride_haunted_house: { name: 'Haunted House', cost: 1400, description: 'Spooky dark ride', size: 2 },
-  ride_spiral_slide: { name: 'Spiral Slide', cost: 700, description: 'Small spiral slide', size: 1 },
-  shop_food: { name: 'Food Stall', cost: 400, description: 'Serve meals to guests', size: 1 },
-  shop_drink: { name: 'Drink Stall', cost: 350, description: 'Serve drinks to guests', size: 1 },
-  shop_toilet: { name: 'Toilets', cost: 200, description: 'Restrooms for guests', size: 1 },
-  staff_handyman: { name: 'Handyman', cost: 0, description: 'Hire a handyman for cleaning' },
-  staff_mechanic: { name: 'Mechanic', cost: 0, description: 'Hire a mechanic for repairs' },
-  staff_security: { name: 'Security', cost: 0, description: 'Hire security for safety' },
-  staff_entertainer: { name: 'Entertainer', cost: 0, description: 'Hire entertainers for morale' },
+  select: { name: msg('Select'), cost: 0, description: msg('Inspect rides, guests, and scenery') },
+  pan: { name: msg('Pan'), cost: 0, description: msg('Move the camera around the park') },
+  path: { name: msg('Path'), cost: 10, description: msg('Build footpaths for guests'), size: 1 },
+  queue_path: { name: msg('Queue'), cost: 10, description: msg('Build queue paths for rides'), size: 1 },
+  bulldoze: { name: msg('Bulldoze'), cost: 5, description: msg('Remove paths and objects') },
+  terrain_raise: { name: msg('Raise Land'), cost: 20, description: msg('Increase terrain height') },
+  terrain_lower: { name: msg('Lower Land'), cost: 20, description: msg('Decrease terrain height') },
+  terrain_smooth: { name: msg('Smooth Land'), cost: 5, description: msg('Smooth terrain slopes') },
+  water: { name: msg('Water'), cost: 30, description: msg('Place or remove water tiles') },
+  coaster_track: { name: msg('Coaster Track'), cost: 15, description: msg('Lay coaster track segments'), size: 1 },
+  scenery_tree: { name: msg('Tree'), cost: 15, description: msg('Plant a tree for scenery'), size: 1 },
+  scenery_flower: { name: msg('Flowers'), cost: 10, description: msg('Place flower beds'), size: 1 },
+  ride_carousel: { name: msg('Carousel'), cost: 800, description: msg('Gentle carousel ride'), size: 2 },
+  ride_ferris_wheel: { name: msg('Ferris Wheel'), cost: 1200, description: msg('Observation wheel'), size: 2 },
+  ride_bumper_cars: { name: msg('Bumper Cars'), cost: 1600, description: msg('Bumper cars pavilion'), size: 2 },
+  ride_swing: { name: msg('Swing Ride'), cost: 900, description: msg('Classic swing ride'), size: 1 },
+  ride_haunted_house: { name: msg('Haunted House'), cost: 1400, description: msg('Spooky dark ride'), size: 2 },
+  ride_spiral_slide: { name: msg('Spiral Slide'), cost: 700, description: msg('Small spiral slide'), size: 1 },
+  shop_food: { name: msg('Food Stall'), cost: 400, description: msg('Serve meals to guests'), size: 1 },
+  shop_drink: { name: msg('Drink Stall'), cost: 350, description: msg('Serve drinks to guests'), size: 1 },
+  shop_toilet: { name: msg('Toilets'), cost: 200, description: msg('Restrooms for guests'), size: 1 },
+  staff_handyman: { name: msg('Handyman'), cost: 0, description: msg('Hire a handyman for cleaning') },
+  staff_mechanic: { name: msg('Mechanic'), cost: 0, description: msg('Hire a mechanic for repairs') },
+  staff_security: { name: msg('Security'), cost: 0, description: msg('Hire security for safety') },
+  staff_entertainer: { name: msg('Entertainer'), cost: 0, description: msg('Hire entertainers for morale') },
 };
 
 export type SavedParkMeta = {

@@ -72,10 +72,11 @@ function drawPathOverlay(
   x: number,
   y: number,
   width: number,
-  height: number
+  height: number,
+  color: string
 ) {
   const inset = width * 0.16;
-  ctx.fillStyle = '#8b9099';
+  ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(x + width / 2, y + inset);
   ctx.lineTo(x + width - inset, y + height / 2);
@@ -83,6 +84,31 @@ function drawPathOverlay(
   ctx.lineTo(x + inset, y + height / 2);
   ctx.closePath();
   ctx.fill();
+}
+
+function drawScenery(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  type: string
+) {
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  if (type === 'tree') {
+    ctx.fillStyle = '#1b5e20';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY - height * 0.1, width * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#6d4c41';
+    ctx.fillRect(centerX - width * 0.03, centerY, width * 0.06, height * 0.18);
+  } else if (type === 'flower') {
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, width * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 export default function CoasterCanvas() {
@@ -145,7 +171,11 @@ export default function CoasterCanvas() {
         const colors = TERRAIN_COLORS[tile.terrain] ?? TERRAIN_COLORS.grass;
         drawDiamond(ctx, screenX, screenY, tileWidth, tileHeight, colors);
         if (tile.path) {
-          drawPathOverlay(ctx, screenX, screenY, tileWidth, tileHeight);
+          const pathColor = tile.path.style === 'queue' ? '#f4b400' : '#8b9099';
+          drawPathOverlay(ctx, screenX, screenY, tileWidth, tileHeight, pathColor);
+        }
+        if (tile.scenery?.type) {
+          drawScenery(ctx, screenX, screenY, tileWidth, tileHeight, tile.scenery.type);
         }
       }
     }

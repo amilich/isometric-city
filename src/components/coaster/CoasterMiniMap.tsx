@@ -62,6 +62,9 @@ export default function CoasterMiniMap({ onNavigate, viewport }: CoasterMiniMapP
           if (tile.scenery) {
             color = '#22c55e';
           }
+          if (tile.building) {
+            color = '#f59e0b';
+          }
           if (x === parkEntrance.x && y === parkEntrance.y) {
             color = '#facc15';
           }

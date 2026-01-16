@@ -6,6 +6,8 @@ import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 import {
   CoasterParkState,
   CoasterTool,
+  CoasterBuilding,
+  CoasterBuildingType,
   PanelType,
   PathInfo,
   PathStyle,
@@ -36,6 +38,24 @@ const TOOL_RIDE_MAP: Partial<Record<CoasterTool, RideType>> = {
   ride_swing: 'swing_ride',
   ride_haunted_house: 'haunted_house',
   ride_spiral_slide: 'spiral_slide',
+};
+
+const TOOL_SHOP_MAP: Partial<Record<CoasterTool, CoasterBuildingType>> = {
+  shop_food: 'food_stall',
+  shop_drink: 'drink_stall',
+  shop_toilet: 'toilets',
+};
+
+const SHOP_DEFAULTS: Record<CoasterBuildingType, { name: string; price: number; capacity: number }> = {
+  food_stall: { name: 'Burger Stall', price: 5, capacity: 10 },
+  drink_stall: { name: 'Soda Stall', price: 3, capacity: 8 },
+  ice_cream_stall: { name: 'Ice Cream', price: 4, capacity: 8 },
+  souvenir_shop: { name: 'Souvenir Shop', price: 6, capacity: 12 },
+  info_kiosk: { name: 'Info Kiosk', price: 2, capacity: 6 },
+  toilets: { name: 'Restrooms', price: 0, capacity: 6 },
+  atm: { name: 'ATM', price: 0, capacity: 4 },
+  first_aid: { name: 'First Aid', price: 0, capacity: 4 },
+  staff_room: { name: 'Staff Room', price: 0, capacity: 4 },
 };
 
 function createRideStats(rideType: RideType): RideStats {
@@ -218,7 +238,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       for (let dx = 0; dx < width; dx++) {
         const tile = prev.grid[y + dy][x + dx];
         if (!tile) return prev;
-        if (tile.path || tile.rideId || tile.building || tile.track || tile.scenery) {
+        if (tile.terrain === 'water' || tile.path || tile.rideId || tile.building || tile.track || tile.scenery) {
           return prev;
         }
       }
@@ -364,6 +384,26 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
           return prev;
         }
         updateTile(x, y, { scenery });
+        return applyCost({ ...prev, grid });
+      }
+
+      const shopType = TOOL_SHOP_MAP[selectedTool];
+      if (shopType) {
+        if (tile.terrain === 'water' || tile.path || tile.rideId || tile.track || tile.scenery) {
+          return prev;
+        }
+        if (tile.building?.type === shopType) {
+          return prev;
+        }
+        const defaults = SHOP_DEFAULTS[shopType];
+        const building: CoasterBuilding = {
+          type: shopType,
+          name: defaults.name,
+          price: defaults.price,
+          capacity: defaults.capacity,
+          open: true,
+        };
+        updateTile(x, y, { building });
         return applyCost({ ...prev, grid });
       }
 

@@ -111,6 +111,39 @@ function drawScenery(
   }
 }
 
+function drawBuilding(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  type: string
+) {
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  const size = width * 0.28;
+  const colorMap: Record<string, string> = {
+    food_stall: '#f87171',
+    drink_stall: '#38bdf8',
+    ice_cream_stall: '#f9a8d4',
+    souvenir_shop: '#facc15',
+    info_kiosk: '#a3e635',
+    toilets: '#cbd5f5',
+    atm: '#94a3b8',
+    first_aid: '#f97316',
+    staff_room: '#64748b',
+  };
+  const fill = colorMap[type] ?? '#e2e8f0';
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY - size * 0.9);
+  ctx.lineTo(centerX + size, centerY);
+  ctx.lineTo(centerX, centerY + size * 0.9);
+  ctx.lineTo(centerX - size, centerY);
+  ctx.closePath();
+  ctx.fill();
+}
+
 export type CoasterCanvasProps = {
   navigationTarget?: { x: number; y: number } | null;
   onNavigationComplete?: () => void;
@@ -206,6 +239,9 @@ export default function CoasterCanvas({ navigationTarget, onNavigationComplete, 
             stroke: '#1f2937',
           });
           ctx.restore();
+        }
+        if (tile.building) {
+          drawBuilding(ctx, screenX, screenY, tileWidth, tileHeight, tile.building.type);
         }
         if (tile.scenery?.type) {
           drawScenery(ctx, screenX, screenY, tileWidth, tileHeight, tile.scenery.type);

@@ -93,6 +93,13 @@ export default function CoasterSidebar() {
               Ride Ops
             </Button>
             <Button
+              variant={activePanel === 'shops' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActivePanel(activePanel === 'shops' ? 'none' : 'shops')}
+            >
+              Shop Ops
+            </Button>
+            <Button
               variant={activePanel === 'finance' ? 'default' : 'ghost'}
               className="w-full justify-start"
               onClick={() => setActivePanel(activePanel === 'finance' ? 'none' : 'finance')}

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { CoasterBuildingType } from '@/games/coaster/types';
 import { useCoaster } from '@/context/CoasterContext';
 import CoasterCanvas from './CoasterCanvas';
 import CoasterSidebar from './CoasterSidebar';
@@ -12,6 +13,7 @@ import ParkPanel from './panels/ParkPanel';
 import ResearchPanel from './panels/ResearchPanel';
 import RidesPanel from './panels/RidesPanel';
 import RidePanel from './panels/RidePanel';
+import ShopPanel from './panels/ShopPanel';
 import StaffPanel from './panels/StaffPanel';
 
 export default function CoasterGame() {
@@ -20,6 +22,7 @@ export default function CoasterGame() {
     setSpeed,
     newGame,
     setRidePrice,
+    setShopPrice,
     toggleRideStatus,
     setActivePanel,
     hireStaff,
@@ -42,6 +45,28 @@ export default function CoasterGame() {
     () => state.rides.find((ride) => ride.id === selectedRideId) ?? null,
     [selectedRideId, state.rides]
   );
+  const shops = useMemo(() => {
+    const entries: {
+      id: string;
+      name: string;
+      type: CoasterBuildingType;
+      price: number;
+      position: { x: number; y: number };
+    }[] = [];
+    state.grid.forEach((row, y) => {
+      row.forEach((tile, x) => {
+        if (!tile.building) return;
+        entries.push({
+          id: `${x}-${y}-${tile.building.type}`,
+          name: tile.building.name,
+          type: tile.building.type,
+          price: tile.building.price,
+          position: { x, y },
+        });
+      });
+    });
+    return entries;
+  }, [state.grid]);
 
   useEffect(() => {
     if (selectedRideId && !selectedRide) {
@@ -166,6 +191,13 @@ export default function CoasterGame() {
                 setActivePanel('none');
               }}
               onToggleRide={toggleRideStatus}
+            />
+          )}
+          {state.activePanel === 'shops' && (
+            <ShopPanel
+              shops={shops}
+              onClose={handleClosePanel}
+              onPriceChange={setShopPrice}
             />
           )}
           {state.activePanel === 'guests' && (

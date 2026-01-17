@@ -9,6 +9,7 @@ import { TrackTrain } from './tracks';
 export type PanelType =
   | 'none'
   | 'rides'
+  | 'shops'
   | 'guests'
   | 'finance'
   | 'staff'

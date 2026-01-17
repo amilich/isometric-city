@@ -271,6 +271,13 @@ const SHOP_EFFECTS: Record<CoasterBuildingType, { hunger?: number; thirst?: numb
   staff_room: { happiness: 0, cost: 0 },
 };
 
+function getShopPrice(grid: CoasterTile[][], target: Guest['targetShop']): number {
+  if (!target) return 0;
+  const building = grid[target.position.y]?.[target.position.x]?.building;
+  if (building) return building.price;
+  return SHOP_EFFECTS[target.type]?.cost ?? 0;
+}
+
 function calculateParkRating(guests: Guest[], rides: number, cleanliness: number): number {
   const averageHappiness = guests.length > 0
     ? guests.reduce((sum, guest) => sum + guest.happiness, 0) / guests.length
@@ -279,9 +286,10 @@ function calculateParkRating(guests: Guest[], rides: number, cleanliness: number
   return clamp(Math.round(averageHappiness * 0.7 + cleanliness * 0.2 + rideBonus), 0, 999);
 }
 
-function applyShopEffects(guest: Guest, shopType: CoasterBuildingType): Guest {
+function applyShopEffects(guest: Guest, shopType: CoasterBuildingType, priceOverride?: number): Guest {
   const effect = SHOP_EFFECTS[shopType];
   if (!effect) return guest;
+  const cost = priceOverride ?? effect.cost ?? 0;
   const needs = {
     ...guest.needs,
     hunger: clamp(guest.needs.hunger + (effect.hunger ?? 0)),
@@ -293,7 +301,7 @@ function applyShopEffects(guest: Guest, shopType: CoasterBuildingType): Guest {
     ...guest,
     needs: { ...needs, happiness },
     happiness,
-    money: Math.max(0, guest.money - effect.cost),
+    money: Math.max(0, guest.money - cost),
   };
 }
 
@@ -338,7 +346,8 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
     const nextTimer = guest.stateTimer - 1;
     if (nextTimer <= 0) {
       const shopType = guest.targetShop?.type;
-      const updatedGuest = shopType ? applyShopEffects(guest, shopType) : guest;
+      const shopPrice = getShopPrice(grid, guest.targetShop);
+      const updatedGuest = shopType ? applyShopEffects(guest, shopType, shopPrice) : guest;
       return {
         ...updatedGuest,
         state: 'wandering',
@@ -1146,8 +1155,7 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   let shopRevenue = 0;
   if (shopEntries.length > 0) {
     shopEntries.forEach((guest) => {
-      const effect = SHOP_EFFECTS[guest.targetShop?.type ?? 'food_stall'];
-      shopRevenue += effect?.cost ?? 0;
+      shopRevenue += getShopPrice(state.grid, guest.targetShop);
     });
   }
 

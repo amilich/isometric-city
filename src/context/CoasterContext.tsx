@@ -119,6 +119,7 @@ type CoasterContextValue = {
   buildRide: (rideType: RideType, x: number, y: number) => boolean;
   buildPath: (x: number, y: number) => void;
   setRidePrice: (rideId: string, price: number) => void;
+  setShopPrice: (position: { x: number; y: number }, price: number) => void;
   toggleRideStatus: (rideId: string) => void;
   hireStaff: (type: 'handyman' | 'mechanic' | 'security' | 'entertainer') => void;
   setStaffPatrolArea: (staffId: number, center: { x: number; y: number }, radius?: number) => void;
@@ -657,6 +658,30 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
     }));
   }, []);
 
+  const setShopPrice = useCallback((position: { x: number; y: number }, price: number) => {
+    const clampedPrice = Math.max(0, Math.min(20, Math.round(price)));
+    setState((prev) => {
+      const tile = prev.grid[position.y]?.[position.x];
+      if (!tile?.building) return prev;
+      const grid = prev.grid.map((row, rowIndex) =>
+        rowIndex === position.y ? row.map((cell, colIndex) => {
+          if (colIndex !== position.x) return cell;
+          return {
+            ...cell,
+            building: {
+              ...cell.building,
+              price: clampedPrice,
+            },
+          };
+        }) : row
+      );
+      return {
+        ...prev,
+        grid,
+      };
+    });
+  }, []);
+
   const toggleRideStatus = useCallback((rideId: string) => {
     setState((prev) => ({
       ...prev,
@@ -920,6 +945,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
     buildRide,
     buildPath,
     setRidePrice,
+    setShopPrice,
     toggleRideStatus,
     hireStaff,
     setStaffPatrolArea,

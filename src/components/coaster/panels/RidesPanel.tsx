@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { msg, useMessages } from 'gt-next';
+import { T, msg, useMessages } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,7 @@ export function RidesPanel() {
 
         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
           {rides.length === 0 && (
-            <div className="text-sm text-muted-foreground">Build some rides to manage pricing and status.</div>
+            <T><div className="text-sm text-muted-foreground">Build some rides to manage pricing and status.</div></T>
           )}
 
           {rides.map((ride) => (

@@ -14,6 +14,8 @@ const NEED_DECAY = {
   nausea: 0.04,
 };
 
+const REST_DURATION = 6;
+
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 const directionFromStep = (from: { x: number; y: number }, to: { x: number; y: number }): CardinalDirection => {
@@ -26,6 +28,18 @@ const directionFromStep = (from: { x: number; y: number }, to: { x: number; y: n
 const isPathTile = (state: CoasterGameState, x: number, y: number) => {
   if (x < 0 || y < 0 || x >= state.gridSize || y >= state.gridSize) return false;
   return Boolean(state.grid[y][x].path);
+};
+
+const isBenchTile = (state: CoasterGameState, x: number, y: number) => {
+  const tile = state.grid[y]?.[x];
+  if (!tile) return false;
+  return tile.scenery.includes('bench') && Boolean(tile.path);
+};
+
+const pickRandomPathTile = (state: CoasterGameState) => {
+  const pathTiles = state.grid.flat().filter((tile) => tile.path);
+  if (!pathTiles.length) return null;
+  return pathTiles[Math.floor(Math.random() * pathTiles.length)];
 };
 
 const findPath = (
@@ -65,6 +79,39 @@ const findPath = (
         path: [...current.path, { x: nx, y: ny }],
       });
     }
+  }
+
+  return null;
+};
+
+const findNearestBench = (state: CoasterGameState, start: { x: number; y: number }) => {
+  const queue: { x: number; y: number; distance: number }[] = [
+    { x: start.x, y: start.y, distance: 0 },
+  ];
+  const visited = new Set<string>([`${start.x},${start.y}`]);
+  const directions = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+  ];
+
+  while (queue.length) {
+    const current = queue.shift()!;
+    if (isBenchTile(state, current.x, current.y)) {
+      return current;
+    }
+
+    directions.forEach((dir) => {
+      const nx = current.x + dir.dx;
+      const ny = current.y + dir.dy;
+      const key = `${nx},${ny}`;
+      if (nx < 0 || ny < 0 || nx >= state.gridSize || ny >= state.gridSize) return;
+      if (visited.has(key)) return;
+      if (!isPathTile(state, nx, ny)) return;
+      visited.add(key);
+      queue.push({ x: nx, y: ny, distance: current.distance + 1 });
+    });
   }
 
   return null;
@@ -131,7 +178,7 @@ const getRideTargetTile = (state: CoasterGameState, ride: Ride) => {
 };
 
 const chooseRide = (state: CoasterGameState, guest: Guest): Ride | null => {
-  const openRides = state.rides.filter((ride) => ride.status !== 'closed');
+  const openRides = state.rides.filter((ride) => ride.status === 'open');
   if (!openRides.length) return null;
 
   if (guest.needs.hunger < 35) {
@@ -181,6 +228,7 @@ const spawnGuest = (state: CoasterGameState): Guest => {
     currentRideId: null,
     targetRideId: null,
     queueTile: null,
+    restTile: null,
     lastDecisionTime: 0,
     stateTimer: 0,
     spriteVariant: Math.floor(Math.random() * 8),
@@ -234,6 +282,7 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
     let direction = guest.direction;
     let guestState = guest.state;
     let queueTile = guest.queueTile;
+    let restTile = guest.restTile;
 
     if (needs.hunger < 15 || needs.thirst < 15 || needs.energy < 10) {
       needs.happiness = clamp(needs.happiness - deltaSeconds * 0.4, 0, 100);
@@ -255,28 +304,44 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
           if (exitPath) {
             path = exitPath;
             pathIndex = 0;
+            restTile = null;
           }
         }
-      } else if (!targetRideId) {
-        const nextRide = chooseRide(state, guest);
-        if (nextRide) {
-          const targetTile = getRideTargetTile(state, nextRide);
-          if (!targetTile) {
-            return {
-              ...guest,
-              needs,
-              state: guestState,
-              stateTimer,
-              money,
-            };
+      } else {
+        if (needs.energy < 30 && !restTile) {
+          const benchTarget = findNearestBench(state, { x: tileX, y: tileY });
+          if (benchTarget) {
+            const benchPath = findPath(state, { x: tileX, y: tileY }, benchTarget);
+            if (benchPath) {
+              restTile = { x: benchTarget.x, y: benchTarget.y };
+              path = benchPath;
+              pathIndex = 0;
+            }
           }
+        }
 
-          const targetPath = findPath(state, { x: tileX, y: tileY }, targetTile);
-          if (targetPath) {
-            targetRideId = nextRide.id;
-            path = targetPath;
-            pathIndex = 0;
-            queueTile = targetTile.distance > 0 ? { x: targetTile.x, y: targetTile.y } : null;
+        if (!targetRideId && !restTile) {
+          const nextRide = chooseRide(state, guest);
+          if (nextRide) {
+            const targetTile = getRideTargetTile(state, nextRide);
+            if (targetTile) {
+              const targetPath = findPath(state, { x: tileX, y: tileY }, targetTile);
+              if (targetPath) {
+                targetRideId = nextRide.id;
+                path = targetPath;
+                pathIndex = 0;
+                queueTile = targetTile.distance > 0 ? { x: targetTile.x, y: targetTile.y } : null;
+              }
+            }
+          } else {
+            const wanderTile = pickRandomPathTile(state);
+            if (wanderTile) {
+              const wanderPath = findPath(state, { x: tileX, y: tileY }, wanderTile);
+              if (wanderPath) {
+                path = wanderPath;
+                pathIndex = 0;
+              }
+            }
           }
         }
       }
@@ -290,17 +355,32 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
           tileX = nextTile.x;
           tileY = nextTile.y;
           pathIndex = nextIndex;
-          if (pathIndex === path.length - 1 && targetRideId) {
-            guestState = 'queuing';
-            stateTimer = 0;
+          if (pathIndex === path.length - 1) {
+            if (targetRideId) {
+              guestState = 'queuing';
+              stateTimer = 0;
+            } else if (restTile) {
+              guestState = 'resting';
+              stateTimer = 0;
+            }
           }
         }
         direction = directionFromStep({ x: tileX, y: tileY }, nextTile);
       }
     }
 
+    if (guestState === 'resting') {
+      needs.energy = clamp(needs.energy + deltaSeconds * 6, 0, 100);
+      needs.happiness = clamp(needs.happiness + deltaSeconds * 2, 0, 100);
+      if (stateTimer >= REST_DURATION) {
+        guestState = 'walking';
+        stateTimer = 0;
+        restTile = null;
+      }
+    }
+
     if (guestState === 'queuing' && targetRideId) {
-        const ride = rides.find((r) => r.id === targetRideId);
+      const ride = rides.find((r) => r.id === targetRideId);
       if (!ride) {
         guestState = 'walking';
         targetRideId = null;
@@ -311,7 +391,7 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
         ride.performance.waitTime = clamp(baseWait, 0.5, MAX_QUEUE_WAIT);
       }
 
-      if (ride && ride.status === 'closed') {
+      if (ride && ride.status !== 'open') {
         guestState = 'walking';
         targetRideId = null;
       } else if (ride && stateTimer >= Math.min(MAX_QUEUE_WAIT, ride.performance.waitTime + 2)) {
@@ -319,6 +399,7 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
         stateTimer = 0;
         currentRideId = ride.id;
         targetRideId = null;
+        queueTile = null;
         ride.performance.waitTime = Math.max(0, ride.performance.waitTime - 1);
       }
     }
@@ -332,6 +413,7 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
         guestState = 'walking';
         stateTimer = 0;
         currentRideId = null;
+        queueTile = null;
         if (ride.exit) {
           tileX = ride.exit.x;
           tileY = ride.exit.y;
@@ -376,6 +458,7 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
       targetRideId,
       stateTimer,
       queueTile,
+      restTile,
     };
   });
 

@@ -4,6 +4,7 @@ export type GuestState =
   | 'walking'
   | 'queuing'
   | 'riding'
+  | 'resting'
   | 'idle'
   | 'leaving';
 
@@ -38,6 +39,7 @@ export interface Guest {
   currentRideId: string | null;
   targetRideId: string | null;
   queueTile: { x: number; y: number } | null;
+  restTile: { x: number; y: number } | null;
   lastDecisionTime: number;
   stateTimer: number;
   spriteVariant: number;

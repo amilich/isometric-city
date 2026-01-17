@@ -1778,6 +1778,7 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
       totalGuests,
       rating: calculateParkRating(nextGuests, updatedRides.length, state.stats.cleanliness, sceneryScore),
       scenery: sceneryScore,
+      litter: countLitter(grid),
       excitement: updatedRides.length > 0
         ? Math.round(updatedRides.reduce((sum, ride) => sum + ride.excitement, 0) / updatedRides.length)
         : state.stats.excitement,
@@ -1795,6 +1796,7 @@ function createDefaultStats(): ParkStats {
     rating: 550,
     cleanliness: 80,
     scenery: 0,
+    litter: 0,
     excitement: 40,
     nausea: 0,
   };

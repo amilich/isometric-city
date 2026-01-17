@@ -83,6 +83,10 @@ export default function ParkPanel({ parkName, stats, weather, onNameChange, onCl
             <span className="font-semibold">{stats.guestsInPark}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
+            <span>Litter</span>
+            <span className="font-semibold">{stats.litter}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
             <span>Total Visitors</span>
             <span className="font-semibold">{stats.totalGuests}</span>
           </div>

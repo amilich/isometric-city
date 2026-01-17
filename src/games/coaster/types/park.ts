@@ -31,6 +31,7 @@ export type ParkStats = {
   rating: number;
   cleanliness: number;
   scenery: number;
+  litter: number;
   excitement: number;
   nausea: number;
 };

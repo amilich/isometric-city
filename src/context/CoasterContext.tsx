@@ -108,6 +108,7 @@ function normalizeCoasterState(state: CoasterParkState): CoasterParkState {
     stats: {
       ...state.stats,
       scenery: state.stats.scenery ?? 0,
+      litter: state.stats.litter ?? 0,
     },
     coasterTrains: state.coasterTrains ?? [],
     rides: state.rides.map((ride) => ({

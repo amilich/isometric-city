@@ -27,7 +27,7 @@ export default function CoasterSidebar() {
 
   const toolGroups = useMemo<ToolGroup[]>(() => [
     { label: 'Tools', tools: ['select', 'path', 'queue_path', 'coaster_track', 'bulldoze', 'water'] },
-    { label: 'Scenery', tools: ['scenery_tree', 'scenery_flower', 'scenery_bench'] },
+    { label: 'Scenery', tools: ['scenery_tree', 'scenery_flower', 'scenery_bench', 'scenery_shrub', 'scenery_lamp', 'scenery_statue', 'scenery_fountain', 'scenery_trash_can', 'scenery_fence'] },
     { label: 'Rides', tools: ['ride_carousel', 'ride_ferris_wheel', 'ride_bumper_cars', 'ride_swing', 'ride_haunted_house', 'ride_spiral_slide', 'ride_coaster_wooden', 'ride_coaster_steel'] },
     { label: 'Shops', tools: ['shop_food', 'shop_drink', 'shop_ice_cream', 'shop_souvenir', 'shop_info', 'shop_atm', 'shop_first_aid', 'shop_toilet'] },
   ], []);

@@ -48,6 +48,12 @@ export type CoasterTool =
   | 'scenery_tree'
   | 'scenery_flower'
   | 'scenery_bench'
+  | 'scenery_shrub'
+  | 'scenery_lamp'
+  | 'scenery_statue'
+  | 'scenery_fountain'
+  | 'scenery_trash_can'
+  | 'scenery_fence'
   | 'ride_carousel'
   | 'ride_ferris_wheel'
   | 'ride_bumper_cars'
@@ -90,6 +96,12 @@ export const TOOL_INFO: Record<CoasterTool, ToolInfo> = {
   scenery_tree: { name: 'Tree', cost: 15, description: 'Plant a tree for scenery', size: 1 },
   scenery_flower: { name: 'Flowers', cost: 10, description: 'Place flower beds', size: 1 },
   scenery_bench: { name: 'Bench', cost: 20, description: 'Give guests a place to rest', size: 1 },
+  scenery_shrub: { name: 'Shrub', cost: 12, description: 'Add low shrubs to landscape', size: 1 },
+  scenery_lamp: { name: 'Lamp', cost: 18, description: 'Light up paths at night', size: 1 },
+  scenery_statue: { name: 'Statue', cost: 40, description: 'Iconic statue centerpiece', size: 1 },
+  scenery_fountain: { name: 'Fountain', cost: 45, description: 'Decorative water fountain', size: 1 },
+  scenery_trash_can: { name: 'Trash Can', cost: 25, description: 'Keep the park tidy', size: 1 },
+  scenery_fence: { name: 'Fence', cost: 8, description: 'Add decorative fencing', size: 1 },
   ride_carousel: { name: 'Carousel', cost: 800, description: 'Gentle carousel ride', size: 2 },
   ride_ferris_wheel: { name: 'Ferris Wheel', cost: 1200, description: 'Observation wheel', size: 2 },
   ride_bumper_cars: { name: 'Bumper Cars', cost: 1600, description: 'Bumper cars pavilion', size: 2 },

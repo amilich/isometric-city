@@ -67,6 +67,18 @@ const SHOP_DEFAULTS: Record<CoasterBuildingType, { name: string; price: number; 
   staff_room: { name: 'Staff Room', price: 0, capacity: 4 },
 };
 
+const SCENERY_TOOL_MAP: Partial<Record<CoasterTool, SceneryType>> = {
+  scenery_tree: 'tree',
+  scenery_flower: 'flower',
+  scenery_bench: 'bench',
+  scenery_shrub: 'shrub',
+  scenery_lamp: 'lamp',
+  scenery_statue: 'statue',
+  scenery_fountain: 'fountain',
+  scenery_trash_can: 'trash_can',
+  scenery_fence: 'fence',
+};
+
 function normalizeCoasterState(state: CoasterParkState): CoasterParkState {
   return {
     ...state,
@@ -556,12 +568,8 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         return applyCost({ ...prev, grid });
       }
 
-      if (selectedTool === 'scenery_tree' || selectedTool === 'scenery_flower' || selectedTool === 'scenery_bench') {
-        const sceneryType: SceneryType = selectedTool === 'scenery_tree'
-          ? 'tree'
-          : selectedTool === 'scenery_flower'
-            ? 'flower'
-            : 'bench';
+      const sceneryType = SCENERY_TOOL_MAP[selectedTool];
+      if (sceneryType) {
         const scenery: Scenery = { type: sceneryType, variant: 0, rotation: 0 };
         if (tile.scenery?.type === sceneryType) {
           return prev;

@@ -140,6 +140,48 @@ function drawScenery(
     ctx.fillStyle = '#713f12';
     ctx.fillRect(centerX - width * 0.12, centerY + height * 0.03, width * 0.05, height * 0.05);
     ctx.fillRect(centerX + width * 0.07, centerY + height * 0.03, width * 0.05, height * 0.05);
+  } else if (type === 'shrub') {
+    ctx.fillStyle = '#2f855a';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, width * 0.13, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (type === 'lamp') {
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(centerX - width * 0.02, centerY - height * 0.18, width * 0.04, height * 0.2);
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY - height * 0.22, width * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (type === 'statue') {
+    ctx.fillStyle = '#cbd5f5';
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - height * 0.12);
+    ctx.lineTo(centerX + width * 0.1, centerY);
+    ctx.lineTo(centerX, centerY + height * 0.12);
+    ctx.lineTo(centerX - width * 0.1, centerY);
+    ctx.closePath();
+    ctx.fill();
+  } else if (type === 'fountain') {
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, width * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0ea5e9';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, width * 0.06, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (type === 'trash_can') {
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(centerX - width * 0.06, centerY - height * 0.04, width * 0.12, height * 0.1);
+    ctx.fillStyle = '#1f2937';
+    ctx.fillRect(centerX - width * 0.07, centerY - height * 0.07, width * 0.14, height * 0.03);
+  } else if (type === 'fence') {
+    ctx.strokeStyle = '#8b5e34';
+    ctx.lineWidth = Math.max(1, width * 0.02);
+    ctx.beginPath();
+    ctx.moveTo(centerX - width * 0.14, centerY + height * 0.02);
+    ctx.lineTo(centerX + width * 0.14, centerY - height * 0.02);
+    ctx.stroke();
   }
 }
 

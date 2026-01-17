@@ -47,6 +47,9 @@ const TOOL_RIDE_MAP: Partial<Record<CoasterTool, RideType>> = {
 const TOOL_SHOP_MAP: Partial<Record<CoasterTool, CoasterBuildingType>> = {
   shop_food: 'food_stall',
   shop_drink: 'drink_stall',
+  shop_ice_cream: 'ice_cream_stall',
+  shop_souvenir: 'souvenir_shop',
+  shop_info: 'info_kiosk',
   shop_toilet: 'toilets',
 };
 

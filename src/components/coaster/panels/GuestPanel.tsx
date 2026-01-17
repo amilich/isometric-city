@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Guest, GuestThoughtType } from '@/games/coaster/types';
+import { Guest, GuestItem, GuestThoughtType } from '@/games/coaster/types';
 
 interface GuestPanelProps {
   guests: Guest[];
@@ -45,6 +45,25 @@ export default function GuestPanel({ guests, onClose }: GuestPanelProps) {
         return 'text-amber-200';
       default:
         return 'text-slate-200';
+    }
+  };
+
+  const getItemLabel = (item: GuestItem) => {
+    switch (item) {
+      case 'food':
+        return 'Snack';
+      case 'drink':
+        return 'Drink';
+      case 'souvenir':
+        return 'Souvenir';
+      case 'map':
+        return 'Park Map';
+      case 'hat':
+        return 'Hat';
+      case 'balloon':
+        return 'Balloon';
+      default:
+        return 'Item';
     }
   };
 
@@ -116,6 +135,9 @@ export default function GuestPanel({ guests, onClose }: GuestPanelProps) {
                         <span>Energy {Math.round((guest.needs.energy / 255) * 100)}%</span>
                         {needHint && (
                           <span className="text-amber-200/80">{needHint}</span>
+                        )}
+                        {guest.hasItem && (
+                          <span className="text-emerald-200/80">{getItemLabel(guest.hasItem)}</span>
                         )}
                       </div>
                       {latestThought && (

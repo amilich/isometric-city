@@ -1,5 +1,5 @@
 import { CardinalDirection, GridPosition, isInBounds } from '@/core/types';
-import { CoasterBuildingType, CoasterParkState, CoasterTile, Finance, Guest, GuestThoughtType, ParkStats, PathInfo, Research, Staff, WeatherState, WeatherType } from '@/games/coaster/types';
+import { CoasterBuildingType, CoasterParkState, CoasterTile, Finance, Guest, GuestItem, GuestThoughtType, ParkStats, PathInfo, Research, Staff, WeatherState, WeatherType } from '@/games/coaster/types';
 import { findPath } from '@/lib/coasterPathfinding';
 import { estimateQueueWaitMinutes, getRideDispatchCapacity } from '@/lib/coasterQueue';
 import { createResearchItems } from '@/lib/coasterResearch';
@@ -278,6 +278,20 @@ const SHOP_EFFECTS: Record<CoasterBuildingType, { hunger?: number; thirst?: numb
   staff_room: { happiness: 0, cost: 0 },
 };
 
+const SHOP_ITEM_OPTIONS: Partial<Record<CoasterBuildingType, GuestItem[]>> = {
+  food_stall: ['food'],
+  drink_stall: ['drink'],
+  ice_cream_stall: ['food'],
+  souvenir_shop: ['souvenir', 'hat', 'balloon'],
+  info_kiosk: ['map'],
+};
+
+function getShopItem(shopType: CoasterBuildingType): GuestItem | null {
+  const options = SHOP_ITEM_OPTIONS[shopType];
+  if (!options || options.length === 0) return null;
+  return options[Math.floor(Math.random() * options.length)] ?? null;
+}
+
 function getShopPrice(grid: CoasterTile[][], target: Guest['targetShop']): number {
   if (!target) return 0;
   const building = grid[target.position.y]?.[target.position.x]?.building;
@@ -293,7 +307,12 @@ function calculateParkRating(guests: Guest[], rides: number, cleanliness: number
   return clamp(Math.round(averageHappiness * 0.7 + cleanliness * 0.2 + rideBonus), 0, 999);
 }
 
-function applyShopEffects(guest: Guest, shopType: CoasterBuildingType, priceOverride?: number): Guest {
+function applyShopEffects(
+  guest: Guest,
+  shopType: CoasterBuildingType,
+  priceOverride?: number,
+  item?: GuestItem | null
+): Guest {
   const effect = SHOP_EFFECTS[shopType];
   if (!effect) return guest;
   const cost = priceOverride ?? effect.cost ?? 0;
@@ -309,6 +328,7 @@ function applyShopEffects(guest: Guest, shopType: CoasterBuildingType, priceOver
     needs: { ...needs, happiness },
     happiness,
     money: Math.max(0, guest.money - cost),
+    hasItem: item ?? guest.hasItem,
   };
 }
 
@@ -394,7 +414,8 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
     if (nextTimer <= 0) {
       const shopType = guest.targetShop?.type;
       const shopPrice = getShopPrice(grid, guest.targetShop);
-      const updatedGuest = shopType ? applyShopEffects(guest, shopType, shopPrice) : guest;
+      const shopItem = shopType ? getShopItem(shopType) : null;
+      const updatedGuest = shopType ? applyShopEffects(guest, shopType, shopPrice, shopItem) : guest;
       return {
         ...updatedGuest,
         state: 'wandering',

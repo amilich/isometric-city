@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { T, msg, useMessages, useGT, Currency } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { Tool, TOOL_INFO } from '@/games/coaster/types';
 import { Button } from '@/components/ui/button';
@@ -19,26 +20,26 @@ import {
 // =============================================================================
 
 const TOOL_CATEGORIES: Record<string, Tool[]> = {
-  'Tools': ['select', 'bulldoze'],
-  'Paths': ['path', 'queue'],
-  'Trees': [
+  [msg('Tools')]: ['select', 'bulldoze'],
+  [msg('Paths')]: ['path', 'queue'],
+  [msg('Trees')]: [
     'tree_oak', 'tree_maple', 'tree_pine', 'tree_palm', 'tree_cherry',
     'bush_hedge', 'bush_flowering', 'topiary_ball',
   ],
-  'Flowers': ['flowers_bed', 'flowers_planter', 'flowers_wild', 'ground_cover'],
-  'Furniture': [
+  [msg('Flowers')]: ['flowers_bed', 'flowers_planter', 'flowers_wild', 'ground_cover'],
+  [msg('Furniture')]: [
     'bench_wooden', 'bench_metal', 'bench_ornate',
     'lamp_victorian', 'lamp_modern', 'lamp_pathway',
     'trash_can_basic', 'trash_can_fancy',
   ],
-  'Food': ['food_hotdog', 'food_burger', 'food_icecream', 'food_cotton_candy', 'food_popcorn'],
-  'Shops': ['shop_souvenir', 'shop_toys', 'shop_photo', 'restroom', 'first_aid'],
-  'Rides': [
+  [msg('Food')]: ['food_hotdog', 'food_burger', 'food_icecream', 'food_cotton_candy', 'food_popcorn'],
+  [msg('Shops')]: ['shop_souvenir', 'shop_toys', 'shop_photo', 'restroom', 'first_aid'],
+  [msg('Rides')]: [
     'ride_carousel', 'ride_teacups', 'ride_ferris_wheel', 'ride_drop_tower',
     'ride_swing_ride', 'ride_bumper_cars', 'ride_go_karts', 'ride_haunted_house',
     'ride_log_flume',
   ],
-  'Coasters': [
+  [msg('Coasters')]: [
     'coaster_build',
     'coaster_track',
     'coaster_turn_left',
@@ -48,7 +49,7 @@ const TOOL_CATEGORIES: Record<string, Tool[]> = {
     'coaster_loop',
     'coaster_station',
   ],
-  'Infrastructure': ['park_entrance', 'staff_building'],
+  [msg('Infrastructure')]: ['park_entrance', 'staff_building'],
 };
 
 // =============================================================================
@@ -70,22 +71,28 @@ function ExitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Exit to Menu</DialogTitle>
-          <DialogDescription>
-            Would you like to save your park before exiting?
-          </DialogDescription>
+          <T>
+            <DialogTitle>Exit to Menu</DialogTitle>
+            <DialogDescription>
+              Would you like to save your park before exiting?
+            </DialogDescription>
+          </T>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={onExitWithoutSaving}
-            className="w-full sm:w-auto"
-          >
-            Exit Without Saving
-          </Button>
-          <Button onClick={onSaveAndExit} className="w-full sm:w-auto">
-            Save & Exit
-          </Button>
+          <T>
+            <Button
+              variant="outline"
+              onClick={onExitWithoutSaving}
+              className="w-full sm:w-auto"
+            >
+              Exit Without Saving
+            </Button>
+          </T>
+          <T>
+            <Button onClick={onSaveAndExit} className="w-full sm:w-auto">
+              Save & Exit
+            </Button>
+          </T>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -104,7 +111,9 @@ export function Sidebar({ onExit }: SidebarProps) {
   const { state, setTool, saveGame } = useCoaster();
   const { selectedTool, finances } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>('Tools');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(msg('Tools'));
+  const m = useMessages();
+  const gt = useGT();
   
   const handleSaveAndExit = useCallback(() => {
     saveGame();
@@ -126,15 +135,17 @@ export function Sidebar({ onExit }: SidebarProps) {
       {/* Header */}
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
-          <span className="text-sidebar-foreground font-bold tracking-tight">
-            COASTER TYCOON
-          </span>
+          <T>
+            <span className="text-sidebar-foreground font-bold tracking-tight">
+              COASTER TYCOON
+            </span>
+          </T>
           {onExit && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowExitDialog(true)}
-              title="Exit to Menu"
+              title={gt('Exit to Menu')}
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
               <svg
@@ -169,7 +180,7 @@ export function Sidebar({ onExit }: SidebarProps) {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span>{category}</span>
+                <span>{m(category)}</span>
                 <svg
                   className={`w-4 h-4 transition-transform ${
                     expandedCategory === category ? 'rotate-180' : ''
@@ -207,12 +218,12 @@ export function Sidebar({ onExit }: SidebarProps) {
                       className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm ${
                         isSelected ? 'bg-primary text-primary-foreground' : ''
                       }`}
-                      title={`${info.description}${info.cost > 0 ? ` - $${info.cost}` : ''}`}
+                      title={info.cost > 0 ? gt('{description} - ${cost}', { description: info.description, cost: info.cost }) : info.description}
                     >
                       <span className="flex-1 text-left truncate">{info.name}</span>
                       {info.cost > 0 && (
                         <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>
-                          ${info.cost}
+                          {gt('${cost}', { cost: info.cost })}
                         </span>
                       )}
                     </Button>
@@ -227,7 +238,7 @@ export function Sidebar({ onExit }: SidebarProps) {
       {/* Bottom panel buttons */}
       <div className="border-t border-sidebar-border p-2">
         <div className="text-xs text-muted-foreground text-center">
-          ${finances.cash.toLocaleString()}
+          <Currency currency="USD">{finances.cash}</Currency>
         </div>
       </div>
       

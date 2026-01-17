@@ -15,6 +15,7 @@ const UI_LABELS = {
   open: msg('Open'),
   closed: msg('Closed'),
   testing: msg('Testing'),
+  close: msg('Close'),
 };
 
 export function RidesPanel() {
@@ -42,7 +43,7 @@ export function RidesPanel() {
                   <div className="text-xs text-muted-foreground capitalize">{ride.type.replace('_', ' ')}</div>
                 </div>
                 <Button
-                  variant={ride.status === 'open' ? 'default' : 'outline'}
+                  variant={ride.status !== 'closed' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() =>
                     updateRide(ride.id, {
@@ -50,7 +51,7 @@ export function RidesPanel() {
                     })
                   }
                 >
-                  {ride.status === 'open' ? m(UI_LABELS.open) : m(UI_LABELS.closed)}
+                  {ride.status === 'closed' ? m(UI_LABELS.open) : m(UI_LABELS.close)}
                 </Button>
               </div>
 
@@ -72,7 +73,14 @@ export function RidesPanel() {
               )}
 
               <div className="text-xs text-muted-foreground">
-                {m(UI_LABELS.status)}: <span className="capitalize">{ride.status}</span>
+                {m(UI_LABELS.status)}:{' '}
+                <span className="capitalize">
+                  {ride.status === 'testing'
+                    ? m(UI_LABELS.testing)
+                    : ride.status === 'open'
+                    ? m(UI_LABELS.open)
+                    : m(UI_LABELS.closed)}
+                </span>
               </div>
             </div>
           ))}

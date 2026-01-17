@@ -372,6 +372,17 @@ export function CoasterCanvasGrid({
           drawInsetDiamond(ctx, centerX, centerY, TILE_WIDTH * 0.7, TILE_HEIGHT * 0.7, PATH_COLORS[tile.path]);
           if (tile.path === 'queue') {
             drawSprite(ctx, COASTER_QUEUE_SPRITE, centerX, centerY);
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 0.7;
+            ctx.setLineDash([3, 2]);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - TILE_HEIGHT * 0.18);
+            ctx.lineTo(centerX + TILE_WIDTH * 0.22, centerY);
+            ctx.lineTo(centerX, centerY + TILE_HEIGHT * 0.18);
+            ctx.lineTo(centerX - TILE_WIDTH * 0.22, centerY);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.setLineDash([]);
           }
         }
 

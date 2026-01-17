@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { T } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { Card } from '@/components/ui/card';
 import { TILE_HEIGHT, TILE_WIDTH } from '@/components/game/types';
@@ -165,7 +166,7 @@ export default function CoasterMiniMap({ onNavigate, viewport }: CoasterMiniMapP
   return (
     <Card className="fixed bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        Park Map
+        <T>Park Map</T>
       </div>
       <canvas
         ref={canvasRef}

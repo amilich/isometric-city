@@ -1,16 +1,33 @@
 {
   "0012d10a61d77a76": "Ticari ve konut talebini artırır (3x3)",
   "002dbb4296181a19": "Yük Teslim Edildi",
+  "0045220942f2bf03": "Park Genel Bakış",
+  "00513a3b28638818": "Görüntüle",
   "0099a8e0d6903046": "Çevre",
   "00ad8aeed0a6c461": "İptal",
   "010d027a9055baf1": "Küçük ofis binası",
   "012b78191d3eef87": "Hız Treni",
+  "013a84ff373430db": "Araziyi Düzle",
   "01ed738a35998bee": "Kaydet ve Çık",
   "0246f296a9647801": "Araçlar",
   "026adc03115f2abb": "petrol",
+  "02eba0d8076e5304": "${wage}/hafta",
+  "030ffd57575ea513": "Ziyaretçi panelini kapat",
+  "034ea2441abcca74": {
+    "c": "Kabul",
+    "i": 1,
+    "t": "span"
+  },
   "036be42493f75286": " - Alanı bölgelendirmek için sürükle",
+  "03b996379c9833fb": "Eğlence araçları panelini kapat",
   "03e108901c6d428d": "Yolcu ve yük istasyonu",
   "044a1cd2d11b505f": "Co-op Şehrine Katıl",
+  "045741aa62df51f8": "Tümü",
+  "054856582bd48fad": {
+    "c": "Park Puanı",
+    "i": 1,
+    "t": "span"
+  },
   "06cb84462c974933": "Damarı bulduk!",
   "06cf637219c05461": "Açık hava kamp alanı",
   "07440458a59d2f55": "Emin misin? Bu, tüm ilerlemeni sıfırlayacak.",
@@ -19,20 +36,49 @@
     "i": 1,
     "t": "Button"
   },
+  "07e45763b56b45ad": "Oyuncağı Aç",
   "083a18f928c6f1d0": "Bölgeyi kaldır",
+  "090aab5bdd0e2909": "Peyzaj için ağaç dik",
+  "09a7faba26b714bd": "Bekleme yok",
+  "0a32d63fdcf0dcd0": "${price}",
   "0a75e464d833bca8": "Ayarlar",
   "0ad556bd75d20fa9": "Otomatik Kayıt",
   "0b14267b74622302": "Şehir Yönetimi",
+  "0b6af6b1b4e6a1e9": "Araziyi Alçalt",
+  "0b8adcf21096854e": "Çiçek tarhları yerleştir",
   "0ba4f8589e36ca76": "Eğitim",
+  "0be770abc2412a2a": {
+    "c": "Henüz personel alınmadı.",
+    "i": 1,
+    "t": "div"
+  },
   "0c26fce8dc4990eb": "Su",
+  "0c4d6bd2e69e9102": {
+    "c": "Henüz hiçbir eğlence tesisi inşa edilmedi.",
+    "i": 1,
+    "t": "div"
+  },
   "0c8b71eedbf075f5": "Boş Arsa",
   "0cb408081b45c212": "Katmanları Görüntüle",
   "0cc2c983267b6a33": "Sahil Şeridi",
+  "0dd622cdb6f16232": "Ayrılıyor",
   "0df552c71ceffdea": "Açık hava basketbol sahası",
+  "0e74a4df00d31209": "Mutlu",
+  "1086cc5a3635000b": {
+    "c": "Lunapark",
+    "i": 1,
+    "t": "div"
+  },
+  "115c69de3202f664": "Aç",
+  "119f85abd1a42c19": "Test ediliyor",
   "11e592ce36623118": "Belediye Binası",
+  "11ef020002921747": "Susamış",
+  "120ecbea6a738095": "Tuvaletler",
+  "135484337740eca3": "Su karolarını yerleştir veya kaldır",
   "13b2402c6c023ebc": "Ana Sayfaya Git",
   "13fcc02124829d6c": "Oda oluşturulamadı",
   "146b7a76457cbdc5": "Co-op Şehri Oluştur",
+  "148beb832c44ca92": "Yolları temiz tutar ve ziyaretçileri mutlu eder.",
   "1681a6233ff22e03": [
     "Oda kodu: ",
     {
@@ -41,8 +87,16 @@
       "v": "v"
     }
   ],
+  "168f27c3fc977989": "Misafirler",
+  "16dd157baece3e51": "Biraz dinlenmem gerekiyor.",
   "16e15fc06c6a007c": "Halka açık yüzme tesisi",
+  "17408f193457610a": {
+    "c": "Eğlence Bileti",
+    "i": 1,
+    "t": "span"
+  },
   "1838df54b0bb4797": "Odaya bağlanırken bir sorun oluştu. Bu durum ağ sorunlarından veya sunucu sınırlamalarından kaynaklanıyor olabilir.",
+  "185b5a4f92d00d71": "{current} / {max} ziyaretçi",
   "196936ae6b19dcdc": {
     "c": [
       {
@@ -71,15 +125,24 @@
     "i": 1,
     "t": "div"
   },
+  "1a011d4b8e657acc": "{percent}% güvenilirlik",
   "1b1481a79d72b160": "yük",
+  "1d0f42ffacc916dd": "Sakin atlıkarınca",
   "1d322b583a4b0247": "Ticari talebi artırır (3x3)",
+  "1dd026c116d821b8": {
+    "c": "Kuyruk",
+    "i": 1,
+    "t": "span"
+  },
   "1e5fcd19bdbca49e": "Doğa yürüyüşü parkuru girişi (3x3)",
   "1f30c00e03eeca50": "Yol",
+  "1ff2793648b18736": "Perili ev",
   "2052aad231d5a7a0": "Şehrin sorunsuz işliyor.",
   "20b6960f6549e2ce": "Ağ",
   "22afa76a44fbcefd": "Go-Kart Pisti",
   "232eb7f71021bb7c": "Fonlar",
   "236b49842190cde3": "Yangınlarla mücadele et",
+  "23c6aef08778da68": "Hız treni ray parçaları döşe",
   "244e7898107e1ee5": "Gündüz/Gece Modu",
   "2455ea3bff6fcd33": "Güvenliği artır",
   "2458e22ee476fd63": [
@@ -89,37 +152,127 @@
       "t": "ArrowRight"
     }
   ],
+  "25d2da7462eb63f0": "Karnım acıkmaya başladı.",
   "265faf7d02352750": "Bu oda mevcut değil veya süresi dolmuş olabilir.",
   "26c08edf08a8fd43": "Şehri genişlet (+30x30)",
   "277949eda13391e5": "Ticari",
   "27b33d5e7ca06b25": "Stadyum",
   "2a39b732be4c5afe": "Eğlence tesisi",
   "2c1c93a646bbea6e": "Dil",
+  "2ca561694eb0463f": "Duraklat",
   "2cfd6433e4b2a26a": "Rastgele yangınları ve felaketleri etkinleştir",
+  "2d5c6708916fc95f": "Sandbox Modu",
   "2e46736f6530763d": "Küçük Park",
+  "2e81762856049871": "Lunapark aracı panelini kapat",
   "2ee85b5d8a92b88c": "Şehre Katıl",
+  "2fd88eb62dc0b824": {
+    "c": [
+      {
+        "i": 2,
+        "k": "_gt_n_2",
+        "v": "n"
+      },
+      "%"
+    ],
+    "i": 1,
+    "t": "span"
+  },
+  "3055c631a208252e": {
+    "d": {
+      "b": {
+        "false": {
+          "c": "Yeni Park Başlat",
+          "i": 2,
+          "t": "C2"
+        },
+        "true": {
+          "c": "Parkı Devam Ettir",
+          "i": 2,
+          "t": "C2"
+        }
+      },
+      "t": "b"
+    },
+    "i": 1,
+    "t": "Branch"
+  },
   "311dc7890d2b1d67": {
     "c": "Oyun durumu bekleniyor",
     "i": 1,
     "t": "p"
   },
   "315f62fadaa37351": "Sağlığı iyileştir (2x2)",
+  "31a22883b53cd9c9": "Dükkanlar",
+  "31a629183c166ca9": "${hiringFee} karşılığında işe al",
+  "31ba5ec9fcbaff06": {
+    "c": "Tema Parkı Patronu",
+    "i": 1,
+    "t": "div"
+  },
   "32957fce34b7e56b": "Arazi Şekillendirme",
   "32db31f0dc62bec8": "Bağlanıyor...",
   "33421e8d33bce805": "Davet Kodu",
+  "3464b70ecc100b78": "Haritaya Tıkla",
+  "353fcd6a7b08ef15": {
+    "c": [
+      "Değerlendirme: ",
+      {
+        "i": 2,
+        "k": "_gt_n_2",
+        "v": "n"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "361b52252c485db1": "Temel eğitim (2x2)",
+  "3654c3fd23d8aee1": "Dönme dolap",
   "36999eca1aa6a62d": "Paneller",
   "3713fd8f06b7bdbd": "Yık",
   "37974ce5901faca4": "Açık hava gösteri alanı (2x2)",
+  "38d097c2c38a0977": "Eğlence görevlisi",
   "38f4bf88be0f7fb8": "Park Kapısı",
+  "38fd100b58285815": "Aç",
   "39582dc021bd9785": "Gelir",
   "39ecf0d809cf7519": "Geliştirici Araçları",
+  "3a6d969fce7e9382": "Temizlik için bir temizlik görevlisi işe al",
   "3a6eca7252adb9a5": "{toolName} - {width}x{height} alanı",
   "3c4c4d97d5e66b21": "Sağlık",
+  "3c711d3aabb5f504": {
+    "c": "Ödenmemiş Kredi",
+    "i": 1,
+    "t": "span"
+  },
   "3ce15d2f4c961d10": "Henüz yeterli veri yok. Tarihsel eğilimleri görmek için oynamaya devam et.",
+  "3cfdc1aaecb22086": "Arazi eğimlerini yumuşat",
   "3d7ab4b2285527d1": "Hazinen bir hayli ağırlaştı. $1,000,000 aldın!",
+  "3d822f1203b8a606": [
+    {
+      "c": "LUNAPARK",
+      "i": 1,
+      "t": "div"
+    },
+    {
+      "c": "Tema Parkı Araçları",
+      "i": 2,
+      "t": "div"
+    }
+  ],
+  "3de9490afb5f7e68": "Ziyaretçiler için tuvaletler",
   "3e3047cbe8ba9923": "Her kenardan 15 karo kaldır. Kenarlardaki binalar silinecek.",
+  "3e446fc9d6794762": "Seyir dönme dolabı",
+  "3e76396799f7e6ef": "Kaydır",
+  "3f982fd045b28402": {
+    "c": "Toplam Ziyaretçi",
+    "i": 1,
+    "t": "span"
+  },
   "3fed752c6b827eb4": "Kaykay parkı",
+  "405d69d49f2aa420": {
+    "c": "Devriye Büyüklüğü",
+    "i": 1,
+    "t": "span"
+  },
   "40bad8960b093d63": "Mutluluk, sağlık, eğitim, güvenlik ve çevreye göre",
   "421db366df78606f": "Oynamaya Devam Et",
   "423be6bbfb254615": "Çevreyi iyileştirmek için ağaç dikin",
@@ -127,9 +280,11 @@
   "43852fb2c437417a": "{toolName} suyun yanına yerleştirilmeli",
   "43f8d980f9a0671a": "Yeraltı ulaşımı",
   "441e4c507e4ad288": "Küçük Ofis",
+  "44fcb381a3fc44ac": "Klasik salıncak",
   "4552acda39be69ce": "Bölgelendirmeyi kaldır",
   "459f0b9e4a127d63": "Su Kulesi",
   "459fd02379259631": "İşler",
+  "45bcd911c6b6382d": "Ziyaretçiler için yol inşa et",
   "46706925a64edad7": {
     "c": {
       "d": {
@@ -161,6 +316,12 @@
     "t": "p"
   },
   "46bcf1a804883ab0": "Ortak bahçe alanı",
+  "47c7b23bf83b8aa5": {
+    "c": "Hava Durumu",
+    "i": 1,
+    "t": "span"
+  },
+  "480646ceb98c7163": "Kapat",
   "482a95b964ba67dc": "Patika Başlangıcı",
   "482ea0cd55a6de89": "Topluluk Bahçesi",
   "4862ed8532afdefe": "Elektrik üret (2x2)",
@@ -168,8 +329,10 @@
   "4abc7c18f4193dec": "Konut bölgesi",
   "4b2cc49f7ddb97d8": "Kayıtlı Şehirler",
   "4b6098b15618c700": "Metro",
+  "4b7fb18d7c25eb9f": "Yol",
   "4c059835fa726e47": "Paylaşmak veya yedeklemek için oyun durumunu kopyala",
   "4ca435219460c2ac": "Adrenalin eğlencesi (2x2)",
+  "4f113bb0bc732b3d": "Temizle",
   "4f7921f3fd81b8b8": "Binaların inşaatının başlayabilmesi için elektrik, su ve yollara ihtiyaç vardır.",
   "50e2a364d74d785c": "Haftalık Net",
   "5151b5e97cd737af": "Toplum Merkezi",
@@ -177,81 +340,238 @@
   "5307628f223147b6": "Yerel topluluk merkezi",
   "5346721dd34606cc": "Elektrik Santrali",
   "5346848488eb3e6d": "Büyük Oyun Parkı",
+  "542b50e61c2697bb": "Çiçekler",
+  "5550b55b17dad46c": "Ata",
   "5584c3a28c29fea7": "Sprite Paketi",
   "55b6968db17e61eb": "Paylaşılan bir şehri görüntülemeden önce şehriniz kaydedildi",
+  "56706b7416b333fd": "Zincirli salıncak",
+  "569d8fe8916c3ce7": {
+    "c": [
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      " · ",
+      {
+        "i": 3,
+        "k": "_gt_n_3",
+        "v": "n"
+      },
+      "°C"
+    ],
+    "i": 1,
+    "t": "span"
+  },
+  "56ca74f5cecae56d": "Onarımlar için bir tamirci işe al",
   "56e589e66d790077": "Binaları ve bölgeleri kaldır",
   "570f15ad126ec582": "{toolName} ({x}, {y}) konumunda",
   "5710fcf3d552b2e4": "İtfaiye Merkezi",
   "573173896178c5b2": "Lunapark",
+  "57787c72eecc3518": "Ürkütücü korku treni",
   "57a3b5a61e0ff28c": "Davet kodunu arkadaşlarınla paylaş",
   "5842190480e1e770": "Su var",
+  "58618977c1f092ab": {
+    "c": "Güvenilirlik",
+    "i": 1,
+    "t": "span"
+  },
   "58b631994c014e93": "Hoş geldin! Önce Konut, Ticari ve Endüstriyel binalar için bölgeler ayır. Sonra şehrini kurmak için yol, elektrik ve su ekle.",
   "5a08b8941a037d58": "Yerel beyzbol sahası (2x2)",
+  "5a10bda57d500b17": "% {percent}",
+  "5bba146ba0ba3393": {
+    "c": "Dükkanlar ve Tezgahlar",
+    "i": 1,
+    "t": "span"
+  },
   "5bf5088caf591468": "Tribünlü spor sahası",
   "5c26a3826c8eebd9": "Nüfus",
   "5c6aa4f2a08f5808": "Güvenlik",
+  "5cfe589f445a1465": "Spiral kaydırak",
   "5d55c4129177872e": "Elektriği var",
+  "5dbb59f6ef6ab22c": {
+    "c": "Giderler",
+    "i": 1,
+    "t": "div"
+  },
   "5dbd90f586ba6162": "Aylık Gelir",
   "5e16578196ee8412": "işler",
   "5e2236ccf9b5ffba": "Gün",
   "5e9e025cf3ae6fc7": "Büyük park (3x3)",
+  "5eb0104fa80f7745": "Tüm parkta",
+  "5fe717e036a4ff7f": "Temizlik Görevlisi",
   "5ffa6e6366e41c69": "Yarış eğlencesi (2x2)",
+  "6002d4582134071b": {
+    "c": "Temizlik",
+    "i": 1,
+    "t": "span"
+  },
+  "600f6fbab7c21b75": {
+    "c": "Takım",
+    "i": 1,
+    "t": "div"
+  },
   "6027a72931335033": "Fabrika bölgesi",
+  "602e26b934f7e7bd": "2x",
   "6034e26d8964b615": "Altyapı",
+  "60a9805544328746": "3x",
   "60eb6be4ae31cecb": "Daha fazla ekipmanlı büyük oyun alanı (2x2)",
   "6136434088767e39": "Tercih ettiğiniz dili seçin",
+  "62d249854d197cef": "Süslemeler",
   "62f43adf29906dd6": "Futbol Sahası",
   "6366c3e6926eb31f": "Şehri Genişlet",
   "644d112397a9d946": "Yükle",
   "668bac01a99df249": "Polis",
   "67b416f395bcb015": "Vatandaşlarınızın sağlık ve eğitimini iyileştirmek için hastaneler ve okullar inşa edin.",
   "67f7439638ec898d": "Topluluk",
+  "683e8c85019c5300": "Başarılı bir hız treni tema parkı kurup yönetin.",
+  "68bbad12ee4e7e1e": "Arazi yüksekliğini artır",
   "68c8018cb5797990": "Oyun durumunu buraya yapıştırın...",
   "693839da902125cb": "İskele",
   "69ba5155e6e2ef95": "Yeniden adlandır",
+  "69d1edea8a41acdc": "1x",
   "6b2711965c0aecca": "Spor",
   "6bbf388c7005fa30": "Üniversite",
   "6c45a87bca570dfb": "Çevre",
   "6d966a4f4fb838a2": "Oda bulunamadı",
+  "6de94182b1d8489c": {
+    "c": "Yoğunluk",
+    "i": 1,
+    "t": "div"
+  },
   "6e706fe5f4dead95": "Mağaza ve ofis bölgesi",
+  "6e7813edfed14fe5": "Şu giriş ücreti epey tuzluydu.",
   "6ef03a3ce71f2e80": "Hazine",
   "6f799a1e48046e50": "Bölgeler",
+  "700f5303c67913a3": "Dolaşanlar",
   "7098a61cad8c8e17": "Co-op şehrini kur",
   "71ba7468560d8d94": "Küçük Oyun Parkı",
   "71c6a9765d5e2456": "Şehrinizin çevresini iyileştirmek ve sakinleri daha mutlu etmek için parklar ve ağaçlar ekleyin.",
   "72bef77d7b502f8f": "Vergi",
+  "72f815740756930d": {
+    "c": "Bilet Fiyatı",
+    "i": 1,
+    "t": "span"
+  },
   "7423144f1896834e": "Kooperatif Şehri",
   "745eee8680d46de2": "Yüzme Havuzu",
   "750760318912cde3": "(geçerli)",
   "7599ffe8c31a20dc": "Tenis Kortu",
+  "75afd1d28146a5ef": {
+    "c": "Filtreler",
+    "i": 1,
+    "t": "div"
+  },
   "7626b00fded50abc": "Ağaç",
   "762fcce45b65eea9": "Kaydet",
   "764fb358fb772d35": "Vergi Oranı",
+  "76930419b59ef880": "Ziyaretçilere yemek servisi yap",
   "7699c52140c9d9d1": "Parklar",
   "7742d857935b5fce": "Şehir Oluştur",
   "786f78fa84e8f121": "Gölet manzaralı park",
+  "7936b1ad4a18f773": {
+    "c": "Eğlence",
+    "i": 1,
+    "t": "div"
+  },
   "7a2dd3bc72dfe4a0": "Futbol Sahası",
   "7ab9534f0cd01856": "Mini harita",
   "7af04611900a2ec1": "dökme malzemeler",
+  "7af93880a2d33f71": "Fena Değil",
+  "7b29092ef212e4b4": {
+    "c": [
+      {
+        "c": "Eğlence Araçları",
+        "i": 2,
+        "t": "div"
+      },
+      {
+        "c": "Eğlence Aracı İşletimi",
+        "i": 3,
+        "t": "div"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "7c75e2d45a946a88": {
+    "c": "Personel İşe Al",
+    "i": 1,
+    "t": "div"
+  },
+  "7d69225841a59a97": {
+    "c": "Heyecan verici eğlenceler inşa et, misafirleri karşıla ve nihai lunaparkı tasarla.",
+    "i": 1,
+    "t": "p"
+  },
+  "7d98ebb238271c61": "Yiyecek Tezgahı",
   "7db45eab1e6e4c9e": "Büyük Park",
+  "7e521b9b801dce7c": "Devriye alanı",
+  "7e86576befb6534e": "{wait} dk",
   "7f248a14247b63c3": "Arkadaşlarınla gerçek zamanlı olarak birlikte şehir inşa et",
+  "7f7f6116f1c8f3a9": "Kapalı",
   "7fb5371007f7f493": "İstatistikler",
+  "7ffc699de47cdc76": "Arazi yüksekliğini azalt",
+  "80e17c99b8942fdb": "Onarım Bekleniyor",
+  "80e190e4cd62006f": {
+    "c": [
+      {
+        "c": {
+          "i": 3,
+          "k": "_gt_value_3",
+          "v": "v"
+        },
+        "i": 2,
+        "t": "span"
+      },
+      " için devriye alanı belirlemek üzere bir kareye tıklayın."
+    ],
+    "i": 1,
+    "t": "span"
+  },
+  "820d58fdd369231a": "Çok Heyecanlı",
   "825d7120d9e5c572": "konteynerler",
   "830e21fdb11a5d4a": "Su sağla",
+  "8417aa7403149a38": "Araziyi Yükselt",
   "8422fd86fad87d61": "Metro ağına erişim",
   "845da39023dc8d69": "İpucunu kapat",
+  "845e7f34c156ffd4": "Kuyruk",
   "84b3fc230d753c82": "Tren İstasyonu",
   "84bfc3db1e596cce": "Gölet Parkı",
   "85c943b4a30a4c69": "Mutluluk",
+  "863d0074d31141bc": {
+    "c": "Personel",
+    "i": 1,
+    "t": "div"
+  },
   "878c45a35ddde226": "Oyunu İçe Aktar",
   "87d0409e4047fbca": "Geçersiz oyun durumu. Lütfen kontrol edip yeniden deneyin.",
   "884832efb61160d4": "Araziyi suya dönüştür",
+  "8911c15a40ba0a27": "Bu oyuncak çok eğlenceli!",
   "89c6ae6c99a26fef": "Örnek durumu yükle",
   "8a2629c99203fd4e": "Danışmanlar",
   "8a3ebfe5eefa1f3a": "Hizmetler",
   "8b5e8de8f4c85850": "Yükseköğretim (3x3)",
   "8b9192b9f5e25ab9": "Bina görsel stilini seç",
+  "8bcacdedfd1695fa": {
+    "c": "Gelir",
+    "i": 1,
+    "t": "div"
+  },
+  "8c166e63e1bac07f": {
+    "c": "Cazibe Merkezleri",
+    "i": 1,
+    "t": "div"
+  },
+  "8c1ef1624236919c": "Morali yükseltmek için eğlence görevlileri tut",
   "8cfe5cbc808ec9b6": "Bölge talebini gözden kaçırma. Negatif talep, binaların terk edilmesine neden olabilir.",
+  "8d65e7d31b970960": "Mağazada",
+  "8d68f5fd558f8a3e": "{percent}% çalışma süresi",
+  "8ded03a23000b926": {
+    "c": "Bu filtreyle eşleşen misafir yok.",
+    "i": 1,
+    "t": "div"
+  },
   "8e1b26faa1066903": [
     {
       "i": 1,
@@ -263,8 +583,19 @@
   "900353afc0ae0c5f": "Henüz kayıtlı şehir yok.",
   "907abc04009841aa": "Minyatür golf sahası (2x2)",
   "90e19ab2fba5da15": "Geri Yükle",
+  "9151eb2076aa3d22": "Park genelinde ziyaretçilerin moralini yükseltir.",
   "915ed53f3aec731b": "Oyun Durumunu Kopyala",
+  "92c20a020e4312ad": {
+    "c": "Finans",
+    "i": 1,
+    "t": "div"
+  },
   "931f3cdc1db7ade0": "Çocuk hayvanat bahçesi / çiftlik hayvanları",
+  "932ab974ffc601c2": {
+    "c": "Giriş Ücreti",
+    "i": 1,
+    "t": "span"
+  },
   "933fa7740fe8c681": {
     "i": 1,
     "k": "_gt_value_1",
@@ -273,6 +604,7 @@
   "942af069571719cf": "Aylık Giderler",
   "947b31327f9622d3": "Yeni Oyun Başlat",
   "955389bd727d0995": "Futbol stadyumu (2x2)",
+  "9561cd383b97f391": "Bu park çok sıkıcı.",
   "956afb617989348a": "Özel",
   "961afdfa1ffd458a": "Oyun başarıyla yüklendi!",
   "973809b714422052": {
@@ -283,14 +615,22 @@
   "97513d561bf53e55": "Metro İstasyonu",
   "97c7b3a9fd235ee5": "Nüfus",
   "9963ed45f2043cb8": "Sera Bahçesi",
+  "9a807f71fdd2ca6b": "Bir şeyler içsem iyi olur.",
+  "9ae9a8155bc41bd2": "Yeni Park",
   "9bd3d3242f1ed87e": "Elektrik yok",
   "9c47942e96f87eff": "Ana Menüye Dön",
   "9d254026827d7830": "Tribünlü Saha",
   "9db16884c1c9d324": "Geri",
   "9e7842be401ec868": "İşbirlikçi Çok Oyunculu",
   "9f2ba8acaf861529": "Çıkmadan önce şehrinizi kaydetmek ister misiniz?",
+  "9f478091fdeaf59e": {
+    "c": "Park",
+    "i": 1,
+    "t": "div"
+  },
   "9f624c646a344dd9": "Botanik sera (2x2)",
   "a0ffbf0fb30b0c88": "Veritabanında oda oluşturulamadı",
+  "a11fbc3c62b16b11": "İçecek Büfesi",
   "a1608c009c5abc68": [
     {
       "i": 1,
@@ -300,24 +640,52 @@
   ],
   "a1fe3b85fd8e6410": "Şehri Küçült (-30x30)",
   "a251f31bd82b46e3": "Şehir Adı",
+  "a3bba90264ca36c7": {
+    "c": "Personel Maaşları",
+    "i": 1,
+    "t": "span"
+  },
+  "a4fb850f1834996a": "Kamerayı parkın etrafında gezdir",
   "a757c44bab1bfc4d": "{cargoName} sevkiyatı Marina'ya ulaştı. +${cargoValue} ticari gelir.",
   "a7894306a08bac01": "Konut",
   "a7cc8ff7202beca4": "Rustik kır kaçamağı",
   "a83f273f0a35b2f5": "Giderler",
+  "a8c73f5d85fe51da": "Personel panelini kapat",
   "a916da3428403968": "Kaykay Parkı",
   "a9749078f63948e2": "Yeni şehir adı...",
+  "a9f6dff79d809a9a": {
+    "c": "Park Personeli",
+    "i": 1,
+    "t": "div"
+  },
   "aa29c7e2f00fb24d": "Mutluluğu ve arsa değerini artırır (1x1)",
+  "ab9cca83beed09ba": "Oyuncakları, ziyaretçileri ve süslemeleri incele",
   "abaacba7b0f79fe8": "Sıfırla",
   "abd01d16a9c20c45": "Bildirilecek acil sorun yok!",
+  "ac07ddb7d5b888bb": "Yolda",
   "ac59cfc290b0aaf7": "Oyun Durumunu Yükle",
+  "ad3a24a9135049b6": "Yönetim",
   "adb5a90c2189aa55": "Ticari ve endüstriyel talebi artırır (4x4)",
   "add48b8a4d3992b8": "Şehir İstatistikleri",
   "ae0bc049bb523734": "Bu şehri sil?",
   "af9c6e5183374398": "Her bir kenardan 15 karo kaldır",
+  "b0d398e02428abc0": {
+    "c": "Çalışma Süresi",
+    "i": 1,
+    "t": "span"
+  },
+  "b1b8ad2c2d944d00": "Kuyruk {current}/{max}",
+  "b2be70822d55f16a": "Açık",
   "b3b7a1d6663ccd5f": "Hastane",
   "b43d25aa91aa1edd": "Zaman ilerleyişini etkilemeden günün saati görünümünü elle ayarla",
   "b453abc6c0aa9847": "Beyzbol Sahası",
   "b4619e9087ef77c7": "Uzay Programı",
+  "b54c46e465dc1276": {
+    "c": "Toplam Gelir",
+    "i": 1,
+    "t": "span"
+  },
+  "b6d3158622fa683f": "Oyuncaklar",
   "b7383a44b9c31f2e": [
     {
       "i": 1,
@@ -339,17 +707,31 @@
   },
   "b7cc80c6e92b9484": "Birden fazla şehri kaydet ve aralarında geçiş yap",
   "b821113430f5f0af": "Demiryolu",
+  "b86feabfb6c7c571": "Atlıkarınca",
+  "b8c2125338ffe591": "Sırada Bekleyenler",
   "b8ffa77d868a668b": "Şehir Adı",
   "bad59346a21883a3": "Havalimanı",
   "bc1312ca9875c6db": "Farklı Odaya Katıl",
   "bc57a3573b2d731a": "Şehir Danışmanları",
+  "bca7d5ae81c9f0fe": "Tuvalete gitmem lazım.",
   "bcfcdb828fb6febe": "Sanayi",
   "bd81be63d5902150": "Co-op City'ye Katılma",
   "bf03c9d6ae13442a": "Şehir daha fazla küçültülemez - en küçük boyuta ulaşıldı.",
+  "c02d885381997f6e": "Ziyaretçilere içecek servisi yap",
+  "c0a029cd498f4098": {
+    "c": "Toplam Ziyaretçi",
+    "i": 1,
+    "t": "span"
+  },
   "c1118dc21f1a3a70": "Futbol sahası",
+  "c17dfe74446f8b4d": "Tamirci",
   "c374929bd865ac52": "Doğa kaçamak kulübesi (2x2)",
+  "c445a3ee77a2d2de": "Oyun Operatörleri",
   "c49fb569cf0344a1": "Şehrini bağla",
   "c56f5cbb6dbe8edb": "Kulübe",
+  "c588689f80d686c4": "Park panelini kapat",
+  "c61fab625a48ac4b": "Oyuncaklar için kuyruk yolu inşa et",
+  "c64a071c48d27f90": "Çarpışan arabalar pisti",
   "c6fa2905d56a750c": "Kaydedildi",
   "c73a2100c4004277": [
     {
@@ -359,25 +741,70 @@
     "Davet Bağlantısını Kopyala"
   ],
   "c7d1e9c9bd97d52d": "Aylık",
+  "c8b946ff3f0b2dd4": "Arızalı",
   "c94455ba1a9942b7": "Şehri Küçült",
   "c96a3fd1bbe8f38a": "Sanayi ve konut talebini artırır (3x3)",
   "caf697c48a419488": "Yeni Şehir Oluştur",
   "cb91c05c442d6da0": "Sahil iskelesi (su kenarına yerleştirilmelidir)",
   "cba582095df8e4d9": "Mini Golf",
   "cd69d8784e9ce625": "Felaketler",
+  "cdd690c4b96d1988": {
+    "c": "Park Haritası",
+    "i": 1,
+    "t": "div"
+  },
   "ce17b8c1c26494e0": "Kamp Alanı",
+  "cf0908d81c9a1465": "Finans",
+  "cf111ae21ef9aa9a": {
+    "c": [
+      "Misafirler: ",
+      {
+        "i": 2,
+        "k": "_gt_n_2",
+        "v": "n"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "cf5babe756808083": "Marina",
+  "d000f2b5e832a45d": "İnşa ediliyor",
   "d062c71072c029de": "Retro Hilesi Etkinleştirildi!",
   "d08f67cf675a3159": "Profesyonel beyzbol sahası (3x3)",
+  "d15d4ce9981708e9": "İptal",
+  "d197e39c79d6b749": "Güvenliği sağlamak için güvenlik görevlileri tut",
   "d1acbf32e4fd9c19": "Olay",
+  "d2472064e3cde031": "Hız Treni Rayları",
   "d26290781c575c73": "Müze",
   "d28b856e9e8b8a3d": "Para",
   "d5120487d8637bd5": "Dekoratif park girişi",
   "d563172b11e46265": " - Yerleştirmek için sürükle",
   "d5bb9c7d05c9221d": "Oyunu Dışa Aktar",
   "d5cfefaf7011c288": "Tekrar Dene",
+  "d6a4abff713b4a09": "Eğlence tesislerini denetler ve onarır.",
   "d76336950671d1e2": "Tekne iskeleleri (2x2, suyun yanına yerleştirilmelidir)",
   "d7804cf2c098d4c3": "Katman Görünümü",
+  "d7b9bbbcb407256f": [
+    "Yıl ",
+    {
+      "i": 1,
+      "k": "_gt_n_1",
+      "v": "n"
+    },
+    " · Gün ",
+    {
+      "i": 2,
+      "k": "_gt_n_2",
+      "v": "n"
+    },
+    " · ",
+    {
+      "i": 3,
+      "k": "_gt_value_3",
+      "v": "v"
+    },
+    ":00"
+  ],
   "d84684d9e8bbd3d5": {
     "c": "Şehre katılınıyor...",
     "i": 1,
@@ -388,11 +815,38 @@
   "d8f8e96fe087aec3": "Beyzbol Stadyumu",
   "d960080f10b5a21e": "Tüm talep türlerini artırır (2x2)",
   "da49b8271b9dffa0": "Sil",
+  "dc1b2e91af5b5f6f": "Bekleme: {wait} dk",
+  "dcb031d5c61c9642": {
+    "c": "Eldeki Nakit",
+    "i": 1,
+    "t": "span"
+  },
+  "dd063c8d1599ddce": "Yolları ve nesneleri sil",
+  "dd1f6ad45e33bf6a": "Finans panelini kapat",
+  "dd3a2cf9949738dc": {
+    "c": "Parktaki Ziyaretçiler",
+    "i": 1,
+    "t": "span"
+  },
   "dd6807c3c88471d5": "Her kenara 15 karo ekle. Kara kenarları kara olarak, su kenarları su olarak uzatılır.",
+  "dd96ebdc723010b9": "Coaster Park — Tema Parkı Patronu",
   "de19414adf212a36": "ABCDE",
   "ded883367c8ddcb0": "Sprite Test Görünümünü Aç",
+  "dffeb24d50d71555": {
+    "c": "Park Defteri",
+    "i": 1,
+    "t": "div"
+  },
+  "e0779edee7d52984": "{count} yolcu",
   "e0a1cc92bd08aa24": "Elektrik",
+  "e0b4460d13982a86": {
+    "c": "Durum",
+    "i": 1,
+    "t": "span"
+  },
+  "e0c2721278e8176b": "Güvenliği ve düzeni sağlar.",
   "e0fa959d80ac0d81": "Seç",
+  "e0fc54cab965e77b": "{percent}% enerji",
   "e1e699a197e3581d": {
     "c": [
       "Yolunuz ",
@@ -421,8 +875,16 @@
   ],
   "e23439349cbca510": "Karo bilgisini görmek için tıkla",
   "e41b7f26a2f7453b": "Odaya Katılınamadı",
+  "e4a7172e09d74f9b": "Personel",
   "e4ca1c349676657c": "Gece",
   "e4f07cb539c8b592": "Benim Co-op Şehrim",
+  "e64970bf1870d592": {
+    "c": "Mide Bulantısı",
+    "i": 1,
+    "t": "span"
+  },
+  "e66b16b782ddbff7": "Çarpışan arabalar",
+  "e6c2122491000a3d": "Bu kuyruk hiç ilerlemiyor.",
   "e78b04c25599cd81": {
     "c": "Davet Kodu",
     "i": 1,
@@ -433,32 +895,82 @@
   "e9574dcabfdab036": "Kaydetmeden Çık",
   "e9f3a9337aab62c6": "Haftalık",
   "eaa9e68396589c20": "Demiryolu rayları döşe",
+  "eb0aacdc64f17046": {
+    "c": "Bakım",
+    "i": 1,
+    "t": "span"
+  },
   "ec8a07c2ad1276af": {
     "c": "Bağlanıyor...",
     "i": 1,
     "t": "p"
   },
+  "ec8e528936b96b22": "Güvenlik",
+  "ed78d5ea97ca977a": {
+    "c": "Park Ziyaretçileri",
+    "i": 1,
+    "t": "div"
+  },
   "edb23f2758bbe9f9": "Okul",
+  "eeb31fe41213ed86": {
+    "c": "Misafirler",
+    "i": 1,
+    "t": "div"
+  },
   "eeca902329b200e6": "Dağ Evi",
   "efd9775f35548e44": "Kopyalandı!",
   "f037be5184516560": "Çocuk parkı",
   "f06fd72176b8179e": "Bölgeleme",
   "f0cfc502ed112098": "Bölge",
+  "f17687760f3801d9": {
+    "c": "Tahmini Bekleme",
+    "i": 1,
+    "t": "span"
+  },
   "f2faf4aaea86ae97": "Basketbol Sahaları",
   "f313b32c80899b3a": "Şehrini suçtan ve yangınlardan korumak için itfaiye ve polis karakolları ekle.",
   "f34a6940381f60d6": "Olay bildirildi.",
+  "f3a3a91291bdface": "Oyuncağı Kapat",
+  "f3cb160d7e63a068": "${price} bilet",
   "f3e6f71a8bc19b40": "Yüklemek için bir oyun durumu yapıştırın",
+  "f445158391347a14": {
+    "c": "Toplam Giderler",
+    "i": 1,
+    "t": "span"
+  },
+  "f51d15a32c30603f": "Mutsuz",
   "f62db7ca5ce71d28": "Etkin",
   "f69724f1685d216d": "Hayvan Ağıl­ları",
   "f6bd806cafa9556d": "Katılmak için 5 karakterli davet kodunu gir",
   "f704e9e58929074b": "Şehir Bilgileri",
+  "f72b23899690fea8": {
+    "c": "Heyecan",
+    "i": 1,
+    "t": "span"
+  },
+  "f80165ab8801b579": "Parkta harika bir gün!",
   "f8107da5171f54fc": "Yangın",
   "f86d1b3defd75cea": "Yok",
   "fa51c4a3c559da90": "Her kenara 15 karo ekle",
   "fb373c7e167e81f2": "Şehrin Genel Puanı",
   "fb6c8a01b4a60b2b": "Şehir kaydedildi!",
+  "fb8e5c8966dfb130": "Küçük dönen kaydırak",
+  "fbc4d20d765a9b24": "Yorgun",
   "fbed860a569bfb30": "Ticari talepte büyük artış (4x4)",
+  "fc682e2b864ae429": "Tuvalet",
   "fd064d8807f0aaa2": "Otomatik",
   "fd9ddc523610dd77": "Muhasebecileriniz kafası karışık ama şikâyetçi değil. 50.000 $ aldınız!",
-  "fe8a0b7a0c5d9c6f": "Bütçe"
+  "fe8a0b7a0c5d9c6f": "Bütçe",
+  "fec1803723bc1eeb": {
+    "c": [
+      {
+        "i": 2,
+        "k": "_gt_n_2",
+        "v": "n"
+      },
+      " / 999"
+    ],
+    "i": 1,
+    "t": "span"
+  }
 }

@@ -308,6 +308,40 @@
             "updatedAt": "2025-12-28T19:26:30.335Z",
             "postProcessHash": "3c584e5552d7ed075962fdb1a1a27ab0db5e43f12cc64ea221d825db24ab97ee"
           }
+        },
+        "8124091e825939ce047586b100c7cbb6682c0af7e141d0e94488ae3b5e2e17be": {
+          "de": {
+            "updatedAt": "2026-01-17T03:49:34.370Z",
+            "postProcessHash": "71e87c6083cdbab83eb3b0fd9a14e44a5c7ddc632952e9b812495c567bc71a3c"
+          },
+          "es": {
+            "updatedAt": "2026-01-17T03:49:34.374Z",
+            "postProcessHash": "da5da85c27b216bab00a474b5d1fa5f37862624fea704239541b2efa32d54d34"
+          },
+          "fr": {
+            "updatedAt": "2026-01-17T03:49:34.376Z",
+            "postProcessHash": "fb27e7ed25120e537ecfe13a0f37bef7d6298563b289120d10989bee6607c96a"
+          },
+          "it": {
+            "updatedAt": "2026-01-17T03:49:34.378Z",
+            "postProcessHash": "7a8929f51b42acd123d3f61a1161c7ed01fbe6ae45db45c8a11dbc50e872a4f4"
+          },
+          "ja": {
+            "updatedAt": "2026-01-17T03:49:34.381Z",
+            "postProcessHash": "9be16b1e52c46ae771e768134a21f8a6e8d3ba5d82ba4c198623a9eb5d0eaebe"
+          },
+          "pt-BR": {
+            "updatedAt": "2026-01-17T03:49:34.383Z",
+            "postProcessHash": "e94c64bc33fd144ccbbf82e2038bc50c7249956a858716612b4113725941e99e"
+          },
+          "tr": {
+            "updatedAt": "2026-01-17T03:49:34.384Z",
+            "postProcessHash": "8748a4b91ec52661ccc5809e8e66c24731a9e26234e2ed7bdd7743722276340a"
+          },
+          "zh": {
+            "updatedAt": "2026-01-17T03:49:34.387Z",
+            "postProcessHash": "e2771b6658dc3e7e25ac1285139faab064fba5bc06d5122a5558369f87281d07"
+          }
         }
       }
     }

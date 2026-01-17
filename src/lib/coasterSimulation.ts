@@ -84,6 +84,7 @@ const QUEUE_PATIENCE_HIGH = 90;
 const QUEUE_PATIENCE_LOW_PENALTY = 0.2;
 const QUEUE_PATIENCE_MEDIUM_PENALTY = 0.35;
 const QUEUE_PATIENCE_HIGH_PENALTY = 0.5;
+const QUEUE_THOUGHT_TICKS = 30;
 
 function createGuest(id: number, tileX: number, tileY: number, entranceFee: number): Guest {
   const colors = ['#60a5fa', '#f87171', '#facc15', '#34d399', '#a78bfa'];
@@ -503,7 +504,7 @@ function getGuestThoughtCandidate(
   tick: number,
   entranceFee: number
 ): { type: GuestThoughtType; message: string } | null {
-  if (guest.state === 'queuing' && guest.queueJoinTick !== null && tick - guest.queueJoinTick > 90) {
+  if (guest.state === 'queuing' && guest.queueJoinTick !== null && tick - guest.queueJoinTick > QUEUE_THOUGHT_TICKS) {
     return { type: 'warning', message: 'This line is taking forever.' };
   }
   if (guest.needs.bathroom < 60) {

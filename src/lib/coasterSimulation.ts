@@ -3,6 +3,7 @@ import { CoasterBuildingType, CoasterParkState, CoasterTile, Finance, Guest, Gue
 import { findPath } from '@/lib/coasterPathfinding';
 import { estimateQueueWaitMinutes, getRideDispatchCapacity } from '@/lib/coasterQueue';
 import { createResearchItems } from '@/lib/coasterResearch';
+import { msg } from 'gt-next';
 
 export const DEFAULT_COASTER_GRID_SIZE = 50;
 
@@ -794,37 +795,37 @@ function getGuestThoughtCandidate(
   sceneryNearby: boolean
 ): { type: GuestThoughtType; message: string } | null {
   if (guest.state === 'queuing' && guest.queueJoinTick !== null && tick - guest.queueJoinTick > QUEUE_THOUGHT_TICKS) {
-    return { type: 'warning', message: 'This line is taking forever.' };
+    return { type: 'warning', message: msg('This line is taking forever.') };
   }
   if (guest.state === 'sitting') {
-    return { type: 'neutral', message: 'Taking a quick break.' };
+    return { type: 'neutral', message: msg('Taking a quick break.') };
   }
   if (guest.needs.bathroom < 60) {
-    return { type: 'warning', message: 'Need a restroom soon.' };
+    return { type: 'warning', message: msg('Need a restroom soon.') };
   }
   if (guest.needs.hunger < 70) {
-    return { type: 'negative', message: 'I am feeling hungry.' };
+    return { type: 'negative', message: msg('I am feeling hungry.') };
   }
   if (guest.needs.thirst < 70) {
-    return { type: 'negative', message: 'I could use a drink.' };
+    return { type: 'negative', message: msg('I could use a drink.') };
   }
   if (guest.needs.energy < 60) {
-    return { type: 'neutral', message: 'I need to rest a bit.' };
+    return { type: 'neutral', message: msg('I need to rest a bit.') };
   }
   if (guest.state === 'on_ride') {
-    return { type: 'positive', message: 'This ride is fun!' };
+    return { type: 'positive', message: msg('This ride is fun!') };
   }
   if (sceneryNearby) {
-    return { type: 'positive', message: 'The park looks beautiful.' };
+    return { type: 'positive', message: msg('The park looks beautiful.') };
   }
   if (entranceFee >= 15 && guest.age < 120) {
-    return { type: 'negative', message: 'That entrance fee was steep.' };
+    return { type: 'negative', message: msg('That entrance fee was steep.') };
   }
   if (guest.happiness < 90) {
-    return { type: 'negative', message: 'This park is boring.' };
+    return { type: 'negative', message: msg('This park is boring.') };
   }
   if (guest.happiness >= 170) {
-    return { type: 'positive', message: 'Great day at the park!' };
+    return { type: 'positive', message: msg('Great day at the park!') };
   }
   return null;
 }

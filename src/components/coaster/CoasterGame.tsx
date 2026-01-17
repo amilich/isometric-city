@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useGT } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { CoasterBuildingType } from '@/games/coaster/types';
 import { useCoaster } from '@/context/CoasterContext';
@@ -36,6 +37,7 @@ export default function CoasterGame() {
     setResearchFunding,
     setActiveResearch,
   } = useCoaster();
+  const gt = useGT();
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null>(null);
   const [selectedRideId, setSelectedRideId] = useState<string | null>(null);
@@ -110,32 +112,32 @@ export default function CoasterGame() {
           <div className="flex items-center gap-4">
             <div className="text-lg font-semibold tracking-wide">{state.parkName}</div>
             <div className="text-xs text-muted-foreground">
-              Year {state.year} · Day {state.day} · {state.hour.toString().padStart(2, '0')}:00
+              {gt('Year {year} · Day {day} · {hour}:00', { year: state.year, day: state.day, hour: state.hour.toString().padStart(2, '0') })}
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <div>Guests: {state.stats.guestsInPark}</div>
-            <div>Rating: {state.stats.rating}</div>
+            <div>{gt('Guests: {count}', { count: state.stats.guestsInPark })}</div>
+            <div>{gt('Rating: {rating}', { rating: state.stats.rating })}</div>
             <div className="capitalize text-muted-foreground">
-              {state.weather.type} · {state.weather.temperature}°C
+              {gt('{weatherType} · {temperature}°C', { weatherType: state.weather.type, temperature: state.weather.temperature })}
             </div>
             <div className="font-medium">${state.finance.cash.toLocaleString()}</div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant={state.speed === 0 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(0)}>
-              Pause
+              {gt('Pause')}
             </Button>
             <Button variant={state.speed === 1 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(1)}>
-              1x
+              {gt('1x')}
             </Button>
             <Button variant={state.speed === 2 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(2)}>
-              2x
+              {gt('2x')}
             </Button>
             <Button variant={state.speed === 3 ? 'default' : 'ghost'} size="sm" onClick={() => setSpeed(3)}>
-              3x
+              {gt('3x')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => newGame()}>
-              New Park
+              {gt('New Park')}
             </Button>
           </div>
         </div>

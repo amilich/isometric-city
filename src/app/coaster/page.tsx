@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import CoasterGame from '@/components/coaster/CoasterGame';
 import { CoasterProvider } from '@/context/CoasterContext';
 import { decompressFromUTF16 } from 'lz-string';
+import { T, Branch } from 'gt-next';
 
 const STORAGE_KEY = 'coaster-game-state';
 
@@ -49,26 +50,34 @@ export default function CoasterHomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-6">
       <div className="max-w-xl w-full text-center space-y-8">
-        <div className="space-y-2">
-          <div className="text-5xl font-light tracking-widest text-white/90">Coaster Park</div>
-          <div className="text-sm text-white/50 uppercase tracking-[0.3em]">Theme Park Tycoon</div>
-        </div>
-        <p className="text-white/60 text-sm leading-relaxed">
-          Build thrilling rides, welcome guests, and design the ultimate amusement park.
-        </p>
+        <T>
+          <div className="space-y-2">
+            <div className="text-5xl font-light tracking-widest text-white/90">Coaster Park</div>
+            <div className="text-sm text-white/50 uppercase tracking-[0.3em]">Theme Park Tycoon</div>
+          </div>
+          <p className="text-white/60 text-sm leading-relaxed">
+            Build thrilling rides, welcome guests, and design the ultimate amusement park.
+          </p>
+        </T>
         <div className="flex flex-col items-center gap-3">
           <Button
             onClick={() => setShowGame(true)}
             className="w-64 py-6 text-lg font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
           >
-            {hasSaved ? 'Continue Park' : 'Start New Park'}
+            <T>
+              <Branch
+                branch={hasSaved.toString()}
+                true={<>Continue Park</>}
+                false={<>Start New Park</>}
+              />
+            </T>
           </Button>
           <Button
             variant="outline"
             onClick={() => setShowGame(true)}
             className="w-64 py-6 text-lg font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
           >
-            Sandbox Mode
+            <T>Sandbox Mode</T>
           </Button>
         </div>
       </div>

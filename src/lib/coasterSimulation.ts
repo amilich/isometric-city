@@ -91,6 +91,7 @@ const LOAN_INTEREST_HOUR = 6;
 const BASE_ENTRANCE_FEE = 10;
 const RESEARCH_RATE = 8;
 const RESEARCH_COST_RATE = 18;
+const RESEARCH_RATE_MULTIPLIER = 1.6;
 
 function createGuest(id: number, tileX: number, tileY: number, entranceFee: number): Guest {
   const colors = ['#60a5fa', '#f87171', '#facc15', '#34d399', '#a78bfa'];
@@ -685,9 +686,12 @@ function updateResearch(state: CoasterParkState): CoasterParkState {
   if (researchCost > 0 && state.finance.cash < researchCost) {
     return state;
   }
+  const researchBoost = researchCost > 0
+    ? 1 + (researchCost / 1000) * RESEARCH_RATE_MULTIPLIER
+    : 1;
   const updatedItems = items.map((item) => {
     if (item.id !== activeResearchId || item.unlocked) return item;
-    const nextProgress = Math.min(item.cost, item.progress + funding * RESEARCH_RATE);
+    const nextProgress = Math.min(item.cost, item.progress + funding * RESEARCH_RATE * researchBoost);
     return {
       ...item,
       progress: nextProgress,

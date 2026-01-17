@@ -67,6 +67,30 @@ function drawDiamond(
   ctx.stroke();
 }
 
+function drawOverlayDiamond(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: string
+) {
+  const halfW = width / 2;
+  const halfH = height / 2;
+
+  ctx.save();
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x + halfW, y);
+  ctx.lineTo(x + width, y + halfH);
+  ctx.lineTo(x + halfW, y + height);
+  ctx.lineTo(x, y + halfH);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawPathOverlay(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -266,6 +290,19 @@ export default function CoasterCanvas({
   const tileWidth = useMemo(() => TILE_WIDTH * zoom, [zoom]);
   const tileHeight = useMemo(() => TILE_HEIGHT * zoom, [zoom]);
   const rideColors = useMemo(() => new Map(rides.map((ride) => [ride.id, ride.color])), [rides]);
+  const patrolOverlay = useMemo(() => {
+    const overlay = new Map<string, string>();
+    staff.forEach((member) => {
+      if (!member.patrolArea) return;
+      const color = STAFF_COLORS[member.type] ?? '#e2e8f0';
+      for (let y = member.patrolArea.minY; y <= member.patrolArea.maxY; y++) {
+        for (let x = member.patrolArea.minX; x <= member.patrolArea.maxX; x++) {
+          overlay.set(`${x},${y}`, color);
+        }
+      }
+    });
+    return overlay;
+  }, [staff]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -326,6 +363,10 @@ export default function CoasterCanvas({
         const screenY = offset.y + iso.y * zoom - heightOffset;
         const colors = TERRAIN_COLORS[tile.terrain] ?? TERRAIN_COLORS.grass;
         drawDiamond(ctx, screenX, screenY, tileWidth, tileHeight, colors);
+        const overlayColor = patrolOverlay.get(`${tile.x},${tile.y}`);
+        if (overlayColor) {
+          drawOverlayDiamond(ctx, screenX, screenY, tileWidth, tileHeight, overlayColor);
+        }
         if (tile.path) {
           const pathColor = tile.path.style === 'queue' ? '#f4b400' : '#8b9099';
           drawPathOverlay(ctx, screenX, screenY, tileWidth, tileHeight, pathColor);
@@ -386,7 +427,7 @@ export default function CoasterCanvas({
       const centerY = baseY + tileHeight / 2 - tileHeight * 0.2;
       drawTrain(ctx, centerX, centerY, tileWidth * 0.1);
     });
-  }, [canvasSize, grid, gridSize, offset, rideColors, guests, staff, coasterTrains, tileHeight, tileWidth, zoom]);
+  }, [canvasSize, grid, gridSize, offset, patrolOverlay, rideColors, guests, staff, coasterTrains, tileHeight, tileWidth, zoom]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDragging(true);

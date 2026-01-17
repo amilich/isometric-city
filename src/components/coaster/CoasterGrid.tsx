@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
 import { Tile } from '@/games/coaster/types';
 import { getSpriteInfo, getSpriteRect, COASTER_SPRITE_PACK } from '@/games/coaster/lib/coasterRenderConfig';
@@ -462,7 +462,7 @@ export function CoasterGrid({
   onViewportChange,
 }: CoasterGridProps) {
   const { state, latestStateRef, placeAtTile, bulldozeTile } = useCoaster();
-  const { grid, gridSize, selectedTool, tick } = state;
+  const { grid, gridSize, selectedTool, tick, guests, coasters } = state;
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -524,8 +524,8 @@ export function CoasterGrid({
     onViewportChange?.({ offset, zoom, canvasSize });
   }, [offset, zoom, canvasSize, onViewportChange]);
   
-  // Navigate to target
-  useEffect(() => {
+  // Navigate to target - useLayoutEffect avoids cascading render issues
+  useLayoutEffect(() => {
     if (navigationTarget) {
       const { screenX, screenY } = gridToScreen(
         navigationTarget.x,
@@ -570,8 +570,8 @@ export function CoasterGrid({
     const viewRight = canvasSize.width / zoom - offset.x / zoom + TILE_WIDTH;
     const viewBottom = canvasSize.height / zoom - offset.y / zoom + TILE_HEIGHT;
     
-    const guestsByTile = new Map<string, typeof state.guests>();
-    state.guests.forEach(guest => {
+    const guestsByTile = new Map<string, typeof guests>();
+    guests.forEach(guest => {
       const key = `${guest.tileX},${guest.tileY}`;
       const existing = guestsByTile.get(key);
       if (existing) {
@@ -582,7 +582,7 @@ export function CoasterGrid({
     });
     
     const carsByTile = new Map<string, { x: number; y: number }[]>();
-    state.coasters.forEach(coaster => {
+    coasters.forEach(coaster => {
       if (coaster.track.length === 0 || coaster.trackTiles.length === 0) return;
       coaster.trains.forEach(train => {
         train.cars.forEach(car => {
@@ -689,7 +689,7 @@ export function CoasterGrid({
     }
     
     ctx.restore();
-  }, [grid, gridSize, offset, zoom, canvasSize, tick, selectedTile, hoveredTile, selectedTool, spriteSheets, state.guests, state.coasters]);
+  }, [grid, gridSize, offset, zoom, canvasSize, tick, selectedTile, hoveredTile, selectedTool, spriteSheets, guests, coasters]);
   
   // Mouse handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

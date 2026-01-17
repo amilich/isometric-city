@@ -6,7 +6,8 @@ export type CheatTrigger =
   | { type: 'konami'; amount: 50000 }
   | { type: 'vinnie' }
   | { type: 'motherlode'; amount: 50000 }
-  | { type: 'fund'; amount: 10000 };
+  | { type: 'fund'; amount: 10000 }
+  | { type: 'admin' };
 
 const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 const MAX_BUFFER_SIZE = 50;
@@ -14,6 +15,7 @@ const MAX_BUFFER_SIZE = 50;
 export function useCheatCodes() {
   const [triggeredCheat, setTriggeredCheat] = useState<CheatTrigger | null>(null);
   const [showVinnieDialog, setShowVinnieDialog] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
   const konamiBufferRef = useRef<string[]>([]);
   const typedBufferRef = useRef<string>('');
   const konamiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,6 +92,11 @@ export function useCheatCodes() {
           console.log('🎮 Cheat activated: fund');
           setTriggeredCheat({ type: 'fund', amount: 10000 });
           typedBufferRef.current = '';
+        } else if (normalizedBuffer.includes('admin')) {
+          console.log('🎮 Cheat activated: admin');
+          setShowAdminMenu(true);
+          setTriggeredCheat({ type: 'admin' });
+          typedBufferRef.current = '';
         }
       }
     };
@@ -113,6 +120,8 @@ export function useCheatCodes() {
     triggeredCheat,
     showVinnieDialog,
     setShowVinnieDialog,
+    showAdminMenu,
+    setShowAdminMenu,
     clearTriggeredCheat,
   };
 }

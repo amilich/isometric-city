@@ -8,6 +8,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { SavedParkMeta } from '@/games/coaster/types/game';
 import { decompressFromUTF16 } from 'lz-string';
 import { X } from 'lucide-react';
+import { T, Var, useGT } from 'gt-next';
 
 const STORAGE_KEY = 'coaster-game-state';
 const SAVED_PARKS_INDEX_KEY = 'coaster-saved-parks-index';
@@ -50,11 +51,12 @@ function loadSavedParks(): SavedParkMeta[] {
 }
 
 // Saved Park Card
-function SavedParkCard({ park, onLoad, onDelete }: { 
-  park: SavedParkMeta; 
-  onLoad: () => void; 
+function SavedParkCard({ park, onLoad, onDelete }: {
+  park: SavedParkMeta;
+  onLoad: () => void;
   onDelete?: () => void;
 }) {
+  const gt = useGT();
   return (
     <div className="relative group">
       <button
@@ -65,9 +67,9 @@ function SavedParkCard({ park, onLoad, onDelete }: {
           {park.parkName}
         </h3>
         <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-          <span>👥 {park.guestCount}</span>
-          <span>💰 ${park.cash.toLocaleString()}</span>
-          <span>⭐ {park.parkRating}</span>
+          <T><span><Var>{park.guestCount}</Var> guests</span></T>
+          <T><span>$<Var>{park.cash.toLocaleString()}</Var></span></T>
+          <T><span><Var>{park.parkRating}</Var> rating</span></T>
         </div>
       </button>
       {onDelete && (
@@ -77,7 +79,7 @@ function SavedParkCard({ park, onLoad, onDelete }: {
             onDelete();
           }}
           className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
-          title="Delete park"
+          title={gt('Delete park')}
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -93,6 +95,7 @@ export default function CoasterPage() {
   const [hasSaved, setHasSaved] = useState(false);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
+  const gt = useGT();
 
   useEffect(() => {
     const check = () => {
@@ -138,7 +141,7 @@ export default function CoasterPage() {
   if (isChecking) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-900 to-purple-950 flex items-center justify-center">
-        <div className="text-white/60">Loading...</div>
+        <T><div className="text-white/60">Loading...</div></T>
       </main>
     );
   }
@@ -159,17 +162,19 @@ export default function CoasterPage() {
       <div className="max-w-4xl w-full flex flex-col items-center space-y-12">
         
         {/* Title */}
-        <div className="text-center">
-          <h1 className="text-6xl md:text-8xl font-light tracking-wider text-white/90">
-            Coaster
-          </h1>
-          <h2 className="text-4xl md:text-6xl font-light tracking-wider text-purple-300/80 mt-2">
-            Tycoon
-          </h2>
-          <p className="text-white/50 mt-4 text-lg">
-            Build the ultimate theme park
-          </p>
-        </div>
+        <T>
+          <div className="text-center">
+            <h1 className="text-6xl md:text-8xl font-light tracking-wider text-white/90">
+              Coaster
+            </h1>
+            <h2 className="text-4xl md:text-6xl font-light tracking-wider text-purple-300/80 mt-2">
+              Tycoon
+            </h2>
+            <p className="text-white/50 mt-4 text-lg">
+              Build the ultimate theme park
+            </p>
+          </div>
+        </T>
 
         {/* Coaster Icon Placeholder */}
         <div className="w-48 h-48 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center">
@@ -178,15 +183,15 @@ export default function CoasterPage() {
         
         {/* Buttons */}
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <Button 
+          <Button
             onClick={() => setShowGame(true)}
             className="w-full py-8 text-2xl font-light tracking-wide bg-purple-600/80 hover:bg-purple-500/80 text-white border border-purple-400/30 rounded-lg transition-all duration-300"
           >
-            {hasSaved ? 'Continue' : 'New Park'}
+            {hasSaved ? gt('Continue') : gt('New Park')}
           </Button>
-          
+
           {hasSaved && (
-            <Button 
+            <Button
               onClick={() => {
                 localStorage.removeItem(STORAGE_KEY);
                 setHasSaved(false);
@@ -195,24 +200,28 @@ export default function CoasterPage() {
               variant="outline"
               className="w-full py-6 text-xl font-light tracking-wide bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/15 rounded-lg transition-all duration-300"
             >
-              New Park
+              {gt('New Park')}
             </Button>
           )}
-          
-          <a
-            href="/"
-            className="text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
-          >
-            ← Back to IsoCity
-          </a>
+
+          <T>
+            <a
+              href="/"
+              className="text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+            >
+              Back to IsoCity
+            </a>
+          </T>
         </div>
         
         {/* Saved Parks */}
         {savedParks.length > 0 && (
           <div className="w-full max-w-xs">
-            <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-              Saved Parks
-            </h2>
+            <T>
+              <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+                Saved Parks
+              </h2>
+            </T>
             <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
               {savedParks.slice(0, 5).map((park) => (
                 <SavedParkCard

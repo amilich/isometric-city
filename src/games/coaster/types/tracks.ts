@@ -3,6 +3,8 @@
  * Defines track pieces, coaster types, and coaster car systems
  */
 
+import { msg } from 'gt-next';
+
 // =============================================================================
 // TRACK PIECE TYPES
 // =============================================================================
@@ -137,7 +139,7 @@ export interface CoasterTypeStats {
 
 export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
   wooden_classic: {
-    name: 'Classic Wooden Coaster',
+    name: msg('Classic Wooden Coaster'),
     maxSpeed: 100,
     maxHeight: 8,
     canInvert: false,
@@ -151,7 +153,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 100,
   },
   wooden_twister: {
-    name: 'Wooden Twister',
+    name: msg('Wooden Twister'),
     maxSpeed: 110,
     maxHeight: 9,
     canInvert: false,
@@ -165,7 +167,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 120,
   },
   steel_sit_down: {
-    name: 'Steel Sit-Down',
+    name: msg('Steel Sit-Down'),
     maxSpeed: 130,
     maxHeight: 10,
     canInvert: true,
@@ -179,7 +181,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 150,
   },
   steel_inverted: {
-    name: 'Inverted Coaster',
+    name: msg('Inverted Coaster'),
     maxSpeed: 120,
     maxHeight: 9,
     canInvert: true,
@@ -193,7 +195,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 180,
   },
   steel_standup: {
-    name: 'Stand-Up Coaster',
+    name: msg('Stand-Up Coaster'),
     maxSpeed: 100,
     maxHeight: 8,
     canInvert: true,
@@ -207,7 +209,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 160,
   },
   steel_floorless: {
-    name: 'Floorless Coaster',
+    name: msg('Floorless Coaster'),
     maxSpeed: 125,
     maxHeight: 10,
     canInvert: true,
@@ -221,7 +223,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 190,
   },
   steel_wing: {
-    name: 'Wing Coaster',
+    name: msg('Wing Coaster'),
     maxSpeed: 115,
     maxHeight: 9,
     canInvert: true,
@@ -235,7 +237,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 220,
   },
   steel_flying: {
-    name: 'Flying Coaster',
+    name: msg('Flying Coaster'),
     maxSpeed: 100,
     maxHeight: 8,
     canInvert: true,
@@ -249,7 +251,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 250,
   },
   steel_4d: {
-    name: '4D Coaster',
+    name: msg('4D Coaster'),
     maxSpeed: 90,
     maxHeight: 7,
     canInvert: true,
@@ -263,7 +265,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 350,
   },
   steel_spinning: {
-    name: 'Spinning Coaster',
+    name: msg('Spinning Coaster'),
     maxSpeed: 70,
     maxHeight: 6,
     canInvert: false,
@@ -277,7 +279,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 130,
   },
   mine_train: {
-    name: 'Mine Train',
+    name: msg('Mine Train'),
     maxSpeed: 80,
     maxHeight: 6,
     canInvert: false,
@@ -291,7 +293,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 90,
   },
   bobsled: {
-    name: 'Bobsled Coaster',
+    name: msg('Bobsled Coaster'),
     maxSpeed: 85,
     maxHeight: 7,
     canInvert: false,
@@ -305,7 +307,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 100,
   },
   suspended: {
-    name: 'Suspended Swinging',
+    name: msg('Suspended Swinging'),
     maxSpeed: 90,
     maxHeight: 8,
     canInvert: false,
@@ -319,7 +321,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 140,
   },
   water_coaster: {
-    name: 'Water Coaster',
+    name: msg('Water Coaster'),
     maxSpeed: 75,
     maxHeight: 7,
     canInvert: false,
@@ -333,7 +335,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 170,
   },
   launch_coaster: {
-    name: 'Launch Coaster',
+    name: msg('Launch Coaster'),
     maxSpeed: 150,
     maxHeight: 10,
     canInvert: true,
@@ -347,7 +349,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 280,
   },
   hyper_coaster: {
-    name: 'Hyper Coaster',
+    name: msg('Hyper Coaster'),
     maxSpeed: 140,
     maxHeight: 10,
     canInvert: false,
@@ -361,7 +363,7 @@ export const COASTER_TYPE_STATS: Record<CoasterType, CoasterTypeStats> = {
     upkeep: 200,
   },
   giga_coaster: {
-    name: 'Giga Coaster',
+    name: msg('Giga Coaster'),
     maxSpeed: 160,
     maxHeight: 10,
     canInvert: false,

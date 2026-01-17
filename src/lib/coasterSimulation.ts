@@ -78,6 +78,12 @@ const LEAVE_PARK_MONEY = 2;
 const BREAKDOWN_INTERVAL_TICKS = 180;
 const REPAIR_TICKS = 90;
 const MAINTENANCE_BASE_COST = 120;
+const QUEUE_PATIENCE_START = 30;
+const QUEUE_PATIENCE_MEDIUM = 90;
+const QUEUE_PATIENCE_HIGH = 150;
+const QUEUE_PATIENCE_LOW_PENALTY = 0.2;
+const QUEUE_PATIENCE_MEDIUM_PENALTY = 0.35;
+const QUEUE_PATIENCE_HIGH_PENALTY = 0.5;
 
 function createGuest(id: number, tileX: number, tileY: number, entranceFee: number): Guest {
   const colors = ['#60a5fa', '#f87171', '#facc15', '#34d399', '#a78bfa'];
@@ -555,6 +561,27 @@ function shouldGuestLeavePark(guest: Guest): boolean {
     || guest.needs.bathroom < LEAVE_PARK_NEED;
 }
 
+function applyQueuePatience(guest: Guest, tick: number): Guest {
+  if (guest.state !== 'queuing' || guest.queueJoinTick === null) return guest;
+  const waitTicks = tick - guest.queueJoinTick;
+  if (waitTicks < QUEUE_PATIENCE_START) return guest;
+  const penalty = waitTicks >= QUEUE_PATIENCE_HIGH
+    ? QUEUE_PATIENCE_HIGH_PENALTY
+    : waitTicks >= QUEUE_PATIENCE_MEDIUM
+      ? QUEUE_PATIENCE_MEDIUM_PENALTY
+      : QUEUE_PATIENCE_LOW_PENALTY;
+  const happiness = clamp(guest.happiness - penalty);
+  if (happiness === guest.happiness) return guest;
+  return {
+    ...guest,
+    happiness,
+    needs: {
+      ...guest.needs,
+      happiness,
+    },
+  };
+}
+
 function updateStaff(state: CoasterParkState): CoasterParkState {
   const updatedStaff = state.staff.map((member) => updateStaffMovement(member, state.grid));
   const handymanCount = updatedStaff.filter((member) => member.type === 'handyman').length;
@@ -711,6 +738,8 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
 
   const entertainers = state.staff.filter((member) => member.type === 'entertainer');
   const securityStaff = state.staff.filter((member) => member.type === 'security');
+  nextGuests = nextGuests.map((guest) => applyQueuePatience(guest, state.tick));
+
   if (entertainers.length > 0 || securityStaff.length > 0) {
     nextGuests = nextGuests.map((guest) => applyStaffMoodEffects(guest, entertainers, securityStaff));
   }

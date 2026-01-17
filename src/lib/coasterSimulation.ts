@@ -547,6 +547,21 @@ function findRideAccessTile(ride: CoasterParkState['rides'][number], grid: Coast
   return accessTile ?? ride.entrance;
 }
 
+function findQueueJoinTile(
+  ride: CoasterParkState['rides'][number],
+  grid: CoasterTile[][],
+  queueLength: number
+): GridPosition | null {
+  const queueEntry = ride.queue.entry;
+  const queuePath = grid[queueEntry.y]?.[queueEntry.x]?.path;
+  const queueConnected = queuePath?.isQueue && Object.values(queuePath.edges).some(Boolean);
+  if (!queueConnected) return null;
+  const queueTiles = buildQueuePathOrder(grid, ride.id, queueEntry);
+  if (queueTiles.length === 0) return queueEntry;
+  const tileIndex = Math.min(queueTiles.length - 1, Math.floor(queueLength / QUEUE_GUESTS_PER_TILE));
+  return queueTiles[tileIndex];
+}
+
 function buildQueuePathOrder(
   grid: CoasterTile[][],
   rideId: string,
@@ -1075,7 +1090,9 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
           break;
         }
       }
-      const accessTile = findRideAccessTile(ride, state.grid);
+      const queueLength = queueCounts.get(ride.id) ?? ride.queue.guestIds.length;
+      const queueJoinTile = findQueueJoinTile(ride, state.grid, queueLength);
+      const accessTile = queueJoinTile ?? findRideAccessTile(ride, state.grid);
       if (!accessTile) return guest;
       const path = findPath({ x: guest.tileX, y: guest.tileY }, accessTile, state.grid);
       if (!path || path.length < 2) return guest;

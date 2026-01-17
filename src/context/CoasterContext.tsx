@@ -504,6 +504,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       if (selectedTool === 'path' || selectedTool === 'queue_path') {
         const adjacentRide = selectedTool === 'queue_path' ? findAdjacentRideId(x, y) : null;
         const queueRideId = adjacentRide?.rideId ?? null;
+        const shouldUpdateQueueEntry = adjacentRide?.isDirect ?? false;
         const newPath = createPath(selectedTool === 'queue_path' ? 'queue' : 'concrete', selectedTool === 'queue_path', queueRideId);
         if (tile.terrain === 'water' || tile.rideId || tile.building) {
           return prev;
@@ -518,7 +519,9 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         }
         const rides = queueRideId
           ? prev.rides.map((ride) =>
-            ride.id === queueRideId ? { ...ride, queue: { ...ride.queue, entry: { x, y } } } : ride
+            ride.id === queueRideId
+              ? { ...ride, queue: { ...ride.queue, entry: shouldUpdateQueueEntry ? { x, y } : ride.queue.entry } }
+              : ride
           )
           : prev.rides;
         return applyCost({ ...prev, grid, rides });

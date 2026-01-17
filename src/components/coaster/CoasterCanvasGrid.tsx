@@ -52,6 +52,8 @@ const PATH_COLORS = {
 
 const RIDE_COLORS: Record<string, string> = {
   coaster: '#f97316',
+  junior_coaster: '#fb923c',
+  log_flume: '#38bdf8',
   carousel: '#f472b6',
   ferris_wheel: '#38bdf8',
   swing_ride: '#facc15',

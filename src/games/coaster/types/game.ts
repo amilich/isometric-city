@@ -19,6 +19,8 @@ export type CoasterTool =
   | 'carousel'
   | 'ferris_wheel'
   | 'swing_ride'
+  | 'junior_coaster'
+  | 'log_flume'
   | 'food_stall'
   | 'drink_stall'
   | 'souvenir_stall'
@@ -55,6 +57,8 @@ export const COASTER_TOOL_INFO: Record<CoasterTool, CoasterToolInfo> = {
   carousel: { name: msg('Carousel'), cost: 900, description: msg('Gentle classic ride'), size: 2 },
   ferris_wheel: { name: msg('Ferris Wheel'), cost: 1800, description: msg('Scenic high ride'), size: 2 },
   swing_ride: { name: msg('Swing Ride'), cost: 1400, description: msg('Spinning thrill ride'), size: 2 },
+  junior_coaster: { name: msg('Junior Coaster'), cost: 1200, description: msg('Family coaster with mild thrills'), size: 2 },
+  log_flume: { name: msg('Log Flume'), cost: 2400, description: msg('Water ride with splashdown'), size: 3 },
   food_stall: { name: msg('Food Stall'), cost: 450, description: msg('Feeds hungry guests') },
   drink_stall: { name: msg('Drink Stall'), cost: 450, description: msg('Quenches thirst') },
   souvenir_stall: { name: msg('Souvenir Stall'), cost: 600, description: msg('Extra income and happiness') },

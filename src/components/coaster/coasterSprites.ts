@@ -77,6 +77,18 @@ export const COASTER_RIDE_SPRITES: Record<string, SpriteConfig> = {
     offsetX: 0,
     offsetY: -0.7,
   },
+  junior_coaster: {
+    src: '/assets/coaster/ride_junior_coaster.png',
+    scale: 1.45,
+    offsetX: 0,
+    offsetY: -0.55,
+  },
+  log_flume: {
+    src: '/assets/coaster/ride_log_flume.png',
+    scale: 1.5,
+    offsetX: 0,
+    offsetY: -0.6,
+  },
 };
 
 export const COASTER_STALL_SPRITES: Record<string, SpriteConfig> = {

@@ -1,5 +1,7 @@
 export type RideType =
   | 'coaster'
+  | 'junior_coaster'
+  | 'log_flume'
   | 'carousel'
   | 'ferris_wheel'
   | 'swing_ride'

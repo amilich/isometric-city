@@ -1,16 +1,21 @@
 {
   "0012d10a61d77a76": "Impulsa la demanda comercial y residencial (3x3)",
   "002dbb4296181a19": "Carga entregada",
+  "00513a3b28638818": "Ver",
   "0099a8e0d6903046": "Entorno",
   "00ad8aeed0a6c461": "Cancelar",
   "010d027a9055baf1": "Pequeño edificio de oficinas",
   "012b78191d3eef87": "Montaña rusa",
+  "013a84ff373430db": "Suavizar el terreno",
   "01ed738a35998bee": "Guardar y salir",
   "0246f296a9647801": "Herramientas",
   "026adc03115f2abb": "petróleo",
+  "030ffd57575ea513": "Cerrar panel de visitantes",
   "036be42493f75286": " - Arrastra para zonificar el área",
+  "03b996379c9833fb": "Cerrar panel de atracciones",
   "03e108901c6d428d": "Estación de pasajeros y carga",
   "044a1cd2d11b505f": "Unirse a ciudad cooperativa",
+  "045741aa62df51f8": "Todos",
   "06cb84462c974933": "¡Filón!",
   "06cf637219c05461": "Zona de acampada al aire libre",
   "07440458a59d2f55": "¿Seguro? Esto restablecerá todo el progreso.",
@@ -19,20 +24,69 @@
     "i": 1,
     "t": "Button"
   },
+  "078eb7f64edb1177": {
+    "c": "Cancelar",
+    "i": 1,
+    "t": "Button"
+  },
   "083a18f928c6f1d0": "Quitar zona",
+  "090aab5bdd0e2909": "Planta un árbol decorativo",
+  "09a7faba26b714bd": "Sin espera",
+  "0a32d63fdcf0dcd0": "${price}",
   "0a75e464d833bca8": "Ajustes",
+  "0a79101bd7dffc3c": "Baños",
   "0ad556bd75d20fa9": "Autoguardado",
   "0b14267b74622302": "Gestión de la ciudad",
+  "0b6af6b1b4e6a1e9": "Bajar el terreno",
+  "0b8adcf21096854e": "Coloca macizos de flores",
   "0ba4f8589e36ca76": "Educación",
+  "0be770abc2412a2a": {
+    "c": "Aún no se ha contratado personal.",
+    "i": 1,
+    "t": "div"
+  },
   "0c26fce8dc4990eb": "Agua",
+  "0c4d6bd2e69e9102": {
+    "c": "Aún no se han construido atracciones.",
+    "i": 1,
+    "t": "div"
+  },
   "0c8b71eedbf075f5": "Solar vacío",
   "0cb408081b45c212": "Ver superposiciones",
   "0cc2c983267b6a33": "Ribera",
   "0df552c71ceffdea": "Cancha de baloncesto al aire libre",
+  "0e74a4df00d31209": "Contento",
+  "115c69de3202f664": "Abrir",
+  "1166116b3f8ebf17": "Continuar parque",
+  "119f85abd1a42c19": "En pruebas",
   "11e592ce36623118": "Ayuntamiento",
+  "11ef020002921747": "Sed",
+  "120ecbea6a738095": "Baños",
+  "135484337740eca3": "Añadir o quitar casillas de agua",
   "13b2402c6c023ebc": "Ir a la página principal",
   "13fcc02124829d6c": "No se pudo crear la sala",
   "146b7a76457cbdc5": "Crear ciudad cooperativa",
+  "148beb832c44ca92": "Mantiene los caminos limpios y a los visitantes contentos.",
+  "15659d3e0952589f": {
+    "c": [
+      {
+        "c": "Tiendas y puestos",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_cost_4",
+          "v": "c"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "1681a6233ff22e03": [
     "Código de sala: ",
     {
@@ -41,8 +95,42 @@
       "v": "v"
     }
   ],
+  "168f27c3fc977989": "Huéspedes",
+  "16a415ca2501c120": {
+    "c": [
+      {
+        "c": [
+          {
+            "c": "Viaje",
+            "i": 3,
+            "t": "div"
+          },
+          {
+            "c": {
+              "i": 5,
+              "k": "_gt_value_5",
+              "v": "v"
+            },
+            "i": 4,
+            "t": "div"
+          }
+        ],
+        "i": 2,
+        "t": "div"
+      },
+      {
+        "c": "✕",
+        "i": 6,
+        "t": "Button"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "16e15fc06c6a007c": "Piscina pública",
+  "1785bb72c55e4930": "Iniciar parque nuevo",
   "1838df54b0bb4797": "Hubo un problema al conectar con la sala. Esto puede deberse a problemas de red o límites del servidor.",
+  "185b5a4f92d00d71": "{current} / {max} visitantes",
   "196936ae6b19dcdc": {
     "c": [
       "Conectar con ",
@@ -73,14 +161,26 @@
     "t": "div"
   },
   "1b1481a79d72b160": "carga",
+  "1c25fb1874e2be5f": "{amount}/sem",
+  "1d0f42ffacc916dd": "Carrusel tranquilo",
   "1d322b583a4b0247": "Aumenta la demanda comercial (3x3)",
+  "1dc7a2a5ade0a14d": "Asignar",
+  "1dd026c116d821b8": {
+    "c": "Cola",
+    "i": 1,
+    "t": "span"
+  },
+  "1e5e48f2d1e5edd3": "Haz clic en el mapa",
   "1e5fcd19bdbca49e": "Entrada a ruta de senderismo (3x3)",
   "1f30c00e03eeca50": "Carretera",
+  "1ff2793648b18736": "Casa encantada",
   "2052aad231d5a7a0": "Tu ciudad funciona sin problemas.",
   "20b6960f6549e2ce": "Neto",
   "22afa76a44fbcefd": "Pista de karts",
+  "232186d3e79e081d": "Montaña rusa de acero",
   "232eb7f71021bb7c": "Fondos",
   "236b49842190cde3": "Apagar incendios",
+  "23c6aef08778da68": "Colocar tramos de vía de montaña rusa",
   "244e7898107e1ee5": "Modo día/noche",
   "2455ea3bff6fcd33": "Aumentar la seguridad",
   "2458e22ee476fd63": [
@@ -90,14 +190,60 @@
       "t": "ArrowRight"
     }
   ],
+  "24dda203536db327": "Tienda de recuerdos",
   "265faf7d02352750": "Esta sala no existe o puede haber expirado.",
   "26c08edf08a8fd43": "Expandir ciudad (+30x30)",
   "277949eda13391e5": "Comercial",
   "27b33d5e7ca06b25": "Estadio",
+  "2842b1ac46319263": [
+    {
+      "c": [
+        {
+          "c": "Parque de montañas rusas",
+          "i": 2,
+          "t": "div"
+        },
+        {
+          "c": "Theme Park Tycoon",
+          "i": 3,
+          "t": "div"
+        }
+      ],
+      "i": 1,
+      "t": "div"
+    },
+    {
+      "c": "Construye atracciones emocionantes, recibe visitantes y diseña el parque de atracciones definitivo.",
+      "i": 4,
+      "t": "p"
+    }
+  ],
   "2a39b732be4c5afe": "Instalación recreativa",
   "2c1c93a646bbea6e": "Idioma",
   "2cfd6433e4b2a26a": "Activar incendios y desastres aleatorios",
+  "2d5c6708916fc95f": "Modo Sandbox",
+  "2e20da7b38443ce1": {
+    "c": [
+      {
+        "c": "Gastos totales",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_cost_4",
+          "v": "c"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "2e46736f6530763d": "Parque pequeño",
+  "2e81762856049871": "Cerrar panel de la atracción",
   "2ee85b5d8a92b88c": "Unirse a ciudad",
   "311dc7890d2b1d67": {
     "c": "Esperando estado del juego",
@@ -105,22 +251,89 @@
     "t": "p"
   },
   "315f62fadaa37351": "Mejorar la salud (2x2)",
+  "31a22883b53cd9c9": "Tiendas",
   "32957fce34b7e56b": "Moldear terreno",
   "32db31f0dc62bec8": "Conectando...",
   "33421e8d33bce805": "Código de invitación",
+  "344fe252fd3a908c": {
+    "c": [
+      {
+        "c": "Efectivo disponible",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_cost_4",
+          "v": "c"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "35d64958a62ea24b": [
+    {
+      "c": "Visitantes",
+      "i": 1,
+      "t": "div"
+    },
+    {
+      "c": "Visitantes del parque",
+      "i": 2,
+      "t": "div"
+    }
+  ],
   "361b52252c485db1": "Educación básica (2x2)",
+  "3654c3fd23d8aee1": "Noria",
   "36999eca1aa6a62d": "Paneles",
   "3713fd8f06b7bdbd": "Demoler",
   "37974ce5901faca4": "Recinto de espectáculos al aire libre (2x2)",
+  "38d097c2c38a0977": "Animador",
   "38f4bf88be0f7fb8": "Puerta del parque",
+  "38fd100b58285815": "Hambre",
   "39582dc021bd9785": "Ingresos",
   "39ecf0d809cf7519": "Herramientas para desarrolladores",
+  "3a2d7d4a71687be3": [
+    "Huéspedes: ",
+    {
+      "i": 1,
+      "k": "_gt_n_1",
+      "v": "n"
+    }
+  ],
+  "3a6d969fce7e9382": "Contrata personal de limpieza para mantener las instalaciones limpias",
   "3a6eca7252adb9a5": "{toolName} - área de {width}x{height}",
   "3c4c4d97d5e66b21": "Salud",
   "3ce15d2f4c961d10": "Todavía no hay suficientes datos. Sigue jugando para ver las tendencias históricas.",
+  "3cfdc1aaecb22086": "Suavizar las pendientes del terreno",
+  "3d53c398d06b01af": "Punto de información",
   "3d7ab4b2285527d1": "Tu tesoro acaba de volverse mucho más pesado. ¡Has recibido $1,000,000!",
+  "3d822f1203b8a606": [
+    {
+      "c": "PARQUE DE ATRACCIONES",
+      "i": 1,
+      "t": "div"
+    },
+    {
+      "c": "Herramientas de parque temático",
+      "i": 2,
+      "t": "div"
+    }
+  ],
+  "3de9490afb5f7e68": "Baños para visitantes",
   "3e3047cbe8ba9923": "Quitar 15 casillas de cada borde. Los edificios en los bordes se eliminarán.",
+  "3e446fc9d6794762": "Noria panorámica",
+  "3e76396799f7e6ef": "Desplazar",
   "3fed752c6b827eb4": "Parque de patinaje",
+  "405d69d49f2aa420": {
+    "c": "Tamaño de patrulla",
+    "i": 1,
+    "t": "span"
+  },
   "40bad8960b093d63": "Basado en la felicidad, la salud, la educación, la seguridad y el medio ambiente",
   "421db366df78606f": "Continuar jugando",
   "423be6bbfb254615": "Planta árboles para mejorar el entorno",
@@ -128,9 +341,11 @@
   "43852fb2c437417a": "{toolName} debe colocarse junto al agua",
   "43f8d980f9a0671a": "Transporte subterráneo",
   "441e4c507e4ad288": "Oficina pequeña",
+  "44fcb381a3fc44ac": "Atracción clásica de columpios",
   "4552acda39be69ce": "Eliminar zonas",
   "459f0b9e4a127d63": "Torre de agua",
   "459fd02379259631": "Empleos",
+  "45bcd911c6b6382d": "Construir caminos peatonales para los visitantes",
   "46706925a64edad7": {
     "c": {
       "d": {
@@ -162,6 +377,7 @@
     "t": "p"
   },
   "46bcf1a804883ab0": "Jardín comunitario",
+  "480646ceb98c7163": "Cerrar",
   "482a95b964ba67dc": "Inicio del sendero",
   "482ea0cd55a6de89": "Huerto comunitario",
   "4862ed8532afdefe": "Generar electricidad (2x2)",
@@ -169,81 +385,258 @@
   "4abc7c18f4193dec": "Zona residencial",
   "4b2cc49f7ddb97d8": "Ciudades guardadas",
   "4b6098b15618c700": "Metro",
+  "4b7fb18d7c25eb9f": "Camino",
   "4c059835fa726e47": "Copia tu estado de partida para compartirlo o hacer una copia de seguridad",
   "4ca435219460c2ac": "Atracción extrema (2x2)",
+  "4e13e23848b9514a": {
+    "c": [
+      {
+        "c": [
+          {
+            "c": "Emoción",
+            "i": 3,
+            "t": "div"
+          },
+          {
+            "c": {
+              "i": 5,
+              "k": "_gt_value_5",
+              "v": "v"
+            },
+            "i": 4,
+            "t": "div"
+          }
+        ],
+        "i": 2,
+        "t": "div"
+      },
+      {
+        "c": [
+          {
+            "c": "Intensidad",
+            "i": 7,
+            "t": "div"
+          },
+          {
+            "c": {
+              "i": 9,
+              "k": "_gt_value_9",
+              "v": "v"
+            },
+            "i": 8,
+            "t": "div"
+          }
+        ],
+        "i": 6,
+        "t": "div"
+      },
+      {
+        "c": [
+          {
+            "c": "Náusea",
+            "i": 11,
+            "t": "div"
+          },
+          {
+            "c": {
+              "i": 13,
+              "k": "_gt_value_13",
+              "v": "v"
+            },
+            "i": 12,
+            "t": "div"
+          }
+        ],
+        "i": 10,
+        "t": "div"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "4f7921f3fd81b8b8": "Los edificios necesitan energía, agua y carreteras para que la construcción pueda comenzar.",
+  "5087bc344fd6e40f": "Puesto de primeros auxilios",
   "50e2a364d74d785c": "Neto semanal",
   "5151b5e97cd737af": "Centro comunitario",
   "51ba70d622cd0090": "Anfiteatro",
   "5307628f223147b6": "Centro comunitario local",
   "5346721dd34606cc": "Central eléctrica",
   "5346848488eb3e6d": "Gran parque infantil",
+  "542b50e61c2697bb": "Flores",
+  "551ff1da9e0c4742": "{size}x{size}",
   "5584c3a28c29fea7": "Paquete de sprites",
   "55b6968db17e61eb": "Tu ciudad se guardó antes de ver una ciudad compartida",
+  "56706b7416b333fd": "Sillas voladoras",
+  "56ca74f5cecae56d": "Contrata a un mecánico para realizar reparaciones",
   "56e589e66d790077": "Eliminar edificios y zonas",
   "570f15ad126ec582": "{toolName} en ({x}, {y})",
   "5710fcf3d552b2e4": "Estación de bomberos",
   "573173896178c5b2": "Parque de atracciones",
+  "57787c72eecc3518": "Atracción oscura y espeluznante",
   "57a3b5a61e0ff28c": "Comparte el código de invitación con amigos",
   "5842190480e1e770": "Tiene agua",
   "58b631994c014e93": "¡Bienvenido! Empieza zonificando áreas para edificios residenciales, comerciales e industriales. Luego añade carreteras, energía y agua para construir tu ciudad.",
+  "59eacd44806f4ab3": "Cerrar atracción",
   "5a08b8941a037d58": "Campo de béisbol local (2x2)",
   "5bf5088caf591468": "Campo deportivo con gradas",
   "5c26a3826c8eebd9": "Población",
   "5c6aa4f2a08f5808": "Seguridad",
+  "5cfe589f445a1465": "Tobogán en espiral",
   "5d55c4129177872e": "Tiene energía",
+  "5dbb59f6ef6ab22c": {
+    "c": "Gastos",
+    "i": 1,
+    "t": "div"
+  },
   "5dbd90f586ba6162": "Ingresos mensuales",
+  "5dd8f53dee597d71": {
+    "c": "Limpiar",
+    "i": 1,
+    "t": "Button"
+  },
   "5e16578196ee8412": "empleos",
   "5e2236ccf9b5ffba": "Día",
   "5e9e025cf3ae6fc7": "Parque grande (3x3)",
+  "5eb0104fa80f7745": "Todo el parque",
+  "5fe717e036a4ff7f": "Personal de limpieza",
   "5ffa6e6366e41c69": "Entretenimiento de carreras (2x2)",
+  "600f6fbab7c21b75": {
+    "c": "Equipo",
+    "i": 1,
+    "t": "div"
+  },
   "6027a72931335033": "Zona para fábricas",
   "6034e26d8964b615": "Servicios",
   "60eb6be4ae31cecb": "Parque infantil grande con más juegos (2x2)",
   "6136434088767e39": "Elige tu idioma preferido",
+  "62d249854d197cef": "Decoración",
   "62f43adf29906dd6": "Campo de fútbol",
   "6366c3e6926eb31f": "Ampliar ciudad",
   "644d112397a9d946": "Cargar",
+  "64d749f21a435824": "Parque nuevo",
   "668bac01a99df249": "Policía",
   "67b416f395bcb015": "Construye hospitales y escuelas para mejorar la salud y la educación de tus ciudadanos.",
   "67f7439638ec898d": "Comunidad",
+  "683e8c85019c5300": "Diseña y gestiona un próspero parque temático de montañas rusas.",
+  "6848686ec40ee487": "Pausa",
+  "68bbad12ee4e7e1e": "Aumentar la altura del terreno",
   "68c8018cb5797990": "Pega el estado de la partida aquí...",
   "693839da902125cb": "Muelle",
   "69ba5155e6e2ef95": "Renombrar",
   "6b2711965c0aecca": "Deportes",
   "6bbf388c7005fa30": "Universidad",
   "6c45a87bca570dfb": "Entorno",
+  "6d07c269403f9810": "Sala de personal",
   "6d966a4f4fb838a2": "Sala no encontrada",
   "6e706fe5f4dead95": "Zona para comercios y oficinas",
   "6ef03a3ce71f2e80": "Tesorería",
   "6f799a1e48046e50": "Zonas",
+  "700f5303c67913a3": "Deambulando",
   "7098a61cad8c8e17": "Configura tu ciudad cooperativa",
   "71ba7468560d8d94": "Parque infantil pequeño",
   "71c6a9765d5e2456": "Añade parques y árboles para mejorar el entorno de tu ciudad y hacer más felices a los habitantes.",
   "72bef77d7b502f8f": "Impuestos",
+  "72f815740756930d": {
+    "c": "Precio de entrada",
+    "i": 1,
+    "t": "span"
+  },
   "7423144f1896834e": "Ciudad cooperativa",
   "745eee8680d46de2": "Piscina",
   "750760318912cde3": "(actual)",
   "7599ffe8c31a20dc": "Pista de tenis",
+  "75afd1d28146a5ef": {
+    "c": "Filtros",
+    "i": 1,
+    "t": "div"
+  },
   "7626b00fded50abc": "Árbol",
   "762fcce45b65eea9": "Guardar",
   "764fb358fb772d35": "Tasa de impuestos",
+  "76930419b59ef880": "Servir comida a los visitantes",
   "7699c52140c9d9d1": "Parques",
   "7742d857935b5fce": "Crear ciudad",
   "786f78fa84e8f121": "Parque con estanque pintoresco",
+  "78c841277b58b925": {
+    "c": [
+      "Energía ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      },
+      "%"
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "7a2dd3bc72dfe4a0": "Campo de fútbol",
   "7ab9534f0cd01856": "Minimapa",
   "7af04611900a2ec1": "materiales a granel",
+  "7af93880a2d33f71": "Normal",
+  "7c75e2d45a946a88": {
+    "c": "Contratar personal",
+    "i": 1,
+    "t": "div"
+  },
+  "7d98ebb238271c61": "Puesto de comida",
   "7db45eab1e6e4c9e": "Parque grande",
+  "7e521b9b801dce7c": "Zona de patrulla",
   "7f248a14247b63c3": "Construye una ciudad junto a tus amigos en tiempo real",
+  "7f7f6116f1c8f3a9": "Cerrado",
   "7fb5371007f7f493": "Estadísticas",
+  "7ffc699de47cdc76": "Reducir la altura del terreno",
+  "80e190e4cd62006f": {
+    "c": [
+      "Haz clic en una casilla para establecer el área de patrulla de ",
+      {
+        "c": {
+          "i": 3,
+          "k": "_gt_value_3",
+          "v": "v"
+        },
+        "i": 2,
+        "t": "span"
+      },
+      "."
+    ],
+    "i": 1,
+    "t": "span"
+  },
+  "817ee42842d2410a": {
+    "c": [
+      {
+        "c": "Boletos de atracción",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_cost_4",
+          "v": "c"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "81a93ea24702f90b": "Puesto de hamburguesas",
+  "820d58fdd369231a": "Entusiasmado",
   "825d7120d9e5c572": "contenedores",
   "830e21fdb11a5d4a": "Proporcionar agua",
+  "8417aa7403149a38": "Elevar el terreno",
   "8422fd86fad87d61": "Acceso a la red de metro",
   "845da39023dc8d69": "Cerrar consejo",
+  "845e7f34c156ffd4": "Cola",
+  "84b2e77f4fbdb883": "{amount} para contratar",
   "84b3fc230d753c82": "Estación de tren",
   "84bfc3db1e596cce": "Parque del Estanque",
   "85c943b4a30a4c69": "Felicidad",
+  "8726dcf783971bf9": "Puesto de refrescos",
+  "874249a1962865f1": "{minutes} min",
   "878c45a35ddde226": "Importar partida",
   "87d0409e4047fbca": "Estado de juego no válido. Revisa y vuelve a intentarlo.",
   "884832efb61160d4": "Transformar terreno en agua",
@@ -252,7 +645,24 @@
   "8a3ebfe5eefa1f3a": "Servicios",
   "8b5e8de8f4c85850": "Educación superior (3x3)",
   "8b9192b9f5e25ab9": "Elige el estilo gráfico de los edificios",
+  "8bcacdedfd1695fa": {
+    "c": "Ingresos",
+    "i": 1,
+    "t": "div"
+  },
+  "8c166e63e1bac07f": {
+    "c": "Atracciones",
+    "i": 1,
+    "t": "div"
+  },
+  "8c1ef1624236919c": "Contrata animadores para mejorar la moral",
   "8cfe5cbc808ec9b6": "Vigila la demanda de zonas. Una demanda negativa puede hacer que los edificios queden abandonados.",
+  "8d65e7d31b970960": "En tienda",
+  "8ded03a23000b926": {
+    "c": "Ningún visitante coincide con este filtro.",
+    "i": 1,
+    "t": "div"
+  },
   "8e1b26faa1066903": [
     {
       "i": 1,
@@ -261,9 +671,38 @@
     "Conectando..."
   ],
   "8e51a2f65e212afd": "Terraformar agua en tierra",
+  "8e6ed991be7a3bf7": {
+    "c": [
+      {
+        "c": [
+          {
+            "c": "Atracciones",
+            "i": 3,
+            "t": "div"
+          },
+          {
+            "c": "Operaciones de atracciones",
+            "i": 4,
+            "t": "div"
+          }
+        ],
+        "i": 2,
+        "t": "div"
+      },
+      {
+        "c": "✕",
+        "i": 5,
+        "t": "Button"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "8f9f0daface08f50": "1x",
   "900353afc0ae0c5f": "Todavía no hay ciudades guardadas.",
   "907abc04009841aa": "Minigolf (2x2)",
   "90e19ab2fba5da15": "Restaurar",
+  "9151eb2076aa3d22": "Mejora la moral de los visitantes del parque.",
   "915ed53f3aec731b": "Copiar estado de la partida",
   "931f3cdc1db7ade0": "Granja interactiva / animales de granja",
   "933fa7740fe8c681": {
@@ -285,13 +724,16 @@
   "97c7b3a9fd235ee5": "Población",
   "9963ed45f2043cb8": "Jardín de invernadero",
   "9bd3d3242f1ed87e": "Sin energía",
+  "9be539398f723fd5": "{minutes} min de espera",
   "9c47942e96f87eff": "Salir al menú principal",
   "9d254026827d7830": "Campo con gradas",
   "9db16884c1c9d324": "Atrás",
   "9e7842be401ec868": "Multijugador cooperativo",
   "9f2ba8acaf861529": "¿Quieres guardar tu ciudad antes de salir?",
   "9f624c646a344dd9": "Invernadero botánico (2x2)",
+  "9fed1b69735d3c26": "Montaña rusa de madera",
   "a0ffbf0fb30b0c88": "Error al crear la sala en la base de datos",
+  "a11fbc3c62b16b11": "Puesto de bebidas",
   "a1608c009c5abc68": [
     {
       "i": 1,
@@ -301,24 +743,88 @@
   ],
   "a1fe3b85fd8e6410": "Reducir ciudad (-30x30)",
   "a251f31bd82b46e3": "Nombre de la ciudad",
+  "a3948b61f753af6a": {
+    "c": [
+      {
+        "c": "Préstamo pendiente",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_cost_4",
+          "v": "c"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "a4fb850f1834996a": "Mover la cámara por el parque",
   "a757c44bab1bfc4d": "Un envío de {cargoName} ha llegado al puerto deportivo. +${cargoValue} de ingresos comerciales.",
   "a7894306a08bac01": "Residencial",
   "a7cc8ff7202beca4": "Retiro en cabaña rústica",
   "a83f273f0a35b2f5": "Gastos",
+  "a8c73f5d85fe51da": "Cerrar panel de personal",
   "a916da3428403968": "Parque de patinaje",
   "a9749078f63948e2": "Nombre de la nueva ciudad...",
+  "a9f6c17f829c8f54": {
+    "c": [
+      {
+        "c": "Finanzas",
+        "i": 2,
+        "t": "div"
+      },
+      {
+        "c": "Registro de parques",
+        "i": 3,
+        "t": "div"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "aa29c7e2f00fb24d": "Aumenta la felicidad y el valor del suelo (1x1)",
+  "ab9cca83beed09ba": "Inspeccionar atracciones, visitantes y decoraciones",
   "abaacba7b0f79fe8": "Restablecer",
   "abd01d16a9c20c45": "¡No hay problemas urgentes que informar!",
+  "ac07ddb7d5b888bb": "En atracción",
   "ac59cfc290b0aaf7": "Cargar estado de la partida",
+  "ac6ca6819693b2c8": {
+    "c": [
+      {
+        "c": "Ingresos totales",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_cost_4",
+          "v": "c"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "ad3a24a9135049b6": "Gestión",
   "adb5a90c2189aa55": "Aumenta la demanda comercial e industrial (4x4)",
   "add48b8a4d3992b8": "Estadísticas de la ciudad",
   "ae0bc049bb523734": "¿Eliminar esta ciudad?",
   "af9c6e5183374398": "Eliminar 15 casillas de cada borde",
+  "b1b8ad2c2d944d00": "Cola {current} / {max}",
+  "b2be70822d55f16a": "Abierto",
   "b3b7a1d6663ccd5f": "Hospital",
   "b43d25aa91aa1edd": "Anula la apariencia de la hora del día sin afectar la progresión del tiempo",
   "b453abc6c0aa9847": "Campo de béisbol",
   "b4619e9087ef77c7": "Programa espacial",
+  "b6d3158622fa683f": "Atracciones",
   "b7383a44b9c31f2e": [
     {
       "i": 1,
@@ -340,6 +846,8 @@
   },
   "b7cc80c6e92b9484": "Guarda varias ciudades y cambia entre ellas",
   "b821113430f5f0af": "Ferrocarril",
+  "b86feabfb6c7c571": "Carrusel",
+  "b8c2125338ffe591": "Haciendo cola",
   "b8ffa77d868a668b": "Nombre de la ciudad",
   "bad59346a21883a3": "Aeropuerto",
   "bc1312ca9875c6db": "Unirse a otra sala",
@@ -347,10 +855,17 @@
   "bcfcdb828fb6febe": "Industrial",
   "bd81be63d5902150": "Unirse a ciudad cooperativa",
   "bf03c9d6ae13442a": "No se puede reducir más la ciudad: se alcanzó el tamaño mínimo.",
+  "c02d885381997f6e": "Servir bebidas a los visitantes",
   "c1118dc21f1a3a70": "Campo de fútbol",
+  "c17dfe74446f8b4d": "Mecánico",
   "c374929bd865ac52": "Albergue de retiro natural (2x2)",
+  "c445a3ee77a2d2de": "Operadores de atracciones",
   "c49fb569cf0344a1": "Conecta tu ciudad",
+  "c5193c6520aa2d9c": "3x",
   "c56f5cbb6dbe8edb": "Cabaña",
+  "c57b8bb8e8bf785a": "2x",
+  "c61fab625a48ac4b": "Construir caminos de cola para las atracciones",
+  "c64a071c48d27f90": "Pabellón de coches de choque",
   "c6fa2905d56a750c": "Guardado",
   "c73a2100c4004277": [
     {
@@ -360,25 +875,85 @@
     "Copiar enlace de invitación"
   ],
   "c7d1e9c9bd97d52d": "Mensual",
+  "c8b946ff3f0b2dd4": "Averiado",
   "c94455ba1a9942b7": "Reducir ciudad",
   "c96a3fd1bbe8f38a": "Aumenta la demanda industrial y residencial (3x3)",
   "caf697c48a419488": "Crear nueva ciudad",
+  "cb841348a52b3a9a": "Parque de montañas rusas",
   "cb91c05c442d6da0": "Muelle costero (debe colocarse junto al agua)",
   "cba582095df8e4d9": "Minigolf",
   "cd69d8784e9ce625": "Desastres",
+  "cdd690c4b96d1988": {
+    "c": "Mapa de parques",
+    "i": 1,
+    "t": "div"
+  },
   "ce17b8c1c26494e0": "Camping",
+  "cf0908d81c9a1465": "Finanzas",
   "cf5babe756808083": "Marina",
+  "d000f2b5e832a45d": "En construcción",
   "d062c71072c029de": "¡Truco retro activado!",
   "d08f67cf675a3159": "Estadio de béisbol profesional (3x3)",
+  "d197e39c79d6b749": "Contrata guardias para mejorar la seguridad",
   "d1acbf32e4fd9c19": "Incidente",
+  "d2472064e3cde031": "Vía de montaña rusa",
   "d26290781c575c73": "Museo",
   "d28b856e9e8b8a3d": "Dinero",
   "d5120487d8637bd5": "Entrada de parque decorativa",
   "d563172b11e46265": " - Arrastra para colocar",
   "d5bb9c7d05c9221d": "Exportar partida",
   "d5cfefaf7011c288": "Reintentar",
+  "d6a4abff713b4a09": "Inspecciona y repara las atracciones.",
+  "d7474b3b16bd4e19": {
+    "c": [
+      {
+        "c": [
+          {
+            "c": "Personal",
+            "i": 3,
+            "t": "div"
+          },
+          {
+            "c": "Personal del parque",
+            "i": 4,
+            "t": "div"
+          }
+        ],
+        "i": 2,
+        "t": "div"
+      },
+      {
+        "c": "✕",
+        "i": 5,
+        "t": "Button"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "d76336950671d1e2": "Muelles para barcos (2x2, debe colocarse junto al agua)",
   "d7804cf2c098d4c3": "Mostrar superposición",
+  "d7b9bbbcb407256f": [
+    "Año ",
+    {
+      "i": 1,
+      "k": "_gt_n_1",
+      "v": "n"
+    },
+    " · Día ",
+    {
+      "i": 2,
+      "k": "_gt_n_2",
+      "v": "n"
+    },
+    " · ",
+    {
+      "i": 3,
+      "k": "_gt_value_3",
+      "v": "v"
+    },
+    ":00"
+  ],
   "d84684d9e8bbd3d5": {
     "c": "Uniéndose a la ciudad...",
     "i": 1,
@@ -389,10 +964,21 @@
   "d8f8e96fe087aec3": "Estadio de béisbol",
   "d960080f10b5a21e": "Aumenta todos los tipos de demanda (2x2)",
   "da49b8271b9dffa0": "Eliminar",
+  "dd063c8d1599ddce": "Eliminar caminos y objetos",
+  "dd1f6ad45e33bf6a": "Cerrar panel de finanzas",
   "dd6807c3c88471d5": "Añade 15 casillas a cada lado. Los bordes de tierra se amplían como tierra y los bordes de agua se amplían como agua.",
+  "dd96ebdc723010b9": "Parque de montañas rusas — Theme Park Tycoon",
   "de19414adf212a36": "ABCDE",
+  "deb580c796a27c1e": "Cajero automático",
   "ded883367c8ddcb0": "Abrir vista de prueba de sprites",
+  "e0779edee7d52984": "{count} pasajeros",
   "e0a1cc92bd08aa24": "Energía",
+  "e0b4460d13982a86": {
+    "c": "Estado",
+    "i": 1,
+    "t": "span"
+  },
+  "e0c2721278e8176b": "Mantiene la seguridad y el orden.",
   "e0fa959d80ac0d81": "Seleccionar",
   "e1e699a197e3581d": {
     "c": [
@@ -420,16 +1006,28 @@
     },
     "Saltar todos los consejos"
   ],
+  "e223a012767cd852": [
+    "Valoración: ",
+    {
+      "i": 1,
+      "k": "_gt_n_1",
+      "v": "n"
+    }
+  ],
   "e23439349cbca510": "Haz clic para ver la información de la casilla",
   "e41b7f26a2f7453b": "No se pudo unir a la sala",
+  "e4a7172e09d74f9b": "Personal",
   "e4ca1c349676657c": "Noche",
   "e4f07cb539c8b592": "Mi ciudad cooperativa",
+  "e66b16b782ddbff7": "Coches de choque",
+  "e6775d9424d77bb4": "{staffType} {id}",
   "e78b04c25599cd81": {
     "c": "Código de invitación",
     "i": 1,
     "t": "p"
   },
   "e79d3dd997b03f78": "Sin agua",
+  "e7ba69dddc8f6d1e": "Puesto de helados",
   "e94b8809e7637224": "Configuración del juego",
   "e9574dcabfdab036": "Salir sin guardar",
   "e9f3a9337aab62c6": "Semanal",
@@ -439,16 +1037,45 @@
     "i": 1,
     "t": "p"
   },
+  "ec8e528936b96b22": "Seguridad",
   "edb23f2758bbe9f9": "Escuela",
+  "eea3c31a619bca54": {
+    "c": [
+      {
+        "c": "Total de visitantes",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_value_4",
+          "v": "v"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "eeca902329b200e6": "Refugio de montaña",
+  "ef0b3fca2f8a0d1d": "Abrir atracción",
   "efd9775f35548e44": "¡Copiado!",
   "f037be5184516560": "Parque infantil",
   "f06fd72176b8179e": "Zonificación",
   "f0cfc502ed112098": "Zona",
+  "f17687760f3801d9": {
+    "c": "Espera estimada",
+    "i": 1,
+    "t": "span"
+  },
   "f2faf4aaea86ae97": "Canchas de baloncesto",
   "f313b32c80899b3a": "Añade estaciones de bomberos y de Policía para mantener tu ciudad a salvo de delitos e incendios.",
   "f34a6940381f60d6": "Incidente reportado.",
+  "f3cb160d7e63a068": "${price} la entrada",
   "f3e6f71a8bc19b40": "Pega un estado de juego para cargarlo",
+  "f51d15a32c30603f": "Descontento",
   "f62db7ca5ce71d28": "Activado",
   "f69724f1685d216d": "Corrales de animales",
   "f6bd806cafa9556d": "Ingresa el código de invitación de 5 caracteres para unirte",
@@ -458,7 +1085,10 @@
   "fa51c4a3c559da90": "Añadir 15 casillas a cada borde",
   "fb373c7e167e81f2": "Calificación general de la ciudad",
   "fb6c8a01b4a60b2b": "¡Ciudad guardada!",
+  "fb8e5c8966dfb130": "Tobogán pequeño en espiral",
+  "fbc4d20d765a9b24": "Cansancio",
   "fbed860a569bfb30": "Gran aumento de la demanda comercial (4x4)",
+  "fc682e2b864ae429": "Baño",
   "fd064d8807f0aaa2": "Automático",
   "fd9ddc523610dd77": "Tus contables están confundidos, pero no se quejan. ¡Has recibido 50.000 $!",
   "fe8a0b7a0c5d9c6f": "Presupuesto"

@@ -142,12 +142,13 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
   if (guestSpawnTimer >= spawnInterval && guests.length < state.maxGuests) {
     guestSpawnTimer = 0;
     const guest = spawnGuest(state);
-    if (guest.money >= finance.entranceFee) {
-      guest.money -= finance.entranceFee;
+    let guestMoney = guest.money;
+    if (guestMoney >= finance.entranceFee) {
+      guestMoney -= finance.entranceFee;
       finance.money += finance.entranceFee;
       finance.dailyIncome += finance.entranceFee;
     }
-    guests.push(guest);
+    guests.push({ ...guest, money: guestMoney });
     lastGuestId += 1;
   }
 
@@ -162,6 +163,7 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
     };
 
     let stateTimer = guest.stateTimer + deltaSeconds;
+    let money = guest.money;
     let currentRideId = guest.currentRideId;
     let targetRideId = guest.targetRideId;
     let path = guest.path;
@@ -253,8 +255,8 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
           tileX = ride.exit.x;
           tileY = ride.exit.y;
         }
-        if (guest.money >= ride.price) {
-          guest.money -= ride.price;
+        if (money >= ride.price) {
+          money -= ride.price;
           finance.money += ride.price;
           finance.dailyIncome += ride.price;
           ride.performance.revenueToday += ride.price;
@@ -281,6 +283,7 @@ export function updateGuests(state: CoasterGameState, deltaSeconds: number): Coa
     return {
       ...guest,
       needs,
+      money,
       tileX,
       tileY,
       progress,

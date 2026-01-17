@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { T, Var, useGT, useMessages } from 'gt-next';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,22 +33,28 @@ export default function StaffPanel({
   onCancelPatrol,
   onPatrolRadiusChange,
 }: StaffPanelProps) {
+  const gt = useGT();
+  const m = useMessages();
   const assignmentTarget = assignmentId ? staff.find((member) => member.id === assignmentId) : null;
 
   return (
     <div className="absolute top-20 right-6 z-50 w-80">
       <Card className="bg-card/95 border-border/70 shadow-xl">
-        <div className="flex items-start justify-between p-4 border-b border-border/60">
-          <div>
-            <div className="text-sm text-muted-foreground uppercase tracking-[0.2em]">Staff</div>
-            <div className="text-lg font-semibold">Park Staff</div>
+        <T>
+          <div className="flex items-start justify-between p-4 border-b border-border/60">
+            <div>
+              <div className="text-sm text-muted-foreground uppercase tracking-[0.2em]">Staff</div>
+              <div className="text-lg font-semibold">Park Staff</div>
+            </div>
+            <Button size="icon-sm" variant="ghost" onClick={onClose} aria-label={gt('Close staff panel')}>
+              ✕
+            </Button>
           </div>
-          <Button size="icon-sm" variant="ghost" onClick={onClose} aria-label="Close staff panel">
-            ✕
-          </Button>
-        </div>
+        </T>
         <div className="p-4 space-y-4 text-sm">
-          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hire Staff</div>
+          <T>
+            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hire Staff</div>
+          </T>
           <div className="grid grid-cols-2 gap-2">
             {STAFF_DEFINITIONS.map((definition) => (
               <Button
@@ -58,27 +65,35 @@ export default function StaffPanel({
                 onClick={() => onHire(definition.type)}
               >
                 <div>
-                  <div className="font-semibold">{definition.name}</div>
-                  <div className="text-[10px] text-muted-foreground">${definition.hiringFee} hire</div>
+                  <div className="font-semibold">{m(definition.name)}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {gt('${hiringFee} hire', { hiringFee: definition.hiringFee })}
+                  </div>
                 </div>
               </Button>
             ))}
           </div>
-          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Team</div>
+          <T>
+            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Team</div>
+          </T>
           {assignmentTarget && (
             <div className="rounded-md border border-border/60 bg-muted/40 p-2 text-xs space-y-2">
               <div className="flex items-center justify-between">
-                <span>
-                  Click a tile to set patrol area for <span className="font-semibold">{assignmentTarget.name}</span>.
-                </span>
+                <T>
+                  <span>
+                    Click a tile to set patrol area for <span className="font-semibold"><Var>{assignmentTarget.name}</Var></span>.
+                  </span>
+                </T>
                 <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={onCancelPatrol}>
-                  Cancel
+                  <T>Cancel</T>
                 </Button>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  Patrol Size
-                </span>
+                <T>
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    Patrol Size
+                  </span>
+                </T>
                 <div className="flex items-center gap-1">
                   {[3, 4, 6].map((radius) => (
                     <Button
@@ -88,7 +103,7 @@ export default function StaffPanel({
                       className="h-6 px-2 text-[10px]"
                       onClick={() => onPatrolRadiusChange(radius)}
                     >
-                      {radius * 2 + 1}x{radius * 2 + 1}
+                      {gt('{size}x{size}', { size: radius * 2 + 1 })}
                     </Button>
                   ))}
                 </div>
@@ -98,18 +113,20 @@ export default function StaffPanel({
           <ScrollArea className="h-48 rounded-md border border-border/50">
             <div className="p-3 space-y-2">
               {staff.length === 0 && (
-                <div className="text-xs text-muted-foreground">No staff hired yet.</div>
+                <T>
+                  <div className="text-xs text-muted-foreground">No staff hired yet.</div>
+                </T>
               )}
               {staff.map((member) => (
                 <div key={member.id} className="flex items-start justify-between gap-2 text-sm">
                   <div>
                     <div className="font-medium">{member.name}</div>
                     <div className="text-xs text-muted-foreground capitalize">
-                      {member.type} · {member.patrolArea ? 'Patrol area' : 'Park-wide'}
+                      {member.type} · {member.patrolArea ? gt('Patrol area') : gt('Park-wide')}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
-                    <div>${member.wage}/wk</div>
+                    <div>{gt('${wage}/wk', { wage: member.wage })}</div>
                     <div className="flex items-center gap-1">
                       <Button
                         size="sm"
@@ -117,7 +134,7 @@ export default function StaffPanel({
                         className="h-6 px-2 text-[10px]"
                         onClick={() => onStartPatrol(member.id)}
                       >
-                        {assignmentId === member.id ? 'Click Map' : 'Assign'}
+                        {assignmentId === member.id ? gt('Click Map') : gt('Assign')}
                       </Button>
                       {member.patrolArea && (
                         <Button
@@ -126,7 +143,7 @@ export default function StaffPanel({
                           className="h-6 px-2 text-[10px]"
                           onClick={() => onClearPatrol(member.id)}
                         >
-                          Clear
+                          <T>Clear</T>
                         </Button>
                       )}
                     </div>

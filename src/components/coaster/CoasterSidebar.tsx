@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { msg, useMessages } from 'gt-next';
+import { T, msg, useGT, useMessages } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { COASTER_TOOL_INFO, CoasterTool } from '@/games/coaster/types';
 import { Button } from '@/components/ui/button';
@@ -18,10 +18,18 @@ const CATEGORY_LABELS: Record<string, unknown> = {
   staff: msg('Staff'),
 };
 
+const PANEL_ITEMS = [
+  { panel: 'finances' as const, icon: <Coins className="w-4 h-4" />, label: msg('Finances') },
+  { panel: 'rides' as const, icon: <Ticket className="w-4 h-4" />, label: msg('Rides') },
+  { panel: 'guests' as const, icon: <Users className="w-4 h-4" />, label: msg('Guests') },
+  { panel: 'settings' as const, icon: <Settings className="w-4 h-4" />, label: msg('Settings') },
+];
+
 export function CoasterSidebar() {
   const { state, setTool, setActivePanel } = useCoaster();
   const { selectedTool, finance, activePanel } = state;
   const m = useMessages();
+  const gt = useGT();
 
   const categories = useMemo(
     () => [
@@ -50,7 +58,9 @@ export function CoasterSidebar() {
   return (
     <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-screen fixed left-0 top-0 z-40">
       <div className="px-4 py-4 border-b border-sidebar-border">
-        <div className="text-sidebar-foreground font-bold tracking-tight">COASTER PARK</div>
+        <T>
+          <div className="text-sidebar-foreground font-bold tracking-tight">COASTER PARK</div>
+        </T>
       </div>
 
       <ScrollArea className="flex-1 py-2">
@@ -74,7 +84,7 @@ export function CoasterSidebar() {
                     className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm ${
                       isSelected ? 'bg-primary text-primary-foreground' : ''
                     }`}
-                    title={`${m(info.description)}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
+                    title={info.cost > 0 ? gt('{description} - Cost: ${cost}', { description: m(info.description), cost: info.cost }) : m(info.description)}
                   >
                     <span className="flex-1 text-left truncate">{m(info.name)}</span>
                     {info.cost > 0 && (
@@ -90,19 +100,14 @@ export function CoasterSidebar() {
 
       <div className="border-t border-sidebar-border p-2">
         <div className="grid grid-cols-4 gap-1">
-          {[
-            { panel: 'finances' as const, icon: <Coins className="w-4 h-4" />, label: 'Finances' },
-            { panel: 'rides' as const, icon: <Ticket className="w-4 h-4" />, label: 'Rides' },
-            { panel: 'guests' as const, icon: <Users className="w-4 h-4" />, label: 'Guests' },
-            { panel: 'settings' as const, icon: <Settings className="w-4 h-4" />, label: 'Settings' },
-          ].map(({ panel, icon, label }) => (
+          {PANEL_ITEMS.map(({ panel, icon, label }) => (
             <Button
               key={panel}
               onClick={() => setActivePanel(activePanel === panel ? 'none' : panel)}
               variant={activePanel === panel ? 'default' : 'ghost'}
               size="icon-sm"
               className="w-full"
-              title={label}
+              title={m(label)}
             >
               {icon}
             </Button>

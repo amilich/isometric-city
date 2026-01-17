@@ -1,9 +1,14 @@
 import type { Metadata } from 'next';
+import { getGT } from 'gt-next/server';
 
-export const metadata: Metadata = {
-  title: 'Coaster Park — Tycoon Builder',
-  description: 'Build thrilling roller coasters, manage guests, and run your own theme park.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const gt = await getGT();
+
+  return {
+    title: gt('Coaster Park — Tycoon Builder'),
+    description: gt('Build thrilling roller coasters, manage guests, and run your own theme park.'),
+  };
+}
 
 export default function CoasterLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

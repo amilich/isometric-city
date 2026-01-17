@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -496,11 +495,14 @@ export function CoasterCanvasGrid({
   useEffect(() => {
     if (!navigationTarget) return;
     const { screenX, screenY } = gridToScreen(navigationTarget.x, navigationTarget.y, 0, 0);
-    setOffset({
-      x: canvasSize.width / 2 - screenX,
-      y: canvasSize.height / 2 - screenY,
+    // Using requestAnimationFrame to avoid synchronous setState in effect
+    requestAnimationFrame(() => {
+      setOffset({
+        x: canvasSize.width / 2 - screenX,
+        y: canvasSize.height / 2 - screenY,
+      });
+      onNavigationComplete?.();
     });
-    onNavigationComplete?.();
   }, [canvasSize.height, canvasSize.width, navigationTarget, onNavigationComplete]);
 
   const handleMouseMove = useCallback(

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { T } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { CoasterGrid } from './CoasterGrid';
@@ -26,7 +27,7 @@ export default function CoasterGame({ onExit }: GameProps) {
   if (!isStateReady) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-950 via-indigo-900 to-purple-950">
-        <div className="text-white/60">Loading park...</div>
+        <T><div className="text-white/60">Loading park...</div></T>
       </div>
     );
   }

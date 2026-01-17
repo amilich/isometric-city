@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useCoaster } from '@/context/CoasterContext';
 import { CardinalDirection, gridToScreen, isInGrid, screenToGrid } from '@/core/types';
 import { TILE_HEIGHT, TILE_WIDTH } from '@/components/game/types';
+import { GuestItem } from '@/games/coaster/types';
 import { getStaffPatrolColor, STAFF_TYPE_COLORS } from '@/lib/coasterStaff';
 
 const ZOOM_MIN = 0.45;
@@ -272,6 +273,88 @@ function drawGuest(
   ctx.fill();
 }
 
+function drawGuestItem(
+  ctx: CanvasRenderingContext2D,
+  screenX: number,
+  screenY: number,
+  size: number,
+  item: GuestItem
+) {
+  const itemSize = Math.max(5, size * 2.6);
+  const baseY = screenY - size * 2.3;
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = Math.max(1, itemSize * 0.12);
+  switch (item) {
+    case 'balloon': {
+      ctx.strokeStyle = '#fcd34d';
+      ctx.lineWidth = Math.max(1, itemSize * 0.12);
+      ctx.beginPath();
+      ctx.moveTo(screenX, screenY - size * 0.2);
+      ctx.lineTo(screenX, baseY);
+      ctx.stroke();
+      ctx.fillStyle = '#f472b6';
+      ctx.beginPath();
+      ctx.arc(screenX, baseY - itemSize * 0.6, itemSize * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#0f172a';
+      ctx.stroke();
+      break;
+    }
+    case 'hat': {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(screenX - itemSize * 0.7, baseY - itemSize * 0.3, itemSize * 1.4, itemSize * 0.4);
+      ctx.fillRect(screenX - itemSize * 0.45, baseY - itemSize * 0.8, itemSize * 0.9, itemSize * 0.4);
+      ctx.strokeRect(screenX - itemSize * 0.7, baseY - itemSize * 0.3, itemSize * 1.4, itemSize * 0.4);
+      break;
+    }
+    case 'map': {
+      ctx.fillStyle = '#fde68a';
+      ctx.fillRect(screenX - itemSize * 0.7, baseY - itemSize * 0.35, itemSize * 1.4, itemSize * 0.7);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = Math.max(1, itemSize * 0.12);
+      ctx.beginPath();
+      ctx.moveTo(screenX, baseY - itemSize * 0.35);
+      ctx.lineTo(screenX, baseY + itemSize * 0.35);
+      ctx.stroke();
+      ctx.strokeStyle = '#0f172a';
+      ctx.strokeRect(screenX - itemSize * 0.7, baseY - itemSize * 0.35, itemSize * 1.4, itemSize * 0.7);
+      break;
+    }
+    case 'drink': {
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(screenX - itemSize * 0.3, baseY - itemSize * 0.4, itemSize * 0.6, itemSize * 0.9);
+      ctx.fillStyle = '#0ea5e9';
+      ctx.fillRect(screenX - itemSize * 0.25, baseY - itemSize * 0.7, itemSize * 0.5, itemSize * 0.3);
+      ctx.strokeRect(screenX - itemSize * 0.3, baseY - itemSize * 0.4, itemSize * 0.6, itemSize * 0.9);
+      break;
+    }
+    case 'souvenir': {
+      ctx.fillStyle = '#a855f7';
+      ctx.beginPath();
+      ctx.moveTo(screenX, baseY - itemSize * 0.6);
+      ctx.lineTo(screenX + itemSize * 0.6, baseY);
+      ctx.lineTo(screenX, baseY + itemSize * 0.6);
+      ctx.lineTo(screenX - itemSize * 0.6, baseY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'food':
+    default: {
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.arc(screenX, baseY, itemSize * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      break;
+    }
+  }
+  ctx.restore();
+}
+
 function drawStaff(
   ctx: CanvasRenderingContext2D,
   screenX: number,
@@ -499,6 +582,9 @@ export default function CoasterCanvas({
       const centerX = baseX + tileWidth / 2;
       const centerY = baseY + tileHeight / 2 - tileHeight * 0.12;
       drawGuest(ctx, centerX, centerY, tileWidth * 0.08, guest.colors.shirt);
+      if (guest.hasItem) {
+        drawGuestItem(ctx, centerX, centerY, tileWidth * 0.08, guest.hasItem);
+      }
     });
     staff.forEach((member) => {
       const vector = GUEST_VECTORS[member.direction];

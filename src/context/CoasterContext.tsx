@@ -101,6 +101,7 @@ const createInitialState = (): CoasterGameState => {
     lastRideId: 0,
     lastGuestId: 0,
     lastStaffId: 0,
+    guestSpawnTimer: 0,
   };
 };
 
@@ -119,7 +120,11 @@ const loadGameState = (): CoasterGameState | null => {
     }
     const parsed = JSON.parse(jsonString) as CoasterGameState;
     if (!parsed.grid || !parsed.gridSize) return null;
-    return parsed;
+    return {
+      ...parsed,
+      parkEntrance: parsed.parkEntrance ?? { x: Math.floor(parsed.gridSize / 2), y: parsed.gridSize - 4 },
+      guestSpawnTimer: parsed.guestSpawnTimer ?? 0,
+    };
   } catch {
     return null;
   }

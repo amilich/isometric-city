@@ -59,6 +59,8 @@ const SCENERY_COLORS: Record<string, string> = {
   flower_bed: '#f43f5e',
 };
 
+const GUEST_COLORS = ['#ffe4c4', '#f9c9a8', '#f4b183', '#d4a373', '#b08968', '#9c6644', '#7f5539', '#e5e7eb'];
+
 type Viewport = {
   offset: { x: number; y: number };
   zoom: number;
@@ -81,7 +83,7 @@ export function CoasterCanvasGrid({
   onViewportChange,
 }: CoasterCanvasGridProps) {
   const { state, placeAtTile } = useCoaster();
-  const { grid, gridSize, selectedTool, coasterTrains } = state;
+  const { grid, gridSize, selectedTool, coasterTrains, guests } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
@@ -188,6 +190,38 @@ export function CoasterCanvasGrid({
     [coasterTrains, drawTrainCar]
   );
 
+  const drawGuests = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      guests.forEach((guest) => {
+        if (guest.state === 'riding') return;
+        const startScreen = gridToScreen(guest.tileX, guest.tileY, offset.x, offset.y);
+        const startX = startScreen.screenX + TILE_WIDTH / 2;
+        const startY = startScreen.screenY + TILE_HEIGHT / 2;
+        let endX = startX;
+        let endY = startY;
+
+        const nextTile = guest.path[guest.pathIndex + 1];
+        if (nextTile) {
+          const endScreen = gridToScreen(nextTile.x, nextTile.y, offset.x, offset.y);
+          endX = endScreen.screenX + TILE_WIDTH / 2;
+          endY = endScreen.screenY + TILE_HEIGHT / 2;
+        }
+
+        const x = startX + (endX - startX) * guest.progress;
+        const y = startY + (endY - startY) * guest.progress;
+
+        ctx.fillStyle = GUEST_COLORS[guest.spriteVariant % GUEST_COLORS.length];
+        ctx.beginPath();
+        ctx.arc(x, y - 2, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#1f2937';
+        ctx.fillRect(x - 1, y, 2, 3);
+      });
+    },
+    [guests, offset.x, offset.y]
+  );
+
   const drawRides = useCallback(
     (ctx: CanvasRenderingContext2D, tile: CoasterTile, screenX: number, screenY: number) => {
       if (!tile.rideId || !tile.rideType) return;
@@ -247,6 +281,7 @@ export function CoasterCanvasGrid({
     }
 
     drawTrains(ctx);
+    drawGuests(ctx);
 
     if (hoveredTile) {
       const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, offset.x, offset.y);
@@ -273,7 +308,7 @@ export function CoasterCanvasGrid({
       ctx.closePath();
       ctx.stroke();
     }
-  }, [drawInsetDiamond, drawRides, drawScenery, drawTrains, grid, gridSize, hoveredTile, offset.x, offset.y, selectedTile, zoom]);
+  }, [drawGuests, drawInsetDiamond, drawRides, drawScenery, drawTrains, grid, gridSize, hoveredTile, offset.x, offset.y, selectedTile, zoom]);
 
   useEffect(() => {
     drawGrid();

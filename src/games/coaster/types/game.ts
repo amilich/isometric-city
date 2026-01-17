@@ -104,4 +104,5 @@ export interface CoasterGameState {
   lastRideId: number;
   lastGuestId: number;
   lastStaffId: number;
+  guestSpawnTimer: number;
 }

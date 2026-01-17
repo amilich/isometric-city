@@ -39,5 +39,6 @@ export interface Guest {
   targetRideId: string | null;
   queueTile: { x: number; y: number } | null;
   lastDecisionTime: number;
+  stateTimer: number;
   spriteVariant: number;
 }

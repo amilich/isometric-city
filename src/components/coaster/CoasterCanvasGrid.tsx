@@ -212,7 +212,7 @@ export function CoasterCanvasGrid({
         ctx.strokeStyle = '#1f2937';
         ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.roundRect(-5, -3, 10, 6, 2);
+        ctx.roundRect(-6, -3.5, 12, 7, 2.4);
         ctx.fill();
         ctx.stroke();
         ctx.restore();

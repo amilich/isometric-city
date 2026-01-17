@@ -114,9 +114,9 @@ export const COASTER_STALL_SPRITES: Record<string, SpriteConfig> = {
 
 export const COASTER_TRAIN_SPRITE: SpriteConfig = {
   src: '/assets/coaster/coaster_train_car.png',
-  scale: 0.5,
+  scale: 0.7,
   offsetX: 0,
-  offsetY: -0.2,
+  offsetY: -0.25,
 };
 
 export const COASTER_ENTRANCE_SPRITE: SpriteConfig = {

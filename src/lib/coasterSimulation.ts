@@ -349,13 +349,27 @@ function updateGuestMovement(guest: Guest, state: CoasterParkState): Guest {
   if (guest.state === 'on_ride') {
     const nextTimer = guest.stateTimer - 1;
     if (nextTimer <= 0) {
-      const exitOptions = (Object.keys(DIRECTION_VECTORS) as CardinalDirection[])
+      const ride = guest.currentRideId
+        ? state.rides.find((item) => item.id === guest.currentRideId)
+        : null;
+      const exitAnchor = ride?.exit ?? { x: guest.tileX, y: guest.tileY };
+      const exitOptions = [
+        exitAnchor,
+        ...((Object.keys(DIRECTION_VECTORS) as CardinalDirection[]).map((direction) => {
+          const delta = DIRECTION_VECTORS[direction];
+          return { x: exitAnchor.x + delta.dx, y: exitAnchor.y + delta.dy };
+        })),
+      ].filter((pos) => grid[pos.y]?.[pos.x]?.path);
+      const fallbackOptions = (Object.keys(DIRECTION_VECTORS) as CardinalDirection[])
         .map((direction) => {
           const delta = DIRECTION_VECTORS[direction];
           return { x: guest.tileX + delta.dx, y: guest.tileY + delta.dy };
         })
         .filter((pos) => grid[pos.y]?.[pos.x]?.path);
-      const exitTile = exitOptions.length > 0 ? exitOptions[Math.floor(Math.random() * exitOptions.length)] : { x: guest.tileX, y: guest.tileY };
+      const availableExits = exitOptions.length > 0 ? exitOptions : fallbackOptions;
+      const exitTile = availableExits.length > 0
+        ? availableExits[Math.floor(Math.random() * availableExits.length)]
+        : { x: guest.tileX, y: guest.tileY };
       return {
         ...guest,
         state: 'wandering',

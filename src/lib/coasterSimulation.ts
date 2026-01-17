@@ -1370,6 +1370,7 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
     nextGuests = nextGuests.map((guest) => {
       if (guest.state !== 'wandering' || guest.targetRideId || guest.targetShop) return guest;
       const rideOptions = availableRides.filter((ride) => {
+        if (ride.price > guest.money) return false;
         const capacity = queueCapacityByRide.get(ride.id) ?? ride.queue.maxLength;
         return (queueCounts.get(ride.id) ?? 0) < capacity;
       });
@@ -1418,12 +1419,30 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   });
   const guestUpdates = new Map<number, Partial<Guest>>();
   queueMap.forEach((queueGuests, rideId) => {
-    queueGuests.sort((a, b) => (a.queueJoinTick ?? 0) - (b.queueJoinTick ?? 0));
+    const ride = state.rides.find((item) => item.id === rideId);
+    let filteredGuests = queueGuests;
+    if (ride) {
+      const affordableGuests = queueGuests.filter((guest) => guest.money >= ride.price);
+      if (affordableGuests.length !== queueGuests.length) {
+        queueGuests.forEach((guest) => {
+          if (guest.money >= ride.price) return;
+          guestUpdates.set(guest.id, {
+            state: 'wandering',
+            targetRideId: null,
+            queueJoinTick: null,
+            path: [],
+            pathIndex: 0,
+          });
+        });
+        filteredGuests = affordableGuests;
+      }
+    }
+    filteredGuests.sort((a, b) => (a.queueJoinTick ?? 0) - (b.queueJoinTick ?? 0));
     const maxLength = queueCapacityByRide.get(rideId)
       ?? state.rides.find((ride) => ride.id === rideId)?.queue.maxLength
       ?? DEFAULT_QUEUE_LENGTH;
-    if (queueGuests.length > maxLength) {
-      const overflow = queueGuests.slice(maxLength);
+    if (filteredGuests.length > maxLength) {
+      const overflow = filteredGuests.slice(maxLength);
       overflow.forEach((guest) => {
         guestUpdates.set(guest.id, {
           state: 'wandering',
@@ -1433,9 +1452,9 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
           pathIndex: 0,
         });
       });
-      queueMap.set(rideId, queueGuests.slice(0, maxLength));
+      queueMap.set(rideId, filteredGuests.slice(0, maxLength));
     } else {
-      queueMap.set(rideId, queueGuests);
+      queueMap.set(rideId, filteredGuests);
     }
   });
 

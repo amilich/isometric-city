@@ -112,7 +112,7 @@ export default function RidePanel({ ride, onClose, onToggleStatus, onPriceChange
             <Slider
               value={[price]}
               min={0}
-              max={10}
+              max={25}
               step={1}
               onValueChange={(value) => setPrice(value[0])}
               onValueCommit={(value) => onPriceChange(value[0])}

@@ -670,7 +670,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
   }, []);
 
   const setRidePrice = useCallback((rideId: string, price: number) => {
-    const clampedPrice = Math.max(0, Math.min(10, Math.round(price)));
+    const clampedPrice = Math.max(0, Math.min(25, Math.round(price)));
     setState((prev) => ({
       ...prev,
       rides: prev.rides.map((ride) =>

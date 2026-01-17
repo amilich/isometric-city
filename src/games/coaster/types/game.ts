@@ -84,6 +84,7 @@ export interface CoasterGameState {
   parkName: string;
   grid: CoasterTile[][];
   gridSize: number;
+  parkEntrance: { x: number; y: number };
   year: number;
   month: number;
   day: number;

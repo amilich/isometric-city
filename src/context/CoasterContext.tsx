@@ -1,7 +1,8 @@
 // CoasterContext for Rollercoaster Tycoon-style game
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react';
+import { useGT } from 'gt-next';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 import {
   CoasterParkState,
@@ -180,6 +181,8 @@ function saveSavedParks(parks: SavedParkMeta[]): void {
 }
 
 export function CoasterProvider({ children, startFresh = false }: { children: React.ReactNode; startFresh?: boolean }) {
+  const gt = useGT();
+  const defaultParkName = useMemo(() => gt('Coaster Park'), [gt]);
   const [state, setState] = useState<CoasterParkState>(() =>
     createInitialCoasterState(DEFAULT_COASTER_GRID_SIZE, 'Coaster Park')
   );
@@ -727,10 +730,10 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
   }, []);
 
   const newGame = useCallback((name?: string, size?: number) => {
-    const fresh = createInitialCoasterState(size ?? DEFAULT_COASTER_GRID_SIZE, name ?? 'Coaster Park');
+    const fresh = createInitialCoasterState(size ?? DEFAULT_COASTER_GRID_SIZE, name ?? defaultParkName);
     skipNextSaveRef.current = true;
     setState(fresh);
-  }, []);
+  }, [defaultParkName]);
 
   const loadState = useCallback((stateString: string) => {
     try {

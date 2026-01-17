@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { T, Currency, useGT } from 'gt-next';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -34,34 +35,42 @@ export default function FinancePanel({
   onEntranceFeeChange,
   onClose,
 }: FinancePanelProps) {
+  const gt = useGT();
+
   return (
     <div className="absolute top-20 right-6 z-50 w-72">
       <Card className="bg-card/95 border-border/70 shadow-xl">
         <div className="flex items-start justify-between p-4 border-b border-border/60">
           <div>
-            <div className="text-sm text-muted-foreground uppercase tracking-[0.2em]">Finance</div>
-            <div className="text-lg font-semibold">Park Ledger</div>
+            <T><div className="text-sm text-muted-foreground uppercase tracking-[0.2em]">Finance</div></T>
+            <T><div className="text-lg font-semibold">Park Ledger</div></T>
           </div>
-          <Button size="icon-sm" variant="ghost" onClick={onClose} aria-label="Close finance panel">
+          <Button size="icon-sm" variant="ghost" onClick={onClose} aria-label={gt('Close finance panel')}>
             ✕
           </Button>
         </div>
         <div className="p-4 space-y-4 text-sm">
-          <div className="flex items-center justify-between">
-            <span>Cash on Hand</span>
-            <span className="font-semibold">${cash.toLocaleString()}</span>
-          </div>
-          <div className="space-y-2">
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Income</div>
+          <T>
             <div className="flex items-center justify-between">
-              <span>Admissions</span>
-              <span>${entranceRevenue.toLocaleString()}</span>
+              <span>Cash on Hand</span>
+              <span className="font-semibold"><Currency currency="USD">{cash}</Currency></span>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Entrance Fee</span>
-                <span>${entranceFee}</span>
+          </T>
+          <div className="space-y-2">
+            <T><div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Income</div></T>
+            <T>
+              <div className="flex items-center justify-between">
+                <span>Admissions</span>
+                <span><Currency currency="USD">{entranceRevenue}</Currency></span>
               </div>
+            </T>
+            <div className="space-y-1">
+              <T>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Entrance Fee</span>
+                  <span><Currency currency="USD">{entranceFee}</Currency></span>
+                </div>
+              </T>
               <Slider
                 value={[entranceFee]}
                 min={0}
@@ -70,38 +79,52 @@ export default function FinancePanel({
                 onValueChange={(value) => onEntranceFeeChange(value[0])}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <span>Ride Tickets</span>
-              <span>${rideRevenue.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Shops & Stalls</span>
-              <span>${shopRevenue.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between font-semibold">
-              <span>Total Income</span>
-              <span>${income.toLocaleString()}</span>
-            </div>
+            <T>
+              <div className="flex items-center justify-between">
+                <span>Ride Tickets</span>
+                <span><Currency currency="USD">{rideRevenue}</Currency></span>
+              </div>
+            </T>
+            <T>
+              <div className="flex items-center justify-between">
+                <span>Shops & Stalls</span>
+                <span><Currency currency="USD">{shopRevenue}</Currency></span>
+              </div>
+            </T>
+            <T>
+              <div className="flex items-center justify-between font-semibold">
+                <span>Total Income</span>
+                <span><Currency currency="USD">{income}</Currency></span>
+              </div>
+            </T>
           </div>
           <div className="space-y-2">
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Expenses</div>
-            <div className="flex items-center justify-between">
-              <span>Staff Wages</span>
-              <span>${staffCost.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Maintenance</span>
-              <span>${maintenanceCost.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between font-semibold">
-              <span>Total Expenses</span>
-              <span>${expenses.toLocaleString()}</span>
-            </div>
+            <T><div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Expenses</div></T>
+            <T>
+              <div className="flex items-center justify-between">
+                <span>Staff Wages</span>
+                <span><Currency currency="USD">{staffCost}</Currency></span>
+              </div>
+            </T>
+            <T>
+              <div className="flex items-center justify-between">
+                <span>Maintenance</span>
+                <span><Currency currency="USD">{maintenanceCost}</Currency></span>
+              </div>
+            </T>
+            <T>
+              <div className="flex items-center justify-between font-semibold">
+                <span>Total Expenses</span>
+                <span><Currency currency="USD">{expenses}</Currency></span>
+              </div>
+            </T>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Outstanding Loan</span>
-            <span>${loan.toLocaleString()}</span>
-          </div>
+          <T>
+            <div className="flex items-center justify-between">
+              <span>Outstanding Loan</span>
+              <span><Currency currency="USD">{loan}</Currency></span>
+            </div>
+          </T>
         </div>
       </Card>
     </div>

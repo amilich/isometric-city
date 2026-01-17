@@ -3,6 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
 import { Card } from '@/components/ui/card';
+import { T } from 'gt-next';
 
 // =============================================================================
 // CONSTANTS
@@ -150,9 +151,11 @@ export function MiniMap({ onNavigate, viewport }: MiniMapProps) {
   
   return (
     <Card className="fixed bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70 z-50">
-      <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
-        Minimap
-      </div>
+      <T>
+        <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
+          Minimap
+        </div>
+      </T>
       <canvas
         ref={canvasRef}
         width={140}
@@ -163,24 +166,26 @@ export function MiniMap({ onNavigate, viewport }: MiniMapProps) {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       />
-      <div className="mt-2 grid grid-cols-4 gap-1 text-[8px]">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-gray-400 rounded-sm" />
-          <span className="text-muted-foreground">Path</span>
+      <T>
+        <div className="mt-2 grid grid-cols-4 gap-1 text-[8px]">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-gray-400 rounded-sm" />
+            <span className="text-muted-foreground">Path</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-pink-500 rounded-sm" />
+            <span className="text-muted-foreground">Ride</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-orange-500 rounded-sm" />
+            <span className="text-muted-foreground">Food</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-cyan-500 rounded-sm" />
+            <span className="text-muted-foreground">Water</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-pink-500 rounded-sm" />
-          <span className="text-muted-foreground">Ride</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-orange-500 rounded-sm" />
-          <span className="text-muted-foreground">Food</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-cyan-500 rounded-sm" />
-          <span className="text-muted-foreground">Water</span>
-        </div>
-      </div>
+      </T>
     </Card>
   );
 }

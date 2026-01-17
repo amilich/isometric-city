@@ -4,21 +4,3 @@ module.exports = {
     autoprefixer: {},
   },
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

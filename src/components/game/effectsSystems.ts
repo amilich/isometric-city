@@ -227,6 +227,7 @@ export function useEffectsSystems(
     const updatedFireworks: Firework[] = [];
     
     for (const firework of fireworksRef.current) {
+      // eslint-disable-next-line react-hooks/immutability -- intentional mutation for game animation performance
       firework.age += delta;
       
       switch (firework.state) {
@@ -499,6 +500,7 @@ export function useEffectsSystems(
         : SMOG_SPAWN_INTERVAL_MEDIUM;
       const spawnInterval = baseSpawnInterval * spawnMultiplier;
       
+      // eslint-disable-next-line react-hooks/immutability -- intentional mutation for game animation performance
       smog.spawnTimer += adjustedDelta;
       
       // Spawn new particles (only if below particle limit)

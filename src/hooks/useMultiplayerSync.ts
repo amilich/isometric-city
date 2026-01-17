@@ -93,6 +93,7 @@ export function useMultiplayerSync() {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- multiplayer object reference is stable
   }, [multiplayer?.initialState, game]);
 
   // Apply a remote action to the local game state

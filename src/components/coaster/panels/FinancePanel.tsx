@@ -16,6 +16,7 @@ interface FinancePanelProps {
   staffCost: number;
   maintenanceCost: number;
   loan: number;
+  onLoanChange: (amount: number, action: 'take' | 'repay') => void;
   onEntranceFeeChange: (fee: number) => void;
   onClose: () => void;
 }
@@ -31,9 +32,16 @@ export default function FinancePanel({
   staffCost,
   maintenanceCost,
   loan,
+  onLoanChange,
   onEntranceFeeChange,
   onClose,
 }: FinancePanelProps) {
+  const [loanAmount, setLoanAmount] = React.useState(2000);
+
+  const handleLoanAmountChange = (value: number) => {
+    setLoanAmount(value);
+  };
+
   return (
     <div className="absolute top-20 right-6 z-50 w-72">
       <Card className="bg-card/95 border-border/70 shadow-xl">
@@ -101,6 +109,38 @@ export default function FinancePanel({
           <div className="flex items-center justify-between">
             <span>Outstanding Loan</span>
             <span>${loan.toLocaleString()}</span>
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Loans</div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Loan Amount</span>
+              <span>${loanAmount}</span>
+            </div>
+            <Slider
+              value={[loanAmount]}
+              min={500}
+              max={10000}
+              step={500}
+              onValueChange={(value) => handleLoanAmountChange(value[0])}
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={() => onLoanChange(loanAmount, 'take')}
+              >
+                Take Loan
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                disabled={loan === 0}
+                onClick={() => onLoanChange(loanAmount, 'repay')}
+              >
+                Repay
+              </Button>
+            </div>
           </div>
         </div>
       </Card>

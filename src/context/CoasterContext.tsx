@@ -112,6 +112,8 @@ type CoasterContextValue = {
   clearStaffPatrolArea: (staffId: number) => void;
   setEntranceFee: (fee: number) => void;
   setParkName: (name: string) => void;
+  takeLoan: (amount: number) => void;
+  repayLoan: (amount: number) => void;
   newGame: (name?: string, size?: number) => void;
   loadState: (stateString: string) => boolean;
   exportState: () => string;
@@ -736,6 +738,36 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
     }));
   }, []);
 
+  const takeLoan = useCallback((amount: number) => {
+    const nextAmount = Math.max(0, Math.round(amount));
+    if (nextAmount <= 0) return;
+    setState((prev) => ({
+      ...prev,
+      finance: {
+        ...prev.finance,
+        cash: prev.finance.cash + nextAmount,
+        loan: prev.finance.loan + nextAmount,
+      },
+    }));
+  }, []);
+
+  const repayLoan = useCallback((amount: number) => {
+    const nextAmount = Math.max(0, Math.round(amount));
+    if (nextAmount <= 0) return;
+    setState((prev) => {
+      const payment = Math.min(nextAmount, prev.finance.loan, prev.finance.cash);
+      if (payment <= 0) return prev;
+      return {
+        ...prev,
+        finance: {
+          ...prev.finance,
+          cash: prev.finance.cash - payment,
+          loan: prev.finance.loan - payment,
+        },
+      };
+    });
+  }, []);
+
   const newGame = useCallback((name?: string, size?: number) => {
     const fresh = createInitialCoasterState(size ?? DEFAULT_COASTER_GRID_SIZE, name ?? 'Coaster Park');
     skipNextSaveRef.current = true;
@@ -843,6 +875,8 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
     clearStaffPatrolArea,
     setEntranceFee,
     setParkName,
+    takeLoan,
+    repayLoan,
     newGame,
     loadState,
     exportState,

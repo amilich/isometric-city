@@ -26,6 +26,8 @@ export default function CoasterGame() {
     clearStaffPatrolArea,
     setEntranceFee,
     setParkName,
+    takeLoan,
+    repayLoan,
   } = useCoaster();
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null>(null);
@@ -122,6 +124,13 @@ export default function CoasterGame() {
               staffCost={state.finance.staffCost}
               maintenanceCost={state.finance.maintenanceCost}
               loan={state.finance.loan}
+              onLoanChange={(amount, action) => {
+                if (action === 'take') {
+                  takeLoan(amount);
+                } else {
+                  repayLoan(amount);
+                }
+              }}
               onEntranceFeeChange={setEntranceFee}
               onClose={handleClosePanel}
             />

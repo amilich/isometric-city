@@ -86,6 +86,7 @@ const QUEUE_PATIENCE_MEDIUM_PENALTY = 0.35;
 const QUEUE_PATIENCE_HIGH_PENALTY = 0.5;
 const QUEUE_THOUGHT_TICKS = 10;
 const WEATHER_CHANGE_HOURS = 2;
+const LOAN_INTEREST_HOUR = 6;
 
 function createGuest(id: number, tileX: number, tileY: number, entranceFee: number): Guest {
   const colors = ['#60a5fa', '#f87171', '#facc15', '#34d399', '#a78bfa'];
@@ -1240,6 +1241,7 @@ export function createInitialCoasterState(
 export function simulateCoasterTick(state: CoasterParkState): CoasterParkState {
   const nextTick = state.tick + 1;
   let { hour, day, month, year, weather } = state;
+  let finance = state.finance;
 
   if (nextTick % 60 === 0) {
     hour = (hour + 1) % 24;
@@ -1257,6 +1259,14 @@ export function simulateCoasterTick(state: CoasterParkState): CoasterParkState {
     if (hour % WEATHER_CHANGE_HOURS === 0) {
       weather = getNextWeather(weather);
     }
+    if (hour === LOAN_INTEREST_HOUR && finance.loan > 0) {
+      const interest = Math.round(finance.loan * finance.loanInterestRate);
+      finance = {
+        ...finance,
+        cash: finance.cash - interest,
+        expenses: finance.expenses + interest,
+      };
+    }
   }
 
   const nextState: CoasterParkState = {
@@ -1267,6 +1277,7 @@ export function simulateCoasterTick(state: CoasterParkState): CoasterParkState {
     month,
     year,
     weather,
+    finance,
   };
 
   const withStaff = updateStaff(nextState);

@@ -51,6 +51,8 @@ export function createGuest(entranceX: number, entranceY: number): Guest {
     // State
     state: 'entering' as GuestState,
     lastState: 'entering' as GuestState,
+    targetBuildingId: null,
+    targetBuildingKind: null,
     targetTileX: entranceX,
     targetTileY: entranceY + 1,
     path: [],
@@ -222,40 +224,58 @@ export function findPath(
 }
 
 function isRideBuilding(type: string): boolean {
-  return type.startsWith('ride_') || type.startsWith('show_');
+  return type.startsWith('ride_') || type.startsWith('show_') || type.startsWith('station_');
 }
 
-function findRideDestination(
+function isFoodBuilding(type: string): boolean {
+  return type.startsWith('food_') || type.startsWith('drink_') || type.startsWith('snack_') || type.startsWith('cart_');
+}
+
+function isShopBuilding(type: string): boolean {
+  return (
+    type.startsWith('shop_') ||
+    type.startsWith('game_') ||
+    type === 'arcade_building' ||
+    type === 'vr_experience' ||
+    type === 'photo_booth' ||
+    type === 'caricature' ||
+    type === 'face_paint'
+  );
+}
+
+function findBuildingDestination(
   grid: Tile[][],
-  guest: Guest
-): { path: { x: number; y: number }[]; rideId: string } | null {
+  guest: Guest,
+  predicate: (type: string) => boolean,
+  preferQueue: boolean
+): { path: { x: number; y: number }[]; buildingId: string } | null {
   const gridSize = grid.length;
-  const rideTiles: { x: number; y: number; id: string }[] = [];
+  const buildingTiles: { x: number; y: number; id: string }[] = [];
   
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
       const buildingType = grid[y][x].building?.type;
-      if (buildingType && isRideBuilding(buildingType)) {
-        rideTiles.push({ x, y, id: `${x},${y}` });
+      if (buildingType && predicate(buildingType)) {
+        buildingTiles.push({ x, y, id: `${x},${y}` });
       }
     }
   }
   
-  if (rideTiles.length === 0) return null;
+  if (buildingTiles.length === 0) return null;
   
-  const attempts = Math.min(6, rideTiles.length);
+  const attempts = Math.min(6, buildingTiles.length);
   for (let i = 0; i < attempts; i++) {
-    const ride = rideTiles[Math.floor(Math.random() * rideTiles.length)];
+    const building = buildingTiles[Math.floor(Math.random() * buildingTiles.length)];
     const neighbors = [
-      { x: ride.x + 1, y: ride.y },
-      { x: ride.x - 1, y: ride.y },
-      { x: ride.x, y: ride.y + 1 },
-      { x: ride.x, y: ride.y - 1 },
+      { x: building.x + 1, y: building.y },
+      { x: building.x - 1, y: building.y },
+      { x: building.x, y: building.y + 1 },
+      { x: building.x, y: building.y - 1 },
     ].filter(tile => tile.x >= 0 && tile.y >= 0 && tile.x < gridSize && tile.y < gridSize);
     
     const queueTiles = neighbors.filter(tile => grid[tile.y][tile.x].queue);
     const pathTiles = neighbors.filter(tile => grid[tile.y][tile.x].path);
-    const targetTile = queueTiles[0] || pathTiles[0];
+    const targetTile = preferQueue ? (queueTiles[0] || pathTiles[0]) : pathTiles[0] || queueTiles[0];
     
     if (!targetTile) continue;
     
@@ -264,11 +284,23 @@ function findRideDestination(
       const trimmedPath = path[0]?.x === guest.tileX && path[0]?.y === guest.tileY
         ? path.slice(1)
         : path;
-      return { path: trimmedPath, rideId: ride.id };
+      return { path: trimmedPath, buildingId: building.id };
     }
   }
   
   return null;
+}
+
+function findRideDestination(grid: Tile[][], guest: Guest) {
+  return findBuildingDestination(grid, guest, isRideBuilding, true);
+}
+
+function findFoodDestination(grid: Tile[][], guest: Guest) {
+  return findBuildingDestination(grid, guest, isFoodBuilding, false);
+}
+
+function findShopDestination(grid: Tile[][], guest: Guest) {
+  return findBuildingDestination(grid, guest, isShopBuilding, false);
 }
 
 function assignPath(guest: Guest, path: { x: number; y: number }[]) {
@@ -330,6 +362,8 @@ export function updateGuest(
           updatedGuest.ridesRidden.push(updatedGuest.queueRideId);
         }
         updatedGuest.queueRideId = null;
+        updatedGuest.targetBuildingId = null;
+        updatedGuest.targetBuildingKind = null;
         updatedGuest.queueTimer = 0;
         updatedGuest.nausea = Math.min(100, updatedGuest.nausea + 5 + Math.random() * 5);
       }
@@ -338,12 +372,48 @@ export function updateGuest(
     return updatedGuest;
   }
 
+  if (updatedGuest.state === 'eating' || updatedGuest.state === 'shopping') {
+    updatedGuest.queueTimer -= deltaTime;
+    if (updatedGuest.queueTimer <= 0) {
+      if (updatedGuest.state === 'eating') {
+        updatedGuest.hunger = Math.max(0, updatedGuest.hunger - 60);
+        updatedGuest.thirst = Math.max(0, updatedGuest.thirst - 40);
+        updatedGuest.happiness = Math.min(100, updatedGuest.happiness + 6);
+      } else {
+        updatedGuest.happiness = Math.min(100, updatedGuest.happiness + 4);
+      }
+      updatedGuest.state = 'walking';
+      updatedGuest.targetBuildingId = null;
+      updatedGuest.targetBuildingKind = null;
+      updatedGuest.queueTimer = 0;
+    }
+    updatedGuest.lastState = previousState;
+    return updatedGuest;
+  }
+
   // Seek rides if idle
-  if ((updatedGuest.state === 'walking' || updatedGuest.state === 'entering') && updatedGuest.path.length === 0 && !updatedGuest.queueRideId) {
+  if ((updatedGuest.state === 'walking' || updatedGuest.state === 'entering') && updatedGuest.path.length === 0 && !updatedGuest.queueRideId && !updatedGuest.targetBuildingId) {
     if (updatedGuest.decisionCooldown <= 0) {
-      const destination = findRideDestination(grid, updatedGuest);
+      let destination: { path: { x: number; y: number }[]; buildingId: string } | null = null;
+      let targetKind: Guest['targetBuildingKind'] = null;
+      
+      if (updatedGuest.hunger > 50 || updatedGuest.thirst > 50) {
+        destination = findFoodDestination(grid, updatedGuest);
+        targetKind = 'food';
+      } else if (updatedGuest.cash > 20 && Math.random() < 0.3) {
+        destination = findShopDestination(grid, updatedGuest);
+        targetKind = 'shop';
+      } else {
+        destination = findRideDestination(grid, updatedGuest);
+        targetKind = 'ride';
+      }
+      
       if (destination) {
-        updatedGuest.queueRideId = destination.rideId;
+        if (targetKind === 'ride') {
+          updatedGuest.queueRideId = destination.buildingId;
+        }
+        updatedGuest.targetBuildingId = destination.buildingId;
+        updatedGuest.targetBuildingKind = targetKind;
         updatedGuest.state = 'walking';
         updatedGuest.decisionCooldown = 60 + Math.random() * 90;
         assignPath(updatedGuest, destination.path);
@@ -380,16 +450,34 @@ export function updateGuest(
         else if (dy < 0) updatedGuest.direction = 'east';
       } else {
         // Path complete
-        if (updatedGuest.queueRideId) {
-          updatedGuest.state = 'queuing';
-          updatedGuest.queueTimer = 30 + Math.random() * 60;
-          updatedGuest.queuePosition = 0;
-          updatedGuest.path = [];
-          updatedGuest.pathIndex = 0;
-          updatedGuest.targetTileX = updatedGuest.tileX;
-          updatedGuest.targetTileY = updatedGuest.tileY;
-          updatedGuest.lastState = previousState;
-          return updatedGuest;
+        if (updatedGuest.targetBuildingKind) {
+          if (updatedGuest.targetBuildingKind === 'ride') {
+            updatedGuest.state = 'queuing';
+            updatedGuest.queueTimer = 30 + Math.random() * 60;
+            updatedGuest.queuePosition = 0;
+            updatedGuest.path = [];
+            updatedGuest.pathIndex = 0;
+            updatedGuest.targetTileX = updatedGuest.tileX;
+            updatedGuest.targetTileY = updatedGuest.tileY;
+            updatedGuest.lastState = previousState;
+            return updatedGuest;
+          }
+          if (updatedGuest.targetBuildingKind === 'food') {
+            updatedGuest.state = 'eating';
+            updatedGuest.queueTimer = 8 + Math.random() * 12;
+            updatedGuest.path = [];
+            updatedGuest.pathIndex = 0;
+            updatedGuest.lastState = previousState;
+            return updatedGuest;
+          }
+          if (updatedGuest.targetBuildingKind === 'shop') {
+            updatedGuest.state = 'shopping';
+            updatedGuest.queueTimer = 6 + Math.random() * 10;
+            updatedGuest.path = [];
+            updatedGuest.pathIndex = 0;
+            updatedGuest.lastState = previousState;
+            return updatedGuest;
+          }
         }
         
         // Wander on paths

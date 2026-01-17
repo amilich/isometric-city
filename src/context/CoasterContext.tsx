@@ -217,6 +217,8 @@ function normalizeLoadedState(state: GameState): GameState {
       lastState: guest.lastState ?? guest.state,
       queueTimer: guest.queueTimer ?? 0,
       decisionCooldown: guest.decisionCooldown ?? 0,
+      targetBuildingId: guest.targetBuildingId ?? null,
+      targetBuildingKind: guest.targetBuildingKind ?? null,
     })),
     buildingCoasterId: state.buildingCoasterId ?? null,
     buildingCoasterPath: state.buildingCoasterPath ?? [],
@@ -413,19 +415,42 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
 
         const rideTicket = prev.settings.payPerRide ? DEFAULT_PRICES.rideTicket : 0;
         let rideRevenue = 0;
+        let foodRevenue = 0;
+        let shopRevenue = 0;
         let rideCompletions = 0;
         const guests = updatedGuests.map(guest => {
+          let nextGuest = guest;
+
           if (guest.state === 'riding' && guest.lastState === 'queuing' && rideTicket > 0) {
             const fee = Math.min(guest.cash, rideTicket);
             if (fee > 0) {
               rideRevenue += fee;
-              return { ...guest, cash: guest.cash - fee, totalSpent: guest.totalSpent + fee };
+              nextGuest = { ...nextGuest, cash: nextGuest.cash - fee, totalSpent: nextGuest.totalSpent + fee };
             }
           }
+
+          if (guest.state === 'eating' && guest.lastState !== 'eating') {
+            const price = guest.thirst > guest.hunger ? DEFAULT_PRICES.drinkItem : DEFAULT_PRICES.foodItem;
+            const fee = Math.min(nextGuest.cash, price);
+            if (fee > 0) {
+              foodRevenue += fee;
+              nextGuest = { ...nextGuest, cash: nextGuest.cash - fee, totalSpent: nextGuest.totalSpent + fee };
+            }
+          }
+
+          if (guest.state === 'shopping' && guest.lastState !== 'shopping') {
+            const fee = Math.min(nextGuest.cash, DEFAULT_PRICES.shopItem);
+            if (fee > 0) {
+              shopRevenue += fee;
+              nextGuest = { ...nextGuest, cash: nextGuest.cash - fee, totalSpent: nextGuest.totalSpent + fee };
+            }
+          }
+
           if (guest.state === 'walking' && guest.lastState === 'riding') {
             rideCompletions += 1;
           }
-          return guest;
+
+          return nextGuest;
         }).concat(spawnedGuests);
 
         
@@ -456,16 +481,20 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
         
         const incomeAdmissions = prev.finances.incomeAdmissions + admissionRevenue;
         const incomeRides = prev.finances.incomeRides + rideRevenue;
-        const incomeTotal = incomeAdmissions + incomeRides + prev.finances.incomeFood + prev.finances.incomeShops;
+        const incomeFood = prev.finances.incomeFood + foodRevenue;
+        const incomeShops = prev.finances.incomeShops + shopRevenue;
+        const incomeTotal = incomeAdmissions + incomeRides + incomeFood + incomeShops;
         const expenseTotal = prev.finances.expenseWages + prev.finances.expenseUpkeep + prev.finances.expenseMarketing + prev.finances.expenseResearch;
         const profit = incomeTotal - expenseTotal;
 
         const monthChanged = month !== prev.month || year !== prev.year;
         let finances = {
           ...prev.finances,
-          cash: prev.finances.cash + admissionRevenue + rideRevenue,
+          cash: prev.finances.cash + admissionRevenue + rideRevenue + foodRevenue + shopRevenue,
           incomeAdmissions,
           incomeRides,
+          incomeFood,
+          incomeShops,
           incomeTotal,
           expenseTotal,
           profit,
@@ -479,7 +508,7 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
 
           finances = {
             ...prev.finances,
-            cash: prev.finances.cash + admissionRevenue + rideRevenue - monthlyExpenses,
+            cash: prev.finances.cash + admissionRevenue + rideRevenue + foodRevenue + shopRevenue - monthlyExpenses,
             incomeAdmissions: 0,
             incomeRides: 0,
             incomeFood: 0,

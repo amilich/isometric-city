@@ -52,6 +52,8 @@ export interface Guest {
   // State
   state: GuestState;
   lastState: GuestState;
+  targetBuildingId: string | null;
+  targetBuildingKind: 'ride' | 'food' | 'shop' | null;
   targetTileX: number;
   targetTileY: number;
   path: { x: number; y: number }[];

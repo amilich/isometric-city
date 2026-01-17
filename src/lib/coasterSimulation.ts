@@ -1,5 +1,5 @@
 import { CardinalDirection, isInBounds } from '@/core/types';
-import { CoasterBuildingType, CoasterParkState, CoasterTile, Finance, Guest, ParkStats, PathInfo, Research, Staff, WeatherState } from '@/games/coaster/types';
+import { CoasterBuildingType, CoasterParkState, CoasterTile, Finance, Guest, GuestThoughtType, ParkStats, PathInfo, Research, Staff, WeatherState } from '@/games/coaster/types';
 import { findPath } from '@/lib/coasterPathfinding';
 import { estimateQueueWaitMinutes } from '@/lib/coasterQueue';
 
@@ -67,6 +67,8 @@ const QUEUE_GUESTS_PER_TILE = 4;
 const MIN_QUEUE_LENGTH = 8;
 const MAX_QUEUE_LENGTH = 80;
 const DEFAULT_QUEUE_LENGTH = 30;
+const THOUGHT_COOLDOWN = 120;
+const MAX_THOUGHTS = 3;
 
 function createGuest(id: number, tileX: number, tileY: number): Guest {
   const colors = ['#60a5fa', '#f87171', '#facc15', '#34d399', '#a78bfa'];
@@ -462,6 +464,53 @@ function calculateQueueCapacities(state: CoasterParkState): Map<string, number> 
   return queueCapacities;
 }
 
+function getGuestThoughtCandidate(guest: Guest, tick: number): { type: GuestThoughtType; message: string } | null {
+  if (guest.state === 'queuing' && guest.queueJoinTick !== null && tick - guest.queueJoinTick > 120) {
+    return { type: 'warning', message: 'This line is taking forever.' };
+  }
+  if (guest.needs.bathroom < 60) {
+    return { type: 'warning', message: 'Need a restroom soon.' };
+  }
+  if (guest.needs.hunger < 70) {
+    return { type: 'negative', message: 'I am feeling hungry.' };
+  }
+  if (guest.needs.thirst < 70) {
+    return { type: 'negative', message: 'I could use a drink.' };
+  }
+  if (guest.needs.energy < 60) {
+    return { type: 'neutral', message: 'I need to rest a bit.' };
+  }
+  if (guest.state === 'on_ride') {
+    return { type: 'positive', message: 'This ride is fun!' };
+  }
+  if (guest.happiness < 90) {
+    return { type: 'negative', message: 'This park is boring.' };
+  }
+  if (guest.happiness >= 170) {
+    return { type: 'positive', message: 'Great day at the park!' };
+  }
+  return null;
+}
+
+function updateGuestThoughts(guest: Guest, tick: number): Guest {
+  const candidate = getGuestThoughtCandidate(guest, tick);
+  if (!candidate) return guest;
+  const lastThought = guest.thoughts[0];
+  if (lastThought && lastThought.message === candidate.message && tick - lastThought.timestamp < THOUGHT_COOLDOWN) {
+    return guest;
+  }
+  const nextThought = {
+    id: `thought-${guest.id}-${tick}`,
+    type: candidate.type,
+    message: candidate.message,
+    timestamp: tick,
+  };
+  return {
+    ...guest,
+    thoughts: [nextThought, ...guest.thoughts].slice(0, MAX_THOUGHTS),
+  };
+}
+
 function updateStaff(state: CoasterParkState): CoasterParkState {
   const updatedStaff = state.staff.map((member) => updateStaffMovement(member, state.grid));
   const handymanCount = updatedStaff.filter((member) => member.type === 'handyman').length;
@@ -588,6 +637,8 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   if (entertainers.length > 0 || securityStaff.length > 0) {
     nextGuests = nextGuests.map((guest) => applyStaffMoodEffects(guest, entertainers, securityStaff));
   }
+
+  nextGuests = nextGuests.map((guest) => updateGuestThoughts(guest, state.tick));
 
   const queueCapacityByRide = calculateQueueCapacities(state);
   const queueCounts = new Map<string, number>();

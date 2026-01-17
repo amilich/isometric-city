@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Guest } from '@/games/coaster/types';
+import { Guest, GuestThoughtType } from '@/games/coaster/types';
 
 interface GuestPanelProps {
   guests: Guest[];
@@ -33,6 +33,19 @@ export default function GuestPanel({ guests, onClose }: GuestPanelProps) {
     if (guest.needs.bathroom < 60) return 'Bathroom';
     if (guest.needs.energy < 60) return 'Tired';
     return null;
+  };
+
+  const getThoughtClass = (type: GuestThoughtType) => {
+    switch (type) {
+      case 'positive':
+        return 'text-emerald-200';
+      case 'negative':
+        return 'text-rose-200';
+      case 'warning':
+        return 'text-amber-200';
+      default:
+        return 'text-slate-200';
+    }
   };
 
   const filteredGuests = useMemo(() => {
@@ -88,6 +101,7 @@ export default function GuestPanel({ guests, onClose }: GuestPanelProps) {
               {filteredGuests.map((guest) => {
                 const mood = getMoodStyles(guest);
                 const needHint = getNeedHint(guest);
+                const latestThought = guest.thoughts[0];
                 return (
                   <div key={guest.id} className="flex items-start justify-between gap-3">
                     <div>
@@ -102,6 +116,11 @@ export default function GuestPanel({ guests, onClose }: GuestPanelProps) {
                           <span className="text-amber-200/80">{needHint}</span>
                         )}
                       </div>
+                      {latestThought && (
+                        <div className={`mt-1 text-[10px] italic ${getThoughtClass(latestThought.type)}`}>
+                          {latestThought.message}
+                        </div>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       ${guest.money}

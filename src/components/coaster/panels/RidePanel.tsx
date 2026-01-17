@@ -42,6 +42,13 @@ export default function RidePanel({ ride, onClose, onToggleStatus, onPriceChange
     }
   }, [ride.status]);
 
+  const canToggle = ride.status === 'open' || ride.status === 'closed';
+  const toggleLabel = ride.status === 'broken'
+    ? 'Awaiting Repair'
+    : ride.status === 'open'
+      ? 'Close Ride'
+      : 'Open Ride';
+
   return (
     <div className="absolute top-20 right-6 z-50 w-72">
       <Card className="bg-card/95 border-border/70 shadow-xl">
@@ -111,8 +118,13 @@ export default function RidePanel({ ride, onClose, onToggleStatus, onPriceChange
               onValueCommit={(value) => onPriceChange(value[0])}
             />
           </div>
-          <Button className="w-full" variant={ride.status === 'open' ? 'outline' : 'default'} onClick={onToggleStatus}>
-            {ride.status === 'open' ? 'Close Ride' : 'Open Ride'}
+          <Button
+            className="w-full"
+            variant={ride.status === 'open' ? 'outline' : 'default'}
+            onClick={onToggleStatus}
+            disabled={!canToggle}
+          >
+            {toggleLabel}
           </Button>
         </div>
       </Card>

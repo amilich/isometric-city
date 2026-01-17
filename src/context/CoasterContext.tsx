@@ -636,6 +636,9 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       ...prev,
       rides: prev.rides.map((ride) => {
         if (ride.id !== rideId) return ride;
+        if (ride.status !== 'open' && ride.status !== 'closed') {
+          return ride;
+        }
         const nextStatus = ride.status === 'open' ? 'closed' : 'open';
         return {
           ...ride,

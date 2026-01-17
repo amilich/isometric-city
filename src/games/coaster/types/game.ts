@@ -3,7 +3,7 @@
  */
 
 import { Building, BuildingType } from './buildings';
-import { Coaster } from './tracks';
+import { Coaster, TrackPiece, TrackDirection } from './tracks';
 import { Guest, ParkFinances, ParkStats, ParkSettings, Staff } from './economy';
 
 // =============================================================================
@@ -19,6 +19,12 @@ export type Tool =
   
   // Coaster building
   | 'coaster_build'
+  | 'coaster_track'
+  | 'coaster_turn_left'
+  | 'coaster_turn_right'
+  | 'coaster_slope_up'
+  | 'coaster_slope_down'
+  | 'coaster_loop'
   | 'coaster_station'
   
   // Trees & Vegetation
@@ -77,7 +83,13 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   path: { name: 'Path', cost: 10, description: 'Build guest walkways', category: 'paths' },
   queue: { name: 'Queue Line', cost: 15, description: 'Build ride queues', category: 'paths' },
   
-  coaster_build: { name: 'Build Coaster', cost: 0, description: 'Design roller coaster track', category: 'coasters' },
+  coaster_build: { name: 'Coaster Build Mode', cost: 0, description: 'Start building a coaster', category: 'coasters' },
+  coaster_track: { name: 'Track: Straight', cost: 20, description: 'Place straight track segments', category: 'coasters' },
+  coaster_turn_left: { name: 'Track: Left Turn', cost: 25, description: 'Place a left turn segment', category: 'coasters' },
+  coaster_turn_right: { name: 'Track: Right Turn', cost: 25, description: 'Place a right turn segment', category: 'coasters' },
+  coaster_slope_up: { name: 'Track: Slope Up', cost: 30, description: 'Place a rising track segment', category: 'coasters' },
+  coaster_slope_down: { name: 'Track: Slope Down', cost: 30, description: 'Place a descending track segment', category: 'coasters' },
+  coaster_loop: { name: 'Track: Loop', cost: 150, description: 'Place a vertical loop element', category: 'coasters' },
   coaster_station: { name: 'Coaster Station', cost: 500, description: 'Place coaster station', category: 'coasters', size: { width: 2, height: 1 } },
   
   // Trees (sample - will be expanded)
@@ -171,6 +183,7 @@ export interface Tile {
   queueRideId: string | null;
   hasCoasterTrack: boolean;
   coasterTrackId: string | null;
+  trackPiece: TrackPiece | null;
   elevation: number; // For terrain height
 }
 
@@ -225,6 +238,9 @@ export interface GameState {
   
   // Active coaster building (if any)
   buildingCoasterId: string | null;
+  buildingCoasterPath: { x: number; y: number }[];
+  buildingCoasterHeight: number;
+  buildingCoasterLastDirection: TrackDirection | null;
   
   // Version for save compatibility
   gameVersion: number;
@@ -267,6 +283,7 @@ export function createEmptyTile(x: number, y: number): Tile {
     queueRideId: null,
     hasCoasterTrack: false,
     coasterTrackId: null,
+    trackPiece: null,
     elevation: 0,
   };
 }

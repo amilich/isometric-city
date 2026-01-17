@@ -12,8 +12,9 @@ import {
   TOOL_INFO,
 } from '@/games/coaster/types';
 import { ParkFinances, ParkStats, ParkSettings, Guest, Staff, DEFAULT_PRICES } from '@/games/coaster/types/economy';
-import { Coaster } from '@/games/coaster/types/tracks';
+import { Coaster, TrackDirection, TrackHeight, TrackPiece, TrackPieceType } from '@/games/coaster/types/tracks';
 import { Building, BuildingType } from '@/games/coaster/types/buildings';
+import { spawnGuests, updateGuest } from '@/components/coaster/guests';
 
 // =============================================================================
 // CONSTANTS
@@ -72,6 +73,28 @@ function generateUUID(): string {
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+}
+
+const DIRECTION_ORDER: TrackDirection[] = ['north', 'east', 'south', 'west'];
+
+function rotateDirection(direction: TrackDirection, turn: 'left' | 'right'): TrackDirection {
+  const index = DIRECTION_ORDER.indexOf(direction);
+  const delta = turn === 'right' ? 1 : -1;
+  return DIRECTION_ORDER[(index + delta + DIRECTION_ORDER.length) % DIRECTION_ORDER.length];
+}
+
+function directionFromDelta(dx: number, dy: number): TrackDirection | null {
+  if (dx === 1 && dy === 0) return 'south';
+  if (dx === -1 && dy === 0) return 'north';
+  if (dx === 0 && dy === 1) return 'west';
+  if (dx === 0 && dy === -1) return 'east';
+  return null;
+}
+
+function clampHeight(height: number): TrackHeight {
+  if (height <= 0) return 0;
+  if (height >= 10) return 10;
+  return height as TrackHeight;
 }
 
 function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
@@ -165,8 +188,30 @@ function createInitialGameState(parkName: string = 'My Theme Park', gridSize: nu
     notifications: [],
     
     buildingCoasterId: null,
+    buildingCoasterPath: [],
+    buildingCoasterHeight: 0,
+    buildingCoasterLastDirection: null,
     
     gameVersion: 1,
+  };
+}
+
+function normalizeLoadedState(state: GameState): GameState {
+  const normalizedGrid = state.grid.map(row =>
+    row.map(tile => ({
+      ...tile,
+      trackPiece: tile.trackPiece ?? null,
+      hasCoasterTrack: tile.hasCoasterTrack || Boolean(tile.trackPiece),
+    }))
+  );
+  
+  return {
+    ...state,
+    grid: normalizedGrid,
+    buildingCoasterId: state.buildingCoasterId ?? null,
+    buildingCoasterPath: state.buildingCoasterPath ?? [],
+    buildingCoasterHeight: state.buildingCoasterHeight ?? 0,
+    buildingCoasterLastDirection: state.buildingCoasterLastDirection ?? null,
   };
 }
 
@@ -205,7 +250,7 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
           
           const parsed = JSON.parse(jsonString);
           if (parsed && parsed.grid && parsed.gridSize) {
-            setState(parsed);
+            setState(normalizeLoadedState(parsed));
             setHasSavedGame(true);
           }
         }
@@ -265,6 +310,21 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
+        // Update guests
+        const deltaTime = 1; // 1 game minute per tick
+        const updatedGuests = prev.guests.map(guest => updateGuest(guest, prev.grid, deltaTime));
+        const spawnedGuests = spawnGuests(prev.grid, updatedGuests, prev.stats.parkRating, hour);
+        const guests = [...updatedGuests, ...spawnedGuests];
+        
+        const guestsInPark = guests.length;
+        const guestsSatisfied = guests.filter(guest => guest.happiness >= 70).length;
+        const guestsUnsatisfied = guests.filter(guest => guest.happiness <= 40).length;
+        const avgHappiness = guestsInPark > 0
+          ? guests.reduce((sum, guest) => sum + guest.happiness, 0) / guestsInPark
+          : 0;
+        
+        const parkRating = Math.min(1000, Math.round(avgHappiness * 10));
+        
         return {
           ...prev,
           tick: newTick,
@@ -273,6 +333,16 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
           day,
           month,
           year,
+          guests,
+          stats: {
+            ...prev.stats,
+            guestsInPark,
+            guestsTotal: prev.stats.guestsTotal + spawnedGuests.length,
+            guestsSatisfied,
+            guestsUnsatisfied,
+            averageHappiness: avgHappiness,
+            parkRating,
+          },
         };
       });
     }, tickInterval);
@@ -327,6 +397,109 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
         tile.queue = true;
         tile.building = { ...createEmptyBuilding(), type: 'queue' };
         return { ...prev, grid: newGrid, finances: { ...prev.finances, cash: prev.finances.cash - toolInfo.cost } };
+      }
+      
+      const trackTools: Tool[] = [
+        'coaster_build',
+        'coaster_track',
+        'coaster_turn_left',
+        'coaster_turn_right',
+        'coaster_slope_up',
+        'coaster_slope_down',
+        'coaster_loop',
+      ];
+      
+      if (trackTools.includes(tool)) {
+        const buildPath = prev.buildingCoasterPath;
+        const lastTile = buildPath.length > 0 ? buildPath[buildPath.length - 1] : null;
+        const deltaDir = lastTile ? directionFromDelta(x - lastTile.x, y - lastTile.y) : null;
+        
+        // For auto-build mode, require adjacency
+        if (tool === 'coaster_build' && lastTile && !deltaDir) return prev;
+        
+        // Determine track directions
+        const baseDirection = prev.buildingCoasterLastDirection ?? deltaDir ?? 'south';
+        let startDirection: TrackDirection = baseDirection;
+        let endDirection: TrackDirection = baseDirection;
+        let pieceType: TrackPieceType = 'straight_flat';
+        let startHeight = prev.buildingCoasterHeight;
+        let endHeight = prev.buildingCoasterHeight;
+        let chainLift = false;
+        
+        if (tool === 'coaster_turn_left') {
+          pieceType = 'turn_left_flat';
+          endDirection = rotateDirection(startDirection, 'left');
+        } else if (tool === 'coaster_turn_right') {
+          pieceType = 'turn_right_flat';
+          endDirection = rotateDirection(startDirection, 'right');
+        } else if (tool === 'coaster_slope_up') {
+          pieceType = 'slope_up_small';
+          endHeight = clampHeight(startHeight + 1);
+          chainLift = true;
+        } else if (tool === 'coaster_slope_down') {
+          pieceType = 'slope_down_small';
+          endHeight = clampHeight(startHeight - 1);
+        } else if (tool === 'coaster_loop') {
+          pieceType = 'loop_vertical';
+        } else if (tool === 'coaster_build') {
+          if (deltaDir) {
+            startDirection = deltaDir;
+            endDirection = deltaDir;
+          }
+          pieceType = 'straight_flat';
+        } else {
+          pieceType = 'straight_flat';
+        }
+        
+        // Update previous tile for auto-build turns
+        if (tool === 'coaster_build' && lastTile && prev.buildingCoasterLastDirection && deltaDir) {
+          if (prev.buildingCoasterLastDirection !== deltaDir) {
+            const turnType: TrackPieceType =
+              rotateDirection(prev.buildingCoasterLastDirection, 'right') === deltaDir
+                ? 'turn_right_flat'
+                : 'turn_left_flat';
+            const previousTile = newGrid[lastTile.y][lastTile.x];
+            previousTile.trackPiece = {
+              type: turnType,
+              direction: prev.buildingCoasterLastDirection,
+              startHeight: clampHeight(prev.buildingCoasterHeight),
+              endHeight: clampHeight(prev.buildingCoasterHeight),
+              bankAngle: 0,
+              chainLift: false,
+              boosted: false,
+            };
+            previousTile.hasCoasterTrack = true;
+          }
+        }
+        
+        const coasterId = prev.buildingCoasterId ?? generateUUID();
+        const trackPiece: TrackPiece = {
+          type: pieceType,
+          direction: startDirection,
+          startHeight: clampHeight(startHeight),
+          endHeight: clampHeight(endHeight),
+          bankAngle: 0,
+          chainLift,
+          boosted: false,
+        };
+        
+        tile.trackPiece = trackPiece;
+        tile.hasCoasterTrack = true;
+        tile.coasterTrackId = coasterId;
+        
+        const updatedPath = buildPath.some(point => point.x === x && point.y === y)
+          ? buildPath
+          : [...buildPath, { x, y }];
+        
+        return {
+          ...prev,
+          grid: newGrid,
+          finances: { ...prev.finances, cash: prev.finances.cash - toolInfo.cost },
+          buildingCoasterId: coasterId,
+          buildingCoasterPath: updatedPath,
+          buildingCoasterHeight: endHeight,
+          buildingCoasterLastDirection: endDirection,
+        };
       }
       
       // Map tools to building types (tool name is often the building type)
@@ -410,28 +583,44 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
       tile.queueRideId = null;
       tile.hasCoasterTrack = false;
       tile.coasterTrackId = null;
+      tile.trackPiece = null;
       
       return { ...prev, grid: newGrid };
     });
   }, []);
   
   const startCoasterBuild = useCallback((coasterType: string) => {
-    // TODO: Implement coaster building start
-    console.log('Start building coaster:', coasterType);
+    setState(prev => ({
+      ...prev,
+      buildingCoasterId: generateUUID(),
+      buildingCoasterPath: [],
+      buildingCoasterHeight: 0,
+      buildingCoasterLastDirection: null,
+    }));
   }, []);
   
   const addCoasterTrack = useCallback((x: number, y: number) => {
-    // TODO: Implement track piece addition
-    console.log('Add track at:', x, y);
-  }, []);
+    placeAtTile(x, y);
+  }, [placeAtTile]);
   
   const finishCoasterBuild = useCallback(() => {
-    // TODO: Implement coaster build completion
-    console.log('Finish coaster build');
+    setState(prev => ({
+      ...prev,
+      buildingCoasterId: null,
+      buildingCoasterPath: [],
+      buildingCoasterHeight: 0,
+      buildingCoasterLastDirection: null,
+    }));
   }, []);
   
   const cancelCoasterBuild = useCallback(() => {
-    setState(prev => ({ ...prev, buildingCoasterId: null }));
+    setState(prev => ({
+      ...prev,
+      buildingCoasterId: null,
+      buildingCoasterPath: [],
+      buildingCoasterHeight: 0,
+      buildingCoasterLastDirection: null,
+    }));
   }, []);
   
   const setParkSettings = useCallback((settings: Partial<ParkSettings>) => {
@@ -488,7 +677,7 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
         
         const parsed = JSON.parse(jsonString);
         if (parsed && parsed.grid && parsed.gridSize) {
-          setState(parsed);
+          setState(normalizeLoadedState(parsed));
           return true;
         }
       }

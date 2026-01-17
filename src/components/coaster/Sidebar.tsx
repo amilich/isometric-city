@@ -37,7 +37,16 @@ const TOOL_CATEGORIES: Record<string, Tool[]> = {
     'ride_carousel', 'ride_teacups', 'ride_ferris_wheel', 'ride_drop_tower',
     'ride_swing_ride', 'ride_bumper_cars', 'ride_go_karts', 'ride_haunted_house',
   ],
-  'Coasters': ['coaster_station'],
+  'Coasters': [
+    'coaster_build',
+    'coaster_track',
+    'coaster_turn_left',
+    'coaster_turn_right',
+    'coaster_slope_up',
+    'coaster_slope_down',
+    'coaster_loop',
+    'coaster_station',
+  ],
   'Infrastructure': ['park_entrance', 'staff_building'],
 };
 

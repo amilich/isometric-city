@@ -4,6 +4,8 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
 import { Tile } from '@/games/coaster/types';
 import { getSpriteInfo, getSpriteRect, COASTER_SPRITE_PACK } from '@/games/coaster/lib/coasterRenderConfig';
+import { drawStraightTrack, drawCurvedTrack, drawSlopeTrack, drawLoopTrack, drawChainLift } from '@/components/coaster/tracks';
+import { drawGuest } from '@/components/coaster/guests';
 
 // =============================================================================
 // CONSTANTS (shared with isocity)
@@ -315,6 +317,35 @@ function drawSprite(
   return true;
 }
 
+function drawTrackSegment(
+  ctx: CanvasRenderingContext2D,
+  trackPiece: Tile['trackPiece'],
+  x: number,
+  y: number,
+  tick: number
+) {
+  if (!trackPiece) return;
+  
+  const { type, direction, startHeight, endHeight, chainLift } = trackPiece;
+  
+  if (type === 'straight_flat' || type === 'lift_hill_start' || type === 'lift_hill_middle' || type === 'lift_hill_end') {
+    drawStraightTrack(ctx, x, y, direction, startHeight);
+  } else if (type === 'turn_left_flat' || type === 'turn_right_flat') {
+    drawCurvedTrack(ctx, x, y, direction, type === 'turn_right_flat', startHeight);
+  } else if (type === 'slope_up_small' || type === 'slope_down_small') {
+    drawSlopeTrack(ctx, x, y, direction, startHeight, endHeight);
+  } else if (type === 'loop_vertical') {
+    drawLoopTrack(ctx, x, y, direction, Math.max(3, endHeight + 3));
+  } else {
+    // Default fallback to straight for unimplemented pieces
+    drawStraightTrack(ctx, x, y, direction, startHeight);
+  }
+  
+  if (chainLift) {
+    drawChainLift(ctx, x, y, direction, startHeight, tick);
+  }
+}
+
 // =============================================================================
 // COMPONENT
 // =============================================================================
@@ -447,6 +478,17 @@ export function CoasterGrid({
     const viewRight = canvasSize.width / zoom - offset.x / zoom + TILE_WIDTH;
     const viewBottom = canvasSize.height / zoom - offset.y / zoom + TILE_HEIGHT;
     
+    const guestsByTile = new Map<string, typeof state.guests>();
+    state.guests.forEach(guest => {
+      const key = `${guest.tileX},${guest.tileY}`;
+      const existing = guestsByTile.get(key);
+      if (existing) {
+        existing.push(guest);
+      } else {
+        guestsByTile.set(key, [guest]);
+      }
+    });
+    
     // Draw tiles (back to front for proper depth)
     for (let sum = 0; sum < gridSize * 2 - 1; sum++) {
       for (let x = 0; x <= sum; x++) {
@@ -472,11 +514,24 @@ export function CoasterGrid({
           drawGrassTile(ctx, screenX, screenY);
         }
         
+        // Draw coaster track if present
+        if (tile.trackPiece) {
+          drawTrackSegment(ctx, tile.trackPiece, screenX, screenY, tick);
+        }
+        
         // Draw building sprite if present
         const buildingType = tile.building?.type;
         if (buildingType && buildingType !== 'empty' && buildingType !== 'grass' && 
             buildingType !== 'water' && buildingType !== 'path' && buildingType !== 'queue') {
           drawSprite(ctx, spriteSheets, buildingType, screenX, screenY);
+        }
+        
+        // Draw guests on this tile
+        const guests = guestsByTile.get(`${x},${y}`);
+        if (guests) {
+          guests.forEach(guest => {
+            drawGuest(ctx, guest, tick);
+          });
         }
         
         // Selection highlight
@@ -507,7 +562,7 @@ export function CoasterGrid({
     }
     
     ctx.restore();
-  }, [grid, gridSize, offset, zoom, canvasSize, tick, selectedTile, hoveredTile, selectedTool, spriteSheets]);
+  }, [grid, gridSize, offset, zoom, canvasSize, tick, selectedTile, hoveredTile, selectedTool, spriteSheets, state.guests]);
   
   // Mouse handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

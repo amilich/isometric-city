@@ -1,3 +1,4 @@
+import { msg } from 'gt-next';
 import { RideCategory, RideType } from '@/games/coaster/types';
 
 export type RideDefinition = {
@@ -17,7 +18,7 @@ export type RideDefinition = {
 export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   carousel: {
     type: 'carousel',
-    name: 'Carousel',
+    name: msg('Carousel'),
     category: 'gentle',
     size: { width: 2, height: 2 },
     excitement: 20,
@@ -30,7 +31,7 @@ export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   },
   ferris_wheel: {
     type: 'ferris_wheel',
-    name: 'Ferris Wheel',
+    name: msg('Ferris Wheel'),
     category: 'gentle',
     size: { width: 2, height: 2 },
     excitement: 35,
@@ -43,7 +44,7 @@ export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   },
   bumper_cars: {
     type: 'bumper_cars',
-    name: 'Bumper Cars',
+    name: msg('Bumper Cars'),
     category: 'thrill',
     size: { width: 2, height: 2 },
     excitement: 45,
@@ -56,7 +57,7 @@ export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   },
   swing_ride: {
     type: 'swing_ride',
-    name: 'Swing Ride',
+    name: msg('Swing Ride'),
     category: 'gentle',
     size: { width: 1, height: 1 },
     excitement: 30,
@@ -69,7 +70,7 @@ export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   },
   haunted_house: {
     type: 'haunted_house',
-    name: 'Haunted House',
+    name: msg('Haunted House'),
     category: 'thrill',
     size: { width: 2, height: 2 },
     excitement: 40,
@@ -82,7 +83,7 @@ export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   },
   spiral_slide: {
     type: 'spiral_slide',
-    name: 'Spiral Slide',
+    name: msg('Spiral Slide'),
     category: 'gentle',
     size: { width: 1, height: 1 },
     excitement: 15,
@@ -95,7 +96,7 @@ export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   },
   coaster_wooden: {
     type: 'coaster_wooden',
-    name: 'Wooden Coaster',
+    name: msg('Wooden Coaster'),
     category: 'coaster',
     size: { width: 4, height: 4 },
     excitement: 70,
@@ -108,7 +109,7 @@ export const RIDE_DEFINITIONS: Record<RideType, RideDefinition> = {
   },
   coaster_steel: {
     type: 'coaster_steel',
-    name: 'Steel Coaster',
+    name: msg('Steel Coaster'),
     category: 'coaster',
     size: { width: 4, height: 4 },
     excitement: 80,

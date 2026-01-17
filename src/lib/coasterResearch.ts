@@ -1,9 +1,10 @@
 import { ResearchItem } from '@/games/coaster/types';
+import { msg } from 'gt-next';
 
 const RESEARCH_ITEMS: ResearchItem[] = [
   {
     id: 'coaster_wooden',
-    name: 'Wooden Coaster',
+    name: msg('Wooden Coaster'),
     category: 'coasters',
     cost: 800,
     progress: 0,
@@ -11,7 +12,7 @@ const RESEARCH_ITEMS: ResearchItem[] = [
   },
   {
     id: 'coaster_steel',
-    name: 'Steel Coaster',
+    name: msg('Steel Coaster'),
     category: 'coasters',
     cost: 1200,
     progress: 0,

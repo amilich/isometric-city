@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import { msg } from 'gt-next';
 import {
   GameState,
   Tool,
@@ -97,7 +98,9 @@ function clampHeight(height: number): TrackHeight {
   return height as TrackHeight;
 }
 
-function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
+const DEFAULT_PARK_NAME = msg('My Theme Park');
+
+function createInitialGameState(parkName: string = DEFAULT_PARK_NAME, gridSize: number = DEFAULT_GRID_SIZE): GameState {
   // Create empty grid
   const grid: Tile[][] = [];
   for (let y = 0; y < gridSize; y++) {

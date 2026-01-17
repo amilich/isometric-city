@@ -113,6 +113,32 @@ function drawPathOverlay(
   ctx.fill();
 }
 
+const LITTER_OFFSETS = [
+  { dx: -0.18, dy: 0.06 },
+  { dx: 0.12, dy: -0.08 },
+  { dx: 0.02, dy: 0.16 },
+];
+
+function drawLitter(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  count: number
+) {
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  const size = Math.max(1.2, width * 0.04);
+  ctx.fillStyle = '#a16207';
+  for (let i = 0; i < Math.min(count, LITTER_OFFSETS.length); i++) {
+    const offset = LITTER_OFFSETS[i];
+    ctx.beginPath();
+    ctx.arc(centerX + width * offset.dx, centerY + height * offset.dy, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 function drawScenery(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -548,6 +574,9 @@ export default function CoasterCanvas({
         if (tile.path) {
           const pathColor = tile.path.style === 'queue' ? '#f4b400' : '#8b9099';
           drawPathOverlay(ctx, screenX, screenY, tileWidth, tileHeight, pathColor);
+          if ((tile.litter ?? 0) > 0) {
+            drawLitter(ctx, screenX, screenY, tileWidth, tileHeight, tile.litter);
+          }
         }
         if (tile.track) {
           drawTrack(ctx, screenX, screenY, tileWidth, tileHeight, tile.track.connections);

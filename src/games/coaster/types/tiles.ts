@@ -77,5 +77,6 @@ export interface CoasterTile extends BaseTile {
   rideId?: string | null;
   track: TrackSegment | null;
   scenery: Scenery | null;
+  litter: number;
   zoneId?: string | null;
 }

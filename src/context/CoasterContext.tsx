@@ -84,8 +84,13 @@ const SCENERY_TOOL_MAP: Partial<Record<CoasterTool, SceneryType>> = {
 };
 
 function normalizeCoasterState(state: CoasterParkState): CoasterParkState {
+  const grid = state.grid.map((row) => row.map((tile) => ({
+    ...tile,
+    litter: tile.litter ?? 0,
+  })));
   return {
     ...state,
+    grid,
     finance: {
       ...state.finance,
       entranceRevenue: state.finance.entranceRevenue ?? 0,
@@ -584,7 +589,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         if (tile.path && tile.path.style === newPath.style && tile.path.isQueue === newPath.isQueue) {
           return prev;
         }
-        updateTile(x, y, { path: newPath });
+        updateTile(x, y, { path: newPath, litter: 0 });
         syncNeighborEdges(x, y, newPath.edges);
         if (queueRideId) {
           propagateQueueRideId(x, y, queueRideId);
@@ -653,7 +658,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       }
 
       if (selectedTool === 'water') {
-        updateTile(x, y, { terrain: tile.terrain === 'water' ? 'grass' : 'water' });
+        updateTile(x, y, { terrain: tile.terrain === 'water' ? 'grass' : 'water', litter: 0 });
         return applyCost({ ...prev, grid });
       }
 
@@ -687,6 +692,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
           building: null,
           rideId: null,
           track: null,
+          litter: 0,
         });
         syncNeighborEdges(x, y, { north: false, east: false, south: false, west: false });
         if (tile.track) {

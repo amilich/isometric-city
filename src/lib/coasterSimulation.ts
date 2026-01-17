@@ -32,6 +32,7 @@ export function createInitialGrid(size: number): CoasterTile[][] {
         rideId: null,
         track: null,
         scenery: null,
+        litter: 0,
         zoneId: null,
       });
     }
@@ -63,6 +64,10 @@ const STAFF_FATIGUE_DECAY = 0.05;
 const STAFF_ROOM_RECOVERY = 0.45;
 const STAFF_ROOM_RADIUS = 2;
 const STAFF_MIN_EFFICIENCY = 0.35;
+const LITTER_DROP_CHANCE = 0.03;
+const LITTER_MAX = 3;
+const LITTER_CLEANLINESS_PENALTY = 0.008;
+const LITTER_HAPPINESS_PENALTY = 0.6;
 const ENTERTAINER_RADIUS = 4;
 const SECURITY_RADIUS = 3;
 const SCENERY_RADIUS = 3;
@@ -678,6 +683,16 @@ function countSceneryType(grid: CoasterTile[][], type: SceneryType): number {
   return count;
 }
 
+function countLitter(grid: CoasterTile[][]): number {
+  let count = 0;
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      count += grid[y][x].litter ?? 0;
+    }
+  }
+  return count;
+}
+
 const SCENERY_EFFECTS: Record<SceneryType, { happiness: number; beauty: boolean }> = {
   tree: { happiness: 0.35, beauty: true },
   flower: { happiness: 0.45, beauty: true },
@@ -904,10 +919,14 @@ function getGuestThoughtCandidate(
   guest: Guest,
   tick: number,
   entranceFee: number,
-  sceneryNearby: boolean
+  sceneryNearby: boolean,
+  messyNearby: boolean
 ): { type: GuestThoughtType; message: string } | null {
   if (guest.state === 'queuing' && guest.queueJoinTick !== null && tick - guest.queueJoinTick > QUEUE_THOUGHT_TICKS) {
     return { type: 'warning', message: 'This line is taking forever.' };
+  }
+  if (messyNearby) {
+    return { type: 'negative', message: 'This place is messy.' };
   }
   if (guest.state === 'sitting') {
     return { type: 'neutral', message: 'Taking a quick break.' };
@@ -942,8 +961,14 @@ function getGuestThoughtCandidate(
   return null;
 }
 
-function updateGuestThoughts(guest: Guest, tick: number, entranceFee: number, sceneryNearby: boolean): Guest {
-  const candidate = getGuestThoughtCandidate(guest, tick, entranceFee, sceneryNearby);
+function updateGuestThoughts(
+  guest: Guest,
+  tick: number,
+  entranceFee: number,
+  sceneryNearby: boolean,
+  messyNearby: boolean
+): Guest {
+  const candidate = getGuestThoughtCandidate(guest, tick, entranceFee, sceneryNearby, messyNearby);
   if (!candidate) return guest;
   const lastThought = guest.thoughts[0];
   if (lastThought && lastThought.message === candidate.message && tick - lastThought.timestamp < THOUGHT_COOLDOWN) {
@@ -1031,12 +1056,27 @@ function updateResearch(state: CoasterParkState): CoasterParkState {
 }
 
 function updateStaff(state: CoasterParkState): CoasterParkState {
-  const movedStaff = state.staff.map((member) => updateStaffMovement(member, state.grid));
-  const staffRooms = findStaffRoomTargets(state.grid);
+  let grid = state.grid;
+  const updateGridTile = (tileX: number, tileY: number, updates: Partial<CoasterTile>) => {
+    if (!grid[tileY] || !grid[tileY][tileX]) return;
+    if (grid === state.grid) {
+      grid = state.grid.map((row) => row.slice());
+    }
+    const row = grid[tileY].slice();
+    row[tileX] = { ...grid[tileY][tileX], ...updates };
+    grid[tileY] = row;
+  };
+
+  const movedStaff = state.staff.map((member) => updateStaffMovement(member, grid));
+  const staffRooms = findStaffRoomTargets(grid);
   const updatedStaff = movedStaff.map((member) => {
     let fatigue = clamp(member.fatigue - STAFF_FATIGUE_DECAY);
     if (staffRooms.length > 0 && isStaffRoomNearby(member, staffRooms, STAFF_ROOM_RADIUS)) {
       fatigue = clamp(fatigue - STAFF_ROOM_RECOVERY);
+    }
+    const currentTile = grid[member.tileY]?.[member.tileX];
+    if (currentTile?.path && (currentTile.litter ?? 0) > 0) {
+      updateGridTile(member.tileX, member.tileY, { litter: Math.max(0, (currentTile.litter ?? 0) - 1) });
     }
     if (fatigue === member.fatigue) return member;
     return { ...member, fatigue };
@@ -1050,9 +1090,11 @@ function updateStaff(state: CoasterParkState): CoasterParkState {
   const mechanicCount = updatedStaff.filter((member) => member.type === 'mechanic').length;
   const cleanlinessDecay = state.guests.length * CLEANLINESS_DECAY_PER_GUEST;
   const trashCanCount = countSceneryType(state.grid, 'trash_can');
+  const litterCount = countLitter(grid);
+  const litterPenalty = litterCount * LITTER_CLEANLINESS_PENALTY;
   const cleanlinessBoost = handymanEffort * HANDYMAN_CLEANLINESS_BOOST
     + trashCanCount * TRASH_CAN_CLEANLINESS_BOOST;
-  const nextCleanliness = clamp(state.stats.cleanliness - cleanlinessDecay + cleanlinessBoost);
+  const nextCleanliness = clamp(state.stats.cleanliness - cleanlinessDecay - litterPenalty + cleanlinessBoost);
 
   const mechanicBoost = mechanicEffort * MECHANIC_UPTIME_BOOST;
   const isStormy = state.weather.type === 'stormy';
@@ -1139,6 +1181,7 @@ function updateStaff(state: CoasterParkState): CoasterParkState {
 
   return {
     ...state,
+    grid,
     staff: updatedStaff,
     rides: updatedRides,
     finance,
@@ -1216,6 +1259,27 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   let nextGuests = state.guests.map((guest) => updateGuestNeeds(guest));
   nextGuests = nextGuests.map((guest) => applyWeatherMood(guest, state.weather));
   nextGuests = nextGuests.map((guest) => updateGuestMovement(guest, state));
+  let grid = state.grid;
+  const updateGridTile = (tileX: number, tileY: number, updates: Partial<CoasterTile>) => {
+    if (!grid[tileY] || !grid[tileY][tileX]) return;
+    if (grid === state.grid) {
+      grid = state.grid.map((row) => row.slice());
+    }
+    const row = grid[tileY].slice();
+    row[tileX] = { ...grid[tileY][tileX], ...updates };
+    grid[tileY] = row;
+  };
+
+  nextGuests = nextGuests.map((guest) => {
+    const tile = grid[guest.tileY]?.[guest.tileX];
+    const canDrop = guest.hasItem === 'food' || guest.hasItem === 'drink';
+    if (!tile?.path || !canDrop) return guest;
+    const litter = tile.litter ?? 0;
+    if (litter >= LITTER_MAX) return guest;
+    if (Math.random() > LITTER_DROP_CHANCE) return guest;
+    updateGridTile(guest.tileX, guest.tileY, { litter: litter + 1 });
+    return { ...guest, hasItem: null };
+  });
   nextGuests = nextGuests.map((guest) => {
     if ((guest.state === 'heading_to_shop' || guest.state === 'at_shop') && guest.targetShop) {
       const building = state.grid[guest.targetShop.position.y]?.[guest.targetShop.position.x]?.building;
@@ -1269,16 +1333,42 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
     nextGuests = nextGuests.map((guest) => applyStaffMoodEffects(guest, entertainers, securityStaff));
   }
 
-  const sceneryTargets = findSceneryTargets(state.grid);
+  const sceneryTargets = findSceneryTargets(grid);
   const isNight = state.hour >= 19 || state.hour < 6;
   if (sceneryTargets.length > 0) {
     nextGuests = nextGuests.map((guest) => {
       const { boost, beauty } = getSceneryMoodBoost(guest, sceneryTargets, SCENERY_RADIUS, isNight);
       const boostedGuest = boost > 0 ? applySceneryMood(guest, boost) : guest;
-      return updateGuestThoughts(boostedGuest, state.tick, state.finance.entranceFee, beauty);
+      const messyNearby = (grid[guest.tileY]?.[guest.tileX]?.litter ?? 0) > 0;
+      const thoughtGuest = updateGuestThoughts(boostedGuest, state.tick, state.finance.entranceFee, beauty, messyNearby);
+      if (!messyNearby) return thoughtGuest;
+      const happiness = clamp(thoughtGuest.happiness - LITTER_HAPPINESS_PENALTY);
+      if (happiness === thoughtGuest.happiness) return thoughtGuest;
+      return {
+        ...thoughtGuest,
+        happiness,
+        needs: {
+          ...thoughtGuest.needs,
+          happiness,
+        },
+      };
     });
   } else {
-    nextGuests = nextGuests.map((guest) => updateGuestThoughts(guest, state.tick, state.finance.entranceFee, false));
+    nextGuests = nextGuests.map((guest) => {
+      const messyNearby = (grid[guest.tileY]?.[guest.tileX]?.litter ?? 0) > 0;
+      const thoughtGuest = updateGuestThoughts(guest, state.tick, state.finance.entranceFee, false, messyNearby);
+      if (!messyNearby) return thoughtGuest;
+      const happiness = clamp(thoughtGuest.happiness - LITTER_HAPPINESS_PENALTY);
+      if (happiness === thoughtGuest.happiness) return thoughtGuest;
+      return {
+        ...thoughtGuest,
+        happiness,
+        needs: {
+          ...thoughtGuest.needs,
+          happiness,
+        },
+      };
+    });
   }
 
   nextGuests = nextGuests.map((guest) => {
@@ -1646,11 +1736,11 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   let shopRevenue = 0;
   if (shopEntries.length > 0) {
     shopEntries.forEach((guest) => {
-      shopRevenue += getShopPrice(state.grid, guest.targetShop);
+      shopRevenue += getShopPrice(grid, guest.targetShop);
     });
   }
 
-  const sceneryScore = calculateSceneryScore(state.grid);
+  const sceneryScore = calculateSceneryScore(grid);
 
   const spawnInterval = getGuestSpawnInterval(state);
   if (state.tick % spawnInterval === 0 && nextGuests.length < MAX_GUESTS) {
@@ -1672,6 +1762,7 @@ function updateGuests(state: CoasterParkState): CoasterParkState {
   return {
     ...state,
     guests: nextGuests,
+    grid,
     rides: updatedRides,
     finance: rideRevenue > 0 || shopRevenue > 0 || entranceRevenue > 0 ? {
       ...state.finance,

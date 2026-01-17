@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import { msg } from 'gt-next';
 import {
   GameState,
   Tool,
@@ -97,7 +98,7 @@ function clampHeight(height: number): TrackHeight {
   return height as TrackHeight;
 }
 
-function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
+function createInitialGameState(parkName: string = msg('My Theme Park'), gridSize: number = DEFAULT_GRID_SIZE): GameState {
   // Create empty grid
   const grid: Tile[][] = [];
   for (let y = 0; y < gridSize; y++) {
@@ -284,7 +285,7 @@ function createDefaultTrain(): CoasterTrain {
 function createDefaultCoaster(id: string, startTile: { x: number; y: number }): Coaster {
   return {
     id,
-    name: 'Custom Coaster',
+    name: msg('Custom Coaster'),
     type: 'steel_sit_down',
     color: { primary: '#dc2626', secondary: '#f59e0b', supports: '#374151' },
     track: [],

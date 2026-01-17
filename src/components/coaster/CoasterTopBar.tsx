@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { T, useGT, msg, useMessages } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { Button } from '@/components/ui/button';
 
@@ -9,20 +10,35 @@ interface CoasterTopBarProps {
   onExit?: () => void;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = [
+  msg('Jan'),
+  msg('Feb'),
+  msg('Mar'),
+  msg('Apr'),
+  msg('May'),
+  msg('Jun'),
+  msg('Jul'),
+  msg('Aug'),
+  msg('Sep'),
+  msg('Oct'),
+  msg('Nov'),
+  msg('Dec'),
+];
 
 export function CoasterTopBar({ isMobile, onExit }: CoasterTopBarProps) {
+  const gt = useGT();
+  const m = useMessages();
   const { state, setSpeed, isSaving } = useCoaster();
   const { park, finances, guests, year, month, day, hour, minute, speed } = state;
 
-  const formatTime = (h: number, m: number) => {
+  const formatTime = (h: number, mm: number) => {
     const hh = h.toString().padStart(2, '0');
-    const mm = m.toString().padStart(2, '0');
-    return `${hh}:${mm}`;
+    const mmStr = mm.toString().padStart(2, '0');
+    return `${hh}:${mmStr}`;
   };
 
   const formatDate = () => {
-    return `${MONTHS[month - 1]} ${day}, Year ${year}`;
+    return gt('{month} {day}, Year {year}', { month: m(MONTHS[month - 1]), day, year });
   };
 
   const formatCash = (amount: number) => {
@@ -66,7 +82,7 @@ export function CoasterTopBar({ isMobile, onExit }: CoasterTopBarProps) {
         <div className="flex items-center gap-2">
           <span className="text-white font-bold">{park.name}</span>
           {isSaving && (
-            <span className="text-xs text-white/40 animate-pulse">Saving...</span>
+            <span className="text-xs text-white/40 animate-pulse"><T>Saving...</T></span>
           )}
         </div>
         
@@ -91,28 +107,28 @@ export function CoasterTopBar({ isMobile, onExit }: CoasterTopBarProps) {
 
       {/* Center section - Stats */}
       <div className="flex items-center gap-6 text-sm">
-        <div className="flex items-center gap-1.5" title="Park Rating">
+        <div className="flex items-center gap-1.5" title={gt('Park Rating')}>
           <span className="text-white/50">⭐</span>
           <span className={`font-medium ${getRatingColor(park.parkRating)}`}>
             {park.parkRating}
           </span>
         </div>
-        
-        <div className="flex items-center gap-1.5" title="Guests">
+
+        <div className="flex items-center gap-1.5" title={gt('Guests')}>
           <span className="text-white/50">👥</span>
           <span className="text-white font-medium">
             {guests.length}
           </span>
         </div>
-        
-        <div className="flex items-center gap-1.5" title="Staff">
+
+        <div className="flex items-center gap-1.5" title={gt('Staff')}>
           <span className="text-white/50">👷</span>
           <span className="text-white font-medium">
             {state.staff.length}
           </span>
         </div>
-        
-        <div className="flex items-center gap-1.5" title="Rides">
+
+        <div className="flex items-center gap-1.5" title={gt('Rides')}>
           <span className="text-white/50">🎢</span>
           <span className="text-white font-medium">
             {state.rides.filter(r => r.status === 'open').length}/{state.rides.length}
@@ -138,7 +154,7 @@ export function CoasterTopBar({ isMobile, onExit }: CoasterTopBarProps) {
             size="icon"
             onClick={() => setSpeed(0)}
             className={`h-7 w-7 ${speed === 0 ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
-            title="Pause"
+            title={gt('Pause')}
           >
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <rect x="6" y="4" width="4" height="16" />
@@ -150,7 +166,7 @@ export function CoasterTopBar({ isMobile, onExit }: CoasterTopBarProps) {
             size="icon"
             onClick={() => setSpeed(1)}
             className={`h-7 w-7 ${speed === 1 ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
-            title="Normal Speed"
+            title={gt('Normal Speed')}
           >
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
@@ -161,7 +177,7 @@ export function CoasterTopBar({ isMobile, onExit }: CoasterTopBarProps) {
             size="icon"
             onClick={() => setSpeed(2)}
             className={`h-7 w-7 ${speed === 2 ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
-            title="Fast"
+            title={gt('Fast')}
           >
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M4 5v14l9-7z" />
@@ -173,7 +189,7 @@ export function CoasterTopBar({ isMobile, onExit }: CoasterTopBarProps) {
             size="icon"
             onClick={() => setSpeed(3)}
             className={`h-7 w-7 ${speed === 3 ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
-            title="Very Fast"
+            title={gt('Very Fast')}
           >
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M2 5v14l6-7z" />

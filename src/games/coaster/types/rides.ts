@@ -3,6 +3,7 @@
  * Defines track pieces, ride instances, and ride mechanics
  */
 
+import { msg } from 'gt-next';
 import { RideType, CoasterType, RideCategory, RIDE_DEFINITIONS } from './buildings';
 
 // =============================================================================
@@ -402,15 +403,15 @@ export function generateRideId(): string {
  * Generate a default ride name
  */
 const COASTER_NAME_ADJECTIVES = [
-  'Wild', 'Thunder', 'Steel', 'Screaming', 'Twisted', 'Flying',
-  'Raging', 'Midnight', 'Crimson', 'Golden', 'Silver', 'Iron',
-  'Electric', 'Cosmic', 'Phantom', 'Shadow', 'Blazing', 'Frozen',
+  msg('Wild'), msg('Thunder'), msg('Steel'), msg('Screaming'), msg('Twisted'), msg('Flying'),
+  msg('Raging'), msg('Midnight'), msg('Crimson'), msg('Golden'), msg('Silver'), msg('Iron'),
+  msg('Electric'), msg('Cosmic'), msg('Phantom'), msg('Shadow'), msg('Blazing'), msg('Frozen'),
 ];
 
 const COASTER_NAME_NOUNS = [
-  'Fury', 'Express', 'Dragon', 'Lightning', 'Viper', 'Falcon',
-  'Tornado', 'Cyclone', 'Phoenix', 'Thunder', 'Storm', 'Blaze',
-  'Comet', 'Rocket', 'Bullet', 'Arrow', 'Serpent', 'Eagle',
+  msg('Fury'), msg('Express'), msg('Dragon'), msg('Lightning'), msg('Viper'), msg('Falcon'),
+  msg('Tornado'), msg('Cyclone'), msg('Phoenix'), msg('Thunder'), msg('Storm'), msg('Blaze'),
+  msg('Comet'), msg('Rocket'), msg('Bullet'), msg('Arrow'), msg('Serpent'), msg('Eagle'),
 ];
 
 export function generateRideName(rideType: RideType): string {

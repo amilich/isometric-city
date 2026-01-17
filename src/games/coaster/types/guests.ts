@@ -3,6 +3,8 @@
  * Defines guests (peeps) and staff
  */
 
+import { msg } from 'gt-next';
+
 // =============================================================================
 // GUEST STATES
 // =============================================================================
@@ -238,29 +240,29 @@ export interface StaffDefinition {
 export const STAFF_DEFINITIONS: Record<StaffType, StaffDefinition> = {
   handyman: {
     type: 'handyman',
-    name: 'Handyman',
-    description: 'Sweeps paths, empties bins, waters gardens',
+    name: msg('Handyman'),
+    description: msg('Sweeps paths, empties bins, waters gardens'),
     baseSalary: 500,
     walkSpeed: 1.5,
   },
   mechanic: {
     type: 'mechanic',
-    name: 'Mechanic',
-    description: 'Inspects and repairs rides',
+    name: msg('Mechanic'),
+    description: msg('Inspects and repairs rides'),
     baseSalary: 800,
     walkSpeed: 1.2,
   },
   security: {
     type: 'security',
-    name: 'Security Guard',
-    description: 'Prevents vandalism and theft',
+    name: msg('Security Guard'),
+    description: msg('Prevents vandalism and theft'),
     baseSalary: 600,
     walkSpeed: 1.8,
   },
   entertainer: {
     type: 'entertainer',
-    name: 'Entertainer',
-    description: 'Cheers up guests in costume',
+    name: msg('Entertainer'),
+    description: msg('Cheers up guests in costume'),
     baseSalary: 550,
     walkSpeed: 1.0,
   },

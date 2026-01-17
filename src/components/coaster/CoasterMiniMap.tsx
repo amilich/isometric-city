@@ -3,6 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
 import { Card } from '@/components/ui/card';
+import { T } from 'gt-next';
 
 const TILE_WIDTH = 64;
 const TILE_HEIGHT = 32;
@@ -136,7 +137,7 @@ export function CoasterMiniMap({ onNavigate, viewport }: CoasterMiniMapProps) {
   return (
     <Card className="fixed bottom-6 right-8 p-3 shadow-lg bg-slate-900/90 border-white/10 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-white/50 font-semibold mb-2">
-        Park Map
+        <T>Park Map</T>
       </div>
       <canvas
         ref={canvasRef}
@@ -151,19 +152,19 @@ export function CoasterMiniMap({ onNavigate, viewport }: CoasterMiniMapProps) {
       <div className="mt-2 grid grid-cols-4 gap-1 text-[8px]">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 bg-green-400 rounded-sm" />
-          <span className="text-white/50">Grass</span>
+          <span className="text-white/50"><T>Grass</T></span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 bg-gray-500 rounded-sm" />
-          <span className="text-white/50">Path</span>
+          <span className="text-white/50"><T>Path</T></span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 bg-pink-500 rounded-sm" />
-          <span className="text-white/50">Ride</span>
+          <span className="text-white/50"><T>Ride</T></span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 bg-amber-500 rounded-sm" />
-          <span className="text-white/50">Shop</span>
+          <span className="text-white/50"><T>Shop</T></span>
         </div>
       </div>
     </Card>

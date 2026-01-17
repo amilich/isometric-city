@@ -6,10 +6,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X } from 'lucide-react';
+import { T, useGT } from 'gt-next';
 
 export function GuestsPanel() {
   const { state, setActivePanel } = useCoaster();
   const { guests } = state;
+  const gt = useGT();
 
   // Calculate averages
   const avgHappiness = guests.length > 0 
@@ -39,7 +41,7 @@ export function GuestsPanel() {
   return (
     <Card className="fixed top-16 right-4 w-80 max-h-[calc(100vh-5rem)] bg-slate-900/95 border-white/10 z-50 flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <h2 className="text-white font-bold">Guests</h2>
+        <T><h2 className="text-white font-bold">Guests</h2></T>
         <Button
           variant="ghost"
           size="icon"
@@ -55,22 +57,22 @@ export function GuestsPanel() {
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="p-3 bg-white/5 rounded-lg text-center">
             <p className="text-3xl font-bold text-white">{guests.length}</p>
-            <p className="text-xs text-white/50">Total Guests</p>
+            <T><p className="text-xs text-white/50">Total Guests</p></T>
           </div>
           <div className="p-3 bg-white/5 rounded-lg text-center">
             <p className={`text-3xl font-bold ${getHappinessColor(avgHappiness)}`}>
               {Math.round(avgHappiness / 2.55)}%
             </p>
-            <p className="text-xs text-white/50">Avg Happiness</p>
+            <T><p className="text-xs text-white/50">Avg Happiness</p></T>
           </div>
         </div>
 
         {/* Average Needs */}
         <div className="mb-6">
-          <h3 className="text-white/50 text-xs uppercase tracking-wider mb-3">Average Needs</h3>
+          <T><h3 className="text-white/50 text-xs uppercase tracking-wider mb-3">Average Needs</h3></T>
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-white/60 w-20">Happiness</span>
+              <T><span className="text-sm text-white/60 w-20">Happiness</span></T>
               <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-green-500 transition-all"
@@ -82,7 +84,7 @@ export function GuestsPanel() {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-white/60 w-20">Hunger</span>
+              <T><span className="text-sm text-white/60 w-20">Hunger</span></T>
               <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-orange-500 transition-all"
@@ -94,7 +96,7 @@ export function GuestsPanel() {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-white/60 w-20">Thirst</span>
+              <T><span className="text-sm text-white/60 w-20">Thirst</span></T>
               <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-500 transition-all"
@@ -111,12 +113,14 @@ export function GuestsPanel() {
         {/* Guest List */}
         <div>
           <h3 className="text-white/50 text-xs uppercase tracking-wider mb-3">
-            Recent Guests ({Math.min(10, guests.length)} of {guests.length})
+            {gt('Recent Guests ({shown} of {total})', { shown: Math.min(10, guests.length), total: guests.length })}
           </h3>
           {guests.length === 0 ? (
-            <p className="text-white/50 text-sm text-center py-4">
-              No guests in the park yet.
-            </p>
+            <T>
+              <p className="text-white/50 text-sm text-center py-4">
+                No guests in the park yet.
+              </p>
+            </T>
           ) : (
             <div className="space-y-2">
               {guests.slice(0, 10).map(guest => (

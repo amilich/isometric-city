@@ -2,10 +2,11 @@
  * Track Builder System - Handles coaster track placement and physics calculation
  */
 
-import { 
-  TrackPieceType, 
-  TrackElement, 
-  RideStats, 
+import { msg } from 'gt-next';
+import {
+  TrackPieceType,
+  TrackElement,
+  RideStats,
   calculateTrackExcitement,
   calculateTrackIntensity,
   calculateTrackNausea,
@@ -43,7 +44,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   // Flat pieces
   flat_straight: {
     type: 'flat_straight',
-    name: 'Straight Track',
+    name: msg('Straight Track'),
     cost: 200,
     segments: [{ dx: 1, dy: 0, dHeight: 0 }],
     entryDirection: 2,
@@ -54,7 +55,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   flat_turn_left: {
     type: 'flat_turn_left',
-    name: 'Left Turn',
+    name: msg('Left Turn'),
     cost: 250,
     segments: [{ dx: 0, dy: -1, dHeight: 0 }],
     entryDirection: 2,
@@ -65,7 +66,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   flat_turn_right: {
     type: 'flat_turn_right',
-    name: 'Right Turn',
+    name: msg('Right Turn'),
     cost: 250,
     segments: [{ dx: 0, dy: 1, dHeight: 0 }],
     entryDirection: 2,
@@ -76,7 +77,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   flat_s_bend_left: {
     type: 'flat_s_bend_left',
-    name: 'S-Bend Left',
+    name: msg('S-Bend Left'),
     cost: 400,
     segments: [{ dx: 1, dy: -1, dHeight: 0 }, { dx: 2, dy: -1, dHeight: 0 }],
     entryDirection: 2,
@@ -87,7 +88,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   flat_s_bend_right: {
     type: 'flat_s_bend_right',
-    name: 'S-Bend Right',
+    name: msg('S-Bend Right'),
     cost: 400,
     segments: [{ dx: 1, dy: 1, dHeight: 0 }, { dx: 2, dy: 1, dHeight: 0 }],
     entryDirection: 2,
@@ -100,7 +101,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   // Slopes
   slope_up_25: {
     type: 'slope_up_25',
-    name: 'Gentle Slope Up',
+    name: msg('Gentle Slope Up'),
     cost: 300,
     segments: [{ dx: 1, dy: 0, dHeight: 2 }],
     entryDirection: 2,
@@ -111,7 +112,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_up_60: {
     type: 'slope_up_60',
-    name: 'Steep Slope Up',
+    name: msg('Steep Slope Up'),
     cost: 500,
     segments: [{ dx: 1, dy: 0, dHeight: 4 }],
     entryDirection: 2,
@@ -122,7 +123,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_up_90: {
     type: 'slope_up_90',
-    name: 'Vertical Climb',
+    name: msg('Vertical Climb'),
     cost: 800,
     segments: [{ dx: 0, dy: 0, dHeight: 6 }],
     entryDirection: 2,
@@ -133,7 +134,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_down_25: {
     type: 'slope_down_25',
-    name: 'Gentle Slope Down',
+    name: msg('Gentle Slope Down'),
     cost: 300,
     segments: [{ dx: 1, dy: 0, dHeight: -2 }],
     entryDirection: 2,
@@ -144,7 +145,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_down_60: {
     type: 'slope_down_60',
-    name: 'Steep Slope Down',
+    name: msg('Steep Slope Down'),
     cost: 500,
     segments: [{ dx: 1, dy: 0, dHeight: -4 }],
     entryDirection: 2,
@@ -155,7 +156,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_down_90: {
     type: 'slope_down_90',
-    name: 'Vertical Drop',
+    name: msg('Vertical Drop'),
     cost: 800,
     segments: [{ dx: 0, dy: 0, dHeight: -6 }],
     entryDirection: 2,
@@ -168,7 +169,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   // Slope transitions
   flat_to_slope_up_25: {
     type: 'flat_to_slope_up_25',
-    name: 'Flat to Gentle Up',
+    name: msg('Flat to Gentle Up'),
     cost: 350,
     segments: [{ dx: 1, dy: 0, dHeight: 1 }],
     entryDirection: 2,
@@ -179,7 +180,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_up_25_to_flat: {
     type: 'slope_up_25_to_flat',
-    name: 'Gentle Up to Flat',
+    name: msg('Gentle Up to Flat'),
     cost: 350,
     segments: [{ dx: 1, dy: 0, dHeight: 1 }],
     entryDirection: 2,
@@ -190,7 +191,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_up_25_to_60: {
     type: 'slope_up_25_to_60',
-    name: 'Gentle to Steep Up',
+    name: msg('Gentle to Steep Up'),
     cost: 450,
     segments: [{ dx: 1, dy: 0, dHeight: 3 }],
     entryDirection: 2,
@@ -201,7 +202,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_up_60_to_25: {
     type: 'slope_up_60_to_25',
-    name: 'Steep to Gentle Up',
+    name: msg('Steep to Gentle Up'),
     cost: 450,
     segments: [{ dx: 1, dy: 0, dHeight: 3 }],
     entryDirection: 2,
@@ -212,7 +213,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   flat_to_slope_down_25: {
     type: 'flat_to_slope_down_25',
-    name: 'Flat to Gentle Down',
+    name: msg('Flat to Gentle Down'),
     cost: 350,
     segments: [{ dx: 1, dy: 0, dHeight: -1 }],
     entryDirection: 2,
@@ -223,7 +224,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   slope_down_25_to_flat: {
     type: 'slope_down_25_to_flat',
-    name: 'Gentle Down to Flat',
+    name: msg('Gentle Down to Flat'),
     cost: 350,
     segments: [{ dx: 1, dy: 0, dHeight: -1 }],
     entryDirection: 2,
@@ -236,7 +237,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   // Banked turns
   banked_turn_left: {
     type: 'banked_turn_left',
-    name: 'Banked Left Turn',
+    name: msg('Banked Left Turn'),
     cost: 350,
     segments: [{ dx: 0, dy: -1, dHeight: 0 }],
     entryDirection: 2,
@@ -247,7 +248,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   banked_turn_right: {
     type: 'banked_turn_right',
-    name: 'Banked Right Turn',
+    name: msg('Banked Right Turn'),
     cost: 350,
     segments: [{ dx: 0, dy: 1, dHeight: 0 }],
     entryDirection: 2,
@@ -258,7 +259,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   banked_helix_left_small: {
     type: 'banked_helix_left_small',
-    name: 'Small Helix Left',
+    name: msg('Small Helix Left'),
     cost: 800,
     segments: [
       { dx: 0, dy: -1, dHeight: 2 },
@@ -273,7 +274,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   banked_helix_right_small: {
     type: 'banked_helix_right_small',
-    name: 'Small Helix Right',
+    name: msg('Small Helix Right'),
     cost: 800,
     segments: [
       { dx: 0, dy: 1, dHeight: 2 },
@@ -288,7 +289,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   banked_helix_left_large: {
     type: 'banked_helix_left_large',
-    name: 'Large Helix Left',
+    name: msg('Large Helix Left'),
     cost: 1200,
     segments: [
       { dx: 0, dy: -1, dHeight: 2 },
@@ -305,7 +306,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   banked_helix_right_large: {
     type: 'banked_helix_right_large',
-    name: 'Large Helix Right',
+    name: msg('Large Helix Right'),
     cost: 1200,
     segments: [
       { dx: 0, dy: 1, dHeight: 2 },
@@ -324,7 +325,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   // Special elements
   chain_lift: {
     type: 'chain_lift',
-    name: 'Chain Lift',
+    name: msg('Chain Lift'),
     cost: 600,
     segments: [{ dx: 1, dy: 0, dHeight: 4 }],
     entryDirection: 2,
@@ -336,7 +337,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   station: {
     type: 'station',
-    name: 'Station',
+    name: msg('Station'),
     cost: 1000,
     segments: [{ dx: 1, dy: 0, dHeight: 0 }],
     entryDirection: 2,
@@ -348,7 +349,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   block_brakes: {
     type: 'block_brakes',
-    name: 'Block Brakes',
+    name: msg('Block Brakes'),
     cost: 500,
     segments: [{ dx: 1, dy: 0, dHeight: 0 }],
     entryDirection: 2,
@@ -360,7 +361,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   brakes: {
     type: 'brakes',
-    name: 'Brakes',
+    name: msg('Brakes'),
     cost: 300,
     segments: [{ dx: 1, dy: 0, dHeight: 0 }],
     entryDirection: 2,
@@ -372,7 +373,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   on_ride_photo: {
     type: 'on_ride_photo',
-    name: 'On-Ride Photo',
+    name: msg('On-Ride Photo'),
     cost: 500,
     segments: [{ dx: 1, dy: 0, dHeight: 0 }],
     entryDirection: 2,
@@ -383,7 +384,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   booster: {
     type: 'booster',
-    name: 'Booster',
+    name: msg('Booster'),
     cost: 800,
     segments: [{ dx: 1, dy: 0, dHeight: 0 }],
     entryDirection: 2,
@@ -397,7 +398,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   // Inversions
   vertical_loop: {
     type: 'vertical_loop',
-    name: 'Vertical Loop',
+    name: msg('Vertical Loop'),
     cost: 2000,
     segments: [
       { dx: 1, dy: 0, dHeight: 4 },
@@ -414,7 +415,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   corkscrew_left: {
     type: 'corkscrew_left',
-    name: 'Corkscrew Left',
+    name: msg('Corkscrew Left'),
     cost: 1500,
     segments: [
       { dx: 1, dy: -1, dHeight: 2 },
@@ -429,7 +430,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   corkscrew_right: {
     type: 'corkscrew_right',
-    name: 'Corkscrew Right',
+    name: msg('Corkscrew Right'),
     cost: 1500,
     segments: [
       { dx: 1, dy: 1, dHeight: 2 },
@@ -444,7 +445,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   barrel_roll_left: {
     type: 'barrel_roll_left',
-    name: 'Barrel Roll Left',
+    name: msg('Barrel Roll Left'),
     cost: 1800,
     segments: [
       { dx: 1, dy: 0, dHeight: 0 },
@@ -459,7 +460,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   barrel_roll_right: {
     type: 'barrel_roll_right',
-    name: 'Barrel Roll Right',
+    name: msg('Barrel Roll Right'),
     cost: 1800,
     segments: [
       { dx: 1, dy: 0, dHeight: 0 },
@@ -474,7 +475,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   half_loop_up: {
     type: 'half_loop_up',
-    name: 'Half Loop Up',
+    name: msg('Half Loop Up'),
     cost: 1200,
     segments: [
       { dx: 1, dy: 0, dHeight: 4 },
@@ -489,7 +490,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   half_loop_down: {
     type: 'half_loop_down',
-    name: 'Half Loop Down',
+    name: msg('Half Loop Down'),
     cost: 1200,
     segments: [
       { dx: 1, dy: 0, dHeight: -4 },
@@ -504,7 +505,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   cobra_roll: {
     type: 'cobra_roll',
-    name: 'Cobra Roll',
+    name: msg('Cobra Roll'),
     cost: 3000,
     segments: [
       { dx: 1, dy: 0, dHeight: 4 },
@@ -521,7 +522,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   heartline_roll: {
     type: 'heartline_roll',
-    name: 'Heartline Roll',
+    name: msg('Heartline Roll'),
     cost: 2200,
     segments: [
       { dx: 1, dy: 0, dHeight: 0 },
@@ -536,7 +537,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   zero_g_roll: {
     type: 'zero_g_roll',
-    name: 'Zero-G Roll',
+    name: msg('Zero-G Roll'),
     cost: 2500,
     segments: [
       { dx: 1, dy: 0, dHeight: 2 },
@@ -551,7 +552,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   inline_twist: {
     type: 'inline_twist',
-    name: 'Inline Twist',
+    name: msg('Inline Twist'),
     cost: 1600,
     segments: [{ dx: 1, dy: 0, dHeight: 0 }],
     entryDirection: 2,
@@ -565,7 +566,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   // Drops
   vertical_drop: {
     type: 'vertical_drop',
-    name: 'Vertical Drop',
+    name: msg('Vertical Drop'),
     cost: 1500,
     segments: [{ dx: 0, dy: 0, dHeight: -10 }],
     entryDirection: 2,
@@ -576,7 +577,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   beyond_vertical_drop: {
     type: 'beyond_vertical_drop',
-    name: 'Beyond Vertical Drop',
+    name: msg('Beyond Vertical Drop'),
     cost: 2000,
     segments: [
       { dx: -1, dy: 0, dHeight: -6 },
@@ -590,7 +591,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   dive_loop: {
     type: 'dive_loop',
-    name: 'Dive Loop',
+    name: msg('Dive Loop'),
     cost: 2500,
     segments: [
       { dx: 1, dy: 0, dHeight: -4 },
@@ -606,7 +607,7 @@ export const TRACK_PIECES: Record<TrackPieceType, TrackPieceDefinition> = {
   },
   immelmann: {
     type: 'immelmann',
-    name: 'Immelmann',
+    name: msg('Immelmann'),
     cost: 2500,
     segments: [
       { dx: 1, dy: 0, dHeight: 4 },
@@ -746,7 +747,7 @@ export function canPlaceTrackPiece(
 ): { valid: boolean; error?: string } {
   const pieceDef = TRACK_PIECES[newPiece];
   if (!pieceDef) {
-    return { valid: false, error: 'Invalid track piece type' };
+    return { valid: false, error: msg('Invalid track piece type') };
   }
 
   // Check grid bounds
@@ -766,21 +767,21 @@ export function canPlaceTrackPiece(
     const nh = height + segment.dHeight;
     
     if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) {
-      return { valid: false, error: 'Track extends beyond map bounds' };
+      return { valid: false, error: msg('Track extends beyond map bounds') };
     }
     
     if (nh < 0) {
-      return { valid: false, error: 'Track goes below ground level' };
+      return { valid: false, error: msg('Track goes below ground level') };
     }
     
     if (nh > 60) {
-      return { valid: false, error: 'Track is too high' };
+      return { valid: false, error: msg('Track is too high') };
     }
     
     // Check for collision with existing track
     const collision = track.find(t => t.x === nx && t.y === ny && Math.abs(t.height - nh) < 4);
     if (collision) {
-      return { valid: false, error: 'Track collides with existing track' };
+      return { valid: false, error: msg('Track collides with existing track') };
     }
   }
 
@@ -791,18 +792,18 @@ export function canPlaceTrackPiece(
     const endPos = calculateTrackEnd(lastPiece, lastDef);
     
     if (x !== endPos.x || y !== endPos.y) {
-      return { valid: false, error: 'Track piece must connect to previous piece' };
+      return { valid: false, error: msg('Track piece must connect to previous piece') };
     }
     
     if (Math.abs(height - endPos.height) > 4) {
-      return { valid: false, error: 'Height change too sudden' };
+      return { valid: false, error: msg('Height change too sudden') };
     }
     
     // Check direction compatibility
     const expectedEntry = (pieceDef.entryDirection + direction) % 4;
     const incomingDirection = (endPos.direction + 2) % 4;
     if (incomingDirection !== expectedEntry) {
-      return { valid: false, error: 'Track direction does not match' };
+      return { valid: false, error: msg('Track direction does not match') };
     }
   }
 

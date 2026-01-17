@@ -2,6 +2,7 @@
  * Coaster Tycoon Game State Types
  */
 
+import { msg } from 'gt-next';
 import { PathSurface, PathType, ParkBuilding, SceneryType, RideType, ShopType, Shop } from './buildings';
 import { Guest, Staff } from './guests';
 import { Ride, TrackElement, TrackPieceType } from './rides';
@@ -256,22 +257,22 @@ export interface ToolInfo {
 }
 
 export const TOOL_INFO: Record<CoasterTool, ToolInfo> = {
-  select: { name: 'Select', cost: 0, description: 'Select and inspect items' },
-  bulldoze: { name: 'Demolish', cost: 0, description: 'Remove paths, rides, and scenery' },
-  path_standard: { name: 'Footpath', cost: 20, description: 'Build guest walkways' },
-  path_queue: { name: 'Queue Path', cost: 25, description: 'Build ride queue lines' },
-  terrain_raise: { name: 'Raise Land', cost: 50, description: 'Raise terrain height' },
-  terrain_lower: { name: 'Lower Land', cost: 50, description: 'Lower terrain height' },
-  terrain_smooth: { name: 'Smooth Land', cost: 30, description: 'Smooth terrain slopes' },
-  terrain_water: { name: 'Add Water', cost: 100, description: 'Create water features' },
-  terrain_own_land: { name: 'Buy Land', cost: 0, description: 'Purchase land for the park' },
-  place_ride: { name: 'Place Ride', cost: 0, description: 'Build a new ride' },
-  place_shop: { name: 'Place Shop', cost: 0, description: 'Build a new shop or facility' },
-  place_scenery: { name: 'Place Scenery', cost: 0, description: 'Add decorations' },
-  hire_handyman: { name: 'Hire Handyman', cost: 500, description: 'Employ a cleaner' },
-  hire_mechanic: { name: 'Hire Mechanic', cost: 800, description: 'Employ a mechanic' },
-  hire_security: { name: 'Hire Security', cost: 600, description: 'Employ a guard' },
-  hire_entertainer: { name: 'Hire Entertainer', cost: 550, description: 'Employ an entertainer' },
+  select: { name: msg('Select'), cost: 0, description: msg('Select and inspect items') },
+  bulldoze: { name: msg('Demolish'), cost: 0, description: msg('Remove paths, rides, and scenery') },
+  path_standard: { name: msg('Footpath'), cost: 20, description: msg('Build guest walkways') },
+  path_queue: { name: msg('Queue Path'), cost: 25, description: msg('Build ride queue lines') },
+  terrain_raise: { name: msg('Raise Land'), cost: 50, description: msg('Raise terrain height') },
+  terrain_lower: { name: msg('Lower Land'), cost: 50, description: msg('Lower terrain height') },
+  terrain_smooth: { name: msg('Smooth Land'), cost: 30, description: msg('Smooth terrain slopes') },
+  terrain_water: { name: msg('Add Water'), cost: 100, description: msg('Create water features') },
+  terrain_own_land: { name: msg('Buy Land'), cost: 0, description: msg('Purchase land for the park') },
+  place_ride: { name: msg('Place Ride'), cost: 0, description: msg('Build a new ride') },
+  place_shop: { name: msg('Place Shop'), cost: 0, description: msg('Build a new shop or facility') },
+  place_scenery: { name: msg('Place Scenery'), cost: 0, description: msg('Add decorations') },
+  hire_handyman: { name: msg('Hire Handyman'), cost: 500, description: msg('Employ a cleaner') },
+  hire_mechanic: { name: msg('Hire Mechanic'), cost: 800, description: msg('Employ a mechanic') },
+  hire_security: { name: msg('Hire Security'), cost: 600, description: msg('Employ a guard') },
+  hire_entertainer: { name: msg('Hire Entertainer'), cost: 550, description: msg('Employ an entertainer') },
 };
 
 // =============================================================================

@@ -6,6 +6,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import { msg } from 'gt-next';
 import {
   CoasterGameState,
   ParkTile,
@@ -278,7 +279,7 @@ function createInitialGrid(size: number): ParkTile[][] {
   return grid;
 }
 
-function createInitialGameState(size: number = DEFAULT_GRID_SIZE, parkName: string = 'My Theme Park'): CoasterGameState {
+function createInitialGameState(size: number = DEFAULT_GRID_SIZE, parkName: string = msg('My Theme Park')): CoasterGameState {
   const parkInfo = createInitialParkInfo(parkName, size);
   const center = Math.floor(size / 2);
   const parkRadius = Math.floor(size * 0.35);
@@ -1120,12 +1121,12 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
       const ride = prev.rides[rideIndex];
       const def = RIDE_DEFINITIONS[ride.type];
       if (!def?.isTracked) {
-        return { ...prev, trackBuildError: 'Track building is only available for tracked rides.' };
+        return { ...prev, trackBuildError: msg('Track building is only available for tracked rides.') };
       }
 
       const newTrack = [...ride.track];
       if (newTrack.length === 0 && piece !== 'station') {
-        return { ...prev, trackBuildError: 'Track must start with a station.' };
+        return { ...prev, trackBuildError: msg('Track must start with a station.') };
       }
 
       let nextElement: { type: TrackPieceType; x: number; y: number; height: number; direction: 0 | 1 | 2 | 3 } | null = null;
@@ -1146,7 +1147,7 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
         const end = calculateTrackEnd(last, lastDef);
         const validation = canPlaceTrackPiece(newTrack, piece, end.x, end.y, end.height, end.direction, prev.gridSize);
         if (!validation.valid) {
-          return { ...prev, trackBuildError: validation.error ?? 'Invalid track placement' };
+          return { ...prev, trackBuildError: validation.error ?? msg('Invalid track placement') };
         }
         nextElement = {
           type: piece,
@@ -1271,7 +1272,7 @@ export function CoasterProvider({ children }: { children: React.ReactNode }) {
   
   const newPark = useCallback((name?: string, size?: number) => {
     localStorage.removeItem(STORAGE_KEY);
-    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'My Theme Park');
+    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || msg('My Theme Park'));
     setState(fresh);
     guestIdRef.current = 0;
     staffIdRef.current = 0;

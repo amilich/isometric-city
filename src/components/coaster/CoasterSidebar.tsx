@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { T, useGT, useMessages } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { CoasterTool, TOOL_INFO } from '@/games/coaster/types/game';
-import { 
-  RIDE_DEFINITIONS, 
-  SHOP_DEFINITIONS, 
+import {
+  RIDE_DEFINITIONS,
+  SHOP_DEFINITIONS,
   SCENERY_DEFINITIONS,
   RideType,
   ShopType,
@@ -110,13 +111,13 @@ function HoverSubmenu({ label, children, isSelected }: HoverSubmenuProps) {
   );
 }
 
-function ExitDialog({ 
-  open, 
-  onOpenChange, 
-  onSaveAndExit, 
-  onExitWithoutSaving 
-}: { 
-  open: boolean; 
+function ExitDialog({
+  open,
+  onOpenChange,
+  onSaveAndExit,
+  onExitWithoutSaving
+}: {
+  open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveAndExit: () => void;
   onExitWithoutSaving: () => void;
@@ -125,9 +126,9 @@ function ExitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-slate-900 border-white/20">
         <DialogHeader>
-          <DialogTitle className="text-white">Exit to Menu</DialogTitle>
+          <DialogTitle className="text-white"><T>Exit to Menu</T></DialogTitle>
           <DialogDescription className="text-white/60">
-            Would you like to save your park before exiting?
+            <T>Would you like to save your park before exiting?</T>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -136,13 +137,13 @@ function ExitDialog({
             onClick={onExitWithoutSaving}
             className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10"
           >
-            Exit Without Saving
+            <T>Exit Without Saving</T>
           </Button>
           <Button
             onClick={onSaveAndExit}
             className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500"
           >
-            Save & Exit
+            <T>Save & Exit</T>
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -155,10 +156,12 @@ interface CoasterSidebarProps {
 }
 
 export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
-  const { 
-    state, 
-    setTool, 
-    setSelectedRideType, 
+  const gt = useGT();
+  const m = useMessages();
+  const {
+    state,
+    setTool,
+    setSelectedRideType,
     setSelectedShopType,
     setSelectedSceneryType,
     setActivePanel,
@@ -216,13 +219,13 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
       {/* Header */}
       <div className="px-4 py-4 border-b border-white/10">
         <div className="flex items-center justify-between">
-          <span className="text-white font-bold tracking-tight">COASTER TYCOON</span>
+          <span className="text-white font-bold tracking-tight"><T>COASTER TYCOON</T></span>
           {onExit && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowExitDialog(true)}
-              title="Exit to Menu"
+              title={gt('Exit to Menu')}
               className="h-7 w-7 text-white/40 hover:text-white hover:bg-white/10"
             >
               <svg className="w-4 h-4 -scale-x-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -237,7 +240,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
         {/* Tools */}
         <div className="mb-1">
           <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-white/40">
-            TOOLS
+            <T>TOOLS</T>
           </div>
           <div className="px-2 flex flex-col gap-0.5">
             {TOOL_CATEGORIES.TOOLS.map(tool => {
@@ -251,7 +254,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
                     selectedTool === tool ? 'bg-purple-600 text-white' : 'text-white/80 hover:bg-white/10'
                   }`}
                 >
-                  <span className="flex-1 text-left">{info.name}</span>
+                  <span className="flex-1 text-left">{m(info.name)}</span>
                 </Button>
               );
             })}
@@ -262,7 +265,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
         <div className="mx-4 my-2 h-px bg-white/10" />
         <div className="mb-1">
           <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-white/40">
-            PATHS
+            <T>PATHS</T>
           </div>
           <div className="px-2 flex flex-col gap-0.5">
             {TOOL_CATEGORIES.PATHS.map(tool => {
@@ -278,7 +281,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
                     selectedTool === tool ? 'bg-purple-600 text-white' : 'text-white/80 hover:bg-white/10'
                   }`}
                 >
-                  <span className="flex-1 text-left">{info.name}</span>
+                  <span className="flex-1 text-left">{m(info.name)}</span>
                   <span className="text-xs opacity-60">${info.cost}</span>
                 </Button>
               );
@@ -289,22 +292,22 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
         {/* Rides */}
         <div className="mx-4 my-2 h-px bg-white/10" />
         <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-white/40">
-          RIDES
+          <T>RIDES</T>
         </div>
         <div className="px-2 flex flex-col gap-0.5">
           {Object.entries(RIDE_CATEGORIES).map(([category, rides]) => {
             const availableRides = rides.filter(r => unlockedRides.has(r));
             if (availableRides.length === 0) return null;
-            
+
             const hasSelectedRide = availableRides.includes(state.selectedRideType as RideType);
-            
+
             return (
               <HoverSubmenu key={category} label={category} isSelected={hasSelectedRide}>
                 {availableRides.map(rideType => {
                   const def = RIDE_DEFINITIONS[rideType];
                   const canAfford = finances.cash >= def.buildCost;
                   const isSelected = state.selectedRideType === rideType;
-                  
+
                   return (
                     <Button
                       key={rideType}
@@ -315,7 +318,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
                         isSelected ? 'bg-purple-600 text-white' : 'text-white/80 hover:bg-white/10'
                       }`}
                     >
-                      <span className="flex-1 text-left truncate">{def.name}</span>
+                      <span className="flex-1 text-left truncate">{m(def.name)}</span>
                       <span className="text-xs opacity-60">${(def.buildCost / 1000).toFixed(0)}k</span>
                     </Button>
                   );
@@ -328,21 +331,21 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
         {/* Shops */}
         <div className="mx-4 my-2 h-px bg-white/10" />
         <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-white/40">
-          SHOPS & FACILITIES
+          <T>SHOPS & FACILITIES</T>
         </div>
         <div className="px-2 flex flex-col gap-0.5">
           {Object.entries(SHOP_CATEGORIES).map(([category, shops]) => {
             const availableShops = shops.filter(s => unlockedShops.has(s));
             if (availableShops.length === 0) return null;
             const hasSelectedShop = availableShops.includes(state.selectedShopType as ShopType);
-            
+
             return (
               <HoverSubmenu key={category} label={category} isSelected={hasSelectedShop}>
                 {availableShops.map(shopType => {
                   const def = SHOP_DEFINITIONS[shopType];
                   const canAfford = finances.cash >= def.buildCost;
                   const isSelected = state.selectedShopType === shopType;
-                  
+
                   return (
                     <Button
                       key={shopType}
@@ -353,7 +356,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
                         isSelected ? 'bg-purple-600 text-white' : 'text-white/80 hover:bg-white/10'
                       }`}
                     >
-                      <span className="flex-1 text-left truncate">{def.name}</span>
+                      <span className="flex-1 text-left truncate">{m(def.name)}</span>
                       <span className="text-xs opacity-60">${def.buildCost}</span>
                     </Button>
                   );
@@ -366,22 +369,22 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
         {/* Scenery */}
         <div className="mx-4 my-2 h-px bg-white/10" />
         <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-white/40">
-          SCENERY
+          <T>SCENERY</T>
         </div>
         <div className="px-2 flex flex-col gap-0.5">
           {Object.entries(SCENERY_CATEGORIES).map(([category, items]) => {
             const availableItems = items.filter(s => unlockedScenery.has(s));
             if (availableItems.length === 0) return null;
-            
+
             const hasSelectedItem = availableItems.includes(state.selectedSceneryType as SceneryType);
-            
+
             return (
               <HoverSubmenu key={category} label={category} isSelected={hasSelectedItem}>
                 {availableItems.map(sceneryType => {
                   const def = SCENERY_DEFINITIONS[sceneryType];
                   const canAfford = finances.cash >= def.buildCost;
                   const isSelected = state.selectedSceneryType === sceneryType;
-                  
+
                   return (
                     <Button
                       key={sceneryType}
@@ -392,7 +395,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
                         isSelected ? 'bg-purple-600 text-white' : 'text-white/80 hover:bg-white/10'
                       }`}
                     >
-                      <span className="flex-1 text-left truncate">{def.name}</span>
+                      <span className="flex-1 text-left truncate">{m(def.name)}</span>
                       <span className="text-xs opacity-60">${def.buildCost}</span>
                     </Button>
                   );
@@ -405,7 +408,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
         {/* Terrain */}
         <div className="mx-4 my-2 h-px bg-white/10" />
         <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-white/40">
-          TERRAIN
+          <T>TERRAIN</T>
         </div>
         <div className="px-2 flex flex-col gap-0.5">
           {TOOL_CATEGORIES.TERRAIN.map(tool => {
@@ -421,7 +424,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
                   selectedTool === tool ? 'bg-purple-600 text-white' : 'text-white/80 hover:bg-white/10'
                 }`}
               >
-                <span className="flex-1 text-left">{info.name}</span>
+                <span className="flex-1 text-left">{m(info.name)}</span>
                 {info.cost > 0 && <span className="text-xs opacity-60">${info.cost}</span>}
               </Button>
             );
@@ -430,7 +433,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
 
         {/* Staff */}
         <div className="mx-4 my-2 h-px bg-white/10" />
-        <HoverSubmenu label="Staff">
+        <HoverSubmenu label={gt('Staff')}>
           {TOOL_CATEGORIES.STAFF.map(tool => {
             const info = TOOL_INFO[tool];
             return (
@@ -440,7 +443,7 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
                 variant="ghost"
                 className="w-full justify-start gap-2 px-3 py-2 h-auto text-sm text-white/80 hover:bg-white/10"
               >
-                <span className="flex-1 text-left truncate">{info.name}</span>
+                <span className="flex-1 text-left truncate">{m(info.name)}</span>
                 <span className="text-xs opacity-60">${info.cost}</span>
               </Button>
             );
@@ -452,11 +455,11 @@ export function CoasterSidebar({ onExit }: CoasterSidebarProps) {
       <div className="border-t border-white/10 p-2">
         <div className="grid grid-cols-5 gap-1">
           {[
-            { panel: 'rides' as const, icon: '🎢', label: 'Rides' },
-            { panel: 'guests' as const, icon: '👥', label: 'Guests' },
-            { panel: 'staff' as const, icon: '👷', label: 'Staff' },
-            { panel: 'finances' as const, icon: '💰', label: 'Finances' },
-            { panel: 'park' as const, icon: '🏰', label: 'Park' },
+            { panel: 'rides' as const, icon: '🎢', label: gt('Rides') },
+            { panel: 'guests' as const, icon: '👥', label: gt('Guests') },
+            { panel: 'staff' as const, icon: '👷', label: gt('Staff') },
+            { panel: 'finances' as const, icon: '💰', label: gt('Finances') },
+            { panel: 'park' as const, icon: '🏰', label: gt('Park') },
           ].map(({ panel, icon, label }) => (
             <Button
               key={panel}

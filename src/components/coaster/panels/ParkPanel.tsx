@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X } from 'lucide-react';
+import { T, useGT } from 'gt-next';
 
 export function ParkPanel() {
   const { state, setActivePanel, setParkName, setParkEntranceFee } = useCoaster();
   const { park, finances, rides, guests, staff, awards } = state;
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState(park.name);
+  const gt = useGT();
 
   const handleSaveName = () => {
     if (newName.trim()) {
@@ -32,7 +34,7 @@ export function ParkPanel() {
   return (
     <Card className="fixed top-16 right-4 w-80 max-h-[calc(100vh-5rem)] bg-slate-900/95 border-white/10 z-50 flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <h2 className="text-white font-bold">Park Info</h2>
+        <T><h2 className="text-white font-bold">Park Info</h2></T>
         <Button
           variant="ghost"
           size="icon"
@@ -52,21 +54,21 @@ export function ParkPanel() {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 className="flex-1 bg-white/10 border-white/20 text-white"
-                placeholder="Park name"
+                placeholder={gt('Park name')}
                 autoFocus
               />
-              <Button size="sm" onClick={handleSaveName}>Save</Button>
+              <T><Button size="sm" onClick={handleSaveName}>Save</Button></T>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <h3 className="text-xl text-white font-bold">{park.name}</h3>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setEditingName(true)}
                 className="text-white/50 hover:text-white"
               >
-                Edit
+                <T>Edit</T>
               </Button>
             </div>
           )}
@@ -77,32 +79,32 @@ export function ParkPanel() {
           <p className={`text-5xl font-bold ${getRatingColor(park.parkRating)}`}>
             {park.parkRating}
           </p>
-          <p className="text-white/50 text-sm mt-1">Park Rating</p>
+          <T><p className="text-white/50 text-sm mt-1">Park Rating</p></T>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="p-3 bg-white/5 rounded-lg text-center">
             <p className="text-2xl font-bold text-white">{guests.length}</p>
-            <p className="text-xs text-white/50">Guests</p>
+            <T><p className="text-xs text-white/50">Guests</p></T>
           </div>
           <div className="p-3 bg-white/5 rounded-lg text-center">
             <p className="text-2xl font-bold text-white">{staff.length}</p>
-            <p className="text-xs text-white/50">Staff</p>
+            <T><p className="text-xs text-white/50">Staff</p></T>
           </div>
           <div className="p-3 bg-white/5 rounded-lg text-center">
             <p className="text-2xl font-bold text-white">{openRides}</p>
-            <p className="text-xs text-white/50">Open Rides</p>
+            <T><p className="text-xs text-white/50">Open Rides</p></T>
           </div>
           <div className="p-3 bg-white/5 rounded-lg text-center">
             <p className="text-2xl font-bold text-white">{rides.length}</p>
-            <p className="text-xs text-white/50">Total Rides</p>
+            <T><p className="text-xs text-white/50">Total Rides</p></T>
           </div>
         </div>
 
         {/* Entrance Fee */}
         <div className="mb-6">
-          <h3 className="text-white/50 text-xs uppercase tracking-wider mb-3">Entrance Fee</h3>
+          <T><h3 className="text-white/50 text-xs uppercase tracking-wider mb-3">Entrance Fee</h3></T>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -110,7 +112,7 @@ export function ParkPanel() {
               onClick={() => setParkEntranceFee(Math.max(0, park.entranceFee - 5))}
               className="border-white/20"
             >
-              -$5
+              <T>-$5</T>
             </Button>
             <div className="flex-1 text-center">
               <span className="text-2xl font-bold text-white">${park.entranceFee}</span>
@@ -121,18 +123,20 @@ export function ParkPanel() {
               onClick={() => setParkEntranceFee(park.entranceFee + 5)}
               className="border-white/20"
             >
-              +$5
+              <T>+$5</T>
             </Button>
           </div>
         </div>
 
         {/* Awards */}
         <div>
-          <h3 className="text-white/50 text-xs uppercase tracking-wider mb-3">Awards</h3>
+          <T><h3 className="text-white/50 text-xs uppercase tracking-wider mb-3">Awards</h3></T>
           {awards.length === 0 ? (
-            <p className="text-white/40 text-sm text-center py-4">
-              No awards yet. Keep improving your park!
-            </p>
+            <T>
+              <p className="text-white/40 text-sm text-center py-4">
+                No awards yet. Keep improving your park!
+              </p>
+            </T>
           ) : (
             <div className="space-y-2">
               {awards.map((award, i) => (
@@ -140,7 +144,7 @@ export function ParkPanel() {
                   <span className="text-xl">🏆</span>
                   <div>
                     <p className="text-white text-sm">{award.type.replace(/_/g, ' ')}</p>
-                    <p className="text-white/40 text-xs">Year {award.year}</p>
+                    <p className="text-white/40 text-xs">{gt('Year {year}', { year: award.year })}</p>
                   </div>
                 </div>
               ))}

@@ -51,6 +51,7 @@ export type Ride = {
   age: number;
   color: string;
   cycleTimer: number;
+  weatherClosed: boolean;
   trackPieces?: TrackPiece[];
   trains?: CoasterTrain[];
 };

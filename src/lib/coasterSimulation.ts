@@ -999,12 +999,14 @@ function updateStaff(state: CoasterParkState): CoasterParkState {
   const nextCleanliness = clamp(state.stats.cleanliness - cleanlinessDecay + cleanlinessBoost);
 
   const mechanicBoost = mechanicCount * MECHANIC_UPTIME_BOOST;
+  const isStormy = state.weather.type === 'stormy';
   let maintenanceCost = 0;
   const updatedRides = state.rides.map((ride) => {
     const nextAge = ride.age + 1;
     let status = ride.status;
     let cycleTimer = ride.cycleTimer;
     let lastBreakdownTick = ride.stats.lastBreakdownTick;
+    let weatherClosed = ride.weatherClosed;
 
     if (status === 'broken' && mechanicCount > 0 && lastBreakdownTick !== null) {
       if (state.tick - lastBreakdownTick >= REPAIR_TICKS) {
@@ -1020,6 +1022,21 @@ function updateStaff(state: CoasterParkState): CoasterParkState {
       lastBreakdownTick = state.tick;
     }
 
+    if (status === 'broken') {
+      weatherClosed = false;
+    }
+
+    if (isStormy) {
+      if (status === 'open') {
+        status = 'closed';
+        cycleTimer = 0;
+        weatherClosed = true;
+      }
+    } else if (weatherClosed && status === 'closed') {
+      status = 'open';
+      weatherClosed = false;
+    }
+
     const wear = status === 'open' ? RIDE_UPTIME_DECAY : RIDE_UPTIME_DECAY * 0.2;
     const uptime = clampFloat(ride.stats.uptime - wear + mechanicBoost, 0.6, 1);
     const reliability = clampFloat(ride.stats.reliability - wear * 0.6 + mechanicBoost * 0.8, 0.6, 1);
@@ -1029,6 +1046,7 @@ function updateStaff(state: CoasterParkState): CoasterParkState {
       age: nextAge,
       status,
       cycleTimer,
+      weatherClosed,
       stats: {
         ...ride.stats,
         uptime,

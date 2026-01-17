@@ -20,6 +20,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   broken: { label: 'Broken', className: 'text-rose-400' },
   testing: { label: 'Testing', className: 'text-sky-400' },
   building: { label: 'Building', className: 'text-slate-400' },
+  storm_closed: { label: 'Storm Closed', className: 'text-sky-300' },
 };
 
 export default function RidesPanel({ rides, onClose, onSelectRide, onToggleRide }: RidesPanelProps) {
@@ -48,7 +49,9 @@ export default function RidesPanel({ rides, onClose, onSelectRide, onToggleRide 
                 <div className="text-xs text-muted-foreground">No rides built yet.</div>
               )}
               {sortedRides.map((ride) => {
-                const status = STATUS_STYLES[ride.status] ?? STATUS_STYLES.building;
+                const status = ride.weatherClosed && ride.status === 'closed'
+                  ? STATUS_STYLES.storm_closed
+                  : STATUS_STYLES[ride.status] ?? STATUS_STYLES.building;
                 const estimatedWait = estimateQueueWaitMinutes(
                   ride.queue.guestIds.length,
                   ride.stats.rideTime,
@@ -85,10 +88,10 @@ export default function RidesPanel({ rides, onClose, onSelectRide, onToggleRide 
                         size="sm"
                         variant={ride.status === 'open' ? 'outline' : 'default'}
                         className="h-7 px-2 text-xs"
-                        disabled={ride.status === 'broken'}
+                        disabled={ride.status === 'broken' || ride.weatherClosed}
                         onClick={() => onToggleRide(ride.id)}
                       >
-                        {ride.status === 'open' ? 'Close' : 'Open'}
+                        {ride.weatherClosed ? 'Storm' : ride.status === 'open' ? 'Close' : 'Open'}
                       </Button>
                     </div>
                   </div>

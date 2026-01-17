@@ -28,6 +28,9 @@ export default function RidePanel({ ride, onClose, onToggleStatus, onPriceChange
   const uptimePercent = Math.round(ride.stats.uptime * 100);
 
   const statusLabel = useMemo(() => {
+    if (ride.weatherClosed && ride.status === 'closed') {
+      return 'Storm Closed';
+    }
     switch (ride.status) {
       case 'open':
         return 'Open';
@@ -42,8 +45,10 @@ export default function RidePanel({ ride, onClose, onToggleStatus, onPriceChange
     }
   }, [ride.status]);
 
-  const canToggle = ride.status === 'open' || ride.status === 'closed';
-  const toggleLabel = ride.status === 'broken'
+  const canToggle = (ride.status === 'open' || ride.status === 'closed') && !ride.weatherClosed;
+  const toggleLabel = ride.weatherClosed
+    ? 'Storm Closed'
+    : ride.status === 'broken'
     ? 'Awaiting Repair'
     : ride.status === 'open'
       ? 'Close Ride'
@@ -64,7 +69,17 @@ export default function RidePanel({ ride, onClose, onToggleStatus, onPriceChange
         <div className="p-4 space-y-4 text-sm">
           <div className="flex items-center justify-between">
             <span>Status</span>
-            <span className={`text-xs font-semibold uppercase tracking-[0.15em] ${ride.status === 'open' ? 'text-emerald-400' : 'text-amber-400'}`}>
+            <span
+              className={`text-xs font-semibold uppercase tracking-[0.15em] ${
+                ride.status === 'open'
+                  ? 'text-emerald-400'
+                  : ride.weatherClosed
+                    ? 'text-sky-400'
+                    : ride.status === 'broken'
+                      ? 'text-rose-400'
+                      : 'text-amber-400'
+              }`}
+            >
               {statusLabel}
             </span>
           </div>

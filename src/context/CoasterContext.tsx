@@ -105,6 +105,7 @@ function normalizeCoasterState(state: CoasterParkState): CoasterParkState {
     rides: state.rides.map((ride) => ({
       ...ride,
       cycleTimer: ride.cycleTimer ?? 0,
+      weatherClosed: ride.weatherClosed ?? false,
     })),
   };
 }
@@ -352,6 +353,7 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       age: 0,
       color: definition.color,
       cycleTimer: 0,
+      weatherClosed: false,
     };
 
     return {
@@ -743,6 +745,12 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
       ...prev,
       rides: prev.rides.map((ride) => {
         if (ride.id !== rideId) return ride;
+        if (prev.weather.type === 'stormy') {
+          return ride;
+        }
+        if (ride.weatherClosed) {
+          return ride;
+        }
         if (ride.status !== 'open' && ride.status !== 'closed') {
           return ride;
         }

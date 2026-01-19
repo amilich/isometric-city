@@ -1,0 +1,167 @@
+import { GridPosition } from '@/core/types';
+import { Finance, Research } from './economy';
+import { Guest } from './guests';
+import { Ride } from './rides';
+import { Staff } from './staff';
+import { CoasterTile } from './tiles';
+import { TrackTrain } from './tracks';
+
+export type PanelType =
+  | 'none'
+  | 'rides'
+  | 'shops'
+  | 'guests'
+  | 'finance'
+  | 'staff'
+  | 'research'
+  | 'park';
+
+export type WeatherType = 'sunny' | 'cloudy' | 'rainy' | 'stormy';
+
+export type WeatherState = {
+  type: WeatherType;
+  temperature: number;
+  rainLevel: number;
+  windSpeed: number;
+};
+
+export type ParkStats = {
+  guestsInPark: number;
+  totalGuests: number;
+  rating: number;
+  cleanliness: number;
+  scenery: number;
+  litter: number;
+  excitement: number;
+  nausea: number;
+};
+
+export type CoasterTool =
+  | 'select'
+  | 'pan'
+  | 'path'
+  | 'queue_path'
+  | 'bulldoze'
+  | 'terrain_raise'
+  | 'terrain_lower'
+  | 'terrain_smooth'
+  | 'water'
+  | 'coaster_track'
+  | 'scenery_tree'
+  | 'scenery_flower'
+  | 'scenery_bench'
+  | 'scenery_shrub'
+  | 'scenery_lamp'
+  | 'scenery_statue'
+  | 'scenery_fountain'
+  | 'scenery_trash_can'
+  | 'scenery_fence'
+  | 'ride_carousel'
+  | 'ride_ferris_wheel'
+  | 'ride_bumper_cars'
+  | 'ride_swing'
+  | 'ride_haunted_house'
+  | 'ride_spiral_slide'
+  | 'ride_coaster_wooden'
+  | 'ride_coaster_steel'
+  | 'shop_food'
+  | 'shop_drink'
+  | 'shop_ice_cream'
+  | 'shop_souvenir'
+  | 'shop_info'
+  | 'shop_atm'
+  | 'shop_first_aid'
+  | 'shop_toilet'
+  | 'shop_staff_room'
+  | 'staff_handyman'
+  | 'staff_mechanic'
+  | 'staff_security'
+  | 'staff_entertainer';
+
+export type ToolInfo = {
+  name: string;
+  cost: number;
+  description: string;
+  size?: number;
+};
+
+export const TOOL_INFO: Record<CoasterTool, ToolInfo> = {
+  select: { name: 'Select', cost: 0, description: 'Inspect rides, guests, and scenery' },
+  pan: { name: 'Pan', cost: 0, description: 'Move the camera around the park' },
+  path: { name: 'Path', cost: 10, description: 'Build footpaths for guests', size: 1 },
+  queue_path: { name: 'Queue', cost: 10, description: 'Build queue paths for rides', size: 1 },
+  bulldoze: { name: 'Bulldoze', cost: 5, description: 'Remove paths and objects' },
+  terrain_raise: { name: 'Raise Land', cost: 20, description: 'Increase terrain height' },
+  terrain_lower: { name: 'Lower Land', cost: 20, description: 'Decrease terrain height' },
+  terrain_smooth: { name: 'Smooth Land', cost: 5, description: 'Smooth terrain slopes' },
+  water: { name: 'Water', cost: 30, description: 'Place or remove water tiles' },
+  coaster_track: { name: 'Coaster Track', cost: 15, description: 'Lay coaster track segments', size: 1 },
+  scenery_tree: { name: 'Tree', cost: 15, description: 'Plant a tree for scenery', size: 1 },
+  scenery_flower: { name: 'Flowers', cost: 10, description: 'Place flower beds', size: 1 },
+  scenery_bench: { name: 'Bench', cost: 20, description: 'Give guests a place to rest', size: 1 },
+  scenery_shrub: { name: 'Shrub', cost: 12, description: 'Add low shrubs to landscape', size: 1 },
+  scenery_lamp: { name: 'Lamp', cost: 18, description: 'Light up paths at night', size: 1 },
+  scenery_statue: { name: 'Statue', cost: 40, description: 'Iconic statue centerpiece', size: 1 },
+  scenery_fountain: { name: 'Fountain', cost: 45, description: 'Decorative water fountain', size: 1 },
+  scenery_trash_can: { name: 'Trash Can', cost: 25, description: 'Keep the park tidy', size: 1 },
+  scenery_fence: { name: 'Fence', cost: 8, description: 'Add decorative fencing', size: 1 },
+  ride_carousel: { name: 'Carousel', cost: 800, description: 'Gentle carousel ride', size: 2 },
+  ride_ferris_wheel: { name: 'Ferris Wheel', cost: 1200, description: 'Observation wheel', size: 2 },
+  ride_bumper_cars: { name: 'Bumper Cars', cost: 1600, description: 'Bumper cars pavilion', size: 2 },
+  ride_swing: { name: 'Swing Ride', cost: 900, description: 'Classic swing ride', size: 1 },
+  ride_haunted_house: { name: 'Haunted House', cost: 1400, description: 'Spooky dark ride', size: 2 },
+  ride_spiral_slide: { name: 'Spiral Slide', cost: 700, description: 'Small spiral slide', size: 1 },
+  ride_coaster_wooden: { name: 'Wooden Coaster', cost: 6000, description: 'Classic wooden roller coaster', size: 4 },
+  ride_coaster_steel: { name: 'Steel Coaster', cost: 8000, description: 'High-speed steel coaster', size: 4 },
+  shop_food: { name: 'Food Stall', cost: 400, description: 'Serve meals to guests', size: 1 },
+  shop_drink: { name: 'Drink Stall', cost: 350, description: 'Serve drinks to guests', size: 1 },
+  shop_ice_cream: { name: 'Ice Cream', cost: 420, description: 'Sweet treats for guests', size: 1 },
+  shop_souvenir: { name: 'Souvenir Shop', cost: 550, description: 'Sell park souvenirs', size: 1 },
+  shop_info: { name: 'Info Kiosk', cost: 250, description: 'Provide maps and tips', size: 1 },
+  shop_atm: { name: 'ATM', cost: 300, description: 'Let guests withdraw cash', size: 1 },
+  shop_first_aid: { name: 'First Aid', cost: 350, description: 'Help guests recover', size: 1 },
+  shop_toilet: { name: 'Toilets', cost: 200, description: 'Restrooms for guests', size: 1 },
+  shop_staff_room: { name: 'Staff Room', cost: 600, description: 'Give staff a place to rest', size: 1 },
+  staff_handyman: { name: 'Handyman', cost: 0, description: 'Hire a handyman for cleaning' },
+  staff_mechanic: { name: 'Mechanic', cost: 0, description: 'Hire a mechanic for repairs' },
+  staff_security: { name: 'Security', cost: 0, description: 'Hire security for safety' },
+  staff_entertainer: { name: 'Entertainer', cost: 0, description: 'Hire entertainers for morale' },
+};
+
+export type SavedParkMeta = {
+  id: string;
+  parkName: string;
+  guests: number;
+  rating: number;
+  cash: number;
+  year: number;
+  month: number;
+  gridSize: number;
+  savedAt: number;
+};
+
+export type CoasterParkState = {
+  id: string;
+  parkName: string;
+  grid: CoasterTile[][];
+  gridSize: number;
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  tick: number;
+  speed: 0 | 1 | 2 | 3;
+  selectedTool: CoasterTool;
+  stats: ParkStats;
+  finance: Finance;
+  rides: Ride[];
+  guests: Guest[];
+  staff: Staff[];
+  coasterTrains: TrackTrain[];
+  research: Research;
+  weather: WeatherState;
+  activePanel: PanelType;
+  parkEntrance: GridPosition;
+  parkExit: GridPosition;
+  gameVersion: number;
+};

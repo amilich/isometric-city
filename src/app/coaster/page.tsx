@@ -75,7 +75,7 @@ export default function CoasterPage() {
         {/* Title */}
         <div className="text-center space-y-4">
           <h1 className="text-7xl font-light tracking-wider text-white/90">
-            Coaster Tycoon
+            IsoCoaster
           </h1>
           <p className="text-xl text-white/60 font-light">
             Build the ultimate theme park

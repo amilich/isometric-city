@@ -1,5 +1,5 @@
 /**
- * Coaster Tycoon Types - Re-export all types
+ * IsoCoaster Types - Re-export all types
  */
 
 export * from './buildings';

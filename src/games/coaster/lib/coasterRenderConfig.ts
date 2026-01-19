@@ -1,5 +1,5 @@
 /**
- * Coaster Tycoon Sprite Render Configuration
+ * IsoCoaster Sprite Render Configuration
  * Maps building types to sprite sheet locations with offsets and scales
  */
 
@@ -586,7 +586,7 @@ const INFRASTRUCTURE_SHEET: SpriteSheet = {
 
 export const COASTER_SPRITE_PACK: CoasterSpritePack = {
   id: 'default',
-  name: 'Coaster Tycoon Default',
+  name: 'IsoCoaster Default',
   sheets: [
     STATIONS_SHEET,
     TREES_SHEET,

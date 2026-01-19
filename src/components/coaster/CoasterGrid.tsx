@@ -723,12 +723,28 @@ function drawQueueTile(
   ctx.setLineDash([]);
 }
 
+// Check if a building type is a tree (for multi-tree rendering)
+function isTreeType(buildingType: string): boolean {
+  return buildingType.startsWith('tree_');
+}
+
+// Seeded random for consistent tree placement per tile
+function seededRandom(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
+}
+
 function drawSprite(
   ctx: CanvasRenderingContext2D,
   spriteSheets: Map<string, HTMLCanvasElement>,
   buildingType: string,
   x: number,
-  y: number
+  y: number,
+  gridX?: number,
+  gridY?: number
 ) {
   const info = getSpriteInfo(buildingType);
   if (!info) return false;
@@ -738,26 +754,78 @@ function drawSprite(
   if (!sheetCanvas) return false;
   
   const rect = getSpriteRect(sheet, sprite, sheetCanvas.width, sheetCanvas.height);
-  const scale = sprite.scale || 1.0;
+  const baseScale = sprite.scale || 1.0;
   
-  // Calculate destination size BASED ON TILE SIZE (like city game does)
-  // Base width is TILE_WIDTH * 1.2, then apply sprite-specific scale
+  // Check if this is a tree - if so, draw multiple trees
+  if (isTreeType(buildingType) && gridX !== undefined && gridY !== undefined) {
+    const numTrees = 3 + Math.floor(seededRandom(gridX * 1000 + gridY)() * 3); // 3-5 trees
+    const rand = seededRandom(gridX * 997 + gridY * 1009);
+    
+    // Generate tree positions sorted by Y for proper depth ordering
+    const treePositions: { offsetX: number; offsetY: number; scale: number; depth: number }[] = [];
+    
+    for (let i = 0; i < numTrees; i++) {
+      // Random position within the isometric tile diamond
+      // Use parametric coordinates and convert to isometric
+      const u = rand() * 0.7 + 0.15; // 0.15 to 0.85 to stay within tile
+      const v = rand() * 0.7 + 0.15;
+      
+      // Convert to isometric offsets from tile center
+      const isoOffsetX = (u - v) * (TILE_WIDTH * 0.35);
+      const isoOffsetY = (u + v - 1) * (TILE_HEIGHT * 0.35);
+      
+      // Random scale variation (80% to 110% of base scale)
+      const scaleVariation = 0.8 + rand() * 0.3;
+      
+      treePositions.push({
+        offsetX: isoOffsetX,
+        offsetY: isoOffsetY,
+        scale: baseScale * scaleVariation,
+        depth: isoOffsetY, // Sort by Y for proper overlap
+      });
+    }
+    
+    // Sort by depth (trees further back drawn first)
+    treePositions.sort((a, b) => a.depth - b.depth);
+    
+    // Draw each tree
+    for (const tree of treePositions) {
+      const scale = tree.scale;
+      const baseWidth = TILE_WIDTH * 1.2;
+      const destWidth = baseWidth * scale;
+      const aspectRatio = rect.sh / rect.sw;
+      const destHeight = destWidth * aspectRatio;
+      
+      const offsetScale = destWidth / rect.sw;
+      const spriteOffsetX = (sprite.offsetX || 0) * offsetScale;
+      const spriteOffsetY = (sprite.offsetY || 0) * offsetScale;
+      
+      const drawX = x + (TILE_WIDTH - destWidth) / 2 + spriteOffsetX + tree.offsetX;
+      const drawY = y + TILE_HEIGHT - destHeight + spriteOffsetY + tree.offsetY;
+      
+      ctx.drawImage(
+        sheetCanvas,
+        rect.sx, rect.sy, rect.sw, rect.sh,
+        drawX, drawY, destWidth, destHeight
+      );
+    }
+    
+    return true;
+  }
+  
+  // Standard single sprite rendering
+  const scale = baseScale;
   const baseWidth = TILE_WIDTH * 1.2;
   const destWidth = baseWidth * scale;
   
-  // Maintain aspect ratio from the source sprite
   const aspectRatio = rect.sh / rect.sw;
   const destHeight = destWidth * aspectRatio;
   
-  // Scale offsets proportionally: old sprites were ~400px, new are ~77px (TILE_WIDTH * 1.2)
-  // So offsets need to be scaled down by approximately destWidth / rect.sw
   const offsetScale = destWidth / rect.sw;
   const offsetX = (sprite.offsetX || 0) * offsetScale;
   const offsetY = (sprite.offsetY || 0) * offsetScale;
   
-  // Position sprite: center horizontally, anchor to bottom of tile with offset
   const drawX = x + (TILE_WIDTH - destWidth) / 2 + offsetX;
-  // Anchor to tile bottom and push up by sprite height, then apply vertical offset
   const drawY = y + TILE_HEIGHT - destHeight + offsetY;
   
   ctx.drawImage(
@@ -1201,9 +1269,9 @@ const tile = grid[y][x];
         
         // Draw building sprite if present
         const buildingType = tile.building?.type;
-        if (buildingType && buildingType !== 'empty' && buildingType !== 'grass' && 
+        if (buildingType && buildingType !== 'empty' && buildingType !== 'grass' &&
             buildingType !== 'water' && buildingType !== 'path' && buildingType !== 'queue') {
-          drawSprite(ctx, spriteSheets, buildingType, screenX, screenY);
+          drawSprite(ctx, spriteSheets, buildingType, screenX, screenY, x, y);
         }
         
         // Draw guests on this tile

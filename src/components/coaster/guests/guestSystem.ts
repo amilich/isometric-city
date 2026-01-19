@@ -1,5 +1,5 @@
 /**
- * Guest System for Coaster Tycoon
+ * Guest System for IsoCoaster
  * Handles guest spawning, AI, pathfinding, and rendering
  */
 

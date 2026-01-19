@@ -1,5 +1,5 @@
 /**
- * Coaster Tycoon Building Types
+ * IsoCoaster Building Types
  * Defines all placeable buildings, rides, and decorations
  */
 

@@ -31,6 +31,13 @@ const TOOL_CATEGORIES: Record<string, Tool[]> = {
     'lamp_victorian', 'lamp_modern', 'lamp_pathway',
     'trash_can_basic', 'trash_can_fancy',
   ],
+  'Fountains': [
+    'fountain_small_1', 'fountain_small_2', 'fountain_small_3',
+    'fountain_medium_1', 'fountain_medium_2', 'fountain_medium_3',
+    'fountain_large_1', 'fountain_large_2', 'fountain_large_3',
+    'pond_small', 'pond_medium', 'pond_koi',
+    'splash_pad', 'water_jets', 'dancing_fountain',
+  ],
   'Food': ['food_hotdog', 'food_burger', 'food_icecream', 'food_cotton_candy', 'food_popcorn'],
   'Shops': ['shop_souvenir', 'shop_toys', 'shop_photo', 'restroom', 'first_aid'],
   'Rides': [
@@ -127,7 +134,7 @@ export function Sidebar({ onExit }: SidebarProps) {
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
           <span className="text-sidebar-foreground font-bold tracking-tight">
-            COASTER TYCOON
+            ISOCOASTER
           </span>
           {onExit && (
             <Button

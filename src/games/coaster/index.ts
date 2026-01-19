@@ -1,5 +1,5 @@
 /**
- * Coaster Tycoon Game Module
+ * IsoCoaster Game Module
  * Re-exports all coaster game types and utilities
  */
 

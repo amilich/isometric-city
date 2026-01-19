@@ -1,5 +1,5 @@
 /**
- * Coaster Tycoon Game State Types
+ * IsoCoaster Game State Types
  */
 
 import { Building, BuildingType } from './buildings';
@@ -44,6 +44,13 @@ export type Tool =
   | 'food_hotdog' | 'food_burger' | 'food_icecream' | 'food_cotton_candy' | 'food_popcorn'
   | 'shop_souvenir' | 'shop_toys' | 'shop_photo' | 'restroom' | 'first_aid'
   
+  // Fountains & Water Features
+  | 'fountain_small_1' | 'fountain_small_2' | 'fountain_small_3' | 'fountain_small_4' | 'fountain_small_5'
+  | 'fountain_medium_1' | 'fountain_medium_2' | 'fountain_medium_3' | 'fountain_medium_4' | 'fountain_medium_5'
+  | 'fountain_large_1' | 'fountain_large_2' | 'fountain_large_3' | 'fountain_large_4' | 'fountain_large_5'
+  | 'pond_small' | 'pond_medium' | 'pond_large' | 'pond_koi' | 'pond_lily'
+  | 'splash_pad' | 'water_jets' | 'mist_fountain' | 'interactive_fountain' | 'dancing_fountain'
+  
   // Flat Rides
   | 'ride_carousel' | 'ride_teacups' | 'ride_ferris_wheel' | 'ride_drop_tower' | 'ride_swing_ride'
   | 'ride_bumper_cars' | 'ride_go_karts' | 'ride_haunted_house' | 'ride_log_flume'
@@ -70,6 +77,7 @@ export type ToolCategory =
   | 'trees'
   | 'flowers'
   | 'furniture'
+  | 'fountains'
   | 'food'
   | 'shops'
   | 'rides_small'
@@ -138,6 +146,41 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   trash_can_basic: { name: 'Trash Can', cost: 30, description: 'Basic trash can', category: 'furniture' },
   trash_can_fancy: { name: 'Fancy Trash Can', cost: 50, description: 'Decorative trash can', category: 'furniture' },
   trash_can_themed: { name: 'Themed Trash Can', cost: 70, description: 'Themed trash can', category: 'furniture' },
+  
+  // Fountains - Small
+  fountain_small_1: { name: 'Small Fountain', cost: 150, description: 'Simple small fountain', category: 'fountains' },
+  fountain_small_2: { name: 'Small Tiered Fountain', cost: 175, description: 'Small tiered fountain', category: 'fountains' },
+  fountain_small_3: { name: 'Small Classic Fountain', cost: 180, description: 'Classic small fountain', category: 'fountains' },
+  fountain_small_4: { name: 'Small Modern Fountain', cost: 200, description: 'Modern small fountain', category: 'fountains' },
+  fountain_small_5: { name: 'Small Ornate Fountain', cost: 220, description: 'Ornate small fountain', category: 'fountains' },
+  
+  // Fountains - Medium
+  fountain_medium_1: { name: 'Medium Fountain', cost: 350, description: 'Standard medium fountain', category: 'fountains' },
+  fountain_medium_2: { name: 'Medium Tiered Fountain', cost: 400, description: 'Tiered medium fountain', category: 'fountains' },
+  fountain_medium_3: { name: 'Medium Classic Fountain', cost: 425, description: 'Classic medium fountain', category: 'fountains' },
+  fountain_medium_4: { name: 'Medium Modern Fountain', cost: 450, description: 'Modern medium fountain', category: 'fountains' },
+  fountain_medium_5: { name: 'Medium Ornate Fountain', cost: 500, description: 'Ornate medium fountain', category: 'fountains' },
+  
+  // Fountains - Large
+  fountain_large_1: { name: 'Large Fountain', cost: 800, description: 'Grand large fountain', category: 'fountains', size: { width: 2, height: 2 } },
+  fountain_large_2: { name: 'Large Tiered Fountain', cost: 900, description: 'Tiered large fountain', category: 'fountains', size: { width: 2, height: 2 } },
+  fountain_large_3: { name: 'Large Classic Fountain', cost: 950, description: 'Classic large fountain', category: 'fountains', size: { width: 2, height: 2 } },
+  fountain_large_4: { name: 'Large Modern Fountain', cost: 1000, description: 'Modern large fountain', category: 'fountains', size: { width: 2, height: 2 } },
+  fountain_large_5: { name: 'Large Ornate Fountain', cost: 1200, description: 'Ornate large fountain', category: 'fountains', size: { width: 2, height: 2 } },
+  
+  // Ponds
+  pond_small: { name: 'Small Pond', cost: 200, description: 'Small decorative pond', category: 'fountains' },
+  pond_medium: { name: 'Medium Pond', cost: 350, description: 'Medium decorative pond', category: 'fountains' },
+  pond_large: { name: 'Large Pond', cost: 500, description: 'Large decorative pond', category: 'fountains', size: { width: 2, height: 2 } },
+  pond_koi: { name: 'Koi Pond', cost: 600, description: 'Pond with koi fish', category: 'fountains' },
+  pond_lily: { name: 'Lily Pond', cost: 400, description: 'Pond with water lilies', category: 'fountains' },
+  
+  // Interactive Water Features
+  splash_pad: { name: 'Splash Pad', cost: 450, description: 'Interactive splash zone', category: 'fountains' },
+  water_jets: { name: 'Water Jets', cost: 300, description: 'Jumping water jets', category: 'fountains' },
+  mist_fountain: { name: 'Mist Fountain', cost: 350, description: 'Cooling mist fountain', category: 'fountains' },
+  interactive_fountain: { name: 'Interactive Fountain', cost: 550, description: 'Guest-activated fountain', category: 'fountains' },
+  dancing_fountain: { name: 'Dancing Fountain', cost: 800, description: 'Choreographed water show', category: 'fountains', size: { width: 2, height: 2 } },
   
   // Food
   food_hotdog: { name: 'Hot Dog Stand', cost: 200, description: 'Sells hot dogs', category: 'food' },

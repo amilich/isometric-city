@@ -1,5 +1,5 @@
 /**
- * Coaster Tycoon Economy & Guest Types
+ * IsoCoaster Economy & Guest Types
  * Defines guests, money, satisfaction, and park management
  */
 

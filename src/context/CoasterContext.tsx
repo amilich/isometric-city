@@ -270,8 +270,54 @@ function calculateStaffWages(staff: Staff[]): number {
 }
 
 /**
+ * Get the exit direction for a track piece.
+ * For straight pieces, exit direction = entry direction.
+ * For curves, exit direction is rotated based on turn type.
+ */
+function getExitDirection(piece: TrackPiece): TrackDirection {
+  const { type, direction } = piece;
+  
+  if (type === 'turn_right_flat') {
+    // Right turn: north->east, east->south, south->west, west->north
+    const rightTurn: Record<TrackDirection, TrackDirection> = {
+      north: 'east', east: 'south', south: 'west', west: 'north'
+    };
+    return rightTurn[direction];
+  }
+  
+  if (type === 'turn_left_flat') {
+    // Left turn: north->west, west->south, south->east, east->north
+    const leftTurn: Record<TrackDirection, TrackDirection> = {
+      north: 'west', west: 'south', south: 'east', east: 'north'
+    };
+    return leftTurn[direction];
+  }
+  
+  // Straight pieces, slopes, loops - exit in same direction
+  return direction;
+}
+
+/**
+ * Get the grid offset to the next tile based on direction.
+ * In our isometric grid:
+ * - North: x-1, y unchanged (moving up-left visually)
+ * - South: x+1, y unchanged (moving down-right visually)  
+ * - East: y-1, x unchanged (moving up-right visually)
+ * - West: y+1, x unchanged (moving down-left visually)
+ */
+function getDirectionOffset(dir: TrackDirection): { dx: number; dy: number } {
+  const offsets: Record<TrackDirection, { dx: number; dy: number }> = {
+    north: { dx: -1, dy: 0 },
+    south: { dx: 1, dy: 0 },
+    east: { dx: 0, dy: -1 },
+    west: { dx: 0, dy: 1 },
+  };
+  return offsets[dir];
+}
+
+/**
  * Collect all track tiles for a coaster from the grid.
- * Returns tiles in connected order starting from any tile, following the track.
+ * Returns tiles in connected order following the track direction.
  */
 function collectCoasterTrack(grid: Tile[][], coasterId: string): { tiles: { x: number; y: number }[]; pieces: TrackPiece[] } {
   const gridSize = grid.length;
@@ -291,7 +337,7 @@ function collectCoasterTrack(grid: Tile[][], coasterId: string): { tiles: { x: n
     return { tiles: [], pieces: [] };
   }
   
-  // Order the tiles by following connections
+  // Order the tiles by following track connections
   const visited = new Set<string>();
   const orderedTiles: { x: number; y: number }[] = [];
   const orderedPieces: TrackPiece[] = [];
@@ -304,42 +350,38 @@ function collectCoasterTrack(grid: Tile[][], coasterId: string): { tiles: { x: n
     orderedTiles.push({ x: current.x, y: current.y });
     orderedPieces.push(current.piece);
     
-    // Find the next connected tile based on track direction
-    const dir = current.piece.direction;
-    const nextOffsets: Record<string, { dx: number; dy: number }[]> = {
-      north: [{ dx: -1, dy: -1 }, { dx: 0, dy: -1 }, { dx: -1, dy: 0 }],
-      south: [{ dx: 1, dy: 1 }, { dx: 0, dy: 1 }, { dx: 1, dy: 0 }],
-      east: [{ dx: 1, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: -1 }],
-      west: [{ dx: -1, dy: 1 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }],
-    };
-    
-    const offsets = nextOffsets[dir] || [{ dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 0, dy: -1 }];
+    // Find the next tile based on exit direction
+    const exitDir = getExitDirection(current.piece);
+    const offset = getDirectionOffset(exitDir);
+    const nx = current.x + offset.dx;
+    const ny = current.y + offset.dy;
+    const key = `${nx},${ny}`;
     
     let found = false;
-    for (const { dx, dy } of offsets) {
-      const nx = current.x + dx;
-      const ny = current.y + dy;
-      const key = `${nx},${ny}`;
-      
-      if (!visited.has(key)) {
-        const next = allTrackTiles.find(t => t.x === nx && t.y === ny);
-        if (next) {
-          current = next;
-          found = true;
-          break;
-        }
+    if (!visited.has(key)) {
+      const next = allTrackTiles.find(t => t.x === nx && t.y === ny);
+      if (next) {
+        current = next;
+        found = true;
       }
     }
     
+    // If primary direction didn't work, try all adjacent unvisited tiles
     if (!found) {
-      // Try any unvisited adjacent track tile
-      for (const t of allTrackTiles) {
-        const key = `${t.x},${t.y}`;
-        if (!visited.has(key)) {
-          const dx = Math.abs(t.x - current.x);
-          const dy = Math.abs(t.y - current.y);
-          if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-            current = t;
+      const adjacentOffsets = [
+        { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
+        { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
+      ];
+      
+      for (const { dx, dy } of adjacentOffsets) {
+        const adjX = current.x + dx;
+        const adjY = current.y + dy;
+        const adjKey = `${adjX},${adjY}`;
+        
+        if (!visited.has(adjKey)) {
+          const next = allTrackTiles.find(t => t.x === adjX && t.y === adjY);
+          if (next) {
+            current = next;
             found = true;
             break;
           }

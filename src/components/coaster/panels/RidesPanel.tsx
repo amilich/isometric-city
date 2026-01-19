@@ -19,6 +19,7 @@ const UI_LABELS = {
   waitTime: msg('Wait'),
   guests: msg('Guests'),
   revenue: msg('Revenue'),
+  noRides: msg('Build some rides to manage pricing and status.'),
 };
 
 export function RidesPanel() {
@@ -35,7 +36,7 @@ export function RidesPanel() {
 
         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
           {rides.length === 0 && (
-            <div className="text-sm text-muted-foreground">Build some rides to manage pricing and status.</div>
+            <div className="text-sm text-muted-foreground">{m(UI_LABELS.noRides)}</div>
           )}
 
           {rides.map((ride) => (

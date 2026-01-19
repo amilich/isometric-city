@@ -783,11 +783,15 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
         if (tool === 'coaster_build' && lastTile && !deltaDir) return prev;
         
         // ALWAYS check for adjacent existing track to inherit direction and height
-        // This is the most reliable way to connect to existing track
+        // When multiple adjacent tracks exist, prefer the one that matches the build path
         let adjacentDirection: TrackDirection | null = null;
         let adjacentHeight = prev.buildingCoasterHeight;
         let connectingToEntry = false; // True if we're feeding INTO adjacent track's entry
         let targetEntryHeight = 0; // The height we need our exit to be at when connecting to entry
+        
+        const oppositeDir: Record<TrackDirection, TrackDirection> = {
+          north: 'south', south: 'north', east: 'west', west: 'east'
+        };
         
         const adjacentOffsets = [
           { dx: -1, dy: 0 },
@@ -795,6 +799,18 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
           { dx: 0, dy: -1 },
           { dx: 0, dy: 1 },
         ];
+        
+        type AdjacentCandidate = {
+          adjX: number;
+          adjY: number;
+          baseDirection: TrackDirection;
+          baseHeight: number;
+          connectingToEntry: boolean;
+          targetEntryHeight: number;
+          isExitConnection: boolean;
+        };
+        
+        const candidates: AdjacentCandidate[] = [];
         
         for (const { dx, dy } of adjacentOffsets) {
           const adjX = x + dx;
@@ -807,12 +823,6 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
               // Calculate entry and exit directions for the adjacent piece
               // Entry is always the side the track comes FROM (opposite of direction)
               // Exit is where the track goes TO (direction for straights, rotated for turns)
-              const oppositeDir: Record<TrackDirection, TrackDirection> = {
-                north: 'south', south: 'north', east: 'west', west: 'east'
-              };
-              
-              // All tracks enter from the opposite side of their direction
-              // direction 'south' means heading south, so entering from north
               const entryDir = oppositeDir[adjPiece.direction];
               
               // Exit direction depends on track type
@@ -841,24 +851,61 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
               );
               
               if (exitPointsToUs) {
-                // Adjacent track exits toward us - we continue in that direction
-                // Our startHeight should match their endHeight
-                adjacentDirection = exitDir;
-                adjacentHeight = adjPiece.endHeight;
-                connectingToEntry = false;
-                targetEntryHeight = adjPiece.startHeight; // In case we need it
-                break;
+                candidates.push({
+                  adjX,
+                  adjY,
+                  baseDirection: exitDir,
+                  baseHeight: adjPiece.endHeight,
+                  connectingToEntry: false,
+                  targetEntryHeight: adjPiece.startHeight,
+                  isExitConnection: true,
+                });
               } else if (entryPointsToUs) {
-                // Adjacent track's entry is toward us - we feed into it
-                // Our endHeight should match their startHeight
-                adjacentDirection = oppositeDir[entryDir];
-                adjacentHeight = adjPiece.startHeight; // This is what our END height needs to be
-                connectingToEntry = true;
-                targetEntryHeight = adjPiece.startHeight;
-                break;
+                candidates.push({
+                  adjX,
+                  adjY,
+                  baseDirection: oppositeDir[entryDir],
+                  baseHeight: adjPiece.startHeight,
+                  connectingToEntry: true,
+                  targetEntryHeight: adjPiece.startHeight,
+                  isExitConnection: false,
+                });
               }
             }
           }
+        }
+        
+        if (candidates.length > 0) {
+          const lastTileMatch = lastTile
+            ? candidates.find(candidate =>
+                candidate.adjX === lastTile.x &&
+                candidate.adjY === lastTile.y &&
+                candidate.isExitConnection
+              )
+            : null;
+          
+          const directionMatch = deltaDir
+            ? candidates.find(candidate =>
+                candidate.baseDirection === deltaDir && candidate.isExitConnection
+              )
+            : null;
+          
+          const exitCandidates = candidates.filter(candidate => candidate.isExitConnection);
+          const heightSorted = (list: AdjacentCandidate[]) =>
+            list.slice().sort((a, b) =>
+              Math.abs(a.baseHeight - prev.buildingCoasterHeight) -
+              Math.abs(b.baseHeight - prev.buildingCoasterHeight)
+            );
+          
+          const chosen = lastTileMatch
+            ?? directionMatch
+            ?? heightSorted(exitCandidates)[0]
+            ?? heightSorted(candidates)[0];
+          
+          adjacentDirection = chosen.baseDirection;
+          adjacentHeight = chosen.baseHeight;
+          connectingToEntry = chosen.connectingToEntry;
+          targetEntryHeight = chosen.targetEntryHeight;
         }
         
         // Determine track directions

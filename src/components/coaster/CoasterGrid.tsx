@@ -993,6 +993,45 @@ const DIRECTION_ANGLES: Record<string, number> = {
   west: Math.atan2(TILE_HEIGHT / 2, -TILE_WIDTH / 2),
 };
 
+function directionFromDelta(dx: number, dy: number): string | null {
+  if (dx === 1 && dy === 0) return 'south';
+  if (dx === -1 && dy === 0) return 'north';
+  if (dx === 0 && dy === 1) return 'west';
+  if (dx === 0 && dy === -1) return 'east';
+  return null;
+}
+
+/**
+ * Get the actual travel direction for a car at parameter t along a track piece.
+ * Uses the ordered track tiles to determine entry/exit directions so cars never
+ * face backward on straights or curves.
+ */
+function getCarTravelDirection(
+  trackPiece: NonNullable<Tile['trackPiece']>,
+  trackTiles: { x: number; y: number }[],
+  trackIndex: number,
+  t: number
+): string {
+  const trackLen = trackTiles.length;
+  if (trackLen < 2) return trackPiece.direction;
+
+  const prevTile = trackTiles[(trackIndex - 1 + trackLen) % trackLen];
+  const currTile = trackTiles[trackIndex];
+  const nextTile = trackTiles[(trackIndex + 1) % trackLen];
+
+  const entryDir = directionFromDelta(currTile.x - prevTile.x, currTile.y - prevTile.y);
+  const exitDir = directionFromDelta(nextTile.x - currTile.x, nextTile.y - currTile.y);
+
+  if (!entryDir || !exitDir) return trackPiece.direction;
+
+  // Straight segments should be constant, curves interpolate by position.
+  if (entryDir === exitDir) return entryDir;
+
+  if (t < 0.3) return entryDir;
+  if (t > 0.7) return exitDir;
+  return t < 0.5 ? entryDir : exitDir;
+}
+
 function drawCoasterCar(ctx: CanvasRenderingContext2D, x: number, y: number, direction: string) {
   const angle = DIRECTION_ANGLES[direction] ?? 0;
   
@@ -1224,10 +1263,13 @@ export function CoasterGrid({
           const centerX = screenX + TILE_WIDTH / 2;
           const centerY = screenY + TILE_HEIGHT / 2;
           const pos = getTrackPoint(trackPiece, centerX, centerY, t);
+          
+          // Calculate actual travel direction based on track piece type and position
+          const travelDirection = getCarTravelDirection(trackPiece, coaster.trackTiles, trackIndex, t);
 
           const key = `${trackTile.x},${trackTile.y}`;
           const existing = carsByTile.get(key);
-          const carData = { ...pos, direction: trackPiece.direction };
+          const carData = { ...pos, direction: travelDirection };
           if (existing) {
             existing.push(carData);
           } else {

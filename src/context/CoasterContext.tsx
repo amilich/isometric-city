@@ -399,7 +399,7 @@ function createDefaultTrain(): CoasterTrain {
   // Create multiple cars for a realistic train
   const numCars = 6;
   const carSpacing = 0.18; // Spacing between cars - smaller value keeps cars closer together
-  const baseVelocity = 0.03;
+  const baseVelocity = 0.06;
   
   const cars: CoasterCar[] = [];
   for (let i = 0; i < numCars; i++) {
@@ -907,25 +907,27 @@ export function CoasterProvider({ children, startFresh = false }: { children: Re
           endDirection = rotateDirection(startDirection, 'right');
         } else if (tool === 'coaster_slope_up') {
           pieceType = 'slope_up_small';
-          if (connectingToEntry) {
+          if (connectingToEntry && targetEntryHeight > 0) {
+            // Only use entry-matching logic if we can create a valid slope
             // Our exit needs to match adjacent's entry height
-            // For slope_up: endHeight = startHeight + 1
-            // So: startHeight = targetEntryHeight - 1
             endHeight = targetEntryHeight;
             startHeight = clampHeight(targetEntryHeight - 1);
           } else {
+            // Default: slope up from current height
+            // If targetEntryHeight is 0, we can't slope up into it (would need negative height)
+            // So just create a normal slope from current position
             endHeight = clampHeight(startHeight + 1);
           }
           chainLift = true; // Chain lift pulls coaster UP
         } else if (tool === 'coaster_slope_down') {
           pieceType = 'slope_down_small';
-          if (connectingToEntry) {
+          if (connectingToEntry && targetEntryHeight < 10) {
+            // Only use entry-matching logic if we can create a valid slope
             // Our exit needs to match adjacent's entry height
-            // For slope_down: endHeight = startHeight - 1
-            // So: startHeight = targetEntryHeight + 1
             endHeight = targetEntryHeight;
             startHeight = clampHeight(targetEntryHeight + 1);
           } else {
+            // Default: slope down from current height
             endHeight = clampHeight(startHeight - 1);
           }
           chainLift = false; // No chain on downward slopes - gravity does the work

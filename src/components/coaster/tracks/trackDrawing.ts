@@ -239,9 +239,15 @@ export function drawCurvedTrack(
     toEdge = turnRight ? northEdge : southEdge;
   }
   
-  // Draw support if elevated
+  // Draw support if elevated - place under the curve midpoint
   if (height > 0) {
-    drawSupport(ctx, center.x, center.y + heightOffset, height);
+    const midT = 0.5;
+    const u = 1 - midT;
+    const curveMid = {
+      x: u * u * fromEdge.x + 2 * u * midT * center.x + midT * midT * toEdge.x,
+      y: u * u * fromEdge.y + 2 * u * midT * center.y + midT * midT * toEdge.y,
+    };
+    drawSupport(ctx, curveMid.x, curveMid.y + heightOffset, height);
   }
   
   // Draw crossties along the quadratic curve (fewer ties - 4 is enough)

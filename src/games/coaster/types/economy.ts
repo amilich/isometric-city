@@ -253,6 +253,10 @@ export interface Guest {
   queueTimer: number; // Remaining wait/ride time
   decisionCooldown: number; // Time until next ride decision
   
+  // Approach state (for walking into shops/food stands)
+  approachProgress: number; // 0 = on path, 1 = at building
+  initialActivityTime: number; // Total time for eating/shopping (to calculate approach progress)
+  
   // Needs (0-100, higher = more urgent)
   hunger: number;
   thirst: number;

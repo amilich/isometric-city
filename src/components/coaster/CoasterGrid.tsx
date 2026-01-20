@@ -663,6 +663,29 @@ function drawGatePost(
   ctx.fill();
 }
 
+// Check if a building type is a shop or food stand (guests can visit)
+function isVisitableBuilding(type: string | undefined): boolean {
+  if (!type) return false;
+  return (
+    type.startsWith('shop_') ||
+    type.startsWith('food_') ||
+    type.startsWith('drink_') ||
+    type.startsWith('snack_') ||
+    type.startsWith('cart_') ||
+    type.startsWith('game_') ||
+    type === 'arcade_building' ||
+    type === 'vr_experience' ||
+    type === 'photo_booth' ||
+    type === 'caricature' ||
+    type === 'face_paint' ||
+    type === 'restroom' ||
+    type === 'first_aid' ||
+    type === 'lockers' ||
+    type === 'stroller_rental' ||
+    type === 'atm'
+  );
+}
+
 function drawPathTile(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -682,11 +705,24 @@ function drawPathTile(
     if (gx < 0 || gy < 0 || gx >= gridSize || gy >= gridSize) return false;
     return grid[gy][gx].path || grid[gy][gx].queue;
   };
+  
+  // Check adjacent tiles for visitable buildings (shops, food stands, etc.)
+  const hasVisitableBuilding = (gx: number, gy: number) => {
+    if (gx < 0 || gy < 0 || gx >= gridSize || gy >= gridSize) return false;
+    const tile = grid[gy]?.[gx];
+    return tile?.building && isVisitableBuilding(tile.building.type);
+  };
 
   const north = hasPath(gridX - 1, gridY);
   const east = hasPath(gridX, gridY - 1);
   const south = hasPath(gridX + 1, gridY);
   const west = hasPath(gridX, gridY + 1);
+  
+  // Check for adjacent visitable buildings (to draw sidewalk connections)
+  const northBuilding = hasVisitableBuilding(gridX - 1, gridY);
+  const eastBuilding = hasVisitableBuilding(gridX, gridY - 1);
+  const southBuilding = hasVisitableBuilding(gridX + 1, gridY);
+  const westBuilding = hasVisitableBuilding(gridX, gridY + 1);
 
   // Draw grass base first
   drawGrassTile(ctx, x, y, 1);
@@ -777,6 +813,51 @@ function drawPathTile(
     ctx.closePath();
     ctx.fill();
   }
+
+  // Draw sidewalk connections to adjacent visitable buildings (shops, food stands, etc.)
+  // These are narrower connector paths that go from the main path to the building entrance
+  const connectorWidthRatio = 0.10; // Slightly narrower than main path
+  const connectorHalfWidth = w * connectorWidthRatio * 0.5;
+  
+  // Helper to draw a connector sidewalk to a building
+  const drawBuildingConnector = (
+    dirDx: number,
+    dirDy: number,
+    edgeX: number,
+    edgeY: number
+  ) => {
+    const perp = getPerp(dirDx, dirDy);
+    const stopX = cx + (edgeX - cx) * edgeStop;
+    const stopY = cy + (edgeY - cy) * edgeStop;
+    
+    // Draw connector surface
+    ctx.fillStyle = PATH_COLORS.surface;
+    ctx.beginPath();
+    ctx.moveTo(cx + perp.nx * connectorHalfWidth, cy + perp.ny * connectorHalfWidth);
+    ctx.lineTo(stopX + perp.nx * connectorHalfWidth, stopY + perp.ny * connectorHalfWidth);
+    ctx.lineTo(stopX - perp.nx * connectorHalfWidth, stopY - perp.ny * connectorHalfWidth);
+    ctx.lineTo(cx - perp.nx * connectorHalfWidth, cy - perp.ny * connectorHalfWidth);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Draw connector edges
+    ctx.strokeStyle = PATH_COLORS.edge;
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(cx + perp.nx * connectorHalfWidth, cy + perp.ny * connectorHalfWidth);
+    ctx.lineTo(stopX + perp.nx * connectorHalfWidth, stopY + perp.ny * connectorHalfWidth);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - perp.nx * connectorHalfWidth, cy - perp.ny * connectorHalfWidth);
+    ctx.lineTo(stopX - perp.nx * connectorHalfWidth, stopY - perp.ny * connectorHalfWidth);
+    ctx.stroke();
+  };
+
+  // Draw connectors to adjacent buildings (only if there's no path already in that direction)
+  if (northBuilding && !north) drawBuildingConnector(northDx, northDy, northEdgeX, northEdgeY);
+  if (eastBuilding && !east) drawBuildingConnector(eastDx, eastDy, eastEdgeX, eastEdgeY);
+  if (southBuilding && !south) drawBuildingConnector(southDx, southDy, southEdgeX, southEdgeY);
+  if (westBuilding && !west) drawBuildingConnector(westDx, westDy, westEdgeX, westEdgeY);
 
   // Draw edge lines for definition (like road curbs)
   ctx.strokeStyle = PATH_COLORS.edge;

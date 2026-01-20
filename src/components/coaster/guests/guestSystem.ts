@@ -92,6 +92,10 @@ export function createGuest(entranceX: number, entranceY: number, gridSize: numb
     queueTimer: 0,
     decisionCooldown: 20 + Math.random() * 40,
     
+    // Approach state
+    approachProgress: 0,
+    initialActivityTime: 0,
+    
     // Needs (0-100)
     hunger: 20 + Math.random() * 30,
     thirst: 20 + Math.random() * 30,
@@ -162,8 +166,28 @@ export function drawGuest(
     }
   }
   
-  const x = startX + (endX - startX) * guest.progress + TILE_WIDTH / 2;
-  const y = startY + (endY - startY) * guest.progress + TILE_HEIGHT / 2;
+  let x = startX + (endX - startX) * guest.progress + TILE_WIDTH / 2;
+  let y = startY + (endY - startY) * guest.progress + TILE_HEIGHT / 2;
+  
+  // When eating or shopping, interpolate from path tile toward the building
+  if ((guest.state === 'eating' || guest.state === 'shopping') && guest.targetBuildingId) {
+    const [buildingX, buildingY] = guest.targetBuildingId.split(',').map(Number);
+    const { x: pathX, y: pathY } = gridToScreen(guest.tileX, guest.tileY);
+    const { x: buildingScreenX, y: buildingScreenY } = gridToScreen(buildingX, buildingY);
+    
+    // Use the tracked approachProgress (0 = on path, 1 = at building center)
+    const maxApproachDistance = 1.0; // Walk fully into the building
+    const approachAmount = guest.approachProgress * maxApproachDistance;
+    
+    // Interpolate from path center toward building center
+    const pathCenterX = pathX + TILE_WIDTH / 2;
+    const pathCenterY = pathY + TILE_HEIGHT / 2;
+    const buildingCenterX = buildingScreenX + TILE_WIDTH / 2;
+    const buildingCenterY = buildingScreenY + TILE_HEIGHT / 2;
+    
+    x = pathCenterX + (buildingCenterX - pathCenterX) * approachAmount;
+    y = pathCenterY + (buildingCenterY - pathCenterY) * approachAmount;
+  }
   
   // Walking animation
   const walkCycle = Math.sin((tick * 0.2 + guest.walkOffset) * 2);
@@ -421,6 +445,25 @@ export function updateGuest(
 
   if (updatedGuest.state === 'eating' || updatedGuest.state === 'shopping') {
     updatedGuest.queueTimer -= deltaTime;
+    
+    // Update approach progress - walk in at start, walk out at end
+    if (updatedGuest.initialActivityTime > 0) {
+      const elapsed = updatedGuest.initialActivityTime - updatedGuest.queueTimer;
+      const remaining = updatedGuest.queueTimer;
+      const approachTime = 1.5; // Time to walk in/out in seconds
+      
+      if (elapsed < approachTime) {
+        // Walking in
+        updatedGuest.approachProgress = Math.min(1, elapsed / approachTime);
+      } else if (remaining < approachTime) {
+        // Walking out
+        updatedGuest.approachProgress = Math.max(0, remaining / approachTime);
+      } else {
+        // In the building
+        updatedGuest.approachProgress = 1;
+      }
+    }
+    
     if (updatedGuest.queueTimer <= 0) {
       if (updatedGuest.state === 'eating') {
         updatedGuest.hunger = Math.max(0, updatedGuest.hunger - 60);
@@ -433,6 +476,8 @@ export function updateGuest(
       updatedGuest.targetBuildingId = null;
       updatedGuest.targetBuildingKind = null;
       updatedGuest.queueTimer = 0;
+      updatedGuest.approachProgress = 0;
+      updatedGuest.initialActivityTime = 0;
     }
     updatedGuest.lastState = previousState;
     return updatedGuest;
@@ -511,7 +556,10 @@ export function updateGuest(
           }
           if (updatedGuest.targetBuildingKind === 'food') {
             updatedGuest.state = 'eating';
-            updatedGuest.queueTimer = 8 + Math.random() * 12;
+            const activityTime = 8 + Math.random() * 12;
+            updatedGuest.queueTimer = activityTime;
+            updatedGuest.initialActivityTime = activityTime;
+            updatedGuest.approachProgress = 0;
             updatedGuest.path = [];
             updatedGuest.pathIndex = 0;
             updatedGuest.lastState = previousState;
@@ -519,7 +567,10 @@ export function updateGuest(
           }
           if (updatedGuest.targetBuildingKind === 'shop') {
             updatedGuest.state = 'shopping';
-            updatedGuest.queueTimer = 6 + Math.random() * 10;
+            const activityTime = 6 + Math.random() * 10;
+            updatedGuest.queueTimer = activityTime;
+            updatedGuest.initialActivityTime = activityTime;
+            updatedGuest.approachProgress = 0;
             updatedGuest.path = [];
             updatedGuest.pathIndex = 0;
             updatedGuest.lastState = previousState;

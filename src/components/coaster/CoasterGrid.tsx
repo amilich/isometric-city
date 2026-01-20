@@ -23,6 +23,21 @@ const TRACK_DRAG_TOOLS: Tool[] = [
   'bulldoze',
 ];
 
+// Scenery tools that support drag-to-draw (flowers, bushes, trees)
+const SCENERY_DRAG_TOOLS: Tool[] = [
+  // Trees
+  'tree_oak', 'tree_maple', 'tree_birch', 'tree_elm', 'tree_willow',
+  'tree_pine', 'tree_spruce', 'tree_fir', 'tree_cedar', 'tree_redwood',
+  'tree_palm', 'tree_banana', 'tree_bamboo', 'tree_coconut', 'tree_tropical',
+  'tree_cherry', 'tree_magnolia', 'tree_dogwood', 'tree_jacaranda', 'tree_wisteria',
+  // Bushes
+  'bush_hedge', 'bush_flowering',
+  // Topiaries
+  'topiary_ball', 'topiary_spiral', 'topiary_animal',
+  // Flowers
+  'flowers_bed', 'flowers_planter', 'flowers_hanging', 'flowers_wild', 'ground_cover',
+];
+
 // =============================================================================
 // CONSTANTS (shared with isocity)
 // =============================================================================
@@ -1272,7 +1287,7 @@ function drawBoardingGuests(
   const carY = cy - 4;
   
   const guestsToShow = Math.min(guestCount, 8);
-  const scale = 1.5; // Larger scale for visibility
+  const scale = 0.7; // Match normal park guest sprite size
   
   for (let i = 0; i < guestsToShow; i++) {
     // Stagger guest animations
@@ -1481,6 +1496,8 @@ export function CoasterGrid({
   
   // Check if current tool supports drag-to-draw
   const isTrackDragTool = useMemo(() => TRACK_DRAG_TOOLS.includes(selectedTool), [selectedTool]);
+  const isSceneryDragTool = useMemo(() => SCENERY_DRAG_TOOLS.includes(selectedTool), [selectedTool]);
+  const isDragTool = isTrackDragTool || isSceneryDragTool;
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lightingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1648,6 +1665,15 @@ export function CoasterGrid({
     
     state.coasters.forEach(coaster => {
       if (coaster.track.length === 0 || coaster.trackTiles.length === 0) return;
+      
+      // Validate that this coaster's track still exists in the grid
+      // Skip rendering if the track tiles don't match the grid state
+      const hasValidTrack = coaster.trackTiles.some(tile => {
+        const gridTile = state.grid[tile.y]?.[tile.x];
+        return gridTile?.coasterTrackId === coaster.id && gridTile?.trackPiece;
+      });
+      if (!hasValidTrack) return;
+      
       const trackLen = coaster.track.length;
       
       // Check if this coaster has an adjacent queue - if not, no guests can ride
@@ -1679,12 +1705,22 @@ export function CoasterGrid({
         }
         
         train.cars.forEach((car, carIdx) => {
+          // Skip cars with invalid progress values
+          if (!Number.isFinite(car.trackProgress)) return;
+          
           // Handle negative track progress by wrapping around
           let normalizedProgress = car.trackProgress % trackLen;
           if (normalizedProgress < 0) normalizedProgress += trackLen;
           
+          // Extra validation - skip if progress is somehow still invalid
+          if (!Number.isFinite(normalizedProgress) || normalizedProgress < 0) return;
+
           const trackIndex = Math.floor(normalizedProgress);
           const t = normalizedProgress - trackIndex;
+          
+          // Skip if trackIndex is out of bounds
+          if (trackIndex < 0 || trackIndex >= trackLen) return;
+          
           const trackTile = coaster.trackTiles[trackIndex];
           const trackPiece = coaster.track[trackIndex];
           if (!trackTile || !trackPiece) return;
@@ -1966,8 +2002,8 @@ const tile = grid[y][x];
       return;
     }
     
-    // If it's a track drag tool and we're on a valid tile, start track dragging
-    if (isTrackDragTool && isValidTile) {
+    // If it's a drag tool (track, scenery) and we're on a valid tile, start dragging
+    if (isDragTool && isValidTile) {
       setIsTrackDragging(true);
       setTrackDragStartTile({ x: gridX, y: gridY });
       setTrackDragDirection(null);
@@ -1987,7 +2023,7 @@ const tile = grid[y][x];
       // Other tools (shops, decorations, etc.) - place on click
       placeAtTile(gridX, gridY);
     }
-  }, [offset, zoom, gridSize, isTrackDragTool, selectedTool, placeAtTile, bulldozeTile, setSelectedTile]);
+  }, [offset, zoom, gridSize, isDragTool, selectedTool, placeAtTile, bulldozeTile, setSelectedTile]);
   
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();

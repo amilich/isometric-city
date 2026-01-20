@@ -13,6 +13,8 @@ import {
   updatePedestrianState,
   spawnPedestrianAtRecreation,
   spawnPedestrianFromBuilding,
+  spawnPedestrianInsideBuilding,
+  spawnPedestrianApproachingShop,
   findBeachTiles,
   getRandomBeachTile,
   spawnPedestrianAtBeach,
@@ -350,8 +352,8 @@ export function useVehicleSystems(
       return true;
     }
     
-    // 22% - Pedestrian already at a recreation area
-    if (spawnType < 0.87) {
+    // 20% - Pedestrian already at a recreation area
+    if (spawnType < 0.85) {
       const recreationAreas = findRecreationAreasCallback();
       if (recreationAreas.length === 0) return false;
       
@@ -385,7 +387,67 @@ export function useVehicleSystems(
       return false;
     }
     
-    // 15% - Pedestrian exiting from a building
+    // 5% - Pedestrian already inside a shop/building (shopping, working, etc.)
+    if (spawnType < 0.90) {
+      const enterableBuildings = findEnterableBuildingsCallback();
+      if (enterableBuildings.length === 0) return false;
+      
+      // Prefer shops/commercial buildings for more visible shopping activity
+      const shopBuildings = enterableBuildings.filter(b => 
+        b.buildingType === 'shop_small' || b.buildingType === 'shop_medium' || b.buildingType === 'mall'
+      );
+      const buildingList = shopBuildings.length > 0 && Math.random() < 0.7 ? shopBuildings : enterableBuildings;
+      
+      const building = buildingList[Math.floor(Math.random() * buildingList.length)];
+      const home = residentials[Math.floor(Math.random() * residentials.length)];
+      
+      const ped = spawnPedestrianInsideBuilding(
+        pedestrianIdRef.current++,
+        building.x,
+        building.y,
+        currentGrid,
+        currentGridSize,
+        home.x,
+        home.y
+      );
+      
+      if (ped) {
+        pedestriansRef.current.push(ped);
+        return true;
+      }
+      return false;
+    }
+    
+    // 5% - Pedestrian approaching a shop (visible at entrance)
+    if (spawnType < 0.95) {
+      const enterableBuildings = findEnterableBuildingsCallback();
+      const shopBuildings = enterableBuildings.filter(b => 
+        b.buildingType === 'shop_small' || b.buildingType === 'shop_medium' || b.buildingType === 'mall'
+      );
+      
+      if (shopBuildings.length === 0) return false;
+      
+      const shop = shopBuildings[Math.floor(Math.random() * shopBuildings.length)];
+      const home = residentials[Math.floor(Math.random() * residentials.length)];
+      
+      const ped = spawnPedestrianApproachingShop(
+        pedestrianIdRef.current++,
+        shop.x,
+        shop.y,
+        currentGrid,
+        currentGridSize,
+        home.x,
+        home.y
+      );
+      
+      if (ped) {
+        pedestriansRef.current.push(ped);
+        return true;
+      }
+      return false;
+    }
+    
+    // 5% - Pedestrian exiting from a building
     const enterableBuildings = findEnterableBuildingsCallback();
     if (enterableBuildings.length === 0) return false;
     

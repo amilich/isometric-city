@@ -128,11 +128,27 @@ export function drawPedestrians(
         pedX = screenX + TILE_WIDTH / 2 + ped.activityOffsetX * 0.3;
         pedY = screenY + TILE_HEIGHT / 2 + ped.activityOffsetY * 0.3;
       }
-    } else if (ped.state === 'entering_building' || ped.state === 'exiting_building') {
-      // Near building entrance
+    } else if (ped.state === 'approaching_shop') {
+      // Approaching shop - stand at the entrance with offset
       const { screenX, screenY } = gridToScreen(ped.destX, ped.destY, 0, 0);
-      pedX = screenX + TILE_WIDTH / 2;
-      pedY = screenY + TILE_HEIGHT / 2;
+      // Position at the front of the shop with slight offset to show queuing
+      pedX = screenX + TILE_WIDTH / 2 + ped.activityOffsetX;
+      pedY = screenY + TILE_HEIGHT / 2 + 8 + ped.activityOffsetY; // Offset down to be at "entrance"
+    } else if (ped.state === 'entering_building' || ped.state === 'exiting_building') {
+      // At building entrance - position depends on if shopping
+      const { screenX, screenY } = gridToScreen(ped.destX, ped.destY, 0, 0);
+      if (ped.activity === 'shopping') {
+        // Shoppers walk towards the door (animate position based on progress)
+        const doorProgress = ped.state === 'entering_building' 
+          ? ped.buildingEntryProgress 
+          : 1 - ped.buildingEntryProgress;
+        pedX = screenX + TILE_WIDTH / 2 + ped.activityOffsetX * (1 - doorProgress);
+        // Move up towards the building as they enter
+        pedY = screenY + TILE_HEIGHT / 2 + 8 * (1 - doorProgress) + ped.activityOffsetY * (1 - doorProgress);
+      } else {
+        pedX = screenX + TILE_WIDTH / 2;
+        pedY = screenY + TILE_HEIGHT / 2;
+      }
     } else if (ped.state === 'socializing') {
       // Socializing - standing still with offset to face conversation partner
       const { screenX, screenY } = gridToScreen(ped.tileX, ped.tileY, 0, 0);
@@ -250,12 +266,25 @@ export function drawPedestrians(
       case 'watching_game':
         drawSpectator(ctx, ped);
         break;
+      case 'shopping':
+        // Draw shopper based on their state
+        if (ped.state === 'approaching_shop') {
+          drawShopperQueuing(ctx, ped);
+        } else if (ped.state === 'entering_building' || ped.state === 'exiting_building') {
+          drawShopperAtDoor(ctx, ped);
+        } else {
+          // Walking with bag
+          drawWalkingPedestrian(ctx, ped);
+        }
+        break;
       default:
         // Default walking/standing pedestrian
         if (ped.state === 'socializing') {
           drawSocializingPerson(ctx, ped);
         } else if (ped.state === 'idle') {
           drawIdlePerson(ctx, ped);
+        } else if (ped.state === 'approaching_shop') {
+          drawShopperQueuing(ctx, ped);
         } else {
           drawWalkingPedestrian(ctx, ped);
         }
@@ -1242,6 +1271,152 @@ function drawIdlePerson(ctx: CanvasRenderingContext2D, ped: Pedestrian): void {
   if (ped.hasBag) {
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(3 * scale, (-4 + breathe) * scale, 2 * scale, 3 * scale);
+  }
+}
+
+// ============================================================================
+// Shop Activity Drawing Functions
+// ============================================================================
+
+/**
+ * Draw a shopper queuing/waiting at a shop entrance
+ */
+function drawShopperQueuing(ctx: CanvasRenderingContext2D, ped: Pedestrian): void {
+  const scale = 0.28;
+  const sway = Math.sin(ped.walkOffset * 0.3) * 0.5;
+  const lookAround = Math.sin(ped.activityAnimTimer * 0.5) * 2;
+
+  // Head - looking around
+  ctx.fillStyle = ped.skinColor;
+  ctx.beginPath();
+  ctx.arc(lookAround * scale, -12 * scale, 3 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hair for variety
+  if (ped.id % 2 === 0) {
+    const hairColor = ['#2c1810', '#4a3728', '#8b4513', '#d4a574', '#f5deb3', '#1a1a1a'][ped.id % 6];
+    ctx.fillStyle = hairColor;
+    ctx.beginPath();
+    ctx.arc(lookAround * scale, -13 * scale, 3 * scale, Math.PI, 0);
+    ctx.fill();
+  }
+
+  // Body
+  ctx.fillStyle = ped.shirtColor;
+  ctx.beginPath();
+  ctx.ellipse(sway * scale, -5 * scale, 2.5 * scale, 4 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Legs - standing
+  ctx.strokeStyle = ped.pantsColor;
+  ctx.lineWidth = 1.5 * scale;
+  ctx.beginPath();
+  ctx.moveTo((-1 + sway) * scale, -1 * scale);
+  ctx.lineTo((-1.2 + sway) * scale, 5 * scale);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo((1 + sway) * scale, -1 * scale);
+  ctx.lineTo((1.2 + sway) * scale, 5 * scale);
+  ctx.stroke();
+
+  // Arms - one arm checking phone/wallet
+  ctx.strokeStyle = ped.skinColor;
+  ctx.lineWidth = 1.2 * scale;
+  ctx.beginPath();
+  ctx.moveTo((-2 + sway) * scale, -6 * scale);
+  ctx.lineTo((-3 + sway) * scale, -2 * scale);
+  ctx.stroke();
+  // Other arm holding phone/wallet
+  ctx.beginPath();
+  ctx.moveTo((2 + sway) * scale, -6 * scale);
+  ctx.lineTo((2 + sway) * scale, -3 * scale);
+  ctx.stroke();
+  
+  // Phone in hand
+  ctx.fillStyle = '#333333';
+  ctx.fillRect((1.5 + sway) * scale, -4 * scale, 1.5 * scale, 2.5 * scale);
+  ctx.fillStyle = '#4488ff';
+  ctx.fillRect((1.6 + sway) * scale, -3.8 * scale, 1.2 * scale, 2 * scale);
+}
+
+/**
+ * Draw a shopper walking through shop door (entering or exiting)
+ */
+function drawShopperAtDoor(ctx: CanvasRenderingContext2D, ped: Pedestrian): void {
+  const scale = 0.28;
+  const walkBob = Math.sin(ped.walkOffset) * 0.5;
+
+  // Head
+  ctx.fillStyle = ped.skinColor;
+  ctx.beginPath();
+  ctx.arc(0, (-12 + walkBob) * scale, 3 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hair
+  if (ped.id % 2 === 0) {
+    const hairColor = ['#2c1810', '#4a3728', '#8b4513', '#d4a574', '#f5deb3', '#1a1a1a'][ped.id % 6];
+    ctx.fillStyle = hairColor;
+    ctx.beginPath();
+    ctx.arc(0, (-13 + walkBob) * scale, 3 * scale, Math.PI, 0);
+    ctx.fill();
+  }
+
+  // Body
+  ctx.fillStyle = ped.shirtColor;
+  ctx.beginPath();
+  ctx.ellipse(0, (-5 + walkBob) * scale, 2.5 * scale, 4 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Legs - walking slowly
+  const legSwing = Math.sin(ped.walkOffset) * 1.5;
+  ctx.strokeStyle = ped.pantsColor;
+  ctx.lineWidth = 1.5 * scale;
+  ctx.beginPath();
+  ctx.moveTo(0, (-1 + walkBob) * scale);
+  ctx.lineTo((-1 + legSwing) * scale, (5 + walkBob) * scale);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, (-1 + walkBob) * scale);
+  ctx.lineTo((1 - legSwing) * scale, (5 + walkBob) * scale);
+  ctx.stroke();
+
+  // Arms - swinging slightly
+  ctx.strokeStyle = ped.skinColor;
+  ctx.lineWidth = 1.2 * scale;
+  const armSwing = legSwing * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(-2 * scale, (-6 + walkBob) * scale);
+  ctx.lineTo((-3 - armSwing) * scale, (-2 + walkBob) * scale);
+  ctx.stroke();
+
+  // If exiting with bag, show shopping bag
+  if (ped.hasBag && ped.state === 'exiting_building') {
+    // Shopping bag in hand
+    ctx.fillStyle = '#e74c3c'; // Red shopping bag
+    ctx.fillRect((2) * scale, (-4 + walkBob) * scale, 3 * scale, 4 * scale);
+    // Bag handles
+    ctx.strokeStyle = '#c0392b';
+    ctx.lineWidth = 0.5 * scale;
+    ctx.beginPath();
+    ctx.moveTo((2.5) * scale, (-4 + walkBob) * scale);
+    ctx.lineTo((2.5) * scale, (-5 + walkBob) * scale);
+    ctx.moveTo((4.5) * scale, (-4 + walkBob) * scale);
+    ctx.lineTo((4.5) * scale, (-5 + walkBob) * scale);
+    ctx.stroke();
+    
+    // Arm holding bag
+    ctx.strokeStyle = ped.skinColor;
+    ctx.lineWidth = 1.2 * scale;
+    ctx.beginPath();
+    ctx.moveTo(2 * scale, (-6 + walkBob) * scale);
+    ctx.lineTo((3) * scale, (-4 + walkBob) * scale);
+    ctx.stroke();
+  } else {
+    // Regular arm
+    ctx.beginPath();
+    ctx.moveTo(2 * scale, (-6 + walkBob) * scale);
+    ctx.lineTo((3 + armSwing) * scale, (-2 + walkBob) * scale);
+    ctx.stroke();
   }
 }
 

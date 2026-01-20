@@ -25,6 +25,7 @@ import {
   PEDESTRIAN_PANTS_COLORS,
   PEDESTRIAN_HAT_COLORS,
   PEDESTRIAN_BUILDING_ENTER_TIME,
+  PEDESTRIAN_APPROACH_TIME,
   PEDESTRIAN_MIN_ACTIVITY_TIME,
   PEDESTRIAN_MAX_ACTIVITY_TIME,
   PEDESTRIAN_BUILDING_MIN_TIME,
@@ -59,6 +60,11 @@ const ENTERABLE_BUILDINGS: BuildingType[] = [
   'factory_small', 'factory_medium', 'factory_large', 'warehouse',
   'police_station', 'fire_station', 'city_hall', 'rail_station',
   'subway_station', 'mountain_lodge',
+];
+
+// Shop buildings where pedestrians visibly approach and shop
+const SHOP_BUILDINGS: BuildingType[] = [
+  'shop_small', 'shop_medium', 'mall',
 ];
 
 // Map building types to possible activities
@@ -144,6 +150,13 @@ export function isRecreationalBuilding(buildingType: BuildingType): boolean {
  */
 export function canPedestrianEnterBuilding(buildingType: BuildingType): boolean {
   return ENTERABLE_BUILDINGS.includes(buildingType);
+}
+
+/**
+ * Check if a building type is a shop (visible approach/shopping)
+ */
+export function isShopBuilding(buildingType: BuildingType): boolean {
+  return SHOP_BUILDINGS.includes(buildingType);
 }
 
 /**
@@ -257,7 +270,23 @@ export function handleArrivalAtDestination(
       ped.hasBall = true;
     }
   }
-  // Check if this is an enterable building
+  // Check if this is a shop - use visible approaching state
+  else if (isShopBuilding(buildingType)) {
+    // Start approaching the shop entrance (visible queuing)
+    ped.state = 'approaching_shop';
+    ped.buildingEntryProgress = 0;
+    ped.activityDuration = PEDESTRIAN_BUILDING_MIN_TIME + 
+      Math.random() * (PEDESTRIAN_BUILDING_MAX_TIME - PEDESTRIAN_BUILDING_MIN_TIME);
+    
+    // Position at the shop entrance
+    const offset = getRandomActivityOffset();
+    ped.activityOffsetX = offset.x * 0.5; // Smaller offset to stay near entrance
+    ped.activityOffsetY = offset.y * 0.3;
+    
+    // Set activity to shopping
+    ped.activity = 'shopping';
+  }
+  // Check if this is an enterable building (non-shop)
   else if (canPedestrianEnterBuilding(buildingType)) {
     // Start entering the building
     ped.state = 'entering_building';
@@ -297,6 +326,9 @@ export function updatePedestrianState(
   switch (ped.state) {
     case 'walking':
       return updateWalkingState(ped, delta, speedMultiplier, grid, gridSize, allPedestrians);
+    
+    case 'approaching_shop':
+      return updateApproachingShopState(ped, delta, speedMultiplier);
     
     case 'entering_building':
       return updateEnteringBuildingState(ped, delta, speedMultiplier);
@@ -434,6 +466,28 @@ function updateWalkingState(
 }
 
 /**
+ * Update approaching shop state - pedestrian waits at shop entrance
+ */
+function updateApproachingShopState(
+  ped: Pedestrian,
+  delta: number,
+  speedMultiplier: number
+): boolean {
+  // Animate the pedestrian looking around / waiting
+  ped.walkOffset += delta * 2; // Slow idle animation
+  
+  ped.buildingEntryProgress += delta * speedMultiplier / PEDESTRIAN_APPROACH_TIME;
+  
+  if (ped.buildingEntryProgress >= 1) {
+    // Done waiting, now enter the building
+    ped.state = 'entering_building';
+    ped.buildingEntryProgress = 0;
+  }
+  
+  return true;
+}
+
+/**
  * Update entering building state
  */
 function updateEnteringBuildingState(
@@ -468,6 +522,11 @@ function updateInsideBuildingState(
     // Time to leave the building
     ped.state = 'exiting_building';
     ped.buildingEntryProgress = 1;
+    
+    // If was shopping, now carry a shopping bag!
+    if (ped.activity === 'shopping') {
+      ped.hasBag = true;
+    }
   }
   
   return true;
@@ -798,6 +857,63 @@ export function spawnPedestrianInsideBuilding(
 }
 
 /**
+ * Spawn a pedestrian approaching a shop (visible at entrance)
+ */
+export function spawnPedestrianApproachingShop(
+  id: number,
+  shopX: number,
+  shopY: number,
+  grid: Tile[][],
+  gridSize: number,
+  homeX: number,
+  homeY: number
+): Pedestrian | null {
+  const tile = grid[shopY]?.[shopX];
+  if (!tile) return null;
+  
+  // Verify this is a shop building
+  if (!isShopBuilding(tile.building.type)) return null;
+  
+  // Find nearest road
+  const roadTile = findNearestRoadToBuilding(grid, gridSize, shopX, shopY);
+  if (!roadTile) return null;
+  
+  // Find path home (for when they're done)
+  const path = findPathOnRoads(grid, gridSize, roadTile.x, roadTile.y, homeX, homeY);
+  if (!path || path.length === 0) return null;
+  
+  const ped = createPedestrian(
+    id,
+    homeX,
+    homeY,
+    shopX,
+    shopY,
+    'commercial',
+    path,
+    0,
+    'south'
+  );
+  
+  // Start at approaching shop state
+  ped.state = 'approaching_shop';
+  ped.buildingEntryProgress = Math.random() * 0.8; // Partway through approach
+  ped.activity = 'shopping';
+  ped.activityDuration = PEDESTRIAN_BUILDING_MIN_TIME +
+    Math.random() * (PEDESTRIAN_BUILDING_MAX_TIME - PEDESTRIAN_BUILDING_MIN_TIME);
+  
+  // Random offset at entrance
+  const offset = getRandomActivityOffset();
+  ped.activityOffsetX = offset.x * 0.5;
+  ped.activityOffsetY = offset.y * 0.3;
+  
+  // Position at the shop
+  ped.tileX = shopX;
+  ped.tileY = shopY;
+  
+  return ped;
+}
+
+/**
  * Get destination type for a building type
  */
 function getDestTypeForBuilding(buildingType: BuildingType): PedestrianDestType {
@@ -931,8 +1047,28 @@ export function getVisiblePedestrians(pedestrians: Pedestrian[]): Pedestrian[] {
 
 /**
  * Get opacity for pedestrian (for enter/exit animations)
+ * Shoppers stay visible at shop entrance (no fade), others fade in/out
  */
 export function getPedestrianOpacity(ped: Pedestrian): number {
+  // Shoppers stay visible at entrances - only fade when actually going inside
+  if (ped.activity === 'shopping') {
+    switch (ped.state) {
+      case 'approaching_shop':
+        return 1; // Fully visible while approaching
+      case 'entering_building':
+        // Only start fading at 50% progress (walk into door first)
+        return ped.buildingEntryProgress < 0.5 ? 1 : 1 - (ped.buildingEntryProgress - 0.5) * 2;
+      case 'exiting_building':
+        // Fade in quickly at the start
+        return ped.buildingEntryProgress > 0.5 ? 1 : ped.buildingEntryProgress * 2;
+      case 'inside_building':
+        return 0;
+      default:
+        return 1;
+    }
+  }
+  
+  // Non-shop buildings: simple fade
   switch (ped.state) {
     case 'entering_building':
       return 1 - ped.buildingEntryProgress;

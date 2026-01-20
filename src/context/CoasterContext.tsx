@@ -276,13 +276,10 @@ function normalizeLoadedState(state: GameState): GameState {
     // Collect the track from the grid using the improved algorithm
     const { tiles: collectedTiles, pieces: collectedPieces } = collectCoasterTrack(normalizedGrid, coaster.id);
     
-    // If we couldn't collect any tiles, fall back to existing data
+    // If we couldn't collect any tiles, this coaster has no valid track
+    // Return null to filter it out later
     if (collectedTiles.length === 0) {
-      return {
-        ...coaster,
-        trackTiles: coaster.trackTiles ?? [],
-        trains: createTrainsForCoaster(coaster.track.length, coaster.type),
-      };
+      return null;
     }
     
     // Find station tile (with adjacent queue or station building)
@@ -310,7 +307,7 @@ function normalizeLoadedState(state: GameState): GameState {
         };
       }),
     };
-  });
+  }).filter((coaster): coaster is NonNullable<typeof coaster> => coaster !== null);
 
   return {
     ...state,
@@ -413,9 +410,64 @@ function getDirectionOffset(dir: TrackDirection): { dx: number; dy: number } {
 }
 
 /**
+ * Calculate the correct direction for a straight track piece based on the actual tile flow.
+ * This fixes pieces that have incorrect stored directions.
+ */
+function calculateCorrectDirection(
+  prevTile: { x: number; y: number } | null,
+  currTile: { x: number; y: number },
+  nextTile: { x: number; y: number } | null,
+  piece: TrackPiece
+): TrackPiece {
+  const { type } = piece;
+  
+  // For turns, we need to calculate based on entry direction
+  if (type === 'turn_left_flat' || type === 'turn_right_flat') {
+    if (prevTile) {
+      // Calculate entry direction (where we came FROM)
+      const dx = currTile.x - prevTile.x;
+      const dy = currTile.y - prevTile.y;
+      
+      let entryDir: TrackDirection;
+      if (dx === 1 && dy === 0) entryDir = 'north';      // came from north (lower x)
+      else if (dx === -1 && dy === 0) entryDir = 'south'; // came from south (higher x)
+      else if (dx === 0 && dy === 1) entryDir = 'east';   // came from east (lower y)
+      else if (dx === 0 && dy === -1) entryDir = 'west';  // came from west (higher y)
+      else return piece; // Can't determine, keep original
+      
+      // For turns, direction field = entry direction
+      if (piece.direction !== entryDir) {
+        return { ...piece, direction: entryDir };
+      }
+    }
+    return piece;
+  }
+  
+  // For straights, slopes, and loops, calculate based on exit direction
+  if (nextTile) {
+    const dx = nextTile.x - currTile.x;
+    const dy = nextTile.y - currTile.y;
+    
+    let exitDir: TrackDirection;
+    if (dx === 1 && dy === 0) exitDir = 'south';      // going to south (higher x)
+    else if (dx === -1 && dy === 0) exitDir = 'north'; // going to north (lower x)
+    else if (dx === 0 && dy === 1) exitDir = 'west';   // going to west (higher y)
+    else if (dx === 0 && dy === -1) exitDir = 'east';  // going to east (lower y)
+    else return piece; // Can't determine, keep original
+    
+    // For straights and slopes, direction field = exit/travel direction
+    if (piece.direction !== exitDir) {
+      return { ...piece, direction: exitDir };
+    }
+  }
+  
+  return piece;
+}
+
+/**
  * Collect a single connected component of track tiles starting from a given tile.
  * Returns tiles in connected order following track connections.
- * Uses lenient connection checking to handle legacy tracks with imperfect directions.
+ * Also fixes track piece directions to match the actual flow.
  */
 function collectConnectedTrack(
   grid: Tile[][],
@@ -425,7 +477,7 @@ function collectConnectedTrack(
 ): { tiles: { x: number; y: number }[]; pieces: TrackPiece[] } {
   const gridSize = grid.length;
   const orderedTiles: { x: number; y: number }[] = [];
-  const orderedPieces: TrackPiece[] = [];
+  const collectedPieces: TrackPiece[] = [];
   
   const startTile = grid[startY]?.[startX];
   if (!startTile?.trackPiece) {
@@ -441,7 +493,7 @@ function collectConnectedTrack(
   while (current && !visited.has(`${current.x},${current.y}`)) {
     visited.add(`${current.x},${current.y}`);
     orderedTiles.push({ x: current.x, y: current.y });
-    orderedPieces.push(current.piece);
+    collectedPieces.push(current.piece);
     
     // Find the next tile based on exit direction
     const exitDir = getExitDirection(current.piece);
@@ -487,6 +539,17 @@ function collectConnectedTrack(
     if (!found) break;
   }
   
+  // Now fix the directions of all collected pieces to match the actual flow
+  const orderedPieces: TrackPiece[] = collectedPieces.map((piece, i) => {
+    const prevTile = i > 0 ? orderedTiles[i - 1] : 
+                     (orderedTiles.length > 1 ? orderedTiles[orderedTiles.length - 1] : null);
+    const currTile = orderedTiles[i];
+    const nextTile = i < orderedTiles.length - 1 ? orderedTiles[i + 1] :
+                     (orderedTiles.length > 1 ? orderedTiles[0] : null);
+    
+    return calculateCorrectDirection(prevTile, currTile, nextTile, piece);
+  });
+  
   return { tiles: orderedTiles, pieces: orderedPieces };
 }
 
@@ -523,19 +586,79 @@ function isTrackComplete(
  */
 function collectCoasterTrack(grid: Tile[][], coasterId: string): { tiles: { x: number; y: number }[]; pieces: TrackPiece[] } {
   const gridSize = grid.length;
-  
-  // Find the first tile with this coaster ID to start collection
+
+  // First, find all tiles with this coaster ID
+  const coasterTiles: { x: number; y: number }[] = [];
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
       const tile = grid[y][x];
       if (tile.coasterTrackId === coasterId && tile.trackPiece) {
-        const visited = new Set<string>();
-        return collectConnectedTrack(grid, x, y, visited);
+        coasterTiles.push({ x, y });
       }
     }
   }
   
-  return { tiles: [], pieces: [] };
+  if (coasterTiles.length === 0) {
+    return { tiles: [], pieces: [] };
+  }
+  
+  // Try to find the best starting tile:
+  // 1. Prefer a tile with an adjacent queue (station area)
+  // 2. Prefer a tile with an adjacent station building
+  // 3. Fall back to first tile found
+  const adjacentOffsets = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+  ];
+  
+  let startTile = coasterTiles[0];
+  
+  // Look for a tile with adjacent queue
+  for (const { x, y } of coasterTiles) {
+    let hasAdjacentQueue = false;
+    for (const { dx, dy } of adjacentOffsets) {
+      const adjX = x + dx;
+      const adjY = y + dy;
+      if (adjX >= 0 && adjY >= 0 && adjX < gridSize && adjY < gridSize) {
+        const adjTile = grid[adjY]?.[adjX];
+        if (adjTile?.queue) {
+          hasAdjacentQueue = true;
+          break;
+        }
+      }
+    }
+    if (hasAdjacentQueue) {
+      startTile = { x, y };
+      break;
+    }
+  }
+  
+  // If no queue found, look for adjacent station building
+  if (startTile === coasterTiles[0]) {
+    for (const { x, y } of coasterTiles) {
+      let hasAdjacentStation = false;
+      for (const { dx, dy } of adjacentOffsets) {
+        const adjX = x + dx;
+        const adjY = y + dy;
+        if (adjX >= 0 && adjY >= 0 && adjX < gridSize && adjY < gridSize) {
+          const adjTile = grid[adjY]?.[adjX];
+          if (adjTile?.building?.type?.startsWith('station_')) {
+            hasAdjacentStation = true;
+            break;
+          }
+        }
+      }
+      if (hasAdjacentStation) {
+        startTile = { x, y };
+        break;
+      }
+    }
+  }
+
+  const visited = new Set<string>();
+  return collectConnectedTrack(grid, startTile.x, startTile.y, visited);
 }
 
 /**
@@ -1027,15 +1150,56 @@ export function CoasterProvider({
         const parkRating = Math.min(1000, Math.round(avgHappiness * 10));
 
         // Update coaster trains with state machine and station logic
-        const updatedCoasters = prev.coasters.map(coaster => {
+        // First, filter out coasters whose track no longer exists in the grid
+        const validCoasters = prev.coasters.filter(coaster => {
+          if (coaster.track.length === 0) return false;
+          // Check if at least one track tile exists in grid with this coaster ID
+          const hasValidTrack = coaster.trackTiles.some(tile => {
+            const gridTile = prev.grid[tile.y]?.[tile.x];
+            return gridTile?.coasterTrackId === coaster.id && gridTile?.trackPiece;
+          });
+          return hasValidTrack;
+        });
+        
+        const updatedCoasters = validCoasters.map(coaster => {
           if (coaster.track.length === 0 || coaster.trains.length === 0) return coaster;
           const trackLength = coaster.track.length;
+          
+          // Validate that trackTiles and track are synchronized
+          if (coaster.trackTiles.length !== trackLength) {
+            // Mismatch - recollect the track to fix
+            const { tiles: fixedTiles, pieces: fixedPieces } = collectCoasterTrack(prev.grid, coaster.id);
+            if (fixedTiles.length > 0) {
+              return {
+                ...coaster,
+                track: fixedPieces,
+                trackTiles: fixedTiles,
+                trains: createTrainsForCoaster(fixedPieces.length, coaster.type),
+              };
+            }
+            return coaster;
+          }
           
           // Only run trains if the track forms a complete loop
           const trackComplete = isTrackComplete(coaster.trackTiles, coaster.track);
           if (!trackComplete) {
-            // Track is incomplete - keep trains stationary at station
-            return coaster;
+            // Track is incomplete - reset all trains to proper positions at start of track
+            // This prevents "stuck" cars from appearing in random positions
+            const carSpacing = 0.18;
+            const resetTrains = coaster.trains.map((train, trainIndex) => {
+              const trainOffset = (trainIndex * trackLength) / Math.max(1, coaster.trains.length);
+              return {
+                ...train,
+                state: 'loading' as const,
+                stateTimer: 8,
+                cars: train.cars.map((car, carIndex) => ({
+                  ...car,
+                  trackProgress: (trainOffset + carIndex * carSpacing) % trackLength,
+                  velocity: 0,
+                })),
+              };
+            });
+            return { ...coaster, trains: resetTrains };
           }
           
           // Find station position - the tile with an adjacent queue
@@ -1048,6 +1212,28 @@ export function CoasterProvider({
           const updatedTrains = coaster.trains.map((train, trainIndex) => {
             let { state, stateTimer, cars } = train;
             stateTimer -= deltaTime;
+            
+            const carSpacing = 0.18;
+            
+            // Validate all car positions - fix any invalid values
+            let hasInvalidCar = false;
+            for (const car of cars) {
+              if (!Number.isFinite(car.trackProgress) || car.trackProgress < 0 || car.trackProgress > trackLength * 10) {
+                hasInvalidCar = true;
+                break;
+              }
+            }
+            
+            if (hasInvalidCar) {
+              // Reset all cars to proper positions at station
+              cars = cars.map((car, idx) => ({
+                ...car,
+                trackProgress: (effectiveStationIndex + idx * carSpacing) % trackLength,
+                velocity: 0,
+              }));
+              state = 'loading';
+              stateTimer = 8;
+            }
             
             // Get lead car's position
             const leadCar = cars[0];
@@ -1063,7 +1249,6 @@ export function CoasterProvider({
             });
             
             // Validate car spacing - if cars have drifted apart, reset them
-            const carSpacing = 0.18;
             const maxCarDrift = carSpacing * 1.5; // Allow 50% variance before resetting
             let needsSpacingReset = false;
             for (let i = 1; i < cars.length; i++) {
@@ -1735,6 +1920,31 @@ export function CoasterProvider({
           buildingCoasterLastDirection: endDirection,
           coasters: updatedCoasters,
         };
+      }
+      
+      // Check if the tool is a scenery tool (flowers, bushes, trees)
+      const sceneryTools = [
+        // Trees
+        'tree_oak', 'tree_maple', 'tree_birch', 'tree_elm', 'tree_willow',
+        'tree_pine', 'tree_spruce', 'tree_fir', 'tree_cedar', 'tree_redwood',
+        'tree_palm', 'tree_banana', 'tree_bamboo', 'tree_coconut', 'tree_tropical',
+        'tree_cherry', 'tree_magnolia', 'tree_dogwood', 'tree_jacaranda', 'tree_wisteria',
+        // Bushes
+        'bush_hedge', 'bush_flowering',
+        // Topiaries
+        'topiary_ball', 'topiary_spiral', 'topiary_animal',
+        // Flowers
+        'flowers_bed', 'flowers_planter', 'flowers_hanging', 'flowers_wild', 'ground_cover',
+      ];
+      
+      // For scenery tools, check if tile already has a structure
+      if (sceneryTools.includes(tool)) {
+        const existingBuildingType = tile.building?.type;
+        // Allow placement only on empty/grass tiles (not on paths, queues, other buildings, or track)
+        const canPlace = !existingBuildingType || existingBuildingType === 'empty' || existingBuildingType === 'grass';
+        if (!canPlace || tile.trackPiece || tile.hasCoasterTrack) {
+          return prev; // Can't place scenery on top of existing structures
+        }
       }
       
       // Map tools to building types (tool name is often the building type)

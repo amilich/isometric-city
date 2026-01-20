@@ -216,9 +216,10 @@ export type PedestrianDestType = 'school' | 'commercial' | 'industrial' | 'park'
 // Pedestrian behavioral states
 export type PedestrianState =
   | 'walking'           // Walking along a path
-  | 'entering_building' // Entering a building (fading out animation)
+  | 'approaching_shop'  // Walking up to a shop entrance (visible at door)
+  | 'entering_building' // Entering a building (walking through door)
   | 'inside_building'   // Inside a building (invisible)
-  | 'exiting_building'  // Exiting a building (fading in animation)
+  | 'exiting_building'  // Exiting a building (walking out of door)
   | 'at_recreation'     // At a recreational area doing an activity
   | 'at_beach'          // At the beach (swimming or on mat)
   | 'idle'              // Standing still, waiting

@@ -686,6 +686,94 @@ function isVisitableBuilding(type: string | undefined): boolean {
   );
 }
 
+// Grey base tile colors (matching iso city style)
+const GREY_TILE_COLORS = {
+  top: '#6b7280',
+  left: '#4b5563',
+  right: '#9ca3af',
+  stroke: '#374151',
+};
+
+// Check if a building type needs grey base tiles (rides, shops, food stands)
+function needsGreyBase(type: string | undefined): boolean {
+  if (!type) return false;
+  return (
+    // Rides
+    type.startsWith('ride_') ||
+    type.startsWith('show_') ||
+    // Shops
+    type.startsWith('shop_') ||
+    type.startsWith('game_') ||
+    type === 'arcade_building' ||
+    type === 'vr_experience' ||
+    type === 'restroom' ||
+    type === 'first_aid' ||
+    type === 'lockers' ||
+    // Food stands
+    type.startsWith('food_') ||
+    type.startsWith('drink_') ||
+    type.startsWith('snack_') ||
+    type.startsWith('cart_') ||
+    // Large fountains
+    type.startsWith('fountain_large_') ||
+    type === 'dancing_fountain' ||
+    type === 'pond_large' ||
+    // Infrastructure
+    type.startsWith('infra_')
+  );
+}
+
+// Draw grey base tiles for multi-tile buildings
+function drawGreyBaseTiles(
+  ctx: CanvasRenderingContext2D,
+  gridX: number,
+  gridY: number,
+  width: number,
+  height: number,
+  zoom: number,
+  grid: Tile[][],
+  gridSize: number
+) {
+  const w = TILE_WIDTH;
+  const h = TILE_HEIGHT;
+  
+  // Draw grey diamond for each tile in the footprint
+  for (let dx = 0; dx < width; dx++) {
+    for (let dy = 0; dy < height; dy++) {
+      const tileX = gridX + dx;
+      const tileY = gridY + dy;
+      
+      // Skip if out of bounds
+      if (tileX < 0 || tileY < 0 || tileX >= gridSize || tileY >= gridSize) continue;
+      
+      // Skip tiles that have coaster tracks - don't draw grey base over tracks
+      const tile = grid[tileY]?.[tileX];
+      if (tile?.trackPiece) continue;
+      
+      // Convert to screen coordinates
+      const screenX = (tileX - tileY) * (w / 2);
+      const screenY = (tileX + tileY) * (h / 2);
+      
+      // Draw the grey isometric diamond
+      ctx.fillStyle = GREY_TILE_COLORS.top;
+      ctx.beginPath();
+      ctx.moveTo(screenX + w / 2, screenY);
+      ctx.lineTo(screenX + w, screenY + h / 2);
+      ctx.lineTo(screenX + w / 2, screenY + h);
+      ctx.lineTo(screenX, screenY + h / 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw stroke when zoomed in enough
+      if (zoom >= 0.6) {
+        ctx.strokeStyle = GREY_TILE_COLORS.stroke;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
 function drawPathTile(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -727,13 +815,13 @@ function drawPathTile(
   // Draw grass base first
   drawGrassTile(ctx, x, y, 1);
 
-  // Path width ratio (similar to road system but slightly narrower)
-  const pathWidthRatio = 0.14;
+  // Path width ratio (wider than queue lines for visual hierarchy)
+  const pathWidthRatio = 0.20;
   const pathW = w * pathWidthRatio;
   const halfWidth = pathW * 0.5;
 
-  // Edge stop distance (paths extend fully to tile edge)
-  const edgeStop = 1.0;
+  // Edge stop distance - extend past edge (>1.0) to ensure overlap and flush alignment at tile boundaries
+  const edgeStop = 1.15;
 
   // Edge midpoints (matching road system exactly)
   const northEdgeX = x + w * 0.25;
@@ -823,7 +911,6 @@ function drawPathTile(
     edgeY: number
   ) => {
     const perp = getPerp(dirDx, dirDy);
-    // Use same stop distance as regular paths for consistency
     const stopX = cx + (edgeX - cx) * edgeStop;
     const stopY = cy + (edgeY - cy) * edgeStop;
     
@@ -931,23 +1018,30 @@ function drawQueueTile(
     if (gx < 0 || gy < 0 || gx >= gridSize || gy >= gridSize) return false;
     return grid[gy][gx].queue;
   };
+  
+  // Check adjacent paths for connections (queue should connect to paths)
+  const hasPath = (gx: number, gy: number) => {
+    if (gx < 0 || gy < 0 || gx >= gridSize || gy >= gridSize) return false;
+    return grid[gy][gx].path;
+  };
 
-  const north = hasQueue(gridX - 1, gridY);
-  const east = hasQueue(gridX, gridY - 1);
-  const south = hasQueue(gridX + 1, gridY);
-  const west = hasQueue(gridX, gridY + 1);
+  // Queue connects to other queues OR to paths
+  const north = hasQueue(gridX - 1, gridY) || hasPath(gridX - 1, gridY);
+  const east = hasQueue(gridX, gridY - 1) || hasPath(gridX, gridY - 1);
+  const south = hasQueue(gridX + 1, gridY) || hasPath(gridX + 1, gridY);
+  const west = hasQueue(gridX, gridY + 1) || hasPath(gridX, gridY + 1);
 
   // Draw grass base first
   drawGrassTile(ctx, x, y, 1);
 
-  // Queue width ratio (similar to path but slightly wider for barriers)
-  const queueWidthRatio = 0.22;
+  // Queue width ratio (narrower than paths for visual hierarchy)
+  const queueWidthRatio = 0.14;
   const queueW = w * queueWidthRatio;
   const halfWidth = queueW * 0.5;
-  const barrierOffset = halfWidth * 0.7; // Distance from center to barrier
+  const barrierOffset = halfWidth * 0.85; // Distance from center to barrier
 
-  // Edge stop distance
-  const edgeStop = 0.98;
+  // Edge stop distance - extend past edge (>1.0) to ensure overlap and flush alignment at tile boundaries
+  const edgeStop = 1.15;
 
   // Edge midpoints (matching path system exactly)
   const northEdgeX = x + w * 0.25;
@@ -1450,7 +1544,7 @@ function getTrackPoint(
   centerX: number,
   centerY: number,
   t: number
-): { x: number; y: number } {
+): { x: number; y: number; pitch: number } {
   const w = TILE_WIDTH;
   const h = TILE_HEIGHT;
   
@@ -1496,6 +1590,7 @@ function getTrackPoint(
     return {
       x: u * u * fromEdge.x + 2 * u * t * center.x + t * t * toEdge.x,
       y: u * u * fromEdge.y + 2 * u * t * center.y + t * t * toEdge.y,
+      pitch: 0, // Flat turns have no pitch
     };
   }
   
@@ -1534,7 +1629,7 @@ function getTrackPoint(
     const angle = t * Math.PI * 2;
     
     // Height: (1 - cos(angle)) gives 0 at entry/exit, 2*radius at top
-    const heightOffset = (1 - Math.cos(angle)) * loopRadius;
+    const loopHeightOffset = (1 - Math.cos(angle)) * loopRadius;
     
     // Horizontal bulge to make it circular - must match drawing
     const bulgeFactor = 0.9;
@@ -1545,9 +1640,13 @@ function getTrackPoint(
     // Apply track elevation
     const elevation = trackPiece.startHeight * HEIGHT_UNIT;
     
+    // Calculate pitch for loops - full rotation around the loop
+    const loopPitch = angle;
+    
     return {
       x: forwardX + bulgeX,
-      y: forwardY + bulgeY - heightOffset - elevation,
+      y: forwardY + bulgeY - loopHeightOffset - elevation,
+      pitch: loopPitch,
     };
   }
   
@@ -1556,34 +1655,40 @@ function getTrackPoint(
   // North/South tracks go diagonally from top-left to bottom-right
   // East/West tracks go diagonally from top-right to bottom-left
   
+  // Calculate pitch angle based on height change
+  const heightDiff = trackPiece.endHeight - trackPiece.startHeight;
+  const trackLength = Math.hypot(TILE_WIDTH / 2, TILE_HEIGHT / 2);
+  const heightChange = heightDiff * HEIGHT_UNIT;
+  const slopePitch = Math.atan2(-heightChange, trackLength);
+  
   if (direction === 'south') {
     // South: enter from north edge (top-left), exit to south edge (bottom-right)
     const fromX = startX + w * 0.25;
     const fromY = startY + h * 0.25 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.75;
     const toY = startY + h * 0.75 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
   } else if (direction === 'north') {
     // North: enter from south edge (bottom-right), exit to north edge (top-left)
     const fromX = startX + w * 0.75;
     const fromY = startY + h * 0.75 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.25;
     const toY = startY + h * 0.25 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
   } else if (direction === 'west') {
     // West: enter from east edge (top-right), exit to west edge (bottom-left)
     const fromX = startX + w * 0.75;
     const fromY = startY + h * 0.25 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.25;
     const toY = startY + h * 0.75 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
   } else {
     // East: enter from west edge (bottom-left), exit to east edge (top-right)
     const fromX = startX + w * 0.25;
     const fromY = startY + h * 0.75 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.75;
     const toY = startY + h * 0.25 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
   }
 }
 
@@ -1735,20 +1840,32 @@ function drawCoasterCar(
   x: number, 
   y: number, 
   direction: string,
+  pitch: number = 0, // Pitch angle in radians (positive = nose down, negative = nose up)
   carIndex: number = 0,
   isLoading: boolean = false,
   guestCount: number = 4, // Number of guests in this car
   tick: number = 0
 ) {
-  const angle = DIRECTION_ANGLES[direction] ?? 0;
+  const yawAngle = DIRECTION_ANGLES[direction] ?? 0;
   
   // Car dimensions - scaled down by 30%
   const carLength = 10;
   const carWidth = 2.8;
   
+  // For isometric view, pitch affects both the visual scale and y-offset
+  // When pitched up (negative pitch), the car should appear to tilt with its nose up
+  // We simulate this by adjusting the y position and applying a scale factor
+  const pitchScale = Math.cos(pitch); // Car appears shorter when tilted
+  const pitchYOffset = Math.sin(pitch) * carLength * 0.3; // Vertical offset from pitch
+  
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
+  ctx.translate(x, y + pitchYOffset);
+  ctx.rotate(yawAngle);
+  
+  // Apply pitch scaling - compress vertically when pitched
+  if (Math.abs(pitch) > 0.01) {
+    ctx.scale(1, Math.max(0.3, pitchScale));
+  }
   
   // Shadow
   ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
@@ -2045,11 +2162,12 @@ export function CoasterGrid({
       }
     });
     
-    // Enhanced car data with loading state and guest info
+    // Enhanced car data with loading state, guest info, and pitch for slopes
     interface CarRenderData {
       x: number;
       y: number;
       direction: string;
+      pitch: number; // Pitch angle in radians for slopes
       carIndex: number;
       isLoading: boolean;
       guestCount: number;
@@ -2146,7 +2264,9 @@ export function CoasterGrid({
           // Only show guests if the coaster has an adjacent queue
           const baseGuestCount = car.guests.length > 0 ? car.guests.length : 4;
           const carData: CarRenderData = { 
-            ...pos, 
+            x: pos.x, 
+            y: pos.y,
+            pitch: pos.pitch,
             direction: travelDirection,
             carIndex: carIdx,
             isLoading,
@@ -2167,8 +2287,40 @@ export function CoasterGrid({
       stationLoadingByTile.set(`${data.x},${data.y}`, data);
     });
     
-    // Collect deferred multi-tile building sprites to draw after base tiles
-    const deferredSprites: { type: string; screenX: number; screenY: number; x: number; y: number; drawOrder: number }[] = [];
+    // Map from "front corner" position to multi-tile building info
+    // This allows us to draw multi-tile buildings at the correct depth in the main loop
+    const multiTileBuildingsByFrontCorner = new Map<string, { 
+      type: string; 
+      anchorX: number; 
+      anchorY: number;
+      width: number;
+      height: number;
+    }>();
+    
+    // First pass: identify all multi-tile buildings and map them by their front corner
+    for (let y = 0; y < gridSize; y++) {
+      for (let x = 0; x < gridSize; x++) {
+        const tile = grid[y][x];
+        const buildingType = tile.building?.type;
+        if (buildingType && !buildingType.endsWith('_footprint')) {
+          const toolInfo = TOOL_INFO[buildingType as Tool];
+          const buildingSize = toolInfo?.size ?? { width: 1, height: 1 };
+          if (buildingSize.width > 1 || buildingSize.height > 1) {
+            // This is a multi-tile building anchor
+            const frontX = x + buildingSize.width - 1;
+            const frontY = y + buildingSize.height - 1;
+            const key = `${frontX},${frontY}`;
+            multiTileBuildingsByFrontCorner.set(key, {
+              type: buildingType,
+              anchorX: x,
+              anchorY: y,
+              width: buildingSize.width,
+              height: buildingSize.height,
+            });
+          }
+        }
+      }
+    }
     
     // Draw tiles (back to front for proper depth)
     for (let sum = 0; sum < gridSize * 2 - 1; sum++) {
@@ -2229,22 +2381,53 @@ const tile = grid[y][x];
         if (spriteBuildingType && spriteBuildingType !== 'empty' && spriteBuildingType !== 'grass' &&
             spriteBuildingType !== 'water' && spriteBuildingType !== 'path' && spriteBuildingType !== 'queue' &&
             !spriteBuildingType.endsWith('_footprint')) {
-          // Check if this is a multi-tile building that needs deferred rendering
+          // Check if this is a multi-tile building
           const toolInfo = TOOL_INFO[spriteBuildingType as Tool];
           const buildingSize = toolInfo?.size ?? { width: 1, height: 1 };
           const isMultiTile = buildingSize.width > 1 || buildingSize.height > 1;
           
-          if (isMultiTile) {
-            // Defer drawing until after all footprint tiles are rendered
-            // Calculate draw order based on the "front" corner of the building (x + width - 1, y + height - 1)
-            const frontX = x + buildingSize.width - 1;
-            const frontY = y + buildingSize.height - 1;
-            const drawOrder = frontX + frontY;
-            deferredSprites.push({ type: spriteBuildingType, screenX, screenY, x, y, drawOrder });
-          } else {
-            // Single tile buildings can be drawn immediately
+          if (!isMultiTile) {
+            // Single tile buildings: draw grey base first if needed (for shops, food stands, etc.)
+            if (needsGreyBase(spriteBuildingType)) {
+              drawGreyBaseTiles(ctx, x, y, 1, 1, zoom, grid, gridSize);
+            }
+            // Then draw the sprite
             drawSprite(ctx, spriteSheets, spriteBuildingType, screenX, screenY, x, y);
           }
+          // Multi-tile buildings are drawn when we reach their front corner (see below)
+        }
+        
+        // Check if this tile is the front corner of a multi-tile building
+        // If so, draw that building now (at the correct depth in isometric order)
+        const frontCornerKey = `${x},${y}`;
+        const multiTileBuilding = multiTileBuildingsByFrontCorner.get(frontCornerKey);
+        if (multiTileBuilding) {
+          const anchorScreen = gridToScreen(multiTileBuilding.anchorX, multiTileBuilding.anchorY, 0, 0);
+          
+          // Draw grey base tiles for the building footprint (skipping tiles with coaster tracks)
+          if (needsGreyBase(multiTileBuilding.type)) {
+            drawGreyBaseTiles(
+              ctx,
+              multiTileBuilding.anchorX,
+              multiTileBuilding.anchorY,
+              multiTileBuilding.width,
+              multiTileBuilding.height,
+              zoom,
+              grid,
+              gridSize
+            );
+          }
+          
+          // Draw the building sprite
+          drawSprite(
+            ctx,
+            spriteSheets,
+            multiTileBuilding.type,
+            anchorScreen.screenX,
+            anchorScreen.screenY,
+            multiTileBuilding.anchorX,
+            multiTileBuilding.anchorY
+          );
         }
         
         // Draw guests on this tile
@@ -2259,7 +2442,7 @@ const tile = grid[y][x];
         const cars = carsByTile.get(`${x},${y}`);
         if (cars) {
           cars.forEach(car => {
-            drawCoasterCar(ctx, car.x, car.y, car.direction, car.carIndex, car.isLoading, car.guestCount, tick);
+            drawCoasterCar(ctx, car.x, car.y, car.direction, car.pitch, car.carIndex, car.isLoading, car.guestCount, tick);
           });
         }
         
@@ -2306,11 +2489,8 @@ const tile = grid[y][x];
       }
     }
     
-    // Draw deferred multi-tile building sprites (sorted by draw order so front buildings draw last)
-    deferredSprites.sort((a, b) => a.drawOrder - b.drawOrder);
-    for (const sprite of deferredSprites) {
-      drawSprite(ctx, spriteSheets, sprite.type, sprite.screenX, sprite.screenY, sprite.x, sprite.y);
-    }
+    // Multi-tile building sprites are now drawn inline during the main loop
+    // when we reach their "front corner" tile for correct isometric depth ordering
     
     // Draw hover highlights AFTER all tiles (so they appear on top)
     // Helper to draw an isometric diamond highlight

@@ -1789,6 +1789,11 @@ export function CoasterProvider({
       
       // Handle path placement
       if (tool === 'path') {
+        // Don't place path on existing buildings, tracks, or footprints
+        const existingType = tile.building?.type;
+        if (existingType && existingType !== 'empty' && existingType !== 'grass' && existingType !== 'path') return prev;
+        if (tile.trackPiece || tile.hasCoasterTrack) return prev;
+        
         tile.path = true;
         tile.building = { ...createEmptyBuilding(), type: 'path' };
         return { ...prev, grid: newGrid, finances: { ...prev.finances, cash: prev.finances.cash - toolInfo.cost } };
@@ -1796,6 +1801,11 @@ export function CoasterProvider({
       
       // Handle queue placement
       if (tool === 'queue') {
+        // Don't place queue on existing buildings, tracks, or footprints
+        const existingType = tile.building?.type;
+        if (existingType && existingType !== 'empty' && existingType !== 'grass' && existingType !== 'queue') return prev;
+        if (tile.trackPiece || tile.hasCoasterTrack) return prev;
+        
         tile.queue = true;
         tile.building = { ...createEmptyBuilding(), type: 'queue' };
         return { ...prev, grid: newGrid, finances: { ...prev.finances, cash: prev.finances.cash - toolInfo.cost } };
@@ -2475,6 +2485,21 @@ export function CoasterProvider({
       
       // Special handling for coaster_station - select correct rotation based on adjacent track
       if (tool === 'coaster_station') {
+        // Validate tile is buildable (coaster_station is 2x1)
+        const stationSize = toolInfo.size ?? { width: 2, height: 1 };
+        for (let dy = 0; dy < stationSize.height; dy++) {
+          for (let dx = 0; dx < stationSize.width; dx++) {
+            const checkX = x + dx;
+            const checkY = y + dy;
+            if (checkX >= prev.gridSize || checkY >= prev.gridSize) return prev;
+            const checkTile = prev.grid[checkY]?.[checkX];
+            if (!checkTile) return prev;
+            if (checkTile.terrain === 'water') return prev;
+            if (checkTile.building?.type && checkTile.building.type !== 'empty' && checkTile.building.type !== 'grass') return prev;
+            if (checkTile.path || checkTile.queue || checkTile.hasCoasterTrack || checkTile.trackPiece) return prev;
+          }
+        }
+        
         // Check adjacent tiles for track to determine station orientation
         const adjacentOffsets = [
           { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
@@ -2540,10 +2565,10 @@ export function CoasterProvider({
             
             const checkTile = newGrid[checkY][checkX];
             
-            // Check if tile is buildable (not water, not already built on)
+            // Check if tile is buildable (not water, not already built on, no tracks)
             if (checkTile.terrain === 'water') return prev;
             if (checkTile.building.type !== 'empty' && checkTile.building.type !== 'grass') return prev;
-            if (checkTile.path || checkTile.queue || checkTile.hasCoasterTrack) return prev;
+            if (checkTile.path || checkTile.queue || checkTile.hasCoasterTrack || checkTile.trackPiece) return prev;
           }
         }
         

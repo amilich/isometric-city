@@ -169,6 +169,7 @@ export type GuestState =
   | 'exiting_ride'    // Leaving ride exit
   | 'shopping'        // At a shop
   | 'eating'          // At a food stand
+  | 'exiting_building' // Walking out of shop/food stand
   | 'sitting'         // Resting on bench
   | 'watching'        // Watching show/entertainment
   | 'leaving'         // Heading to exit

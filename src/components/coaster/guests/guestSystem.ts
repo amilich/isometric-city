@@ -170,9 +170,9 @@ export function drawGuest(
   let x = startX + (endX - startX) * guest.progress + TILE_WIDTH / 2;
   let y = startY + (endY - startY) * guest.progress + TILE_HEIGHT / 2;
   
-  // When eating or shopping, interpolate from path tile toward the building
+  // When eating, shopping, or exiting building - animate position
   // Use real time for smooth animation independent of game tick rate
-  if ((guest.state === 'eating' || guest.state === 'shopping') && guest.targetBuildingId) {
+  if ((guest.state === 'eating' || guest.state === 'shopping' || guest.state === 'exiting_building') && guest.targetBuildingId) {
     const parts = guest.targetBuildingId.split(',');
     if (parts.length === 2) {
       const buildingX = parseInt(parts[0], 10);
@@ -188,35 +188,23 @@ export function drawGuest(
         const buildingCenterX = buildingScreenX + TILE_WIDTH / 2;
         const buildingCenterY = buildingScreenY + TILE_HEIGHT / 2;
         
-        // Calculate real-time animation progress
-        // Walk animation takes 800ms to walk in, 800ms to walk out
         const walkDurationMs = 800;
-        const startTime = guest.activityStartTime || Date.now();
-        const elapsedMs = Date.now() - startTime;
-        
-        // Total activity duration in real time (approximate based on game speed)
-        // At normal speed: 1 game minute = 100ms, so 10 game minutes = 1000ms
-        const totalDurationMs = (guest.initialActivityTime || 10) * 100;
-        const remainingMs = totalDurationMs - elapsedMs;
+        // If activityStartTime is 0 or undefined, treat as just started
+        const now = Date.now();
+        const startTime = guest.activityStartTime && guest.activityStartTime > 0 ? guest.activityStartTime : now;
+        const elapsedMs = now - startTime;
         
         let progress: number;
-        if (elapsedMs < walkDurationMs) {
-          // Walking in (0 -> 1)
-          progress = elapsedMs / walkDurationMs;
-        } else if (remainingMs < walkDurationMs && remainingMs > 0) {
-          // Walking out (1 -> 0)
-          progress = remainingMs / walkDurationMs;
-        } else if (remainingMs <= 0) {
-          // Done - back at path
-          progress = 0;
+        
+        if (guest.state === 'exiting_building') {
+          // Walking out: 1 -> 0 over 800ms
+          progress = Math.max(0, 1 - elapsedMs / walkDurationMs);
         } else {
-          // Inside building
-          progress = 1;
+          // Walking in: 0 -> 1 over 800ms, then stay at 1
+          progress = Math.min(1, elapsedMs / walkDurationMs);
         }
         
-        // Clamp and apply easing for smoother movement
-        progress = Math.max(0, Math.min(1, progress));
-        // Ease in-out for more natural movement
+        // Apply easing for smoother movement
         const easedProgress = progress < 0.5 
           ? 2 * progress * progress 
           : 1 - Math.pow(-2 * progress + 2, 2) / 2;
@@ -527,12 +515,29 @@ export function updateGuest(
       } else {
         updatedGuest.happiness = Math.min(100, updatedGuest.happiness + 4);
       }
+      // Transition to exiting_building for walk-out animation
+      updatedGuest.state = 'exiting_building';
+      updatedGuest.activityStartTime = Date.now(); // Reset for exit animation
+      updatedGuest.queueTimer = 0;
+      updatedGuest.approachProgress = 1; // Start at building
+    }
+    updatedGuest.lastState = previousState;
+    return updatedGuest;
+  }
+  
+  // Handle exiting_building state (walk-out animation)
+  if (updatedGuest.state === 'exiting_building') {
+    const exitDuration = 800; // 800ms to walk out
+    const elapsed = Date.now() - (updatedGuest.activityStartTime || Date.now());
+    
+    if (elapsed >= exitDuration) {
+      // Exit animation complete, now walking
       updatedGuest.state = 'walking';
       updatedGuest.targetBuildingId = null;
       updatedGuest.targetBuildingKind = null;
-      updatedGuest.queueTimer = 0;
       updatedGuest.approachProgress = 0;
       updatedGuest.initialActivityTime = 0;
+      updatedGuest.activityStartTime = 0;
     }
     updatedGuest.lastState = previousState;
     return updatedGuest;
@@ -544,15 +549,45 @@ export function updateGuest(
       let destination: { path: { x: number; y: number }[]; buildingId: string } | null = null;
       let targetKind: Guest['targetBuildingKind'] = null;
       
-      if (updatedGuest.hunger > 50 || updatedGuest.thirst > 50) {
-        destination = findFoodDestination(grid, updatedGuest);
-        targetKind = 'food';
-      } else if (updatedGuest.cash > 20 && Math.random() < 0.3) {
-        destination = findShopDestination(grid, updatedGuest);
-        targetKind = 'shop';
+      // Random activity selection with weighted probabilities
+      const roll = Math.random();
+      const isHungry = updatedGuest.hunger > 50 || updatedGuest.thirst > 50;
+      
+      if (isHungry) {
+        // When hungry, 70% food, 30% shop (browsing while looking for food)
+        if (roll < 0.7) {
+          destination = findFoodDestination(grid, updatedGuest);
+          targetKind = 'food';
+        } else {
+          destination = findShopDestination(grid, updatedGuest);
+          targetKind = 'shop';
+        }
       } else {
+        // When not hungry: 40% shop, 40% ride, 20% food (snack)
+        if (roll < 0.4) {
+          destination = findShopDestination(grid, updatedGuest);
+          targetKind = 'shop';
+        } else if (roll < 0.8) {
+          destination = findRideDestination(grid, updatedGuest);
+          targetKind = 'ride';
+        } else {
+          destination = findFoodDestination(grid, updatedGuest);
+          targetKind = 'food';
+        }
+      }
+      
+      // If first choice not found, try alternatives
+      if (!destination && targetKind !== 'ride') {
         destination = findRideDestination(grid, updatedGuest);
         targetKind = 'ride';
+      }
+      if (!destination && targetKind !== 'shop') {
+        destination = findShopDestination(grid, updatedGuest);
+        targetKind = 'shop';
+      }
+      if (!destination && targetKind !== 'food') {
+        destination = findFoodDestination(grid, updatedGuest);
+        targetKind = 'food';
       }
       
       if (destination) {

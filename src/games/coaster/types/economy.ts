@@ -3,6 +3,8 @@
  * Defines guests, money, satisfaction, and park management
  */
 
+import { msg } from 'gt-next';
+
 // =============================================================================
 // WEATHER SYSTEM
 // =============================================================================
@@ -117,13 +119,13 @@ export const WEATHER_EFFECTS: Record<WeatherType, WeatherEffects> = {
 };
 
 export const WEATHER_DISPLAY: Record<WeatherType, { name: string; icon: string; color: string }> = {
-  sunny: { name: 'Sunny', icon: '☀️', color: '#fbbf24' },
-  partly_cloudy: { name: 'Partly Cloudy', icon: '⛅', color: '#94a3b8' },
-  cloudy: { name: 'Cloudy', icon: '☁️', color: '#64748b' },
-  rain: { name: 'Rain', icon: '🌧️', color: '#3b82f6' },
-  storm: { name: 'Storm', icon: '⛈️', color: '#6366f1' },
-  hot: { name: 'Heat Wave', icon: '🔥', color: '#ef4444' },
-  cold: { name: 'Cold', icon: '❄️', color: '#06b6d4' },
+  sunny: { name: msg('Sunny'), icon: '☀️', color: '#fbbf24' },
+  partly_cloudy: { name: msg('Partly Cloudy'), icon: '⛅', color: '#94a3b8' },
+  cloudy: { name: msg('Cloudy'), icon: '☁️', color: '#64748b' },
+  rain: { name: msg('Rain'), icon: '🌧️', color: '#3b82f6' },
+  storm: { name: msg('Storm'), icon: '⛈️', color: '#6366f1' },
+  hot: { name: msg('Heat Wave'), icon: '🔥', color: '#ef4444' },
+  cold: { name: msg('Cold'), icon: '❄️', color: '#06b6d4' },
 };
 
 // Weather transition probabilities based on current weather
@@ -203,29 +205,29 @@ export type GuestThought =
 
 // Guest thought display text
 export const GUEST_THOUGHT_TEXT: Record<GuestThought, string> = {
-  happy: "I'm having a great time!",
-  excited: "This is so exciting!",
-  hungry: "I'm getting hungry...",
-  thirsty: "I need a drink!",
-  tired: "My feet are killing me.",
-  need_bathroom: "Where's the restroom?",
-  lost: "I can't find my way...",
-  queue_too_long: "This queue is too long!",
-  ride_was_great: "That ride was amazing!",
-  ride_was_scary: "That was terrifying!",
-  ride_made_sick: "I feel sick...",
-  path_disgusting: "This path is disgusting!",
-  scenery_beautiful: "The scenery here is beautiful!",
-  want_to_go_home: "I want to go home.",
-  cant_find_exit: "Where's the exit?",
-  spent_too_much: "I've spent too much money.",
-  good_value: "Great value for money!",
-  weather_great: "What lovely weather!",
-  getting_wet: "I'm getting soaked!",
-  too_hot: "It's so hot today!",
-  too_cold: "Brrr, it's cold!",
-  need_shelter: "I need to find shelter!",
-  perfect_day: "Perfect day for the park!",
+  happy: msg("I'm having a great time!"),
+  excited: msg("This is so exciting!"),
+  hungry: msg("I'm getting hungry..."),
+  thirsty: msg("I need a drink!"),
+  tired: msg("My feet are killing me."),
+  need_bathroom: msg("Where's the restroom?"),
+  lost: msg("I can't find my way..."),
+  queue_too_long: msg("This queue is too long!"),
+  ride_was_great: msg("That ride was amazing!"),
+  ride_was_scary: msg("That was terrifying!"),
+  ride_made_sick: msg("I feel sick..."),
+  path_disgusting: msg("This path is disgusting!"),
+  scenery_beautiful: msg("The scenery here is beautiful!"),
+  want_to_go_home: msg("I want to go home."),
+  cant_find_exit: msg("Where's the exit?"),
+  spent_too_much: msg("I've spent too much money."),
+  good_value: msg("Great value for money!"),
+  weather_great: msg("What lovely weather!"),
+  getting_wet: msg("I'm getting soaked!"),
+  too_hot: msg("It's so hot today!"),
+  too_cold: msg("Brrr, it's cold!"),
+  need_shelter: msg("I need to find shelter!"),
+  perfect_day: msg("Perfect day for the park!"),
 };
 
 export interface Guest {

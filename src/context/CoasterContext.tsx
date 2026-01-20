@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
+import { msg } from 'gt-next';
 import {
   GameState,
   Tool,
@@ -342,7 +343,7 @@ function findStationTile(
   return trackTiles[0];
 }
 
-function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
+function createInitialGameState(parkName: string = msg('My Theme Park'), gridSize: number = DEFAULT_GRID_SIZE): GameState {
   // Create empty grid
   const grid: Tile[][] = [];
   for (let y = 0; y < gridSize; y++) {
@@ -1098,7 +1099,7 @@ function createTrainsForCoaster(trackLength: number, coasterType: string = 'stee
 function createDefaultCoaster(id: string, startTile: { x: number; y: number }, trackLength: number = 0): Coaster {
   return {
     id,
-    name: 'Custom Coaster',
+    name: msg('Custom Coaster'),
     type: 'steel_sit_down',
     color: { primary: '#dc2626', secondary: '#f59e0b', supports: '#374151' },
     track: [],

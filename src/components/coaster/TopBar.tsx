@@ -1,8 +1,15 @@
 'use client';
 
 import React from 'react';
+import { T, useGT, msg, useMessages } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { Button } from '@/components/ui/button';
+
+// Month names for localization
+const MONTH_NAMES = [
+  msg('Jan'), msg('Feb'), msg('Mar'), msg('Apr'), msg('May'), msg('Jun'),
+  msg('Jul'), msg('Aug'), msg('Sep'), msg('Oct'), msg('Nov'), msg('Dec')
+];
 
 // =============================================================================
 // SPEED ICONS
@@ -46,29 +53,29 @@ function SuperFastIcon() {
 // =============================================================================
 
 export function TopBar() {
+  const gt = useGT();
+  const m = useMessages();
   const { state, setSpeed, setActivePanel, addMoney } = useCoaster();
   const { settings, stats, finances, year, month, day, hour, minute, speed } = state;
-  
+
   // Format time - use Math.floor for minute since it can be fractional
   const displayMinute = Math.floor(minute);
   const timeString = `${hour.toString().padStart(2, '0')}:${displayMinute.toString().padStart(2, '0')}`;
-  const dateString = `Year ${year}, Month ${month}, Day ${day}`;
-  
+
   // Format month name
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const monthName = monthNames[(month - 1) % 12];
+  const monthName = m(MONTH_NAMES[(month - 1) % 12]);
   
   return (
     <div className="h-14 bg-slate-900/95 border-b border-slate-700 flex items-center px-4 gap-6">
       {/* Park name and date - fixed width to prevent layout jitter */}
       <div className="flex flex-col min-w-[180px]">
         <span className="text-white font-medium text-sm truncate">{settings.name}</span>
-        <span className="text-white/50 text-xs tabular-nums">{monthName} {day}, Year {year} — {timeString}</span>
+        <span className="text-white/50 text-xs tabular-nums">{gt('{month} {day}, Year {year} — {time}', { month: monthName, day, year, time: timeString })}</span>
       </div>
-      
+
       {/* Separator */}
       <div className="w-px h-8 bg-slate-700" />
-      
+
       {/* Speed controls */}
       <div className="flex items-center gap-1">
         <Button
@@ -76,7 +83,7 @@ export function TopBar() {
           size="icon"
           className="h-8 w-8"
           onClick={() => setSpeed(0)}
-          title="Pause"
+          title={gt('Pause')}
         >
           <PauseIcon />
         </Button>
@@ -85,7 +92,7 @@ export function TopBar() {
           size="icon"
           className="h-8 w-8"
           onClick={() => setSpeed(1)}
-          title="Normal speed"
+          title={gt('Normal speed')}
         >
           <PlayIcon />
         </Button>
@@ -94,7 +101,7 @@ export function TopBar() {
           size="icon"
           className="h-8 w-8"
           onClick={() => setSpeed(2)}
-          title="Fast"
+          title={gt('Fast')}
         >
           <FastForwardIcon />
         </Button>
@@ -103,39 +110,39 @@ export function TopBar() {
           size="icon"
           className="h-8 w-8"
           onClick={() => setSpeed(3)}
-          title="Super fast"
+          title={gt('Super fast')}
         >
           <SuperFastIcon />
         </Button>
       </div>
-      
+
       {/* Separator */}
       <div className="w-px h-8 bg-slate-700" />
-      
+
       {/* Stats */}
       <div className="flex items-center gap-6 text-sm">
         {/* Money */}
         <div className="flex flex-col items-center">
           <span className="text-green-400 font-medium">${finances.cash.toLocaleString()}</span>
-          <span className="text-white/40 text-xs">Cash</span>
+          <T><span className="text-white/40 text-xs">Cash</span></T>
         </div>
-        
+
         {/* Guests */}
         <div className="flex flex-col items-center">
           <span className="text-blue-400 font-medium">{stats.guestsInPark}</span>
-          <span className="text-white/40 text-xs">Guests</span>
+          <T><span className="text-white/40 text-xs">Guests</span></T>
         </div>
-        
+
         {/* Park Rating */}
         <div className="flex flex-col items-center">
           <span className="text-yellow-400 font-medium">{stats.parkRating}</span>
-          <span className="text-white/40 text-xs">Rating</span>
+          <T><span className="text-white/40 text-xs">Rating</span></T>
         </div>
       </div>
-      
+
       {/* Spacer */}
       <div className="flex-1" />
-      
+
       {/* Panel buttons */}
       <div className="flex items-center gap-2">
         <Button
@@ -144,35 +151,35 @@ export function TopBar() {
           onClick={() => addMoney(500000)}
           className="text-green-400 hover:text-green-300"
         >
-          +$500k
+          <T>+$500k</T>
         </Button>
         <Button
           variant={state.activePanel === 'finances' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setActivePanel(state.activePanel === 'finances' ? 'none' : 'finances')}
         >
-          Finances
+          <T>Finances</T>
         </Button>
         <Button
           variant={state.activePanel === 'guests' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setActivePanel(state.activePanel === 'guests' ? 'none' : 'guests')}
         >
-          Guests
+          <T>Guests</T>
         </Button>
         <Button
           variant={state.activePanel === 'rides' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setActivePanel(state.activePanel === 'rides' ? 'none' : 'rides')}
         >
-          Rides
+          <T>Rides</T>
         </Button>
         <Button
           variant={state.activePanel === 'settings' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setActivePanel(state.activePanel === 'settings' ? 'none' : 'settings')}
         >
-          Settings
+          <T>Settings</T>
         </Button>
       </div>
     </div>

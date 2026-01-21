@@ -1218,14 +1218,14 @@ const COASTER_TYPE_COLORS: Record<CoasterType, { primary: string; secondary: str
 };
 
 function createDefaultCoaster(
-  id: string, 
-  startTile: { x: number; y: number }, 
+  id: string,
+  startTile: { x: number; y: number },
   trackLength: number = 0,
   coasterType: CoasterType = 'steel_sit_down'
 ): Coaster {
   const colors = COASTER_TYPE_COLORS[coasterType] ?? COASTER_TYPE_COLORS.steel_sit_down;
   const typeStats = COASTER_TYPE_STATS[coasterType];
-  
+
   return {
     id,
     name: typeStats?.name ?? 'Custom Coaster',

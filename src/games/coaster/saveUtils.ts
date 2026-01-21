@@ -1,4 +1,5 @@
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import { msg } from 'gt-next';
 import { GameState } from '@/games/coaster/types';
 import { serializeAndCompressAsync } from '@/lib/saveWorkerManager';
 
@@ -22,7 +23,7 @@ export type SavedParkMeta = {
 export function buildSavedParkMeta(state: GameState, savedAt: number = Date.now()): SavedParkMeta {
   return {
     id: state.id,
-    name: state.settings?.name ?? 'Unnamed Park',
+    name: state.settings?.name ?? msg('Unnamed Park'),
     cash: state.finances?.cash ?? 0,
     guests: state.stats?.guestsInPark ?? 0,
     rating: state.stats?.parkRating ?? 0,

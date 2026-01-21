@@ -14,6 +14,7 @@ import { ParkFinances, ParkStats, ParkSettings, Guest, Staff, DEFAULT_PRICES, We
 import { Coaster, CoasterTrain, CoasterCar, TrackDirection, TrackHeight, TrackPiece, TrackPieceType, CoasterType, COASTER_TYPE_STATS, getStrutStyleForCoasterType, getCoasterCategory, areCoasterTypesCompatible } from '@/games/coaster/types/tracks';
 import { Building, BuildingType } from '@/games/coaster/types/buildings';
 import { spawnGuests, updateGuest } from '@/components/coaster/guests';
+import { msg } from 'gt-next';
 import {
   COASTER_AUTOSAVE_KEY,
   COASTER_SAVED_PARK_PREFIX,
@@ -343,7 +344,7 @@ function findStationTile(
   return trackTiles[0];
 }
 
-function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
+function createInitialGameState(parkName: string = msg('My Theme Park'), gridSize: number = DEFAULT_GRID_SIZE): GameState {
   // Create empty grid
   const grid: Tile[][] = [];
   for (let y = 0; y < gridSize; y++) {
@@ -1142,7 +1143,7 @@ function createDefaultCoaster(
   
   return {
     id,
-    name: typeStats?.name ?? 'Custom Coaster',
+    name: typeStats?.name ?? msg('Custom Coaster'),
     type: coasterType,
     color: colors,
     track: [],

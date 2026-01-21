@@ -47,13 +47,13 @@ function SuperFastIcon() {
 // =============================================================================
 
 export function TopBar() {
-  const { state, setSpeed, setActivePanel, addMoney, setParkSettings } = useCoaster();
+  const { state, setSpeed, setActivePanel, setParkSettings } = useCoaster();
   const { settings, stats, finances, year, month, day, hour, minute, speed } = state;
   
   // Calculate demand based on ticket price
   // At $0, demand is 100%. At $100, demand is roughly 30%. Sweet spot around $30-50.
   const ticketPrice = settings.entranceFee;
-  const demandPercent = Math.max(30, Math.round(100 * Math.exp(-ticketPrice / 80)));
+  const demandPercent = Math.max(5, Math.round(100 * Math.exp(-ticketPrice / 40)));
   
   // Format time - use Math.floor for minute since it can be fractional
   const displayMinute = Math.floor(minute);
@@ -166,14 +166,6 @@ export function TopBar() {
       
       {/* Panel buttons */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => addMoney(500000)}
-          className="text-green-400 hover:text-green-300"
-        >
-          +$500k
-        </Button>
         <Button
           variant={state.activePanel === 'finances' ? 'default' : 'ghost'}
           size="sm"

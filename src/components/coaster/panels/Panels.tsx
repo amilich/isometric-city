@@ -126,7 +126,7 @@ async function loadExampleState(
 }
 
 function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const { state, setParkSettings, exportState, loadState, setActivePanel, newGame } = useCoaster();
+  const { state, setParkSettings, exportState, loadState, setActivePanel, newGame, addMoney } = useCoaster();
   const { settings, gridSize } = state;
   
   const [importValue, setImportValue] = useState('');
@@ -314,13 +314,22 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {/* Developer Tools */}
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Developer Tools</div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => loadExampleState('example_state.json', loadState, setActivePanel)}
-            >
-              Load Example State
-            </Button>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => loadExampleState('example_state.json', loadState, setActivePanel)}
+              >
+                Load Example State
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full text-green-400 hover:text-green-300"
+                onClick={() => addMoney(500000)}
+              >
+                +$500k (Cheat)
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

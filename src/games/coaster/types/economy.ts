@@ -173,6 +173,7 @@ export type GuestState =
   | 'sitting'         // Resting on bench
   | 'watching'        // Watching show/entertainment
   | 'leaving'         // Heading to exit
+  | 'exited'          // Has left the park (will be removed)
   | 'lost';           // Can't find path
 
 export type GuestThought =

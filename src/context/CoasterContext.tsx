@@ -1449,9 +1449,9 @@ export function CoasterProvider({
         const baseSpawnedGuests = spawnGuests(prev.grid, updatedGuests, prev.stats.parkRating, hour);
 
         // Calculate price-based demand modifier
-        // At $0, demand is 100%. At $100, demand is roughly 30%. Sweet spot around $30-50.
+        // At $0, demand is 100%. At $100, demand is ~5%. Sweet spot around $20-40.
         const ticketPrice = prev.settings.payPerRide ? 0 : prev.settings.entranceFee;
-        const priceDemandMultiplier = Math.max(0.3, Math.exp(-ticketPrice / 80));
+        const priceDemandMultiplier = Math.max(0.05, Math.exp(-ticketPrice / 40));
         
         // Apply weather spawn multiplier AND price demand probabilistically
         // Since spawns are typically 0-1 guests, we need to treat the multiplier as a probability
@@ -1509,7 +1509,9 @@ export function CoasterProvider({
           }
 
           return nextGuest;
-        }).concat(spawnedGuests);
+        }).concat(spawnedGuests)
+          // Filter out guests who have exited the park
+          .filter(guest => guest.state !== 'exited');
 
         
         const guestsInPark = guests.length;

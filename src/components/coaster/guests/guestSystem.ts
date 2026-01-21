@@ -398,6 +398,51 @@ function findRideDestination(grid: Tile[][], guest: Guest) {
   return findBuildingDestination(grid, guest, isRideBuilding, true);
 }
 
+/**
+ * Find path to nearest exit (path tile on grid edge)
+ */
+function findExitPath(grid: Tile[][], startX: number, startY: number): { x: number; y: number }[] {
+  const gridSize = grid.length;
+  
+  // Find all exit tiles (path tiles on edges)
+  const exitTiles: { x: number; y: number }[] = [];
+  for (let i = 0; i < gridSize; i++) {
+    if (grid[i]?.[0]?.path) exitTiles.push({ x: 0, y: i });
+    if (grid[i]?.[gridSize - 1]?.path) exitTiles.push({ x: gridSize - 1, y: i });
+    if (grid[0]?.[i]?.path) exitTiles.push({ x: i, y: 0 });
+    if (grid[gridSize - 1]?.[i]?.path) exitTiles.push({ x: i, y: gridSize - 1 });
+  }
+  
+  // Remove duplicates
+  const uniqueExits = exitTiles.filter((tile, index, self) =>
+    index === self.findIndex(t => t.x === tile.x && t.y === tile.y)
+  );
+  
+  if (uniqueExits.length === 0) return [];
+  
+  // Try to find path to each exit, pick the shortest
+  let bestPath: { x: number; y: number }[] = [];
+  let bestLength = Infinity;
+  
+  // Shuffle and try a few exits (for variety)
+  const shuffledExits = uniqueExits.sort(() => Math.random() - 0.5).slice(0, 4);
+  
+  for (const exit of shuffledExits) {
+    const path = findPath(grid, startX, startY, exit.x, exit.y, 200);
+    if (path.length > 0 && path.length < bestLength) {
+      bestPath = path;
+      bestLength = path.length;
+    }
+  }
+  
+  // Remove starting position if it matches
+  if (bestPath.length > 0 && bestPath[0].x === startX && bestPath[0].y === startY) {
+    return bestPath.slice(1);
+  }
+  
+  return bestPath;
+}
+
 function findFoodDestination(grid: Tile[][], guest: Guest) {
   return findBuildingDestination(grid, guest, isFoodBuilding, false);
 }
@@ -541,6 +586,92 @@ export function updateGuest(
     }
     updatedGuest.lastState = previousState;
     return updatedGuest;
+  }
+
+  // Handle leaving state - pathfind to nearest exit
+  if (updatedGuest.state === 'leaving') {
+    // If no path yet, find one to an exit
+    if (updatedGuest.path.length === 0 && updatedGuest.progress >= 1) {
+      const exitPath = findExitPath(grid, updatedGuest.tileX, updatedGuest.tileY);
+      if (exitPath && exitPath.length > 0) {
+        assignPath(updatedGuest, exitPath);
+      } else {
+        // Can't find exit, just wander
+        updatedGuest.state = 'walking';
+        updatedGuest.decisionCooldown = 30;
+      }
+    }
+    
+    // Movement while leaving (same as walking)
+    const speed = 0.025; // Slightly faster when leaving
+    updatedGuest.progress += speed;
+    
+    if (updatedGuest.progress >= 1) {
+      updatedGuest.tileX = updatedGuest.targetTileX;
+      updatedGuest.tileY = updatedGuest.targetTileY;
+      updatedGuest.progress = 0;
+      
+      // Check if reached exit (edge tile)
+      const gridSize = grid.length;
+      const atEdge = updatedGuest.tileX === 0 || updatedGuest.tileX === gridSize - 1 ||
+                     updatedGuest.tileY === 0 || updatedGuest.tileY === gridSize - 1;
+      
+      if (atEdge) {
+        // Mark as exited - will be filtered out
+        updatedGuest.state = 'exited' as GuestState;
+        updatedGuest.lastState = previousState;
+        return updatedGuest;
+      }
+      
+      // Continue along path
+      if (updatedGuest.path.length > 0 && updatedGuest.pathIndex < updatedGuest.path.length) {
+        const next = updatedGuest.path[updatedGuest.pathIndex];
+        updatedGuest.targetTileX = next.x;
+        updatedGuest.targetTileY = next.y;
+        updatedGuest.pathIndex++;
+      }
+    }
+    
+    updatedGuest.lastState = previousState;
+    return updatedGuest;
+  }
+
+  // Unhappy guests may decide to leave (checked periodically)
+  if (updatedGuest.state === 'walking' && updatedGuest.decisionCooldown <= 0) {
+    // Very unhappy guests (happiness < 30) have a chance to leave
+    // Also guests who have been in the park a long time with low happiness
+    const unhappinessLevel = 100 - updatedGuest.happiness;
+    const timeInParkMinutes = updatedGuest.timeInPark;
+    
+    // Base leave chance increases with unhappiness and time
+    let leaveChance = 0;
+    if (updatedGuest.happiness < 30) {
+      leaveChance = 0.02; // 2% base chance when very unhappy
+    } else if (updatedGuest.happiness < 50 && timeInParkMinutes > 120) {
+      leaveChance = 0.005; // 0.5% if moderately unhappy and been here a while
+    }
+    
+    // Increase chance if multiple needs are critical
+    const criticalNeeds = [
+      updatedGuest.hunger > 80,
+      updatedGuest.thirst > 80,
+      updatedGuest.bathroom > 90,
+      updatedGuest.energy < 20,
+      updatedGuest.nausea > 70,
+    ].filter(Boolean).length;
+    
+    leaveChance += criticalNeeds * 0.01;
+    
+    if (Math.random() < leaveChance) {
+      updatedGuest.state = 'leaving';
+      updatedGuest.thoughts = [...updatedGuest.thoughts.slice(-4), 'want_to_go_home' as const];
+      updatedGuest.path = [];
+      updatedGuest.pathIndex = 0;
+      updatedGuest.targetBuildingId = null;
+      updatedGuest.targetBuildingKind = null;
+      updatedGuest.lastState = previousState;
+      return updatedGuest;
+    }
   }
 
   // Seek rides if idle

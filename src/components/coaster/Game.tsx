@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useGT } from 'gt-next';
 import { CoasterGrid } from './CoasterGrid';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -14,6 +15,7 @@ interface GameProps {
 }
 
 export default function CoasterGame({ onExit }: GameProps) {
+  const gt = useGT();
   const { state, isStateReady, setTool } = useCoaster();
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{
@@ -49,7 +51,7 @@ export default function CoasterGame({ onExit }: GameProps) {
   if (!isStateReady) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-950 via-indigo-900 to-purple-950">
-        <div className="text-white/60">Loading park...</div>
+        <div className="text-white/60">{gt('Loading park...')}</div>
       </div>
     );
   }

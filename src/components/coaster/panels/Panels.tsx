@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { T, Var, useGT } from 'gt-next';
 
 function formatCurrency(value: number) {
   return `$${value.toLocaleString()}`;
@@ -18,7 +19,7 @@ function PanelWrapper({ title, children, onClose }: { title: string; children: R
   return (
     <Card className="absolute top-20 right-8 w-[360px] bg-slate-950/95 border-slate-700 shadow-xl z-50">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-        <h3 className="text-sm font-semibold tracking-wide text-white/90 uppercase">{title}</h3>
+        <h3 className="text-sm font-semibold tracking-wide text-white/90 uppercase"><T><Var>{title}</Var></T></h3>
         <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 text-white/60 hover:text-white">
           ✕
         </Button>
@@ -33,63 +34,74 @@ function PanelWrapper({ title, children, onClose }: { title: string; children: R
 function FinancesPanel({ onClose }: { onClose: () => void }) {
   const { state } = useCoaster();
   const { finances } = state;
-  
+  const gt = useGT();
+
   return (
-    <PanelWrapper title="Finances" onClose={onClose}>
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <div className="text-white/50 text-xs uppercase">Cash</div>
-          <div className="text-green-400 font-semibold">{formatCurrency(finances.cash)}</div>
-        </div>
-        <div>
-          <div className="text-white/50 text-xs uppercase">Profit</div>
-          <div className={`font-semibold ${finances.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {formatCurrency(finances.profit)}
+    <PanelWrapper title={gt('Finances')} onClose={onClose}>
+      <T>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <div className="text-white/50 text-xs uppercase">Cash</div>
+            <div className="text-green-400 font-semibold"><Var>{formatCurrency(finances.cash)}</Var></div>
+          </div>
+          <div>
+            <div className="text-white/50 text-xs uppercase">Profit</div>
+            <div className={`font-semibold ${finances.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <Var>{formatCurrency(finances.profit)}</Var>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center justify-between text-white/80">
-          <span>Admissions</span>
-          <span className="text-green-300">{formatCurrency(finances.incomeAdmissions)}</span>
+      </T>
+
+      <T>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center justify-between text-white/80">
+            <span>Admissions</span>
+            <span className="text-green-300"><Var>{formatCurrency(finances.incomeAdmissions)}</Var></span>
+          </div>
+          <div className="flex items-center justify-between text-white/80">
+            <span>Ride Tickets</span>
+            <span className="text-green-300"><Var>{formatCurrency(finances.incomeRides)}</Var></span>
+          </div>
+          <div className="flex items-center justify-between text-white/80">
+            <span>Food & Drinks</span>
+            <span className="text-green-300"><Var>{formatCurrency(finances.incomeFood)}</Var></span>
+          </div>
+          <div className="flex items-center justify-between text-white/80">
+            <span>Shops</span>
+            <span className="text-green-300"><Var>{formatCurrency(finances.incomeShops)}</Var></span>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-white/80">
-          <span>Ride Tickets</span>
-          <span className="text-green-300">{formatCurrency(finances.incomeRides)}</span>
+      </T>
+
+      <T>
+        <div className="border-t border-slate-800 pt-3 space-y-2 text-sm">
+          <div className="flex items-center justify-between text-white/70">
+            <span>Upkeep</span>
+            <span className="text-red-300"><Var>{formatCurrency(finances.expenseUpkeep)}</Var></span>
+          </div>
+          <div className="flex items-center justify-between text-white/70">
+            <span>Wages</span>
+            <span className="text-red-300"><Var>{formatCurrency(finances.expenseWages)}</Var></span>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-white/80">
-          <span>Food & Drinks</span>
-          <span className="text-green-300">{formatCurrency(finances.incomeFood)}</span>
-        </div>
-        <div className="flex items-center justify-between text-white/80">
-          <span>Shops</span>
-          <span className="text-green-300">{formatCurrency(finances.incomeShops)}</span>
-        </div>
-      </div>
-      
-      <div className="border-t border-slate-800 pt-3 space-y-2 text-sm">
-        <div className="flex items-center justify-between text-white/70">
-          <span>Upkeep</span>
-          <span className="text-red-300">{formatCurrency(finances.expenseUpkeep)}</span>
-        </div>
-        <div className="flex items-center justify-between text-white/70">
-          <span>Wages</span>
-          <span className="text-red-300">{formatCurrency(finances.expenseWages)}</span>
-        </div>
-      </div>
-      
+      </T>
+
       {finances.history.length > 0 && (
         <div>
-          <div className="text-xs uppercase text-white/50 tracking-wide mb-2">Recent Months</div>
+          <T>
+            <div className="text-xs uppercase text-white/50 tracking-wide mb-2">Recent Months</div>
+          </T>
           <div className="space-y-2 text-xs text-white/70">
             {finances.history.slice(-4).map(point => (
-              <div key={`${point.month}-${point.year}`} className="flex justify-between">
-                <span>Y{point.year} M{point.month}</span>
-                <span className={point.profit >= 0 ? 'text-green-300' : 'text-red-300'}>
-                  {formatCurrency(point.profit)}
-                </span>
-              </div>
+              <T key={`${point.month}-${point.year}`}>
+                <div className="flex justify-between">
+                  <span>Y<Var>{point.year}</Var> M<Var>{point.month}</Var></span>
+                  <span className={point.profit >= 0 ? 'text-green-300' : 'text-red-300'}>
+                    <Var>{formatCurrency(point.profit)}</Var>
+                  </span>
+                </div>
+              </T>
             ))}
           </div>
         </div>
@@ -128,7 +140,8 @@ async function loadExampleState(
 function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { state, setParkSettings, exportState, loadState, setActivePanel, newGame } = useCoaster();
   const { settings, gridSize } = state;
-  
+  const gt = useGT();
+
   const [importValue, setImportValue] = useState('');
   const [exportCopied, setExportCopied] = useState(false);
   const [importError, setImportError] = useState(false);
@@ -162,16 +175,20 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
     <Dialog open={true} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-[400px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle><T>Settings</T></DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Park Settings */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Park Settings</div>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Park Settings</div>
+            </T>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Entrance Fee</label>
+                <T>
+                  <label className="text-sm font-medium">Entrance Fee</label>
+                </T>
                 <Input
                   type="number"
                   min={0}
@@ -181,13 +198,17 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                   disabled={settings.payPerRide}
                 />
                 {settings.payPerRide && (
-                  <p className="text-xs text-muted-foreground mt-1">Disabled while pay-per-ride is enabled.</p>
+                  <T>
+                    <p className="text-xs text-muted-foreground mt-1">Disabled while pay-per-ride is enabled.</p>
+                  </T>
                 )}
               </div>
               <div className="flex items-center justify-between py-2">
                 <div>
-                  <div className="text-sm font-medium">Pay Per Ride</div>
-                  <p className="text-xs text-muted-foreground">Charge guests per ride instead of admission</p>
+                  <T>
+                    <div className="text-sm font-medium">Pay Per Ride</div>
+                    <p className="text-xs text-muted-foreground">Charge guests per ride instead of admission</p>
+                  </T>
                 </div>
                 <Switch
                   checked={settings.payPerRide}
@@ -201,30 +222,38 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               </div>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           {/* Park Information */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Park Information</div>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Park Information</div>
+            </T>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Park Name</span>
-                <span className="text-foreground">{settings.name}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Grid Size</span>
-                <span className="text-foreground">{gridSize} x {gridSize}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Auto-Save</span>
-                <span className="text-green-400">Enabled</span>
-              </div>
+              <T>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Park Name</span>
+                  <span className="text-foreground"><Var>{settings.name}</Var></span>
+                </div>
+              </T>
+              <T>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Grid Size</span>
+                  <span className="text-foreground"><Var>{gridSize}</Var> x <Var>{gridSize}</Var></span>
+                </div>
+              </T>
+              <T>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Auto-Save</span>
+                  <span className="text-green-400">Enabled</span>
+                </div>
+              </T>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           {/* New Game */}
           {!showNewGameConfirm ? (
             <Button
@@ -232,15 +261,17 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               className="w-full"
               onClick={() => setShowNewGameConfirm(true)}
             >
-              Start New Park
+              <T>Start New Park</T>
             </Button>
           ) : (
             <div className="space-y-3">
-              <p className="text-muted-foreground text-sm text-center">Are you sure? This will reset all progress.</p>
+              <T>
+                <p className="text-muted-foreground text-sm text-center">Are you sure? This will reset all progress.</p>
+              </T>
               <Input
                 value={newParkName}
                 onChange={(e) => setNewParkName(e.target.value)}
-                placeholder="New park name..."
+                placeholder={gt('New park name...')}
               />
               <div className="flex gap-2">
                 <Button
@@ -248,7 +279,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                   className="flex-1"
                   onClick={() => setShowNewGameConfirm(false)}
                 >
-                  Cancel
+                  <T>Cancel</T>
                 </Button>
                 <Button
                   variant="destructive"
@@ -258,34 +289,38 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                     setActivePanel('none');
                   }}
                 >
-                  Reset
+                  <T>Reset</T>
                 </Button>
               </div>
             </div>
           )}
-          
+
           <Separator />
-          
+
           {/* Export Game */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Export Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Copy your game state to share or backup</p>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Export Game</div>
+              <p className="text-muted-foreground text-xs mb-2">Copy your game state to share or backup</p>
+            </T>
             <Button
               variant="outline"
               className="w-full"
               onClick={handleCopyExport}
             >
-              {exportCopied ? '✓ Copied!' : 'Copy Game State'}
+              {exportCopied ? <T>✓ Copied!</T> : <T>Copy Game State</T>}
             </Button>
           </div>
-          
+
           {/* Import Game */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import Game</div>
-            <p className="text-muted-foreground text-xs mb-2">Paste a game state to load it</p>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import Game</div>
+              <p className="text-muted-foreground text-xs mb-2">Paste a game state to load it</p>
+            </T>
             <textarea
               className="w-full h-20 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder="Paste game state here..."
+              placeholder={gt('Paste game state here...')}
               value={importValue}
               onChange={(e) => {
                 setImportValue(e.target.value);
@@ -294,10 +329,14 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               }}
             />
             {importError && (
-              <p className="text-red-400 text-xs mt-1">Invalid game state. Please check and try again.</p>
+              <T>
+                <p className="text-red-400 text-xs mt-1">Invalid game state. Please check and try again.</p>
+              </T>
             )}
             {importSuccess && (
-              <p className="text-green-400 text-xs mt-1">Game loaded successfully!</p>
+              <T>
+                <p className="text-green-400 text-xs mt-1">Game loaded successfully!</p>
+              </T>
             )}
             <Button
               variant="outline"
@@ -305,21 +344,23 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               onClick={handleImport}
               disabled={!importValue.trim()}
             >
-              Load Game State
+              <T>Load Game State</T>
             </Button>
           </div>
-          
+
           <Separator />
-          
+
           {/* Developer Tools */}
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Developer Tools</div>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Developer Tools</div>
+            </T>
             <Button
               variant="outline"
               className="w-full"
               onClick={() => loadExampleState('example_state.json', loadState, setActivePanel)}
             >
-              Load Example State
+              <T>Load Example State</T>
             </Button>
           </div>
         </div>

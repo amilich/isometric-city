@@ -27,26 +27,74 @@ export function getDarkness(hour: number): number {
 /**
  * Get ambient color based on time of day
  * Returns RGB values for the ambient lighting overlay
+ * Enhanced with smoother transitions and richer colors
  */
 export function getAmbientColor(hour: number): { r: number; g: number; b: number } {
-  if (hour >= 7 && hour < 18) return { r: 255, g: 255, b: 255 };
+  // Full daylight (clear bright sky)
+  if (hour >= 9 && hour < 16) return { r: 255, g: 255, b: 255 };
+  
+  // Late morning transition (golden hour start fading)
+  if (hour >= 7 && hour < 9) {
+    const t = (hour - 7) / 2;
+    return { 
+      r: Math.round(255 - 15 * (1 - t)), 
+      g: Math.round(245 + 10 * t), 
+      b: Math.round(230 + 25 * t) 
+    };
+  }
+  
+  // Early golden hour (warm afternoon light)
+  if (hour >= 16 && hour < 18) {
+    const t = (hour - 16) / 2;
+    return { 
+      r: Math.round(255 - 20 * t), 
+      g: Math.round(240 - 50 * t), 
+      b: Math.round(220 - 80 * t) 
+    };
+  }
+  
+  // Dawn (purple-pink to golden)
   if (hour >= 5 && hour < 7) {
     const t = (hour - 5) / 2;
     return { 
-      r: Math.round(60 + 40 * t), 
-      g: Math.round(40 + 30 * t), 
-      b: Math.round(70 + 20 * t) 
+      r: Math.round(80 + 160 * t), 
+      g: Math.round(50 + 140 * t), 
+      b: Math.round(100 + 130 * t) 
     };
   }
+  
+  // Sunset/Dusk (golden to deep blue)
   if (hour >= 18 && hour < 20) {
     const t = (hour - 18) / 2;
     return { 
-      r: Math.round(100 - 40 * t), 
-      g: Math.round(70 - 30 * t), 
-      b: Math.round(90 - 20 * t) 
+      r: Math.round(235 - 200 * t), 
+      g: Math.round(190 - 150 * t), 
+      b: Math.round(140 - 70 * t) 
     };
   }
-  return { r: 20, g: 30, b: 60 }; // Night
+  
+  // Early night (deep blue transitioning to night)
+  if (hour >= 20 && hour < 22) {
+    const t = (hour - 20) / 2;
+    return { 
+      r: Math.round(35 - 15 * t), 
+      g: Math.round(40 - 10 * t), 
+      b: Math.round(70 - 10 * t) 
+    };
+  }
+  
+  // Pre-dawn (slight lightening)
+  if (hour >= 4 && hour < 5) {
+    const t = hour - 4;
+    return { 
+      r: Math.round(20 + 60 * t), 
+      g: Math.round(30 + 20 * t), 
+      b: Math.round(60 + 40 * t) 
+    };
+  }
+  
+  // Deep night (rich dark blue)
+  return { r: 20, g: 30, b: 60 };
 }
 
 /**
@@ -246,56 +294,109 @@ export function drawLightCutouts(
 
 /**
  * Draw colored glows for special buildings (hospitals, fire stations, etc.)
+ * Enhanced with multi-layer glow effects and pulsing animations
  */
 export function drawColoredGlows(
   ctx: CanvasRenderingContext2D,
   coloredGlows: ColoredGlow[],
   lightIntensity: number
 ): void {
+  // Get time-based pulse factor for animated glows
+  const time = Date.now() / 1000;
+  const pulseFactor = 0.85 + 0.15 * Math.sin(time * 2);
+  const fastPulse = 0.7 + 0.3 * Math.sin(time * 4);
+  
   for (const glow of coloredGlows) {
     const { screenX, screenY } = gridToScreen(glow.x, glow.y, 0, 0);
     const tileCenterX = screenX + TILE_WIDTH / 2;
     const tileCenterY = screenY + TILE_HEIGHT / 2;
     
     if (glow.type === 'road') {
-      const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, 20);
-      gradient.addColorStop(0, `rgba(255, 210, 130, ${0.3 * lightIntensity})`);
-      gradient.addColorStop(0.5, `rgba(255, 190, 100, ${0.15 * lightIntensity})`);
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      // Enhanced warm street light glow with subtle orange tint
+      const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, 24);
+      gradient.addColorStop(0, `rgba(255, 220, 150, ${0.35 * lightIntensity})`);
+      gradient.addColorStop(0.3, `rgba(255, 200, 120, ${0.25 * lightIntensity})`);
+      gradient.addColorStop(0.6, `rgba(255, 180, 100, ${0.12 * lightIntensity})`);
+      gradient.addColorStop(1, 'rgba(255, 160, 80, 0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(tileCenterX, tileCenterY, 20, 0, Math.PI * 2);
+      ctx.arc(tileCenterX, tileCenterY, 24, 0, Math.PI * 2);
       ctx.fill();
     } else {
       let glowColor: { r: number; g: number; b: number } | null = null;
       let glowRadius = 20;
+      let useFlashing = false;
+      let secondaryColor: { r: number; g: number; b: number } | null = null;
       
       if (glow.type === 'hospital') {
-        glowColor = { r: 255, g: 80, b: 80 };
-        glowRadius = 25;
-      } else if (glow.type === 'fire_station') {
-        glowColor = { r: 255, g: 100, b: 50 };
-        glowRadius = 22;
-      } else if (glow.type === 'police_station') {
-        glowColor = { r: 60, g: 140, b: 255 };
-        glowRadius = 22;
-      } else if (glow.type === 'power_plant') {
-        glowColor = { r: 255, g: 200, b: 50 };
+        glowColor = { r: 255, g: 60, b: 60 };
+        secondaryColor = { r: 255, g: 120, b: 120 };
         glowRadius = 30;
+        useFlashing = true;
+      } else if (glow.type === 'fire_station') {
+        glowColor = { r: 255, g: 80, b: 30 };
+        secondaryColor = { r: 255, g: 140, b: 50 };
+        glowRadius = 28;
+        useFlashing = true;
+      } else if (glow.type === 'police_station') {
+        // Alternating red/blue police lights
+        const phase = Math.floor(time * 3) % 2;
+        glowColor = phase === 0 ? { r: 50, g: 100, b: 255 } : { r: 255, g: 50, b: 50 };
+        secondaryColor = phase === 0 ? { r: 100, g: 150, b: 255 } : { r: 255, g: 100, b: 100 };
+        glowRadius = 26;
+        useFlashing = true;
+      } else if (glow.type === 'power_plant') {
+        glowColor = { r: 255, g: 220, b: 50 };
+        secondaryColor = { r: 255, g: 240, b: 100 };
+        glowRadius = 35;
       }
       
       if (glowColor) {
-        const gradient = ctx.createRadialGradient(
-          tileCenterX, tileCenterY - 15, 0,
-          tileCenterX, tileCenterY - 15, glowRadius
+        const effectivePulse = useFlashing ? fastPulse : pulseFactor;
+        const effectiveRadius = glowRadius * effectivePulse;
+        
+        // Outer soft glow layer
+        const outerGradient = ctx.createRadialGradient(
+          tileCenterX, tileCenterY - 12, 0,
+          tileCenterX, tileCenterY - 12, effectiveRadius * 1.5
         );
-        gradient.addColorStop(0, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.55 * lightIntensity})`);
-        gradient.addColorStop(0.5, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.25 * lightIntensity})`);
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = gradient;
+        outerGradient.addColorStop(0, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.3 * lightIntensity * effectivePulse})`);
+        outerGradient.addColorStop(0.5, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.1 * lightIntensity})`);
+        outerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = outerGradient;
         ctx.beginPath();
-        ctx.arc(tileCenterX, tileCenterY - 15, glowRadius, 0, Math.PI * 2);
+        ctx.arc(tileCenterX, tileCenterY - 12, effectiveRadius * 1.5, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Inner bright core
+        const innerGradient = ctx.createRadialGradient(
+          tileCenterX, tileCenterY - 15, 0,
+          tileCenterX, tileCenterY - 15, effectiveRadius
+        );
+        const coreColor = secondaryColor || glowColor;
+        innerGradient.addColorStop(0, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, ${0.65 * lightIntensity * effectivePulse})`);
+        innerGradient.addColorStop(0.4, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.35 * lightIntensity})`);
+        innerGradient.addColorStop(0.7, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.15 * lightIntensity})`);
+        innerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = innerGradient;
+        ctx.beginPath();
+        ctx.arc(tileCenterX, tileCenterY - 15, effectiveRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Extra bright center point for emergency services
+        if (useFlashing) {
+          const spotGradient = ctx.createRadialGradient(
+            tileCenterX, tileCenterY - 18, 0,
+            tileCenterX, tileCenterY - 18, 8
+          );
+          spotGradient.addColorStop(0, `rgba(255, 255, 255, ${0.5 * lightIntensity * effectivePulse})`);
+          spotGradient.addColorStop(0.5, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, ${0.3 * lightIntensity})`);
+          spotGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = spotGradient;
+          ctx.beginPath();
+          ctx.arc(tileCenterX, tileCenterY - 18, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
   }

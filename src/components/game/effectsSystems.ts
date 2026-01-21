@@ -2,6 +2,17 @@ import { useCallback } from 'react';
 import { Firework, FactorySmog, Cloud, CloudPuff, CloudType, WorldRenderState, TILE_WIDTH, TILE_HEIGHT } from './types';
 import { BuildingType } from '@/types/game';
 import {
+  AmbientParticle,
+  createDustMote,
+  createLeaf,
+  createFirefly,
+  updateAmbientParticles,
+  drawAmbientParticles,
+  shouldSpawnAmbientParticle,
+  getRandomViewportPosition,
+  AMBIENT_CONFIG,
+} from './ambientEffects';
+import {
   FIREWORK_BUILDINGS,
   FIREWORK_COLORS,
   FIREWORK_PARTICLE_COUNT,
@@ -72,6 +83,8 @@ export interface EffectsSystemRefs {
   cloudsRef: React.MutableRefObject<Cloud[]>;
   cloudIdRef: React.MutableRefObject<number>;
   cloudSpawnTimerRef: React.MutableRefObject<number>;
+  ambientParticlesRef: React.MutableRefObject<AmbientParticle[]>;
+  ambientSpawnTimerRef: React.MutableRefObject<number>;
 }
 
 export interface EffectsSystemState {
@@ -96,6 +109,8 @@ export function useEffectsSystems(
     cloudsRef,
     cloudIdRef,
     cloudSpawnTimerRef,
+    ambientParticlesRef,
+    ambientSpawnTimerRef,
   } = refs;
 
   const { worldStateRef, gridVersionRef, isMobile } = systemState;
@@ -346,73 +361,119 @@ export function useEffectsSystems(
       }
       
       if (firework.state === 'launching') {
-        // Draw launching trail
+        // Draw launching trail with enhanced glow
+        const trailLength = 0.12;
         const gradient = ctx.createLinearGradient(
           firework.x, firework.y,
-          firework.x - firework.vx * 0.1, firework.y - firework.vy * 0.1
+          firework.x - firework.vx * trailLength, firework.y - firework.vy * trailLength
         );
         gradient.addColorStop(0, firework.color);
+        gradient.addColorStop(0.3, `${firework.color}cc`);
+        gradient.addColorStop(0.6, 'rgba(255, 200, 100, 0.4)');
         gradient.addColorStop(1, 'rgba(255, 200, 100, 0)');
         
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(firework.x, firework.y);
         ctx.lineTo(
-          firework.x - firework.vx * 0.08,
-          firework.y - firework.vy * 0.08
+          firework.x - firework.vx * trailLength,
+          firework.y - firework.vy * trailLength
         );
         ctx.stroke();
+        
+        // Outer glow halo
+        const glowGradient = ctx.createRadialGradient(
+          firework.x, firework.y, 0,
+          firework.x, firework.y, 12
+        );
+        glowGradient.addColorStop(0, `${firework.color}80`);
+        glowGradient.addColorStop(0.4, `${firework.color}30`);
+        glowGradient.addColorStop(1, 'rgba(255, 200, 100, 0)');
+        ctx.fillStyle = glowGradient;
+        ctx.beginPath();
+        ctx.arc(firework.x, firework.y, 12, 0, Math.PI * 2);
+        ctx.fill();
         
         // Draw the firework head (bright point)
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(firework.x, firework.y, 2, 0, Math.PI * 2);
+        ctx.arc(firework.x, firework.y, 3, 0, Math.PI * 2);
         ctx.fill();
         
-        // Glow effect
+        // Inner glow effect
         ctx.fillStyle = firework.color;
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.7;
         ctx.beginPath();
-        ctx.arc(firework.x, firework.y, 4, 0, Math.PI * 2);
+        ctx.arc(firework.x, firework.y, 5, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
         
       } else if (firework.state === 'exploding' || firework.state === 'fading') {
-        // Draw particles
+        // Draw particles with enhanced glow and trail effects
         for (const particle of firework.particles) {
           const alpha = Math.max(0, 1 - particle.age / particle.maxAge);
-          if (alpha <= 0) continue;
+          if (alpha <= 0.02) continue;
           
-          // Draw particle trail
+          // Draw particle trail with gradient fade
           if (particle.trail.length > 1) {
-            ctx.strokeStyle = particle.color;
-            ctx.lineWidth = particle.size * 0.5;
             ctx.lineCap = 'round';
-            ctx.globalAlpha = alpha * 0.3;
+            ctx.lineJoin = 'round';
             
-            ctx.beginPath();
-            ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
+            // Draw trail segments with fading opacity
             for (let i = 1; i < particle.trail.length; i++) {
+              const segmentAlpha = alpha * 0.4 * (1 - i / particle.trail.length);
+              ctx.strokeStyle = particle.color;
+              ctx.lineWidth = particle.size * 0.6 * (1 - i / particle.trail.length * 0.5);
+              ctx.globalAlpha = segmentAlpha;
+              
+              ctx.beginPath();
+              ctx.moveTo(particle.trail[i - 1].x, particle.trail[i - 1].y);
               ctx.lineTo(particle.trail[i].x, particle.trail[i].y);
+              ctx.stroke();
             }
-            ctx.lineTo(particle.x, particle.y);
-            ctx.stroke();
+            
+            // Final segment to current position
+            if (particle.trail.length > 0) {
+              const lastTrail = particle.trail[particle.trail.length - 1];
+              ctx.globalAlpha = alpha * 0.5;
+              ctx.strokeStyle = particle.color;
+              ctx.lineWidth = particle.size * 0.5;
+              ctx.beginPath();
+              ctx.moveTo(lastTrail.x, lastTrail.y);
+              ctx.lineTo(particle.x, particle.y);
+              ctx.stroke();
+            }
           }
           
-          // Draw particle
+          // Outer glow halo
+          const glowSize = particle.size * alpha * 3;
+          const glowGradient = ctx.createRadialGradient(
+            particle.x, particle.y, 0,
+            particle.x, particle.y, glowSize
+          );
+          glowGradient.addColorStop(0, `${particle.color}${Math.floor(alpha * 60).toString(16).padStart(2, '0')}`);
+          glowGradient.addColorStop(0.5, `${particle.color}${Math.floor(alpha * 20).toString(16).padStart(2, '0')}`);
+          glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = glowGradient;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, glowSize, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw particle core
           ctx.globalAlpha = alpha;
           ctx.fillStyle = particle.color;
           ctx.beginPath();
-          ctx.arc(particle.x, particle.y, particle.size * alpha, 0, Math.PI * 2);
+          ctx.arc(particle.x, particle.y, particle.size * alpha * 1.2, 0, Math.PI * 2);
           ctx.fill();
           
-          // Bright center
+          // Bright center highlight
           ctx.fillStyle = '#ffffff';
-          ctx.globalAlpha = alpha * 0.7;
+          ctx.globalAlpha = alpha * 0.85;
           ctx.beginPath();
-          ctx.arc(particle.x, particle.y, particle.size * alpha * 0.5, 0, Math.PI * 2);
+          ctx.arc(particle.x, particle.y, particle.size * alpha * 0.6, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -898,59 +959,70 @@ export function useEffectsSystems(
   }, [worldStateRef, cloudsRef, cloudSpawnTimerRef, isMobile, spawnCloud]);
 
   // Get gradient color stops for a cloud type and portion (for cumulonimbus base/top)
+  // Enhanced with richer colors and better depth
   const getCloudGradientStops = (cloudType: CloudType, portion: 'base' | 'top' | undefined, puffOpacity: number): [number, string][] => {
     switch (cloudType) {
       case 'cumulus':
-        // Bright white, fair-weather
+        // Bright white with subtle warm tint, fair-weather - enhanced fluffy appearance
         return [
           [0, `rgba(255, 255, 255, ${puffOpacity})`],
-          [0.4, `rgba(250, 250, 252, ${puffOpacity * 0.9})`],
-          [0.7, `rgba(245, 245, 250, ${puffOpacity * 0.5})`],
-          [1, `rgba(240, 240, 248, 0)`],
-        ];
-      case 'stratus':
-        // Gray overcast, flat layered
-        return [
-          [0, `rgba(220, 222, 228, ${puffOpacity})`],
-          [0.35, `rgba(200, 204, 212, ${puffOpacity * 0.9})`],
-          [0.65, `rgba(185, 190, 200, ${puffOpacity * 0.5})`],
-          [1, `rgba(175, 180, 192, 0)`],
-        ];
-      case 'cirrus':
-        // Wispy, faint icy white, high altitude
-        return [
-          [0, `rgba(255, 255, 255, ${puffOpacity * 0.9})`],
-          [0.3, `rgba(248, 250, 255, ${puffOpacity * 0.6})`],
-          [0.6, `rgba(240, 245, 252, ${puffOpacity * 0.25})`],
+          [0.25, `rgba(252, 252, 255, ${puffOpacity * 0.95})`],
+          [0.5, `rgba(248, 250, 255, ${puffOpacity * 0.7})`],
+          [0.75, `rgba(242, 245, 252, ${puffOpacity * 0.35})`],
           [1, `rgba(235, 240, 250, 0)`],
         ];
+      case 'stratus':
+        // Gray overcast with subtle blue undertone - more atmospheric
+        return [
+          [0, `rgba(210, 215, 225, ${puffOpacity})`],
+          [0.2, `rgba(200, 206, 218, ${puffOpacity * 0.95})`],
+          [0.45, `rgba(188, 195, 210, ${puffOpacity * 0.7})`],
+          [0.7, `rgba(175, 184, 200, ${puffOpacity * 0.4})`],
+          [1, `rgba(165, 175, 192, 0)`],
+        ];
+      case 'cirrus':
+        // Wispy, ethereal ice crystals - more delicate appearance
+        return [
+          [0, `rgba(255, 255, 255, ${puffOpacity * 0.85})`],
+          [0.2, `rgba(250, 252, 255, ${puffOpacity * 0.6})`],
+          [0.45, `rgba(245, 248, 255, ${puffOpacity * 0.35})`],
+          [0.7, `rgba(240, 245, 255, ${puffOpacity * 0.15})`],
+          [1, `rgba(235, 242, 252, 0)`],
+        ];
       case 'cumulonimbus':
-        // Storm cloud: dark base, bright anvil top
+        // Storm cloud with dramatic contrast - dark threatening base, bright anvil
         if (portion === 'base') {
           return [
-            [0, `rgba(120, 125, 140, ${puffOpacity})`],
-            [0.3, `rgba(100, 108, 125, ${puffOpacity * 0.9})`],
-            [0.6, `rgba(85, 92, 110, ${puffOpacity * 0.5})`],
-            [1, `rgba(70, 78, 95, 0)`],
+            [0, `rgba(100, 105, 125, ${puffOpacity})`],
+            [0.2, `rgba(88, 95, 115, ${puffOpacity * 0.95})`],
+            [0.45, `rgba(75, 82, 105, ${puffOpacity * 0.7})`],
+            [0.7, `rgba(62, 70, 92, ${puffOpacity * 0.4})`],
+            [1, `rgba(50, 58, 80, 0)`],
           ];
         }
-        // Top / anvil: bright white
+        // Top / anvil: brilliant white with slight yellow highlight
         return [
-          [0, `rgba(255, 255, 255, ${puffOpacity})`],
-          [0.4, `rgba(248, 248, 252, ${puffOpacity * 0.85})`],
-          [0.7, `rgba(240, 242, 248, ${puffOpacity * 0.4})`],
-          [1, `rgba(235, 238, 245, 0)`],
+          [0, `rgba(255, 255, 252, ${puffOpacity})`],
+          [0.25, `rgba(252, 252, 250, ${puffOpacity * 0.9})`],
+          [0.5, `rgba(248, 248, 248, ${puffOpacity * 0.6})`],
+          [0.75, `rgba(242, 244, 250, ${puffOpacity * 0.3})`],
+          [1, `rgba(238, 240, 248, 0)`],
         ];
       case 'altocumulus':
-        // Patchy mackerel sky, gray-white
+        // Patchy mackerel sky with subtle pink/orange hints at edges
         return [
-          [0, `rgba(238, 240, 245, ${puffOpacity})`],
-          [0.4, `rgba(225, 228, 235, ${puffOpacity * 0.85})`],
-          [0.7, `rgba(210, 215, 225, ${puffOpacity * 0.45})`],
-          [1, `rgba(200, 206, 218, 0)`],
+          [0, `rgba(235, 238, 248, ${puffOpacity})`],
+          [0.25, `rgba(228, 232, 245, ${puffOpacity * 0.9})`],
+          [0.5, `rgba(218, 224, 238, ${puffOpacity * 0.6})`],
+          [0.75, `rgba(208, 215, 230, ${puffOpacity * 0.3})`],
+          [1, `rgba(198, 206, 222, 0)`],
         ];
       default:
-        return [[0, `rgba(255,255,255,${puffOpacity})`], [1, `rgba(240,240,245,0)`]];
+        return [
+          [0, `rgba(255, 255, 255, ${puffOpacity})`],
+          [0.5, `rgba(245, 248, 252, ${puffOpacity * 0.5})`],
+          [1, `rgba(240, 242, 248, 0)`],
+        ];
     }
   };
 
@@ -1082,6 +1154,69 @@ export function useEffectsSystems(
     ctx.restore();
   }, [worldStateRef, cloudsRef]);
 
+  // Update ambient particles - spawn and animate floating particles
+  const updateAmbientParticlesCallback = useCallback((delta: number, currentHour: number) => {
+    const { speed: gameSpeed, zoom: currentZoom } = worldStateRef.current;
+    
+    if (gameSpeed === 0) return;
+    
+    // Skip ambient particles when zoomed out too far
+    if (currentZoom < AMBIENT_CONFIG.MIN_ZOOM) {
+      ambientParticlesRef.current = [];
+      return;
+    }
+    
+    // Mobile: fewer particles for performance
+    const maxParticles = isMobile ? AMBIENT_CONFIG.MAX_PARTICLES_MOBILE : AMBIENT_CONFIG.MAX_PARTICLES;
+    const spawnInterval = isMobile ? AMBIENT_CONFIG.SPAWN_INTERVAL_MOBILE : AMBIENT_CONFIG.SPAWN_INTERVAL;
+    
+    // Update existing particles
+    ambientParticlesRef.current = updateAmbientParticles(
+      ambientParticlesRef.current,
+      delta,
+      gameSpeed
+    );
+    
+    // Spawn new particles
+    ambientSpawnTimerRef.current += delta;
+    if (ambientSpawnTimerRef.current >= spawnInterval && 
+        ambientParticlesRef.current.length < maxParticles) {
+      ambientSpawnTimerRef.current = 0;
+      
+      const pos = getRandomViewportPosition(worldStateRef.current);
+      
+      // Spawn dust motes during day
+      if (shouldSpawnAmbientParticle(currentHour, 'dust_mote')) {
+        ambientParticlesRef.current.push(createDustMote(pos.x, pos.y));
+      }
+      
+      // Spawn falling leaves
+      if (shouldSpawnAmbientParticle(currentHour, 'leaf')) {
+        ambientParticlesRef.current.push(createLeaf(pos.x, pos.y));
+      }
+      
+      // Spawn fireflies at night (spawn at various heights, not just top)
+      if (shouldSpawnAmbientParticle(currentHour, 'firefly')) {
+        const { offset, zoom, canvasSize } = worldStateRef.current;
+        const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+        const viewHeight = canvasSize.height / (dpr * zoom);
+        const viewTop = -offset.y / zoom;
+        const fireflyPos = {
+          x: pos.x,
+          y: viewTop + Math.random() * viewHeight,
+        };
+        ambientParticlesRef.current.push(createFirefly(fireflyPos.x, fireflyPos.y));
+      }
+    }
+  }, [worldStateRef, ambientParticlesRef, ambientSpawnTimerRef, isMobile]);
+
+  // Draw ambient particles
+  const drawAmbientParticlesCallback = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (ambientParticlesRef.current.length === 0) return;
+    
+    drawAmbientParticles(ctx, ambientParticlesRef.current, worldStateRef.current);
+  }, [worldStateRef, ambientParticlesRef]);
+
   return {
     updateFireworks,
     drawFireworks,
@@ -1089,6 +1224,8 @@ export function useEffectsSystems(
     drawSmog,
     updateClouds,
     drawClouds,
+    updateAmbientParticles: updateAmbientParticlesCallback,
+    drawAmbientParticles: drawAmbientParticlesCallback,
     findFireworkBuildingsCallback,
     findSmogFactoriesCallback,
   };

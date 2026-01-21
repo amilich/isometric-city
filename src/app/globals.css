@@ -343,6 +343,207 @@
   animation: fireFlicker 0.3s ease-in-out infinite;
 }
 
+/* Enhanced visual effects for game graphics */
+
+/* Subtle water shimmer animation */
+@keyframes waterShimmer {
+  0%, 100% { 
+    filter: brightness(1) saturate(1);
+    transform: scale(1);
+  }
+  50% { 
+    filter: brightness(1.05) saturate(1.1);
+    transform: scale(1.002);
+  }
+}
+
+/* Ambient glow pulse for special buildings */
+@keyframes ambientGlow {
+  0%, 100% { 
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.2),
+                0 0 30px rgba(96, 165, 250, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 25px rgba(96, 165, 250, 0.35),
+                0 0 50px rgba(96, 165, 250, 0.15);
+  }
+}
+
+.animate-ambient-glow {
+  animation: ambientGlow 3s ease-in-out infinite;
+}
+
+/* Soft breathing animation for UI elements */
+@keyframes breathe {
+  0%, 100% { 
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* Sparkle animation for highlights */
+@keyframes sparkle {
+  0%, 100% { 
+    opacity: 0.5;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* Smooth color transition for day/night */
+@keyframes dayNightTransition {
+  0% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(0.85) saturate(0.9) sepia(0.1); }
+  100% { filter: brightness(1) saturate(1); }
+}
+
+/* Ripple effect for water interactions */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 1.5s ease-out forwards;
+}
+
+/* Gentle hover lift effect */
+@keyframes hoverLift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.animate-hover-lift:hover {
+  animation: hoverLift 0.6s ease-in-out;
+}
+
+/* Enhanced button press effect */
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+.animate-press:active {
+  animation: buttonPress 0.15s ease-out;
+}
+
+/* Gradient shimmer for loading states */
+@keyframes gradientShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-gradient-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(220 18% 11%) 0%,
+    hsl(220 18% 16%) 50%,
+    hsl(220 18% 11%) 100%
+  );
+  background-size: 200% 100%;
+  animation: gradientShimmer 2s linear infinite;
+}
+
+/* Icon bounce for notifications */
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-4px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-2px); }
+}
+
+.animate-icon-bounce {
+  animation: iconBounce 0.6s ease-out;
+}
+
+/* Subtle scale pulse for active states */
+@keyframes scalePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-scale-pulse {
+  animation: scalePulse 2s ease-in-out infinite;
+}
+
+/* Glow ring animation for selected items */
+@keyframes glowRing {
+  0%, 100% { 
+    box-shadow: 0 0 0 2px hsl(210 60% 60% / 0.4),
+                0 0 10px hsl(210 60% 60% / 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 0 3px hsl(210 60% 60% / 0.6),
+                0 0 20px hsl(210 60% 60% / 0.3);
+  }
+}
+
+.animate-glow-ring {
+  animation: glowRing 2s ease-in-out infinite;
+}
+
+/* Subtle text glow for important labels */
+@keyframes textGlow {
+  0%, 100% { 
+    text-shadow: 0 0 10px hsl(210 60% 60% / 0.3);
+  }
+  50% { 
+    text-shadow: 0 0 20px hsl(210 60% 60% / 0.5),
+                 0 0 30px hsl(210 60% 60% / 0.2);
+  }
+}
+
+.animate-text-glow {
+  animation: textGlow 3s ease-in-out infinite;
+}
+
+/* Enhanced card hover effect */
+.card-hover-glow {
+  transition: all 0.3s ease;
+}
+
+.card-hover-glow:hover {
+  box-shadow: 0 4px 20px rgba(96, 165, 250, 0.15),
+              0 0 40px rgba(96, 165, 250, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Smooth border glow animation */
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: hsl(210 60% 40%);
+  }
+  50% {
+    border-color: hsl(210 60% 60%);
+  }
+}
+
+.animate-border-glow {
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
 /* Button glow effect */
 .btn-glow {
   position: relative;

@@ -1562,6 +1562,7 @@ function drawTrackSegment(
   if (!trackPiece) return;
   
   const { type, direction, startHeight, endHeight, chainLift, strutStyle } = trackPiece;
+  
   // Default to metal if strutStyle not defined (for backwards compatibility with old saves)
   const effectiveStrutStyle = strutStyle ?? 'metal';
   // Use provided track color or default

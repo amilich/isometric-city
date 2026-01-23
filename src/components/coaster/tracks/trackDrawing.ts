@@ -14,10 +14,11 @@ const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.60;
 const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
 
-// Track visual parameters
-const TRACK_WIDTH = 5; // Width of the track rails
-const RAIL_WIDTH = 2; // Width of individual rails
-const TIE_LENGTH = 8; // Length of crossties
+// Track visual parameters  
+const TRACK_WIDTH = 14; // Width between the two rails (spacing)
+const RAIL_WIDTH = 6; // Width of individual rails (3px radius)
+const TIE_LENGTH = 18; // Length of crossties
+const TIE_WIDTH = 3; // Width of crossties
 const TIE_SPACING = 8; // Space between crossties
 const SUPPORT_WIDTH = 2; // Width of support columns (thinner)
 
@@ -413,44 +414,74 @@ export function drawStraightTrack(
   const length = Math.hypot(toEdge.x - fromEdge.x, toEdge.y - fromEdge.y);
   const numTies = Math.max(3, Math.floor(length / TIE_SPACING));
   
-  // Draw crossties - wooden coasters get wooden ties
-  if (coasterCategory === 'wooden' || strutStyle === 'wood') {
-    ctx.strokeStyle = COLORS.woodAccent;
-  } else {
-    ctx.strokeStyle = COLORS.tie;
-  }
-  ctx.lineWidth = 1.5;
-  ctx.lineCap = 'butt';
+  // Draw crossties using filled rectangles instead of strokes
+  const tieColor = (coasterCategory === 'wooden' || strutStyle === 'wood') ? COLORS.woodAccent : COLORS.tie;
+  const tieWidth = TIE_WIDTH;
   
   for (let i = 0; i <= numTies; i++) {
     const t = i / numTies;
     const tieX = fromEdge.x + (toEdge.x - fromEdge.x) * t;
     const tieY = fromEdge.y + (toEdge.y - fromEdge.y) * t;
     
+    // Draw tie as a filled polygon
+    const halfLen = TIE_LENGTH / 2;
+    const halfWidth = tieWidth / 2;
+    
+    // Calculate the 4 corners of the tie rectangle
+    // Tie runs perpendicular to the track (along perpX, perpY)
+    // Track direction is from fromEdge to toEdge
+    const trackDirX = (toEdge.x - fromEdge.x) / length;
+    const trackDirY = (toEdge.y - fromEdge.y) / length;
+    
+    ctx.fillStyle = tieColor;
     ctx.beginPath();
-    ctx.moveTo(tieX - perpX * TIE_LENGTH / 2, tieY - perpY * TIE_LENGTH / 2);
-    ctx.lineTo(tieX + perpX * TIE_LENGTH / 2, tieY + perpY * TIE_LENGTH / 2);
-    ctx.stroke();
+    ctx.moveTo(
+      tieX - perpX * halfLen - trackDirX * halfWidth,
+      tieY - perpY * halfLen - trackDirY * halfWidth
+    );
+    ctx.lineTo(
+      tieX + perpX * halfLen - trackDirX * halfWidth,
+      tieY + perpY * halfLen - trackDirY * halfWidth
+    );
+    ctx.lineTo(
+      tieX + perpX * halfLen + trackDirX * halfWidth,
+      tieY + perpY * halfLen + trackDirY * halfWidth
+    );
+    ctx.lineTo(
+      tieX - perpX * halfLen + trackDirX * halfWidth,
+      tieY - perpY * halfLen + trackDirY * halfWidth
+    );
+    ctx.closePath();
+    ctx.fill();
   }
   
-  // Draw rails
+  // Draw rails using filled circles for a smooth line appearance
   const railOffset = TRACK_WIDTH / 2;
-  
-  ctx.strokeStyle = trackColor;
-  ctx.lineWidth = RAIL_WIDTH;
-  ctx.lineCap = 'round';
+  const effectiveColor = trackColor || COLORS.rail;
+  const railRadius = RAIL_WIDTH / 2;
+  const numRailPoints = Math.max(10, Math.ceil(length / 3)); // More points for longer tracks
   
   // Left rail
-  ctx.beginPath();
-  ctx.moveTo(fromEdge.x - perpX * railOffset, fromEdge.y - perpY * railOffset);
-  ctx.lineTo(toEdge.x - perpX * railOffset, toEdge.y - perpY * railOffset);
-  ctx.stroke();
+  for (let i = 0; i <= numRailPoints; i++) {
+    const t = i / numRailPoints;
+    const x = fromEdge.x - perpX * railOffset + (toEdge.x - fromEdge.x) * t;
+    const y = fromEdge.y - perpY * railOffset + (toEdge.y - fromEdge.y) * t;
+    ctx.fillStyle = effectiveColor;
+    ctx.beginPath();
+    ctx.arc(x, y, railRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
   
   // Right rail
-  ctx.beginPath();
-  ctx.moveTo(fromEdge.x + perpX * railOffset, fromEdge.y + perpY * railOffset);
-  ctx.lineTo(toEdge.x + perpX * railOffset, toEdge.y + perpY * railOffset);
-  ctx.stroke();
+  for (let i = 0; i <= numRailPoints; i++) {
+    const t = i / numRailPoints;
+    const x = fromEdge.x + perpX * railOffset + (toEdge.x - fromEdge.x) * t;
+    const y = fromEdge.y + perpY * railOffset + (toEdge.y - fromEdge.y) * t;
+    ctx.fillStyle = effectiveColor;
+    ctx.beginPath();
+    ctx.arc(x, y, railRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 /**
@@ -517,13 +548,8 @@ export function drawCurvedTrack(
   
   // Draw crossties along the quadratic curve (fewer ties - 4 is enough)
   const numTies = 4;
-  // Wooden coasters get wooden ties
-  if (coasterCategory === 'wooden' || strutStyle === 'wood') {
-    ctx.strokeStyle = COLORS.woodAccent;
-  } else {
-    ctx.strokeStyle = COLORS.tie;
-  }
-  ctx.lineWidth = 1.5;
+  const tieColor = (coasterCategory === 'wooden' || strutStyle === 'wood') ? COLORS.woodAccent : COLORS.tie;
+  const tieWidth = TIE_WIDTH;
   
   for (let i = 0; i <= numTies; i++) {
     const t = i / numTies;
@@ -542,26 +568,44 @@ export function drawCurvedTrack(
     const perpX = -tangent.y / len;
     const perpY = tangent.x / len;
     
+    // Draw tie as filled polygon
+    const halfLen = TIE_LENGTH / 2;
+    const halfWidth = tieWidth / 2;
+    const tangentNormX = tangent.x / len;
+    const tangentNormY = tangent.y / len;
+    
+    ctx.fillStyle = tieColor;
     ctx.beginPath();
-    ctx.moveTo(pt.x - perpX * TIE_LENGTH / 2, pt.y - perpY * TIE_LENGTH / 2);
-    ctx.lineTo(pt.x + perpX * TIE_LENGTH / 2, pt.y + perpY * TIE_LENGTH / 2);
-    ctx.stroke();
+    ctx.moveTo(
+      pt.x - perpX * halfLen - tangentNormX * halfWidth,
+      pt.y - perpY * halfLen - tangentNormY * halfWidth
+    );
+    ctx.lineTo(
+      pt.x + perpX * halfLen - tangentNormX * halfWidth,
+      pt.y + perpY * halfLen - tangentNormY * halfWidth
+    );
+    ctx.lineTo(
+      pt.x + perpX * halfLen + tangentNormX * halfWidth,
+      pt.y + perpY * halfLen + tangentNormY * halfWidth
+    );
+    ctx.lineTo(
+      pt.x - perpX * halfLen + tangentNormX * halfWidth,
+      pt.y - perpY * halfLen + tangentNormY * halfWidth
+    );
+    ctx.closePath();
+    ctx.fill();
   }
   
-  // Draw rails using quadratic bezier
+  // Draw rails using filled circles along the quadratic bezier
   const railOffset = TRACK_WIDTH / 2;
-  const segments = 16;
-  
-  ctx.strokeStyle = trackColor;
-  ctx.lineWidth = RAIL_WIDTH;
-  ctx.lineCap = 'round';
+  const effectiveColor = trackColor || COLORS.rail;
+  const railRadius = RAIL_WIDTH / 2;
+  const numRailPoints = 16;
   
   // Left and right rail paths
   for (const side of [-1, 1]) {
-    ctx.beginPath();
-    
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
+    for (let i = 0; i <= numRailPoints; i++) {
+      const t = i / numRailPoints;
       const u = 1 - t;
       
       // Quadratic bezier point
@@ -582,14 +626,11 @@ export function drawCurvedTrack(
       const rx = pt.x + perpX * railOffset * side;
       const ry = pt.y + perpY * railOffset * side;
       
-      if (i === 0) {
-        ctx.moveTo(rx, ry);
-      } else {
-        ctx.lineTo(rx, ry);
-      }
+      ctx.fillStyle = effectiveColor;
+      ctx.beginPath();
+      ctx.arc(rx, ry, railRadius, 0, Math.PI * 2);
+      ctx.fill();
     }
-    
-    ctx.stroke();
   }
 }
 
@@ -699,48 +740,68 @@ export function drawSlopeTrack(
     }
   }
   
-  // Draw crossties
+  // Draw crossties using fill-based drawing (stroke doesn't work in this canvas context)
   const numTies = Math.max(3, Math.floor(trackLen / TIE_SPACING));
   
   // Wooden coasters get wooden ties
-  if (coasterCategory === 'wooden' || strutStyle === 'wood') {
-    ctx.strokeStyle = COLORS.woodAccent;
-  } else {
-    ctx.strokeStyle = COLORS.tie;
-  }
-  ctx.lineWidth = 1.5;
-  ctx.lineCap = 'butt';
+  const tieColor = (coasterCategory === 'wooden' || strutStyle === 'wood') ? COLORS.woodAccent : COLORS.tie;
+  const tieWidth = TIE_WIDTH;
   
   for (let i = 0; i <= numTies; i++) {
     const t = i / numTies;
     const tieX = x1 + trackDirX * t;
     const tieY = y1 + trackDirY * t;
     
+    // Draw tie as a filled polygon (rectangle along the perpendicular)
+    const halfLen = TIE_LENGTH / 2;
+    const halfWidth = tieWidth / 2;
+    
+    // Get the normalized track direction for the tie width offset
+    const normTrackX = trackLen > 0 ? trackDirX / trackLen : 0;
+    const normTrackY = trackLen > 0 ? trackDirY / trackLen : 0;
+    
+    // Four corners of the tie rectangle
+    const x1t = tieX - perpX * halfLen - normTrackX * halfWidth;
+    const y1t = tieY - perpY * halfLen - normTrackY * halfWidth;
+    const x2t = tieX + perpX * halfLen - normTrackX * halfWidth;
+    const y2t = tieY + perpY * halfLen - normTrackY * halfWidth;
+    const x3t = tieX + perpX * halfLen + normTrackX * halfWidth;
+    const y3t = tieY + perpY * halfLen + normTrackY * halfWidth;
+    const x4t = tieX - perpX * halfLen + normTrackX * halfWidth;
+    const y4t = tieY - perpY * halfLen + normTrackY * halfWidth;
+    
+    ctx.fillStyle = tieColor;
     ctx.beginPath();
-    ctx.moveTo(tieX - perpX * TIE_LENGTH / 2, tieY - perpY * TIE_LENGTH / 2);
-    ctx.lineTo(tieX + perpX * TIE_LENGTH / 2, tieY + perpY * TIE_LENGTH / 2);
-    ctx.stroke();
+    ctx.moveTo(x1t, y1t);
+    ctx.lineTo(x2t, y2t);
+    ctx.lineTo(x3t, y3t);
+    ctx.lineTo(x4t, y4t);
+    ctx.closePath();
+    ctx.fill();
   }
   
-  // Draw rails - use ground-plane perpendicular for rail spacing
-  // (rails stay horizontal relative to each other, only the track slopes)
+  // Draw rails using fill-based drawing (series of small filled circles)
   const railOffset = TRACK_WIDTH / 2;
+  const railCircleRadius = RAIL_WIDTH / 2;
+  const railSteps = Math.max(10, Math.floor(trackLen / 2));
   
-  ctx.strokeStyle = trackColor;
-  ctx.lineWidth = RAIL_WIDTH;
-  ctx.lineCap = 'round';
+  ctx.fillStyle = trackColor;
   
-  // Left rail
-  ctx.beginPath();
-  ctx.moveTo(x1 - groundPerpX * railOffset, y1 - groundPerpY * railOffset);
-  ctx.lineTo(x2 - groundPerpX * railOffset, y2 - groundPerpY * railOffset);
-  ctx.stroke();
-  
-  // Right rail
-  ctx.beginPath();
-  ctx.moveTo(x1 + groundPerpX * railOffset, y1 + groundPerpY * railOffset);
-  ctx.lineTo(x2 + groundPerpX * railOffset, y2 + groundPerpY * railOffset);
-  ctx.stroke();
+  for (let i = 0; i <= railSteps; i++) {
+    const t = i / railSteps;
+    const rx = x1 + trackDirX * t;
+    const ry = y1 + trackDirY * t;
+    
+    // Left rail
+    ctx.beginPath();
+    ctx.arc(rx - groundPerpX * railOffset, ry - groundPerpY * railOffset, railCircleRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Right rail
+    ctx.beginPath();
+    ctx.arc(rx + groundPerpX * railOffset, ry + groundPerpY * railOffset, railCircleRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 /**

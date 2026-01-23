@@ -151,6 +151,7 @@ export function useBoatSystem(
     const updatedBoats: Boat[] = [];
     
     for (const boat of boatsRef.current) {
+       
       boat.age += delta;
       
       // Update wake particles (similar to contrails) - shorter on mobile
@@ -516,6 +517,7 @@ export function useBoatSystem(
     }
     
     ctx.restore();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- isMobile is stable for the lifetime of the component
   }, [worldStateRef, boatsRef, visualHour]);
 
   return {

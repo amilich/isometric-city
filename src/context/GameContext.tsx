@@ -1047,7 +1047,6 @@ export function GameProvider({ children, startFresh = false }: { children: React
       return {
         ...prev,
         grid: newGrid,
-        gridVersion: prev.gridVersion + 1,
         stats: { ...prev.stats, money: prev.stats.money - cost },
       };
     });

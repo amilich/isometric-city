@@ -2121,7 +2121,9 @@ export function CoasterProvider({
           chainLift = false;
         } else if (tool === 'coaster_loop') {
           pieceType = 'loop_vertical';
-        } else if (tool === 'coaster_build') {
+        } else if (tool === 'coaster_build' || tool === 'coaster_track') {
+          // For auto-build and straight track tools, use deltaDir if available
+          // This ensures straight tracks have the correct direction based on placement
           if (deltaDir) {
             startDirection = deltaDir;
             endDirection = deltaDir;

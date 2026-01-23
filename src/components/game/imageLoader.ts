@@ -378,8 +378,8 @@ export function analyzeContentBounds(img: HTMLImageElement): ContentBounds {
     };
   }
   
-  const contentWidth = maxX - minX;
-  const contentHeight = maxY - minY;
+  const contentWidth = maxX - minX + 1;
+  const contentHeight = maxY - minY + 1;
   
   // Calculate center of content
   const contentCenterX = minX + contentWidth / 2;

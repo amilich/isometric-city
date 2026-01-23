@@ -273,6 +273,12 @@ function generateUUID(): string {
 }
 
 const DIRECTION_ORDER: TrackDirection[] = ['north', 'east', 'south', 'west'];
+const OPPOSITE_DIRECTION: Record<TrackDirection, TrackDirection> = {
+  north: 'south',
+  south: 'north',
+  east: 'west',
+  west: 'east',
+};
 
 function rotateDirection(direction: TrackDirection, turn: 'left' | 'right'): TrackDirection {
   const index = DIRECTION_ORDER.indexOf(direction);
@@ -562,7 +568,7 @@ function calculateStaffWages(staff: Staff[]): number {
 function getExitDirection(piece: TrackPiece): TrackDirection {
   const { type, direction } = piece;
   
-  if (type === 'turn_right_flat') {
+  if (type === 'turn_right_flat' || type === 'turn_right_large_flat') {
     // Right turn: north->east, east->south, south->west, west->north
     const rightTurn: Record<TrackDirection, TrackDirection> = {
       north: 'east', east: 'south', south: 'west', west: 'north'
@@ -570,7 +576,7 @@ function getExitDirection(piece: TrackPiece): TrackDirection {
     return rightTurn[direction];
   }
   
-  if (type === 'turn_left_flat') {
+  if (type === 'turn_left_flat' || type === 'turn_left_large_flat') {
     // Left turn: north->west, west->south, south->east, east->north
     const leftTurn: Record<TrackDirection, TrackDirection> = {
       north: 'west', west: 'south', south: 'east', east: 'north'
@@ -613,7 +619,7 @@ function calculateCorrectDirection(
   const { type } = piece;
   
   // For turns, we need to calculate based on entry direction
-  if (type === 'turn_left_flat' || type === 'turn_right_flat') {
+  if (type === 'turn_left_flat' || type === 'turn_right_flat' || type === 'turn_left_large_flat' || type === 'turn_right_large_flat') {
     if (prevTile) {
       // Calculate entry direction (where we came FROM)
       const dx = currTile.x - prevTile.x;
@@ -1900,10 +1906,6 @@ export function CoasterProvider({
         let connectingToEntry = false; // True if we're feeding INTO adjacent track's entry
         let targetEntryHeight = 0; // The height we need our exit to be at when connecting to entry
         
-        const oppositeDir: Record<TrackDirection, TrackDirection> = {
-          north: 'south', south: 'north', east: 'west', west: 'east'
-        };
-        
         const adjacentOffsets = [
           { dx: -1, dy: 0 },
           { dx: 1, dy: 0 },
@@ -1932,15 +1934,19 @@ export function CoasterProvider({
               const adjPiece = adjTile.trackPiece;
               
               // Calculate entry and exit directions for the adjacent piece
-              // Entry is always the side the track comes FROM (opposite of direction)
-              // Exit is where the track goes TO (direction for straights, rotated for turns)
-              const entryDir = oppositeDir[adjPiece.direction];
+              // Turns store entry direction; straights/slopes store exit direction.
+              const isFlatTurn =
+                adjPiece.type === 'turn_left_flat' ||
+                adjPiece.type === 'turn_right_flat' ||
+                adjPiece.type === 'turn_left_large_flat' ||
+                adjPiece.type === 'turn_right_large_flat';
+              const entryDir = isFlatTurn ? adjPiece.direction : OPPOSITE_DIRECTION[adjPiece.direction];
               
               // Exit direction depends on track type
               let exitDir = adjPiece.direction;
-              if (adjPiece.type === 'turn_left_flat') {
+              if (adjPiece.type === 'turn_left_flat' || adjPiece.type === 'turn_left_large_flat') {
                 exitDir = rotateDirection(adjPiece.direction, 'left');
-              } else if (adjPiece.type === 'turn_right_flat') {
+              } else if (adjPiece.type === 'turn_right_flat' || adjPiece.type === 'turn_right_large_flat') {
                 exitDir = rotateDirection(adjPiece.direction, 'right');
               }
               
@@ -1975,7 +1981,7 @@ export function CoasterProvider({
                 candidates.push({
                   adjX,
                   adjY,
-                  baseDirection: oppositeDir[entryDir],
+                  baseDirection: OPPOSITE_DIRECTION[entryDir],
                   baseHeight: adjPiece.startHeight,
                   connectingToEntry: true,
                   targetEntryHeight: adjPiece.startHeight,
@@ -2041,10 +2047,7 @@ export function CoasterProvider({
               startDirection = rotateDirection(adjacentDirection, 'right');
             } else {
               // Receiving from adjacent's exit - we enter FROM the opposite of where they're going
-              const oppositeDir: Record<TrackDirection, TrackDirection> = {
-                north: 'south', south: 'north', east: 'west', west: 'east'
-              };
-              startDirection = oppositeDir[adjacentDirection];
+              startDirection = OPPOSITE_DIRECTION[adjacentDirection];
             }
           }
           endDirection = rotateDirection(startDirection, 'left');
@@ -2056,10 +2059,7 @@ export function CoasterProvider({
               // So: entry = rotateDirection(exit, 'left')
               startDirection = rotateDirection(adjacentDirection, 'left');
             } else {
-              const oppositeDir: Record<TrackDirection, TrackDirection> = {
-                north: 'south', south: 'north', east: 'west', west: 'east'
-              };
-              startDirection = oppositeDir[adjacentDirection];
+              startDirection = OPPOSITE_DIRECTION[adjacentDirection];
             }
           }
           endDirection = rotateDirection(startDirection, 'right');
@@ -2072,20 +2072,11 @@ export function CoasterProvider({
           //
           // When connecting to existing track:
           // - Exit connection: adjacent exits toward us, we receive at our entry
-          //   Keep the same direction so train flow continues naturally
           // - Entry connection: we feed into adjacent's entry
-          //   Flip direction so our exit faces their entry
+          // adjacentDirection already matches travel direction in both cases.
           if (adjacentDirection) {
-            if (connectingToEntry) {
-              // We're feeding into their entry - flip so our exit faces them
-              const oppDir: Record<TrackDirection, TrackDirection> = {
-                north: 'south', south: 'north', east: 'west', west: 'east'
-              };
-              startDirection = oppDir[adjacentDirection];
-            } else {
-              // Receiving from their exit - continue in the same flow direction
-              startDirection = adjacentDirection;
-            }
+            // For both entry/exit connections, adjacentDirection already matches travel direction.
+            startDirection = adjacentDirection;
           }
           if (connectingToEntry && targetEntryHeight > 0) {
             endHeight = targetEntryHeight;
@@ -2097,19 +2088,10 @@ export function CoasterProvider({
         } else if (tool === 'coaster_slope_down') {
           pieceType = 'slope_down_small';
           // For slope_down, direction logic is the SAME as slope_up:
-          // When receiving from adjacent exit, DON'T flip - we continue in same direction but descend
-          // When feeding into adjacent entry, we flip so our exit faces their entry
+          // adjacentDirection already matches travel direction for entry/exit connections.
           if (adjacentDirection) {
-            if (connectingToEntry) {
-              // We're feeding into their entry - flip so our exit (endHeight, lower) faces them
-              const oppDir: Record<TrackDirection, TrackDirection> = {
-                north: 'south', south: 'north', east: 'west', west: 'east'
-              };
-              startDirection = oppDir[adjacentDirection];
-            } else {
-              // Receiving from their exit - continue in the same flow direction
-              startDirection = adjacentDirection;
-            }
+            // For both entry/exit connections, adjacentDirection already matches travel direction.
+            startDirection = adjacentDirection;
           }
           if (connectingToEntry && targetEntryHeight < 10) {
             endHeight = targetEntryHeight;
@@ -2132,10 +2114,13 @@ export function CoasterProvider({
         }
         
         // Update previous tile for auto-build turns
-        if (tool === 'coaster_build' && lastTile && prev.buildingCoasterLastDirection && deltaDir) {
-          if (prev.buildingCoasterLastDirection !== deltaDir) {
+        if (tool === 'coaster_build' && lastTile && deltaDir && buildPath.length > 1) {
+          const prevPathTile = buildPath[buildPath.length - 2];
+          const incomingDir = directionFromDelta(lastTile.x - prevPathTile.x, lastTile.y - prevPathTile.y);
+          if (incomingDir && incomingDir !== deltaDir) {
+            const entryDir = OPPOSITE_DIRECTION[incomingDir];
             const turnType: TrackPieceType =
-              rotateDirection(prev.buildingCoasterLastDirection, 'right') === deltaDir
+              rotateDirection(entryDir, 'right') === deltaDir
                 ? 'turn_right_flat'
                 : 'turn_left_flat';
             const previousTile = newGrid[lastTile.y][lastTile.x];
@@ -2144,7 +2129,7 @@ export function CoasterProvider({
             const coasterTypeForStrut: CoasterType = prev.buildingCoasterType ?? existingCoasterForStrut?.type ?? 'steel_sit_down';
             previousTile.trackPiece = {
               type: turnType,
-              direction: prev.buildingCoasterLastDirection,
+              direction: entryDir,
               startHeight: clampHeight(prev.buildingCoasterHeight),
               endHeight: clampHeight(prev.buildingCoasterHeight),
               bankAngle: 0,
@@ -2893,6 +2878,7 @@ export function CoasterProvider({
       const existingCoasterForLine = prev.coasters.find(c => c.id === coasterId);
       const coasterTypeForLine: CoasterType = prev.buildingCoasterType ?? existingCoasterForLine?.type ?? 'steel_sit_down';
       const strutStyleForLine = getStrutStyleForCoasterType(coasterTypeForLine);
+      const directionFromLineDelta = (dx: number, dy: number) => directionFromDelta(dx, dy);
       let currentHeight = startedNewCoaster ? 0 : prev.buildingCoasterHeight;
       let lastDirection: TrackDirection | null = startedNewCoaster ? null : prev.buildingCoasterLastDirection;
       const updatedPath = startedNewCoaster ? [] : [...prev.buildingCoasterPath];
@@ -2976,18 +2962,14 @@ export function CoasterProvider({
           const prev = tiles[i - 1];
           const dx = x - prev.x;
           const dy = y - prev.y;
-          if (dx === 1 && dy === 0) direction = 'east';
-          else if (dx === -1 && dy === 0) direction = 'west';
-          else if (dx === 0 && dy === 1) direction = 'south';
-          else if (dx === 0 && dy === -1) direction = 'north';
+          const nextDir = directionFromLineDelta(dx, dy);
+          if (nextDir) direction = nextDir;
         } else if (updatedPath.length > 0) {
           const prevTile = updatedPath[updatedPath.length - 1];
           const dx = x - prevTile.x;
           const dy = y - prevTile.y;
-          if (dx === 1 && dy === 0) direction = 'east';
-          else if (dx === -1 && dy === 0) direction = 'west';
-          else if (dx === 0 && dy === 1) direction = 'south';
-          else if (dx === 0 && dy === -1) direction = 'north';
+          const nextDir = directionFromLineDelta(dx, dy);
+          if (nextDir) direction = nextDir;
         }
         
         // Determine track piece type
@@ -3000,14 +2982,16 @@ export function CoasterProvider({
           if (prevTileCoord) {
             const prevTile = newGrid[prevTileCoord.y]?.[prevTileCoord.x];
             if (prevTile && prevTile.trackPiece) {
-              // Determine turn type based on direction change
-              const turnType: TrackPieceType = 
-                rotateDirection(lastDirection, 'right') === direction
+              // Determine turn type based on entry->exit directions
+              const entryDir = OPPOSITE_DIRECTION[lastDirection];
+              const turnType: TrackPieceType =
+                rotateDirection(entryDir, 'right') === direction
                   ? 'turn_right_flat'
                   : 'turn_left_flat';
               prevTile.trackPiece = {
                 ...prevTile.trackPiece,
                 type: turnType,
+                direction: entryDir,
               };
             }
           }

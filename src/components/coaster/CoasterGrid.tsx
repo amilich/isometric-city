@@ -2068,14 +2068,14 @@ export function CoasterGrid({
   const getExitDirection = useCallback((piece: { type: string; direction: 'north' | 'east' | 'south' | 'west' }): 'north' | 'east' | 'south' | 'west' => {
     const { type, direction } = piece;
     
-    if (type === 'turn_right_flat') {
+    if (type === 'turn_right_flat' || type === 'turn_right_large_flat') {
       const rightTurn: Record<'north' | 'east' | 'south' | 'west', 'north' | 'east' | 'south' | 'west'> = {
         north: 'east', east: 'south', south: 'west', west: 'north'
       };
       return rightTurn[direction];
     }
     
-    if (type === 'turn_left_flat') {
+    if (type === 'turn_left_flat' || type === 'turn_left_large_flat') {
       const leftTurn: Record<'north' | 'east' | 'south' | 'west', 'north' | 'east' | 'south' | 'west'> = {
         north: 'west', west: 'south', south: 'east', east: 'north'
       };

@@ -1000,14 +1000,15 @@ export function GameProvider({ children, startFresh = false }: { children: React
       // Check if we can afford it
       if (prev.stats.money < cost) return prev;
       
-      // Check if all tiles in the footprint are valid and empty
+      // Check if all tiles in the footprint are valid (grass only)
+      // NOTE: 'empty' tiles are placeholders for existing multi-tile buildings, not truly empty
       for (let dy = 0; dy < size; dy++) {
         for (let dx = 0; dx < size; dx++) {
           const tile = prev.grid[y + dy]?.[x + dx];
           if (!tile) return prev; // Out of bounds
-          // Allow placement on grass or empty, not on water/roads/other buildings
+          // Only allow placement on grass - 'empty' is part of multi-tile building footprints
           const type = tile.building.type;
-          if (type !== 'grass' && type !== 'empty') return prev;
+          if (type !== 'grass') return prev;
         }
       }
       

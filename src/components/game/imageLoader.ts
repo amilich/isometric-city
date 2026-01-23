@@ -317,7 +317,26 @@ export function analyzeContentBounds(img: HTMLImageElement): ContentBounds {
   }
   
   ctx.drawImage(img, 0, 0);
-  const imageData = ctx.getImageData(0, 0, width, height);
+  
+  // getImageData can throw SecurityError on CORS-tainted canvases
+  let imageData;
+  try {
+    imageData = ctx.getImageData(0, 0, width, height);
+  } catch {
+    // Fallback: assume content fills entire image
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: width,
+      maxY: height,
+      contentWidth: width,
+      contentHeight: height,
+      centerOffsetX: 0,
+      centerOffsetY: 0,
+      contentRatioX: 1,
+      contentRatioY: 1,
+    };
+  }
   const data = imageData.data;
   
   // Find bounds of non-transparent pixels

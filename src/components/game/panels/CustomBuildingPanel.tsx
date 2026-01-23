@@ -112,9 +112,9 @@ export function CustomBuildingPanel({ open, onOpenChange, onBuildingCreated }: C
   // Handle dialog close
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) {
-      // Only reset if not currently generating or analyzing
+      // Only reset if not currently generating
       // This allows the user to close the modal and reopen to see progress
-      if (step !== 'generating' && step !== 'analyzing') {
+      if (step !== 'generating') {
         reset();
         setPrompt('');
         setEditedName('');
@@ -212,26 +212,6 @@ export function CustomBuildingPanel({ open, onOpenChange, onBuildingCreated }: C
               <div className="text-center">
                 <p className="text-lg font-medium">Generating your building...</p>
                 <p className="text-sm text-slate-400 mt-1">This may take 10-30 seconds</p>
-              </div>
-            </div>
-          )}
-
-          {/* Analyzing Step */}
-          {step === 'analyzing' && result && (
-            <div className="flex flex-col items-center py-8 gap-4">
-              <div className="relative">
-                <img 
-                  src={result.imageUrl} 
-                  alt="Generated building"
-                  className="w-32 h-32 rounded-xl border-2 border-slate-600 object-cover"
-                />
-                <div className="absolute -bottom-2 -right-2 bg-purple-600 rounded-full p-1.5">
-                  <Loader2 className="w-4 h-4 text-white animate-spin" />
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-medium">Analyzing building attributes...</p>
-                <p className="text-sm text-slate-400 mt-1">Determining stats and category</p>
               </div>
             </div>
           )}

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 
-export type GenerationStep = 'idle' | 'generating' | 'analyzing' | 'complete' | 'error';
+export type GenerationStep = 'idle' | 'generating' | 'complete' | 'error';
 
 export interface BuildingAttributes {
   category: 'residential' | 'commercial' | 'industrial' | 'service' | 'recreation';

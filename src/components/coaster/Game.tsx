@@ -8,6 +8,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { MiniMap } from './MiniMap';
 import { Panels } from './panels/Panels';
+import { CoasterCommandMenu } from '@/components/coaster/CommandMenu';
 
 interface GameProps {
   onExit?: () => void;
@@ -85,6 +86,8 @@ export default function CoasterGame({ onExit }: GameProps) {
             <Panels />
           </div>
         </div>
+
+        <CoasterCommandMenu />
       </div>
     </TooltipProvider>
   );

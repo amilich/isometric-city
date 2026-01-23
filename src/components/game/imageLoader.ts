@@ -9,8 +9,32 @@ const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
 // Color distance threshold - pixels within this distance will be made transparent
 const COLOR_THRESHOLD = 155; // Adjust this value to be more/less aggressive
 
+// Light background colors to remove from AI-generated images (white, light grey)
+const LIGHT_BG_THRESHOLD = 220; // Pixels with R, G, B all above this are considered background (lowered for grey backgrounds)
+
 // Image cache for building sprites
 const imageCache = new Map<string, HTMLImageElement>();
+
+// Cache for content bounds analysis (for custom buildings)
+export interface ContentBounds {
+  // Bounding box of non-transparent content (in pixels)
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  // Content dimensions
+  contentWidth: number;
+  contentHeight: number;
+  // Center of content relative to image center (as ratio of image size)
+  // Positive = content is shifted right/down from center
+  centerOffsetX: number; // -0.5 to 0.5
+  centerOffsetY: number; // -0.5 to 0.5
+  // How much of the image is actually content (0 to 1)
+  contentRatioX: number;
+  contentRatioY: number;
+}
+
+const contentBoundsCache = new Map<string, ContentBounds>();
 
 // Track WebP support (detected once on first use)
 let webpSupported: boolean | null = null;
@@ -77,12 +101,21 @@ function notifyImageLoaded() {
 function loadImageDirect(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    
+    // Set crossOrigin for external URLs (like fal.ai CDN) to enable CORS
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      img.crossOrigin = 'anonymous';
+    }
+    
     img.onload = () => {
       imageCache.set(src, img);
       notifyImageLoaded();
       resolve(img);
     };
-    img.onerror = reject;
+    img.onerror = (err) => {
+      console.warn(`Failed to load image: ${src}`, err);
+      reject(err);
+    };
     img.src = src;
   });
 }
@@ -202,6 +235,104 @@ export function filterBackgroundColor(img: HTMLImageElement, threshold: number =
 }
 
 /**
+ * Removes light/white backgrounds from AI-generated images
+ * Uses edge detection to preserve building details while removing uniform backgrounds
+ * @param img The source image to process
+ * @returns A new HTMLImageElement with light backgrounds made transparent
+ */
+export function removeLightBackground(img: HTMLImageElement): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      
+      // Draw the original image
+      ctx.drawImage(img, 0, 0);
+      
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Process each pixel - remove light backgrounds
+      let filteredCount = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Check if pixel is a light/white color (likely background)
+        const isLight = r >= LIGHT_BG_THRESHOLD && g >= LIGHT_BG_THRESHOLD && b >= LIGHT_BG_THRESHOLD;
+        
+        // Check for near-white
+        const isNearWhite = r >= 240 && g >= 240 && b >= 240;
+        
+        // Catch uniform greys (low saturation, high brightness)
+        const avgColor = (r + g + b) / 3;
+        const colorVariance = Math.abs(r - avgColor) + Math.abs(g - avgColor) + Math.abs(b - avgColor);
+        const isUniformLight = avgColor >= 200 && colorVariance < 30; // More aggressive for greys
+        
+        // Catch the specific grey that AI generates (around 210-230 RGB)
+        const isAIGrey = r >= 200 && r <= 240 && g >= 200 && g <= 240 && b >= 200 && b <= 240 && colorVariance < 25;
+        
+        if (isLight || isNearWhite || isUniformLight || isAIGrey) {
+          data[i + 3] = 0; // Make transparent
+          filteredCount++;
+        }
+      }
+      
+      // Put the modified image data back
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Create a new image from the processed canvas
+      const filteredImg = new Image();
+      filteredImg.onload = () => {
+        console.log(`Removed ${filteredCount} light background pixels from custom building`);
+        resolve(filteredImg);
+      };
+      filteredImg.onerror = (error) => {
+        reject(new Error('Failed to create filtered image'));
+      };
+      filteredImg.src = canvas.toDataURL('image/png');
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Load a custom building sprite with background removal
+ * @param src The image URL (external URL from fal.ai)
+ * @returns Promise resolving to image with transparent background
+ */
+export async function loadCustomBuildingSprite(src: string): Promise<HTMLImageElement> {
+  const cacheKey = `${src}_nobg`;
+  
+  // Return cached if available
+  if (imageCache.has(cacheKey)) {
+    return imageCache.get(cacheKey)!;
+  }
+  
+  // Load the image
+  const img = await loadImage(src);
+  
+  // Remove light background
+  const filteredImg = await removeLightBackground(img);
+  
+  // Cache the filtered version
+  imageCache.set(cacheKey, filteredImg);
+  notifyImageLoaded();
+  
+  return filteredImg;
+}
+
+/**
  * Loads an image and applies background color filtering if it's a sprite sheet
  * @param src The image source path
  * @param applyFilter Whether to apply background color filtering (default: true for sprite sheets)
@@ -250,4 +381,126 @@ export function getCachedImage(src: string, filtered: boolean = false): HTMLImag
  */
 export function clearImageCache(): void {
   imageCache.clear();
+  contentBoundsCache.clear();
+}
+
+/**
+ * Analyze an image to find the bounding box of non-transparent content.
+ * This is used to properly center AI-generated sprites that may not be
+ * perfectly centered in their image frame.
+ * @param img The image to analyze
+ * @returns ContentBounds with positioning information
+ */
+export function analyzeContentBounds(img: HTMLImageElement): ContentBounds {
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+  
+  // Create a temporary canvas to read pixel data
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    // Fallback: assume content fills entire image
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: width,
+      maxY: height,
+      contentWidth: width,
+      contentHeight: height,
+      centerOffsetX: 0,
+      centerOffsetY: 0,
+      contentRatioX: 1,
+      contentRatioY: 1,
+    };
+  }
+  
+  ctx.drawImage(img, 0, 0);
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  
+  // Find bounds of non-transparent pixels
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+  
+  // Alpha threshold - consider pixels with alpha > this as "content"
+  const alphaThreshold = 10;
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const alpha = data[idx + 3];
+      
+      if (alpha > alphaThreshold) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  
+  // Handle edge case: no content found
+  if (minX > maxX || minY > maxY) {
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: width,
+      maxY: height,
+      contentWidth: width,
+      contentHeight: height,
+      centerOffsetX: 0,
+      centerOffsetY: 0,
+      contentRatioX: 1,
+      contentRatioY: 1,
+    };
+  }
+  
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+  
+  // Calculate center of content
+  const contentCenterX = minX + contentWidth / 2;
+  const contentCenterY = minY + contentHeight / 2;
+  
+  // Calculate offset from image center (as ratio of image size)
+  // Positive means content is shifted right/down from where it should be
+  const imageCenterX = width / 2;
+  const imageCenterY = height / 2;
+  
+  const centerOffsetX = (contentCenterX - imageCenterX) / width;
+  const centerOffsetY = (contentCenterY - imageCenterY) / height;
+  
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    contentWidth,
+    contentHeight,
+    centerOffsetX,
+    centerOffsetY,
+    contentRatioX: contentWidth / width,
+    contentRatioY: contentHeight / height,
+  };
+}
+
+/**
+ * Get cached content bounds for an image, or analyze if not cached
+ * @param src Image source URL
+ * @param img The loaded image element
+ * @returns ContentBounds for the image
+ */
+export function getContentBounds(src: string, img: HTMLImageElement): ContentBounds {
+  if (contentBoundsCache.has(src)) {
+    return contentBoundsCache.get(src)!;
+  }
+  
+  const bounds = analyzeContentBounds(img);
+  contentBoundsCache.set(src, bounds);
+  return bounds;
 }

@@ -1,0 +1,73 @@
+/* Fal Logo Spinner Animation */
+.fal-logo-spinner {
+  width: 48px;
+  height: 48px;
+  animation: logoSpin 4s ease-in-out infinite;
+}
+
+/* Hover-only spin for button logo - uses same animation as loading spinner */
+.fal-logo-button {
+  transition: fill 0.2s ease;
+}
+
+.group:hover .fal-logo-button {
+  animation: logoSpin 4s ease-in-out infinite;
+}
+
+@keyframes logoSpin {
+  0% { 
+    transform: rotate(0deg); 
+    fill: #5718c0; 
+  }
+  20% { 
+    transform: rotate(360deg); 
+    fill: #ab77ff; 
+  }
+  25% { 
+    transform: rotate(360deg); 
+    fill: #e366af; 
+  }
+  45% { 
+    transform: rotate(720deg); 
+    fill: #ec0648; 
+  }
+  50% { 
+    transform: rotate(720deg); 
+    fill: #ab77ff; 
+  }
+  70% { 
+    transform: rotate(1080deg); 
+    fill: #38acc6; 
+  }
+  75% { 
+    transform: rotate(1080deg); 
+    fill: #3fb5fe; 
+  }
+  95% { 
+    transform: rotate(1440deg); 
+    fill: #115ef3; 
+  }
+  100% { 
+    transform: rotate(1440deg); 
+    fill: #5718c0; 
+  }
+}
+
+/* Fal Generate Button - Minimal Style */
+.btn-generate {
+  background: #5718c0;
+  color: white;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-generate:hover {
+  background: #6829d4;
+  box-shadow: 0 0 20px rgba(87, 24, 192, 0.3);
+}
+
+.btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}

@@ -54,6 +54,25 @@ Made with [Cursor](https://cursor.com)
 4.  **Open the game:**
     Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Custom Building Generation
+
+IsoCity includes an experimental feature to generate custom buildings using AI, powered by [fal.ai](https://fal.ai).
+
+**How it works:**
+1. Describe any building (e.g., "Hogwarts Castle")
+2. AI selects the optimal aspect ratio based on your description (portrait for towers, landscape for warehouses, etc.)
+3. [Nano Banana Pro](https://fal.ai/models/fal-ai/nano-banana-pro) generates an isometric sprite
+4. [Bria RMBG](https://fal.ai/models/fal-ai/bria/background/remove) removes the background
+5. [Gemini 2.5 Flash](https://fal.ai/models/openrouter/router) analyzes the image to suggest game stats
+
+**To enable:**
+1. Get a free API key from [fal.ai](https://fal.ai)
+2. Create `.env.local` in the project root:
+   ```
+   FAL_KEY=your_fal_api_key_here
+   ```
+3. Restart the dev server and look for the "Custom" panel in the sidebar
+
 ## Contributing
 
 Contributions are welcome! Whether it's reporting a bug, proposing a new feature, or submitting a pull request, your input is valued.

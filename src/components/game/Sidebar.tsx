@@ -38,8 +38,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { openCommandMenu } from '@/components/ui/CommandMenu';
-import { Users } from 'lucide-react';
+import { Users, X } from 'lucide-react';
 import { ShareModal } from '@/components/multiplayer/ShareModal';
+import { CustomBuildingPanel } from '@/components/game/panels/CustomBuildingPanel';
+import { useCustomBuildings, CustomBuilding } from '@/context/CustomBuildingsContext';
 import { useMultiplayerOptional } from '@/context/MultiplayerContext';
 import {
   Dialog,
@@ -49,6 +51,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import '@/components/game/panels/fal-branding.css';
 
 // Hover Submenu Component for collapsible tool categories
 // Implements triangle-rule safe zone for forgiving cursor navigation
@@ -464,12 +467,23 @@ function ExitDialog({
 
 // Memoized Sidebar Component
 export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => void }) {
-  const { state, setTool, setActivePanel, saveCity, expandCity, shrinkCity } = useGame();
+  const { state, setTool: setGameTool, setActivePanel, saveCity, expandCity, shrinkCity } = useGame();
   const { selectedTool, stats, activePanel } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCustomBuildingPanel, setShowCustomBuildingPanel] = useState(false);
   const multiplayer = useMultiplayerOptional();
+  const { customBuildings, addCustomBuilding, selectedCustomBuildingId, selectCustomBuilding, removeCustomBuilding, isCustomBuildingMode } = useCustomBuildings();
   const hasShownShareModalRef = useRef(false);
+  
+  // Wrapper for setTool that also clears custom building selection
+  const setTool = useCallback((tool: Tool) => {
+    setGameTool(tool);
+    // Clear custom building selection when switching to any tool
+    if (selectedCustomBuildingId) {
+      selectCustomBuilding(null);
+    }
+  }, [setGameTool, selectCustomBuilding, selectedCustomBuildingId]);
   
   // Auto-show share modal when first connecting as host (not guest)
   // Guests have initialState set (received from host), hosts don't
@@ -700,6 +714,84 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
             />
           ))}
         </div>
+        
+        {/* AI Building Creator */}
+        <div className="mx-4 my-2 h-px bg-sidebar-border/50" />
+        <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground">
+          CUSTOM BUILDINGS
+        </div>
+        <div className="px-2 pb-2 space-y-1">
+          <Button
+            onClick={() => setShowCustomBuildingPanel(true)}
+            variant="outline"
+            className="w-full justify-start gap-2 px-3 py-2.5 h-auto text-sm bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-purple-500/30 hover:border-purple-500/50 hover:from-purple-600/20 hover:to-pink-600/20 transition-all duration-200 group"
+          >
+            <svg 
+              className="fal-logo-button w-4 h-4 text-purple-400" 
+              viewBox="0 0 624 624" 
+              fill="currentColor" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path fillRule="evenodd" clipRule="evenodd" d="M402.365 0C413.17 0.000231771 421.824 8.79229 422.858 19.5596C432.087 115.528 508.461 191.904 604.442 201.124C615.198 202.161 624 210.821 624 221.638V402.362C624 413.179 615.198 421.839 604.442 422.876C508.461 432.096 432.087 508.472 422.858 604.44C421.824 615.208 413.17 624 402.365 624H221.635C210.83 624 202.176 615.208 201.142 604.44C191.913 508.472 115.538 432.096 19.5576 422.876C8.80183 421.839 0 413.179 0 402.362V221.638C0 210.821 8.80183 202.161 19.5576 201.124C115.538 191.904 191.913 115.528 201.142 19.5596C202.176 8.79215 210.83 0 221.635 0H402.365ZM312 124C208.17 124 124 208.17 124 312C124 415.83 208.17 500 312 500C415.83 500 500 415.83 500 312C500 208.17 415.83 124 312 124Z"/>
+            </svg>
+            <span className="flex-1 text-left">Create New</span>
+          </Button>
+          
+          {/* List of custom buildings for placement */}
+          {customBuildings.length > 0 && (
+            <div className="flex flex-col gap-0.5 mt-2">
+              {customBuildings.map((building) => {
+                const isSelected = selectedCustomBuildingId === building.id;
+                const canAfford = stats.money >= building.cost;
+                return (
+                  <div key={building.id} className="relative group">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCustomBuilding(building.id);
+                        // Deselect if the removed building was selected
+                        if (isSelected) {
+                          selectCustomBuilding(null);
+                          setTool('select');
+                        }
+                      }}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-4 h-4 flex items-center justify-center rounded-sm bg-red-600/80 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove building"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <Button
+                      onClick={() => {
+                        if (isSelected) {
+                          selectCustomBuilding(null);
+                          setTool('select');
+                        } else {
+                          selectCustomBuilding(building.id);
+                          // Clear regular tool selection when selecting custom building
+                          setTool('select');
+                        }
+                      }}
+                      disabled={!canAfford}
+                      variant={isSelected ? 'default' : 'ghost'}
+                      className={`w-full justify-start gap-2 pl-6 pr-2 py-1.5 h-auto text-sm ${
+                        isSelected ? 'bg-purple-600 text-white ring-2 ring-purple-400' : ''
+                      }`}
+                      title={`${building.name} - $${building.cost}`}
+                    >
+                      <img 
+                        src={building.spriteUrl} 
+                        alt={building.name}
+                        className="w-6 h-6 rounded object-cover flex-shrink-0"
+                      />
+                      <span className="flex-1 text-left truncate text-xs">{building.name}</span>
+                      <span className="text-[10px] opacity-60">${building.cost}</span>
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </ScrollArea>
       
       <div className="border-t border-sidebar-border p-2">
@@ -737,6 +829,17 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
           onOpenChange={setShowShareModal}
         />
       )}
+      
+      <CustomBuildingPanel
+        open={showCustomBuildingPanel}
+        onOpenChange={setShowCustomBuildingPanel}
+        onBuildingCreated={(building: CustomBuilding) => {
+          addCustomBuilding(building);
+          // Auto-select the custom building for immediate placement
+          selectCustomBuilding(building.id);
+          setGameTool('select'); // Clear any other tool selection
+        }}
+      />
     </div>
   );
 });

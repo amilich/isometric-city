@@ -300,7 +300,7 @@ function hasBlockingBuilding(tile: Tile): boolean {
 }
 
 function isTrackPlacementBlocked(tile: Tile): boolean {
-  return hasBlockingBuilding(tile) || tile.path || tile.queue || tile.trackPiece || tile.hasCoasterTrack;
+  return hasBlockingBuilding(tile) || tile.path || tile.queue || Boolean(tile.trackPiece) || tile.hasCoasterTrack;
 }
 
 function isStationCompatibleTrack(piece: TrackPiece): boolean {

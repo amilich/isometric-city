@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { openCoasterCommandMenu } from './CommandMenu';
 import {
   Tooltip,
   TooltipContent,
@@ -619,29 +620,47 @@ export function Sidebar({ onExit }: SidebarProps) {
           <span className="text-sidebar-foreground font-bold tracking-tight">
             ISOCOASTER
           </span>
-          {onExit && (
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
-              title="Exit to Menu"
+              onClick={openCoasterCommandMenu}
+              title="Search (⌘K)"
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
-              <svg
-                className="w-4 h-4 -scale-x-100"
+              <svg 
+                className="w-4 h-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </Button>
-          )}
+            {onExit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowExitDialog(true)}
+                title="Exit to Menu"
+                className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+              >
+                <svg
+                  className="w-4 h-4 -scale-x-100"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       

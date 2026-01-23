@@ -767,8 +767,8 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                           setTool('select');
                         } else {
                           selectCustomBuilding(building.id);
-                          // Clear regular tool selection when selecting custom building
-                          setTool('select');
+                          // Use setGameTool directly to avoid the wrapper clearing our selection
+                          setGameTool('select');
                         }
                       }}
                       disabled={!canAfford}

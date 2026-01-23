@@ -1021,6 +1021,9 @@ export function GameProvider({ children, startFresh = false }: { children: React
             return {
               ...tile,
               zone: 'none' as const,
+              // Apply AI-analyzed environmental stats
+              pollution: customBuilding.stats.pollution ?? 0,
+              landValue: customBuilding.stats.landValue ?? 0,
               building: {
                 ...tile.building,
                 type: 'custom' as BuildingType,

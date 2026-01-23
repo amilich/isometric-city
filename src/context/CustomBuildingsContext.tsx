@@ -51,6 +51,20 @@ const STORAGE_KEY = 'isocity-custom-buildings';
 // Create context
 const CustomBuildingsContext = createContext<CustomBuildingsContextValue | null>(null);
 
+// Validate a custom building has required fields to prevent NaN/undefined errors
+function isValidCustomBuilding(b: unknown): b is CustomBuilding {
+  if (!b || typeof b !== 'object') return false;
+  const obj = b as Record<string, unknown>;
+  return (
+    typeof obj.id === 'string' &&
+    typeof obj.name === 'string' &&
+    typeof obj.spriteUrl === 'string' &&
+    typeof obj.size === 'number' && obj.size >= 1 && obj.size <= 4 &&
+    typeof obj.cost === 'number' &&
+    typeof obj.stats === 'object' && obj.stats !== null
+  );
+}
+
 // Load custom buildings from localStorage
 function loadCustomBuildings(): CustomBuilding[] {
   if (typeof window === 'undefined') return [];
@@ -59,7 +73,8 @@ function loadCustomBuildings(): CustomBuilding[] {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        return parsed as CustomBuilding[];
+        // Filter out any corrupted/invalid entries
+        return parsed.filter(isValidCustomBuilding);
       }
     }
   } catch (e) {

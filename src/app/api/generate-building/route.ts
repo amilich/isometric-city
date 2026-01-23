@@ -6,6 +6,10 @@ fal.config({
   credentials: process.env.FAL_KEY,
 });
 
+// Valid aspect ratios supported by nano-banana-pro API
+const VALID_ASPECT_RATIOS = ["21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16"] as const;
+type AspectRatio = typeof VALID_ASPECT_RATIOS[number];
+
 // Types for the response
 interface AspectRatioResponse {
   success: boolean;
@@ -58,17 +62,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<AspectRat
 "${prompt}"
 
 Consider the building's natural proportions:
-- Tall buildings (towers, skyscrapers, chimneys, lighthouses) → use "3:4" or "4:5" (portrait)
-- Wide buildings (warehouses, malls, stadiums, factories, hangars) → use "5:4" or "4:3" (landscape)
+- Very tall buildings (skyscrapers, towers, monuments) → use "9:16" or "2:3" (tall portrait)
+- Tall buildings (office buildings, apartments, churches) → use "3:4" or "4:5" (portrait)
 - Square/balanced buildings (houses, shops, small offices, parks) → use "1:1" (square)
+- Wide buildings (warehouses, malls, factories) → use "5:4" or "4:3" (landscape)
+- Very wide buildings (stadiums, airports, hangars) → use "3:2" or "16:9" (wide landscape)
 
-Return ONLY ONE of these aspect ratio strings: "1:1", "4:5", "5:4", "3:4", "4:3", "16:9", "9:16"
+Return ONLY ONE of these aspect ratio strings: "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16"
 No explanation, just the ratio string.`,
           temperature: 0.1,
         },
       });
 
-      const aspectRatio = result.data?.output?.trim() || "4:5";
+      // Validate LLM response against valid API values, fallback to 4:5 if invalid
+      const rawRatio = result.data?.output?.trim() || "4:5";
+      const aspectRatio: AspectRatio = VALID_ASPECT_RATIOS.includes(rawRatio as AspectRatio) 
+        ? (rawRatio as AspectRatio) 
+        : "4:5";
       
       return NextResponse.json({ 
         success: true, 
@@ -77,11 +87,16 @@ No explanation, just the ratio string.`,
     }
 
     if (step === "generate") {
-      const { prompt, aspectRatio = "4:5" } = body;
+      const { prompt, aspectRatio: rawAspectRatio = "4:5" } = body;
       
       if (!prompt || typeof prompt !== 'string') {
         return NextResponse.json({ success: false, error: "Prompt is required" }, { status: 400 });
       }
+      
+      // Validate aspect ratio from client
+      const aspectRatio: AspectRatio = VALID_ASPECT_RATIOS.includes(rawAspectRatio as AspectRatio)
+        ? (rawAspectRatio as AspectRatio)
+        : "4:5";
 
       // Craft the prompt for highly detailed isometric game art
       const fullPrompt = `Highly detailed realistic isometric building render: ${prompt}. 
@@ -98,7 +113,7 @@ Quality: Ultra high detail, realistic proportions, natural color palette, visibl
         input: {
           prompt: fullPrompt,
           num_images: 1,
-          aspect_ratio: aspectRatio as "1:1" | "4:5" | "5:4" | "3:4" | "4:3" | "16:9" | "9:16",
+          aspect_ratio: aspectRatio as AspectRatio,
           output_format: "png" as const,
           resolution: "1K" as const,
         },

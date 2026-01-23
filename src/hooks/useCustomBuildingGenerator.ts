@@ -104,6 +104,7 @@ export function useCustomBuildingGenerator(): UseCustomBuildingGeneratorReturn {
       // (still in "generating" state)
       await new Promise<void>((resolve, reject) => {
         const img = new Image();
+        img.crossOrigin = 'anonymous'; // Required for external fal.ai CDN URLs
         img.onload = () => resolve();
         img.onerror = () => reject(new Error('Failed to load generated image'));
         img.src = imageUrl;

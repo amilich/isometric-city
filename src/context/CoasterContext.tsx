@@ -294,6 +294,19 @@ function clampHeight(height: number): TrackHeight {
   return height as TrackHeight;
 }
 
+function hasBlockingBuilding(tile: Tile): boolean {
+  const buildingType = tile.building?.type;
+  return Boolean(buildingType && buildingType !== 'empty' && buildingType !== 'grass');
+}
+
+function isTrackPlacementBlocked(tile: Tile): boolean {
+  return hasBlockingBuilding(tile) || tile.path || tile.queue || tile.trackPiece || tile.hasCoasterTrack;
+}
+
+function isStationCompatibleTrack(piece: TrackPiece): boolean {
+  return piece.type === 'straight_flat' && piece.startHeight === piece.endHeight;
+}
+
 /**
  * Find the best station tile for a coaster - prioritizes tiles with adjacent queue lines
  * Falls back to first track tile if no queue-adjacent tile is found
@@ -1886,6 +1899,8 @@ export function CoasterProvider({
       ];
       
       if (trackTools.includes(tool)) {
+        if (isTrackPlacementBlocked(tile)) return prev;
+
         const buildPath = prev.buildingCoasterPath;
         const lastTile = buildPath.length > 0 ? buildPath[buildPath.length - 1] : null;
         const deltaDir = lastTile ? directionFromDelta(x - lastTile.x, y - lastTile.y) : null;
@@ -2587,12 +2602,21 @@ export function CoasterProvider({
           const adjY = y + dy;
           if (adjX >= 0 && adjY >= 0 && adjX < prev.gridSize && adjY < prev.gridSize) {
             const adjTile = prev.grid[adjY]?.[adjX];
-            if (adjTile?.trackPiece) {
-              trackDirection = adjTile.trackPiece.direction;
-              break;
+            const adjPiece = adjTile?.trackPiece;
+            if (!adjPiece || !isStationCompatibleTrack(adjPiece)) continue;
+            if (prev.buildingCoasterId && adjTile?.coasterTrackId !== prev.buildingCoasterId) continue;
+            if (prev.buildingCoasterType && adjTile?.coasterTrackId) {
+              const adjacentCoaster = prev.coasters.find(coaster => coaster.id === adjTile.coasterTrackId);
+              if (adjacentCoaster && !areCoasterTypesCompatible(prev.buildingCoasterType, adjacentCoaster.type)) {
+                continue;
+              }
             }
+            trackDirection = adjPiece.direction;
+            break;
           }
         }
+
+        if (!trackDirection) return prev;
         
         // Select station type randomly
         const stationTypes = ['wooden', 'steel', 'inverted', 'water'];
@@ -2966,9 +2990,8 @@ export function CoasterProvider({
         // Skip if out of bounds
         if (x < 0 || y < 0 || x >= prev.gridSize || y >= prev.gridSize) continue;
         
-        // Skip if already has track
         const tile = newGrid[y][x];
-        if (tile.hasCoasterTrack) continue;
+        if (isTrackPlacementBlocked(tile)) continue;
         
         // Determine direction from previous tile
         let direction: TrackDirection = lastDirection ?? 'south';

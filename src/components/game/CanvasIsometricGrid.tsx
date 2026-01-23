@@ -2368,7 +2368,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (selectedTile && selectedTile.x >= 0 && selectedTile.x < gridSize && selectedTile.y >= 0 && selectedTile.y < gridSize) {
       const selectedOrigin = grid[selectedTile.y]?.[selectedTile.x];
       if (selectedOrigin) {
-        const selectedSize = getBuildingSize(selectedOrigin.building.type);
+        // Use customSize for custom buildings, otherwise use getBuildingSize
+        const selectedSize = selectedOrigin.building.type === 'custom' && selectedOrigin.building.customSize
+          ? { width: selectedOrigin.building.customSize, height: selectedOrigin.building.customSize }
+          : getBuildingSize(selectedOrigin.building.type);
         // Draw highlight for each tile in the building footprint
         for (let dx = 0; dx < selectedSize.width; dx++) {
           for (let dy = 0; dy < selectedSize.height; dy++) {

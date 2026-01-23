@@ -1844,7 +1844,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         else {
           const isBuilding = tile.building.type !== 'grass' && tile.building.type !== 'empty';
           if (isBuilding) {
-            const size = getBuildingSize(tile.building.type);
+            // Use customSize for custom buildings, otherwise use getBuildingSize
+            const size = tile.building.type === 'custom' && tile.building.customSize
+              ? { width: tile.building.customSize, height: tile.building.customSize }
+              : getBuildingSize(tile.building.type);
             const depth = x + y + size.width + size.height - 2;
             buildingQueue.push({ screenX, screenY, tile, depth });
           }

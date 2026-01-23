@@ -1562,6 +1562,11 @@ function drawTrackSegment(
   if (!trackPiece) return;
   
   const { type, direction, startHeight, endHeight, chainLift, strutStyle } = trackPiece;
+  
+  // DEBUG: Log when drawing turn pieces
+  if (type === 'turn_left_flat' || type === 'turn_right_flat') {
+    console.log(`DRAW_TURN: type=${type}, direction=${direction}, screenX=${x}, screenY=${y}`);
+  }
   // Default to metal if strutStyle not defined (for backwards compatibility with old saves)
   const effectiveStrutStyle = strutStyle ?? 'metal';
   // Use provided track color or default

@@ -2320,6 +2320,11 @@ export function CoasterProvider({
           updatedCoasters.push(coaster);
         }
         
+        // DEBUG: Log final state before return - showing just the key values as strings
+        if (lastTile) {
+          const finalPrevTile = newGrid[lastTile.y][lastTile.x];
+          console.log(`FINAL_STATE: current(${x},${y})=${tile.trackPiece?.type}/${tile.trackPiece?.direction}, prev(${lastTile.x},${lastTile.y})=${finalPrevTile.trackPiece?.type}/${finalPrevTile.trackPiece?.direction}`);
+        }
         return {
           ...prev,
           grid: newGrid,

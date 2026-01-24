@@ -438,13 +438,15 @@ interface StableIframeProps {
 function StableIframe({ pane, position }: StableIframeProps) {
   const [isLoading, setIsLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  
+  // Guard: only render if pane has a game selected
+  if (!pane.gameType || !position) return null;
+  
   const game = GAMES[pane.gameType];
 
   const handleIframeLoad = () => {
     setIsLoading(false);
   };
-
-  if (!position) return null;
 
   return (
     <div

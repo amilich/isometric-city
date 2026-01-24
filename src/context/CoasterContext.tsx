@@ -186,7 +186,7 @@ function shouldGuestLeaveForWeather(guest: Guest, weather: WeatherType): boolean
   const effects = WEATHER_EFFECTS[weather];
 
   // Base leave chance (extremely low - this is per tick!)
-  // With 100ms ticks at normal speed, this runs ~10 times per second
+  // With 50ms ticks at normal speed, this runs ~20 times per second
   const baseChance = 0.0001;
 
   // Only check in bad weather (storms)
@@ -1533,7 +1533,7 @@ export function CoasterProvider({
   useEffect(() => {
     if (!isStateReady || state.speed === 0) return;
     
-    const tickInterval = [0, 100, 50, 25][state.speed]; // ms per tick
+    const tickInterval = [0, 50, 25, 16][state.speed]; // ms per tick
     
     const interval = setInterval(() => {
       setState(prev => {
@@ -1843,7 +1843,7 @@ export function CoasterProvider({
                   stateTimer = 0;
                 }
                 // Slow acceleration - boost velocity at higher game speeds for visual feedback
-                const speedBoostDispatch = [1, 1, 1.5, 2.0][prev.speed];
+                const speedBoostDispatch = [1, 1.5, 2.0, 2.5][prev.speed];
                 const baseDispatchVelocity = (0.02 + (1 - stateTimer / 2) * 0.04) * speedBoostDispatch;
                 cars = cars.map(car => {
                   // Check if car is on a loop - slow down on loops
@@ -1870,7 +1870,7 @@ export function CoasterProvider({
                   stateTimer = 0;
                 } else {
                   // Normal running speed - boost velocity at higher game speeds for visual feedback
-                  const speedBoostRun = [1, 1, 1.5, 2.0][prev.speed];
+                  const speedBoostRun = [1, 1.5, 2.0, 2.5][prev.speed];
                   const baseRunVelocity = (hasTrainAhead ? 0.02 : 0.06) * speedBoostRun;
                   cars = cars.map(car => {
                     // Check if car is on a loop - loops are much longer so slow down
@@ -1891,7 +1891,7 @@ export function CoasterProvider({
                 
               case 'braking':
                 // Slow down approaching station - boost velocity at higher game speeds for visual feedback
-                const speedBoostBrake = [1, 1, 1.5, 2.0][prev.speed];
+                const speedBoostBrake = [1, 1.5, 2.0, 2.5][prev.speed];
                 const baseBrakeVelocity = (hasTrainAhead ? 0.01 : 0.03) * speedBoostBrake;
                 const leadProgressNow = cars[0].trackProgress % trackLength;
                 const atStation = isPositionAtStation(leadProgressNow);

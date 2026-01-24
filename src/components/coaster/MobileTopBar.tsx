@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { T, useGT, msg, useMessages } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { Tile, TOOL_INFO } from '@/games/coaster/types';
 import { WEATHER_DISPLAY } from '@/games/coaster/types/economy';
@@ -16,6 +17,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+const monthNames = [
+  msg('Jan'),
+  msg('Feb'),
+  msg('Mar'),
+  msg('Apr'),
+  msg('May'),
+  msg('Jun'),
+  msg('Jul'),
+  msg('Aug'),
+  msg('Sep'),
+  msg('Oct'),
+  msg('Nov'),
+  msg('Dec'),
+];
 
 // =============================================================================
 // ICONS
@@ -94,6 +110,8 @@ export function MobileCoasterTopBar({
   const [showDetails, setShowDetails] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showTicketSlider, setShowTicketSlider] = useState(false);
+  const gt = useGT();
+  const m = useMessages();
 
   const handleSaveAndExit = useCallback(() => {
     saveGame();
@@ -105,8 +123,6 @@ export function MobileCoasterTopBar({
     setShowExitDialog(false);
     onExit?.();
   }, [onExit]);
-
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const displayMinute = Math.floor(minute);
   const timeString = `${hour.toString().padStart(2, '0')}:${displayMinute.toString().padStart(2, '0')}`;
   
@@ -132,20 +148,20 @@ export function MobileCoasterTopBar({
                 <span className="text-sm">{weatherDisplay.icon}</span>
               </div>
               <span className="text-muted-foreground text-[10px] font-mono">
-                {monthNames[month - 1]} {day}, Yr {year}
+                {gt('{month} {day}, Yr {year}', { month: m(monthNames[month - 1]), day, year })}
               </span>
             </div>
             <div className="flex flex-col items-start">
               <span className="text-xs font-mono font-semibold text-blue-400">
                 {stats.guestsInPark}
               </span>
-              <span className="text-[9px] text-muted-foreground">Guests</span>
+              <T><span className="text-[9px] text-muted-foreground">Guests</span></T>
             </div>
             <div className="flex flex-col items-start">
               <span className={`text-xs font-mono font-semibold ${finances.cash < 0 ? 'text-red-500' : finances.cash < 1000 ? 'text-amber-500' : 'text-green-500'}`}>
                 ${finances.cash >= 1000000 ? `${(finances.cash / 1000000).toFixed(1)}M` : finances.cash >= 1000 ? `${(finances.cash / 1000).toFixed(0)}k` : finances.cash}
               </span>
-              <span className="text-[9px] text-muted-foreground">Cash</span>
+              <T><span className="text-[9px] text-muted-foreground">Cash</span></T>
             </div>
           </button>
 
@@ -157,7 +173,7 @@ export function MobileCoasterTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Pause"
+                title={gt('Pause')}
               >
                 <PauseIcon size={12} />
               </button>
@@ -166,7 +182,7 @@ export function MobileCoasterTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Normal speed"
+                title={gt('Normal speed')}
               >
                 <PlayIcon size={12} />
               </button>
@@ -175,7 +191,7 @@ export function MobileCoasterTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="2x speed"
+                title={gt('2x speed')}
               >
                 <div className="flex items-center -space-x-[5px]">
                   <PlayIcon size={12} />
@@ -187,7 +203,7 @@ export function MobileCoasterTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 3 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="3x speed"
+                title={gt('3x speed')}
               >
                 <div className="flex items-center -space-x-[7px]">
                   <PlayIcon size={12} />
@@ -202,7 +218,7 @@ export function MobileCoasterTopBar({
               <button
                 onClick={() => setShowExitDialog(true)}
                 className="h-6 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
-                title="Exit to Main Menu"
+                title={gt('Exit to Main Menu')}
               >
                 <svg 
                   className="w-3 h-3 -scale-x-100" 
@@ -225,7 +241,7 @@ export function MobileCoasterTopBar({
               <span className="text-[10px] font-mono text-yellow-400">{stats.parkRating}</span>
             </div>
             <span className="text-[9px] text-muted-foreground">
-              {Math.round(weather.temperature)}°C
+              {gt('{temperature}°C', { temperature: Math.round(weather.temperature) })}
             </span>
           </div>
 
@@ -239,13 +255,13 @@ export function MobileCoasterTopBar({
               }
             }}
           >
-            <span className="text-[9px] text-muted-foreground">Ticket</span>
+            <T><span className="text-[9px] text-muted-foreground">Ticket</span></T>
             <span className="text-[10px] font-mono text-foreground">${settings.entranceFee}</span>
           </button>
 
           <div className="flex items-center gap-1">
             <span className={`text-[10px] font-mono ${finances.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {finances.profit >= 0 ? '+' : ''}${finances.profit.toLocaleString()}/mo
+              {finances.profit >= 0 ? '+' : ''}${finances.profit.toLocaleString()}{gt('/mo')}
             </span>
           </div>
         </div>
@@ -253,7 +269,7 @@ export function MobileCoasterTopBar({
         {/* Ticket Price Slider Row */}
         {showTicketSlider && !selectedTile && (
           <div className="border-t border-sidebar-border/50 bg-secondary/30 px-3 py-0.5 flex items-center gap-2 text-[10px]">
-            <span className="text-muted-foreground whitespace-nowrap">Ticket Price</span>
+            <T><span className="text-muted-foreground whitespace-nowrap">Ticket Price</span></T>
             <Slider
               value={[settings.entranceFee]}
               onValueChange={(value) => setParkSettings({ entranceFee: value[0] })}
@@ -297,18 +313,18 @@ export function MobileCoasterTopBar({
                 selectedTile.building.type !== 'empty' ? 'bg-green-500' : 'bg-muted-foreground/40'
               }`} />
               <span className="text-xs font-medium text-foreground capitalize">
-                {selectedTile.building.type === 'empty' 
-                  ? (selectedTile.path ? 'Path' : selectedTile.terrain)
+                {selectedTile.building.type === 'empty'
+                  ? (selectedTile.path ? gt('Path') : selectedTile.terrain)
                   : selectedTile.building.type.replace(/_/g, ' ')}
               </span>
             </div>
 
             {/* Building stats */}
             {selectedTile.building.type !== 'empty' && selectedTile.building.operating && (
-              <span className="text-green-400 shrink-0">Operating</span>
+              <T><span className="text-green-400 shrink-0">Operating</span></T>
             )}
             {selectedTile.building.type !== 'empty' && selectedTile.building.broken && (
-              <span className="text-red-400 shrink-0">Broken</span>
+              <T><span className="text-red-400 shrink-0">Broken</span></T>
             )}
 
             {/* Spacer */}
@@ -339,27 +355,27 @@ export function MobileCoasterTopBar({
             <div className="p-4 grid grid-cols-4 gap-3">
               <StatItem
                 icon={<GuestsIcon size={16} />}
-                label="Guests"
+                label={gt('Guests')}
                 value={stats.guestsInPark}
                 color="text-blue-400"
                 isNumber
               />
               <StatItem
                 icon={<StarIcon size={16} />}
-                label="Rating"
+                label={gt('Rating')}
                 value={stats.parkRating}
                 color={stats.parkRating >= 700 ? 'text-green-500' : stats.parkRating >= 400 ? 'text-amber-500' : 'text-red-500'}
                 isNumber
               />
               <StatItem
                 icon={<MoneyIcon size={16} />}
-                label="Park Value"
+                label={gt('Park Value')}
                 value={`$${(stats.parkValue / 1000).toFixed(0)}k`}
                 color="text-emerald-400"
               />
               <StatItem
                 icon={<span className="text-lg">{weatherDisplay.icon}</span>}
-                label="Weather"
+                label={gt('Weather')}
                 value={`${Math.round(weather.temperature)}°C`}
                 color={weatherDisplay.color}
               />
@@ -370,23 +386,23 @@ export function MobileCoasterTopBar({
             {/* Detailed finances */}
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Guests</span>
+                <T><span className="text-sm text-muted-foreground">Total Guests</span></T>
                 <span className="text-sm font-mono text-foreground">{stats.guestsTotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Avg. Happiness</span>
+                <T><span className="text-sm text-muted-foreground">Avg. Happiness</span></T>
                 <span className="text-sm font-mono text-foreground">{Math.round(stats.averageHappiness)}%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Income</span>
+                <T><span className="text-sm text-muted-foreground">Monthly Income</span></T>
                 <span className="text-sm font-mono text-green-400">${finances.incomeTotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Expenses</span>
+                <T><span className="text-sm text-muted-foreground">Monthly Expenses</span></T>
                 <span className="text-sm font-mono text-red-400">${finances.expenseTotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Profit</span>
+                <T><span className="text-sm text-muted-foreground">Monthly Profit</span></T>
                 <span className={`text-sm font-mono ${finances.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   ${finances.profit.toLocaleString()}
                 </span>
@@ -398,7 +414,7 @@ export function MobileCoasterTopBar({
             {/* Ticket price slider */}
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Ticket Price</span>
+                <T><span className="text-sm text-muted-foreground">Ticket Price</span></T>
                 <span className="text-sm font-mono text-foreground">${settings.entranceFee}</span>
               </div>
               <Slider
@@ -409,10 +425,12 @@ export function MobileCoasterTopBar({
                 step={5}
                 className="w-full"
               />
-              <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-                <span>$0</span>
-                <span>$100</span>
-              </div>
+              <T>
+                <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+                  <span>$0</span>
+                  <span>$100</span>
+                </div>
+              </T>
             </div>
           </Card>
         </div>
@@ -422,10 +440,12 @@ export function MobileCoasterTopBar({
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Exit to Main Menu</DialogTitle>
-            <DialogDescription>
-              Would you like to save your park before exiting?
-            </DialogDescription>
+            <T><DialogTitle>Exit to Main Menu</DialogTitle></T>
+            <T>
+              <DialogDescription>
+                Would you like to save your park before exiting?
+              </DialogDescription>
+            </T>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
@@ -433,13 +453,13 @@ export function MobileCoasterTopBar({
               onClick={handleExitWithoutSaving}
               className="w-full sm:w-auto"
             >
-              Exit Without Saving
+              <T>Exit Without Saving</T>
             </Button>
             <Button
               onClick={handleSaveAndExit}
               className="w-full sm:w-auto"
             >
-              Save & Exit
+              <T>Save & Exit</T>
             </Button>
           </DialogFooter>
         </DialogContent>

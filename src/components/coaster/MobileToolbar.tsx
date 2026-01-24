@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { T, useGT, msg, useMessages } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { Tool, TOOL_INFO } from '@/games/coaster/types';
 import { COASTER_TYPE_STATS, getCoasterCategory } from '@/games/coaster/types/tracks';
@@ -96,17 +97,17 @@ function RideIcon({ size = 20 }: { size?: number }) {
 const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   {
     key: 'paths',
-    label: 'Paths',
+    label: msg('Paths'),
     tools: ['path', 'queue'],
   },
   {
     key: 'terrain',
-    label: 'Terrain',
+    label: msg('Terrain'),
     tools: ['zone_water', 'zone_land'],
   },
   {
     key: 'trees',
-    label: 'Trees & Plants',
+    label: msg('Trees & Plants'),
     tools: [
       'tree_oak', 'tree_maple', 'tree_pine', 'tree_palm', 'tree_cherry',
       'bush_hedge', 'bush_flowering', 'topiary_ball',
@@ -115,7 +116,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'furniture',
-    label: 'Furniture',
+    label: msg('Furniture'),
     tools: [
       'bench_wooden', 'bench_metal', 'bench_ornate',
       'lamp_victorian', 'lamp_modern', 'lamp_pathway',
@@ -124,7 +125,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'fountains',
-    label: 'Fountains',
+    label: msg('Fountains'),
     tools: [
       'fountain_small_1', 'fountain_small_2', 'fountain_medium_1', 'fountain_large_1',
       'pond_small', 'pond_medium', 'splash_pad', 'water_jets',
@@ -132,7 +133,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'food',
-    label: 'Food & Drink',
+    label: msg('Food & Drink'),
     tools: [
       'food_hotdog', 'food_burger', 'food_icecream', 'food_cotton_candy',
       'drink_soda', 'drink_lemonade', 'snack_popcorn', 'snack_pizza',
@@ -140,7 +141,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'shops',
-    label: 'Shops & Services',
+    label: msg('Shops & Services'),
     tools: [
       'shop_souvenir', 'shop_toys', 'shop_candy', 'arcade_building',
       'restroom', 'first_aid', 'atm',
@@ -148,7 +149,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'rides_small',
-    label: 'Small Rides',
+    label: msg('Small Rides'),
     tools: [
       'ride_carousel', 'ride_teacups', 'ride_bumper_cars', 'ride_go_karts',
       'ride_kiddie_coaster', 'ride_kiddie_train', 'ride_haunted_house',
@@ -156,7 +157,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'rides_large',
-    label: 'Large Rides',
+    label: msg('Large Rides'),
     tools: [
       'ride_ferris_classic', 'ride_drop_tower', 'ride_swing_ride',
       'ride_log_flume', 'ride_rapids',
@@ -164,7 +165,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'coasters_wooden',
-    label: 'Wooden Coasters',
+    label: msg('Wooden Coasters'),
     tools: [
       'coaster_type_wooden_classic',
       'coaster_type_wooden_twister',
@@ -172,7 +173,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'coasters_steel',
-    label: 'Steel Coasters',
+    label: msg('Steel Coasters'),
     tools: [
       'coaster_type_steel_sit_down',
       'coaster_type_steel_inverted',
@@ -183,7 +184,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'coasters_specialty',
-    label: 'Specialty Coasters',
+    label: msg('Specialty Coasters'),
     tools: [
       'coaster_type_water_coaster',
       'coaster_type_mine_train',
@@ -192,7 +193,7 @@ const TOOL_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'infrastructure',
-    label: 'Infrastructure',
+    label: msg('Infrastructure'),
     tools: ['park_entrance', 'staff_building'],
   },
 ];
@@ -243,6 +244,8 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
   const { selectedTool, finances, buildingCoasterType } = state;
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const gt = useGT();
+  const m = useMessages();
 
   const handleCategoryClick = useCallback((category: string) => {
     if (expandedCategory === category) {
@@ -289,7 +292,7 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
               <div className="flex items-center gap-2">
                 <CoasterIcon size={14} />
                 <span className="text-foreground font-medium">
-                  {COASTER_TYPE_STATS[buildingCoasterType]?.name ?? 'Custom Coaster'}
+                  {COASTER_TYPE_STATS[buildingCoasterType]?.name ?? gt('Custom Coaster')}
                 </span>
                 <span className="text-muted-foreground capitalize text-[10px]">
                   ({getCoasterCategory(buildingCoasterType)})
@@ -423,9 +426,11 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
           >
             {/* Park Management section at top */}
             <div className="p-3 border-b border-border flex-shrink-0">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                Park Management
-              </div>
+              <T>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                  Park Management
+                </div>
+              </T>
               <div className="grid grid-cols-4 gap-2">
                 <Button
                   variant="ghost"
@@ -433,7 +438,7 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('finances'); setShowMenu(false); }}
                 >
-                  Finances
+                  <T>Finances</T>
                 </Button>
                 <Button
                   variant="ghost"
@@ -441,7 +446,7 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('guests'); setShowMenu(false); }}
                 >
-                  Guests
+                  <T>Guests</T>
                 </Button>
                 <Button
                   variant="ghost"
@@ -449,7 +454,7 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('rides'); setShowMenu(false); }}
                 >
-                  Rides
+                  <T>Rides</T>
                 </Button>
                 <Button
                   variant="ghost"
@@ -457,7 +462,7 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
                 >
-                  Settings
+                  <T>Settings</T>
                 </Button>
               </div>
             </div>
@@ -465,9 +470,11 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
             {/* Track Building Tools - shown when building a coaster */}
             {buildingCoasterType && (
               <div className="p-3 border-b border-border flex-shrink-0 bg-primary/5">
-                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                  Track Building
-                </div>
+                <T>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                    Track Building
+                  </div>
+                </T>
                 <div className="grid grid-cols-4 gap-2">
                   {TRACK_BUILD_TOOLS.map((tool) => {
                     const info = TOOL_INFO[tool];
@@ -502,7 +509,7 @@ export function MobileCoasterToolbar({ onOpenPanel }: MobileCoasterToolbarProps)
                       className="w-full justify-start gap-3 h-12"
                       onClick={() => handleCategoryClick(category.key)}
                     >
-                      <span className="flex-1 text-left font-medium">{category.label}</span>
+                      <span className="flex-1 text-left font-medium">{m(category.label)}</span>
                       <svg
                         className={`w-4 h-4 transition-transform ${expandedCategory === category.key ? 'rotate-180' : ''}`}
                         viewBox="0 0 24 24"

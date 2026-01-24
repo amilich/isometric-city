@@ -51,7 +51,7 @@ function isStarterBuilding(x: number, y: number, buildingType: string): boolean 
   return false;
 }
 
-// Perlin-like noise for terrain generation
+// Perlin-like noise for terrain generation (exported for reuse in other games)
 function noise2D(x: number, y: number, seed: number = 42): number {
   const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453123;
   return n - Math.floor(n);
@@ -83,7 +83,7 @@ function interpolatedNoise(x: number, y: number, seed: number): number {
   return i1 * (1 - fracY) + i2 * fracY;
 }
 
-function perlinNoise(x: number, y: number, seed: number, octaves: number = 4): number {
+export function perlinNoise(x: number, y: number, seed: number, octaves: number = 4): number {
   let total = 0;
   let frequency = 0.05;
   let amplitude = 1;

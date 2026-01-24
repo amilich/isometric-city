@@ -14,6 +14,7 @@ import { ParkFinances, ParkStats, ParkSettings, Guest, Staff, DEFAULT_PRICES, We
 import { Coaster, CoasterTrain, CoasterCar, TrackDirection, TrackHeight, TrackPiece, TrackPieceType, CoasterType, COASTER_TYPE_STATS, getStrutStyleForCoasterType, getCoasterCategory, areCoasterTypesCompatible } from '@/games/coaster/types/tracks';
 import { Building, BuildingType } from '@/games/coaster/types/buildings';
 import { spawnGuests, updateGuest } from '@/components/coaster/guests';
+import { perlinNoise } from '@/lib/simulation';
 import {
   COASTER_AUTOSAVE_KEY,
   COASTER_SAVED_PARK_PREFIX,
@@ -213,6 +214,152 @@ function shouldGuestLeaveForWeather(guest: Guest, weather: WeatherType): boolean
 }
 
 // =============================================================================
+// TERRAIN GENERATION
+// =============================================================================
+
+// Generate 2-3 large, round lakes for the park terrain
+// Uses perlinNoise imported from @/lib/simulation
+function generateLakes(grid: Tile[][], size: number, seed: number): void {
+  // Use noise to find potential lake centers - look for low points
+  const lakeNoise = (x: number, y: number) => perlinNoise(x, y, seed + 1000, 3);
+  
+  // Find lake seed points (local minimums in noise)
+  const lakeCenters: { x: number; y: number; noise: number }[] = [];
+  const minDistFromEdge = Math.max(8, Math.floor(size * 0.15)); // Keep lakes away from edges
+  const minDistBetweenLakes = Math.max(size * 0.2, 10); // Adaptive but ensure minimum separation
+  
+  // Collect all potential lake centers with adaptive threshold
+  let threshold = 0.5;
+  let attempts = 0;
+  const maxAttempts = 3;
+  
+  while (lakeCenters.length < 2 && attempts < maxAttempts) {
+    lakeCenters.length = 0; // Reset for this attempt
+    
+    for (let y = minDistFromEdge; y < size - minDistFromEdge; y++) {
+      for (let x = minDistFromEdge; x < size - minDistFromEdge; x++) {
+        const noiseVal = lakeNoise(x, y);
+        
+        // Check if this is a good lake center (low noise value)
+        if (noiseVal < threshold) {
+          // Check distance from other lake centers
+          let tooClose = false;
+          for (const center of lakeCenters) {
+            const dist = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+            if (dist < minDistBetweenLakes) {
+              tooClose = true;
+              break;
+            }
+          }
+          
+          if (!tooClose) {
+            lakeCenters.push({ x, y, noise: noiseVal });
+          }
+        }
+      }
+    }
+    
+    // If we found enough centers, break
+    if (lakeCenters.length >= 2) break;
+    
+    // Otherwise, relax the threshold for next attempt
+    threshold += 0.1;
+    attempts++;
+  }
+  
+  // If still no centers found, force create at least 2 lakes at strategic positions
+  if (lakeCenters.length === 0) {
+    const safeZone = minDistFromEdge + 5;
+    const quarterSize = Math.max(safeZone, Math.floor(size / 4));
+    const threeQuarterSize = Math.min(size - safeZone, Math.floor(size * 3 / 4));
+    lakeCenters.push(
+      { x: quarterSize, y: quarterSize, noise: 0 },
+      { x: threeQuarterSize, y: threeQuarterSize, noise: 0 }
+    );
+  } else if (lakeCenters.length === 1) {
+    // If only one center found, add another at a safe distance
+    const existing = lakeCenters[0];
+    const safeZone = minDistFromEdge + 5;
+    const quarterSize = Math.max(safeZone, Math.floor(size / 4));
+    const threeQuarterSize = Math.min(size - safeZone, Math.floor(size * 3 / 4));
+    const newX = existing.x > size / 2 ? quarterSize : threeQuarterSize;
+    const newY = existing.y > size / 2 ? quarterSize : threeQuarterSize;
+    lakeCenters.push({ x: newX, y: newY, noise: 0 });
+  }
+  
+  // Sort by noise value (lowest first) and pick 2-3 best candidates
+  lakeCenters.sort((a, b) => a.noise - b.noise);
+  const numLakes = 2 + Math.floor(Math.random() * 2); // 2 or 3 lakes
+  const selectedCenters = lakeCenters.slice(0, Math.min(numLakes, lakeCenters.length));
+  
+  // Grow lakes from each center using radial expansion for rounder shapes
+  for (const center of selectedCenters) {
+    // Target size: 40-80 tiles for bigger lakes
+    const targetSize = 40 + Math.floor(Math.random() * 41);
+    const lakeTiles: { x: number; y: number }[] = [{ x: center.x, y: center.y }];
+    const candidates: { x: number; y: number; dist: number; noise: number }[] = [];
+    
+    // Add initial neighbors as candidates
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+    for (const [dx, dy] of directions) {
+      const nx = center.x + dx;
+      const ny = center.y + dy;
+      if (nx >= minDistFromEdge && nx < size - minDistFromEdge && 
+          ny >= minDistFromEdge && ny < size - minDistFromEdge) {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const noise = lakeNoise(nx, ny);
+        candidates.push({ x: nx, y: ny, dist, noise });
+      }
+    }
+    
+    // Grow lake by adding adjacent tiles, prioritizing:
+    // 1. Closer to center (for rounder shape)
+    // 2. Lower noise values (for organic shape)
+    while (lakeTiles.length < targetSize && candidates.length > 0) {
+      // Sort by distance from center first, then noise
+      candidates.sort((a, b) => {
+        if (Math.abs(a.dist - b.dist) < 0.5) {
+          return a.noise - b.noise;
+        }
+        return a.dist - b.dist;
+      });
+      
+      // Pick from top candidates (closest/lowest noise)
+      const pickIndex = Math.floor(Math.random() * Math.min(5, candidates.length));
+      const picked = candidates.splice(pickIndex, 1)[0];
+      
+      // Check if already in lake
+      if (lakeTiles.some(t => t.x === picked.x && t.y === picked.y)) continue;
+      
+      // Check if tile is valid (not already water from another lake)
+      if (grid[picked.y][picked.x].building.type === 'water') continue;
+      
+      lakeTiles.push({ x: picked.x, y: picked.y });
+      
+      // Add new neighbors as candidates
+      for (const [dx, dy] of directions) {
+        const nx = picked.x + dx;
+        const ny = picked.y + dy;
+        if (nx >= minDistFromEdge && nx < size - minDistFromEdge && 
+            ny >= minDistFromEdge && ny < size - minDistFromEdge &&
+            !lakeTiles.some(t => t.x === nx && t.y === ny) &&
+            !candidates.some(c => c.x === nx && c.y === ny)) {
+          const dist = Math.sqrt((nx - center.x) ** 2 + (ny - center.y) ** 2);
+          const noise = lakeNoise(nx, ny);
+          candidates.push({ x: nx, y: ny, dist, noise });
+        }
+      }
+    }
+    
+    // Apply lake tiles to grid
+    for (const tile of lakeTiles) {
+      grid[tile.y][tile.x].terrain = 'water';
+      grid[tile.y][tile.x].building = { ...createEmptyBuilding(), type: 'water' };
+    }
+  }
+}
+
+// =============================================================================
 // CONTEXT TYPE
 // =============================================================================
 
@@ -361,21 +508,9 @@ function createInitialGameState(parkName: string = 'My Theme Park', gridSize: nu
     grid.push(row);
   }
   
-  // Add some water tiles for variety (a small lake in the corner)
-  const lakeX = Math.floor(gridSize * 0.7);
-  const lakeY = Math.floor(gridSize * 0.7);
-  const lakeRadius = 5;
-  for (let y = lakeY - lakeRadius; y <= lakeY + lakeRadius; y++) {
-    for (let x = lakeX - lakeRadius; x <= lakeX + lakeRadius; x++) {
-      if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
-        const dist = Math.sqrt(Math.pow(x - lakeX, 2) + Math.pow(y - lakeY, 2));
-        if (dist <= lakeRadius) {
-          grid[y][x].terrain = 'water';
-          grid[y][x].building = { ...createEmptyBuilding(), type: 'water' };
-        }
-      }
-    }
-  }
+  // Generate random lakes using procedural terrain generation (2-3 lakes)
+  const seed = Math.random() * 1000;
+  generateLakes(grid, gridSize, seed);
   
   return {
     id: generateUUID(),

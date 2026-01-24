@@ -2605,7 +2605,7 @@ export function CoasterGrid({
       offset,
       zoom,
       hour: state.hour,
-      isMobile: false,
+      isMobile,
     },
     {
       cloudsRef,

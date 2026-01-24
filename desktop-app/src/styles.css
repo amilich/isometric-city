@@ -389,6 +389,20 @@ a {
   pointer-events: auto;
 }
 
+/* Prevent iframe from stealing drag events during resize */
+body.is-resizing .stable-iframe-wrapper iframe {
+  pointer-events: none;
+}
+
+/* Show a solid placeholder while resizing to prevent flicker */
+body.is-resizing .stable-iframe-wrapper {
+  background: hsl(220 18% 11%);
+}
+
+body.is-resizing .stable-iframe-wrapper iframe {
+  visibility: hidden;
+}
+
 .stable-iframe-wrapper .pane-loading {
   position: absolute;
   inset: 0;

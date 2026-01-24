@@ -79,12 +79,15 @@ function ResizeHandle({ direction, onResize }: ResizeHandleProps) {
   const startPosRef = useRef(0);
   const onResizeRef = useRef(onResize);
   const directionRef = useRef(direction);
+  const rafRef = useRef<number | null>(null);
+  const pendingDeltaRef = useRef(0);
   
   // Keep callback ref updated (this is fine, refs don't trigger re-renders)
   onResizeRef.current = onResize;
   directionRef.current = direction;
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -97,9 +100,19 @@ function ResizeHandle({ direction, onResize }: ResizeHandleProps) {
     const handleMouseMove = (e: MouseEvent) => {
       const currentPos = directionRef.current === 'horizontal' ? e.clientX : e.clientY;
       const delta = currentPos - startPosRef.current;
-      if (delta !== 0) {
-        onResizeRef.current(delta);
-        startPosRef.current = currentPos;
+      if (delta === 0) return;
+      pendingDeltaRef.current += delta;
+      startPosRef.current = currentPos;
+
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          const pending = pendingDeltaRef.current;
+          pendingDeltaRef.current = 0;
+          rafRef.current = null;
+          if (pending !== 0) {
+            onResizeRef.current(pending);
+          }
+        });
       }
     };
 
@@ -107,9 +120,10 @@ function ResizeHandle({ direction, onResize }: ResizeHandleProps) {
       setIsDragging(false);
     };
 
-    // Set cursor styles
+    // Set cursor styles and disable iframe pointer events during drag
     document.body.style.cursor = directionRef.current === 'horizontal' ? 'col-resize' : 'row-resize';
     document.body.style.userSelect = 'none';
+    document.body.classList.add('is-resizing');
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -117,6 +131,12 @@ function ResizeHandle({ direction, onResize }: ResizeHandleProps) {
     return () => {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      document.body.classList.remove('is-resizing');
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      pendingDeltaRef.current = 0;
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -208,14 +228,23 @@ function App() {
     setPaneTree((prevTree) => {
       const updateNode = (node: PaneNode): PaneNode => {
         if (node.type === 'split' && node.id === splitId) {
+          if (containerSize <= 0) {
+            return node;
+          }
+
           const totalSize = node.sizes.reduce((a, b) => a + b, 0);
           const deltaRatio = (delta / containerSize) * totalSize;
           const newSizes = [...node.sizes];
           
           // Adjust the sizes of adjacent panes
           const minSize = 0.1; // minimum 10%
-          newSizes[childIndex] = Math.max(minSize, newSizes[childIndex] + deltaRatio);
-          newSizes[childIndex + 1] = Math.max(minSize, newSizes[childIndex + 1] - deltaRatio);
+          const pairTotal = newSizes[childIndex] + newSizes[childIndex + 1];
+          const nextFirst = Math.min(
+            pairTotal - minSize,
+            Math.max(minSize, newSizes[childIndex] + deltaRatio)
+          );
+          newSizes[childIndex] = nextFirst;
+          newSizes[childIndex + 1] = pairTotal - nextFirst;
           
           return { ...node, sizes: newSizes };
         }

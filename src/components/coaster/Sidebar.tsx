@@ -8,6 +8,7 @@ import { COASTER_TYPE_STATS, CoasterType, getCoasterCategory } from '@/games/coa
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { openCoasterCommandMenu } from '@/components/coaster/CommandMenu';
+import { Users } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -564,6 +565,7 @@ function ExitDialog({
 
 interface SidebarProps {
   onExit?: () => void;
+  onInvite?: () => void;
 }
 
 // Map coaster type tools to their CoasterType values
@@ -612,7 +614,7 @@ const COASTER_TYPE_PRIMARY_COLORS: Record<string, string> = {
   suspended: '#b45309',
 };
 
-export function Sidebar({ onExit }: SidebarProps) {
+export function Sidebar({ onExit, onInvite }: SidebarProps) {
   const { state, setTool, saveGame, startCoasterBuild, cancelCoasterBuild } = useCoaster();
   const { selectedTool, finances, weather, buildingCoasterType } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -666,6 +668,17 @@ export function Sidebar({ onExit }: SidebarProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </Button>
+            {onInvite && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onInvite}
+                title="Invite Players"
+                className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+              >
+                <Users className="w-4 h-4" />
+              </Button>
+            )}
             {onExit && (
               <Button
                 variant="ghost"

@@ -18,8 +18,8 @@ import {
   Player,
   ConnectionState,
   RoomData,
+  MultiplayerState,
 } from '@/lib/multiplayer/types';
-import { GameState } from '@/types/game';
 import { useGT } from 'gt-next';
 
 // Generate a random 5-character room code
@@ -40,7 +40,7 @@ interface MultiplayerContextValue {
   error: string | null;
 
   // Actions
-  createRoom: (cityName: string, initialState: GameState) => Promise<string>;
+  createRoom: (cityName: string, initialState: MultiplayerState) => Promise<string>;
   joinRoom: (roomCode: string) => Promise<RoomData>;
   leaveRoom: () => void;
   
@@ -48,14 +48,14 @@ interface MultiplayerContextValue {
   dispatchAction: (action: GameActionInput) => void;
   
   // Initial state for new players
-  initialState: GameState | null;
+  initialState: MultiplayerState | null;
   
   // Callback for when remote actions are received
   onRemoteAction: ((action: GameAction) => void) | null;
   setOnRemoteAction: (callback: ((action: GameAction) => void) | null) => void;
   
   // Update the game state (any player can do this now)
-  updateGameState: (state: GameState) => void;
+  updateGameState: (state: MultiplayerState) => void;
   
   // Provider instance (for advanced usage)
   provider: MultiplayerProvider | null;
@@ -76,7 +76,7 @@ export function MultiplayerContextProvider({
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [initialState, setInitialState] = useState<GameState | null>(null);
+  const [initialState, setInitialState] = useState<MultiplayerState | null>(null);
   const [provider, setProvider] = useState<MultiplayerProvider | null>(null);
   const [onRemoteAction, setOnRemoteAction] = useState<((action: GameAction) => void) | null>(null);
 
@@ -94,7 +94,7 @@ export function MultiplayerContextProvider({
 
   // Create a room (first player to start a session)
   const createRoom = useCallback(
-    async (cityName: string, gameState: GameState): Promise<string> => {
+    async (cityName: string, gameState: MultiplayerState): Promise<string> => {
       setConnectionState('connecting');
       setError(null);
 
@@ -226,7 +226,7 @@ export function MultiplayerContextProvider({
 
   // Update the game state (any player can do this)
   const updateGameState = useCallback(
-    (state: GameState) => {
+    (state: MultiplayerState) => {
       if (providerRef.current) {
         providerRef.current.updateGameState(state);
       }

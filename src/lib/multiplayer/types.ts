@@ -1,6 +1,9 @@
 // Multiplayer types for co-op gameplay
 
-import { Tool, GameState, Budget } from '@/types/game';
+import type { Tool, Budget, GameState as IsoCityGameState } from '@/types/game';
+import type { GameState as CoasterGameState } from '@/games/coaster/types';
+
+export type MultiplayerState = IsoCityGameState | CoasterGameState;
 
 // Base action properties
 interface BaseAction {
@@ -18,7 +21,7 @@ export type GameAction =
   | (BaseAction & { type: 'setSpeed'; speed: 0 | 1 | 2 | 3 })
   | (BaseAction & { type: 'setDisasters'; enabled: boolean })
   | (BaseAction & { type: 'createBridges'; pathTiles: Array<{ x: number; y: number }>; trackType: 'road' | 'rail' })
-  | (BaseAction & { type: 'fullState'; state: GameState })
+  | (BaseAction & { type: 'fullState'; state: MultiplayerState })
   | (BaseAction & { type: 'tick'; tickData: TickData });
 
 // Action input types (without timestamp and playerId, which are added automatically)
@@ -30,7 +33,7 @@ export type SetBudgetAction = { type: 'setBudget'; key: keyof Budget; funding: n
 export type SetSpeedAction = { type: 'setSpeed'; speed: 0 | 1 | 2 | 3 };
 export type SetDisastersAction = { type: 'setDisasters'; enabled: boolean };
 export type CreateBridgesAction = { type: 'createBridges'; pathTiles: Array<{ x: number; y: number }>; trackType: 'road' | 'rail' };
-export type FullStateAction = { type: 'fullState'; state: GameState };
+export type FullStateAction = { type: 'fullState'; state: MultiplayerState };
 export type TickAction = { type: 'tick'; tickData: TickData };
 
 export type GameActionInput = 
@@ -52,12 +55,12 @@ export interface TickData {
   day: number;
   hour: number;
   tick: number;
-  stats: GameState['stats'];
+  stats: IsoCityGameState['stats'];
   // Only send changed tiles to minimize bandwidth
   changedTiles?: Array<{
     x: number;
     y: number;
-    tile: GameState['grid'][0][0];
+    tile: IsoCityGameState['grid'][0][0];
   }>;
 }
 

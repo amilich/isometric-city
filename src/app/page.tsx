@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
 import { MultiplayerContextProvider } from '@/context/MultiplayerContext';
@@ -9,6 +9,7 @@ import { CoopModal } from '@/components/multiplayer/CoopModal';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
 import { SavedCityMeta, GameState } from '@/types/game';
+import { MultiplayerState } from '@/lib/multiplayer/types';
 import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { Users, X } from 'lucide-react';
@@ -399,19 +400,28 @@ export default function HomePage() {
     }
   };
 
+  const resolveIsoCityState = useCallback((state?: MultiplayerState): GameState | null => {
+    if (!state || typeof state !== 'object') return null;
+    if ('cityName' in state && 'grid' in state && 'stats' in state) {
+      return state as GameState;
+    }
+    return null;
+  }, []);
+
   // Handle co-op game start
-  const handleCoopStart = (isHost: boolean, initialState?: GameState, roomCode?: string) => {
+  const handleCoopStart = (isHost: boolean, initialState?: MultiplayerState, roomCode?: string) => {
     setIsMultiplayer(true);
+    const cityState = resolveIsoCityState(initialState);
     
-    if (isHost && initialState) {
+    if (isHost && cityState) {
       // Host starts with the state they created - save it so GameProvider loads it
       try {
-        const compressed = compressToUTF16(JSON.stringify(initialState));
+        const compressed = compressToUTF16(JSON.stringify(cityState));
         localStorage.setItem(STORAGE_KEY, compressed);
         
         // Also save to saved cities index so it appears on homepage
         if (roomCode) {
-          saveCityToIndex(initialState, roomCode);
+          saveCityToIndex(cityState, roomCode);
         }
       } catch (e) {
         console.error('Failed to save co-op state:', e);
@@ -420,15 +430,15 @@ export default function HomePage() {
     } else if (isHost) {
       // Host without state - fallback to fresh game
       setStartFreshGame(true);
-    } else if (initialState) {
+    } else if (cityState) {
       // Guest received state from host - save it so GameProvider loads it
       try {
-        const compressed = compressToUTF16(JSON.stringify(initialState));
+        const compressed = compressToUTF16(JSON.stringify(cityState));
         localStorage.setItem(STORAGE_KEY, compressed);
         
         // Also save to saved cities index so it appears on homepage
         if (roomCode) {
-          saveCityToIndex(initialState, roomCode);
+          saveCityToIndex(cityState, roomCode);
         }
       } catch (e) {
         console.error('Failed to save co-op state:', e);

@@ -350,7 +350,7 @@ function findStationTile(
   return trackTiles[0];
 }
 
-function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
+export function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
   // Create empty grid
   const grid: Tile[][] = [];
   for (let y = 0; y < gridSize; y++) {

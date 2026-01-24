@@ -9,6 +9,8 @@ import { TopBar } from './TopBar';
 import { MiniMap } from './MiniMap';
 import { Panels } from './panels/Panels';
 import { CoasterCommandMenu } from '@/components/coaster/CommandMenu';
+import { useCoasterMultiplayerSync } from '@/hooks/useCoasterMultiplayerSync';
+import { CoasterShareModal } from '@/components/multiplayer/CoasterShareModal';
 
 interface GameProps {
   onExit?: () => void;
@@ -16,6 +18,8 @@ interface GameProps {
 
 export default function CoasterGame({ onExit }: GameProps) {
   const { state, isStateReady, setTool, setSpeed } = useCoaster();
+  const { isMultiplayer, playerCount } = useCoasterMultiplayerSync();
+  const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{
     offset: { x: number; y: number };
@@ -64,12 +68,12 @@ export default function CoasterGame({ onExit }: GameProps) {
     <TooltipProvider>
       <div className="w-full h-full min-h-[720px] overflow-hidden bg-background flex">
         {/* Sidebar */}
-        <Sidebar onExit={onExit} />
+        <Sidebar onExit={onExit} onInvite={() => setShowShareModal(true)} />
         
         {/* Main content */}
         <div className="flex-1 flex flex-col ml-56">
           {/* Top bar */}
-          <TopBar />
+          <TopBar isMultiplayer={isMultiplayer} playerCount={playerCount} />
           
           {/* Canvas area */}
           <div className="flex-1 relative overflow-visible">
@@ -92,6 +96,7 @@ export default function CoasterGame({ onExit }: GameProps) {
           </div>
         </div>
         <CoasterCommandMenu />
+        <CoasterShareModal open={showShareModal} onOpenChange={setShowShareModal} />
       </div>
     </TooltipProvider>
   );

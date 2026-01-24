@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMultiplayer } from '@/context/MultiplayerContext';
-import { GameState } from '@/types/game';
+import { MultiplayerState } from '@/lib/multiplayer/types';
 import { createInitialGameState, DEFAULT_GRID_SIZE } from '@/lib/simulation';
 import { Copy, Check, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { T, useGT, Plural, Var } from 'gt-next';
@@ -21,9 +21,16 @@ import { T, useGT, Plural, Var } from 'gt-next';
 interface CoopModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onStartGame: (isHost: boolean, initialState?: GameState, roomCode?: string) => void;
-  currentGameState?: GameState;
+  onStartGame: (isHost: boolean, initialState?: MultiplayerState, roomCode?: string) => void;
+  currentGameState?: MultiplayerState;
   pendingRoomCode?: string | null;
+  basePath?: string;
+  homePath?: string;
+  defaultRoomName?: string;
+  locationLabel?: string;
+  locationLabelLower?: string;
+  createInitialState?: (name: string) => MultiplayerState;
+  applyNameToState?: (state: MultiplayerState, name: string) => MultiplayerState;
 }
 
 type Mode = 'select' | 'create' | 'join';
@@ -34,10 +41,29 @@ export function CoopModal({
   onStartGame,
   currentGameState,
   pendingRoomCode,
+  basePath,
+  homePath,
+  defaultRoomName,
+  locationLabel,
+  locationLabelLower,
+  createInitialState,
+  applyNameToState,
 }: CoopModalProps) {
   const gt = useGT();
+  const coopBasePath = (basePath ?? '/coop').replace(/\/$/, '');
+  const fallbackHomePath = homePath ?? '/';
+  const resolvedLocationLabel = locationLabel ?? gt('City');
+  const resolvedLocationLabelLower = locationLabelLower ?? gt('city');
+  const resolvedDefaultRoomName = defaultRoomName ?? gt('My Co-op City');
+  const buildInitialState = createInitialState ?? ((name: string) => createInitialGameState(DEFAULT_GRID_SIZE, name));
+  const applyName = applyNameToState ?? ((state: MultiplayerState, name: string) => {
+    if (state && typeof state === 'object' && 'cityName' in state) {
+      return { ...(state as { cityName?: string }), cityName: name } as MultiplayerState;
+    }
+    return state;
+  });
   const [mode, setMode] = useState<Mode>('select');
-  const [cityName, setCityName] = useState(gt('My Co-op City'));
+  const [roomName, setRoomName] = useState(resolvedDefaultRoomName);
   const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +91,7 @@ export function CoopModal({
       // Join immediately - state will be loaded from Supabase database
       joinRoom(pendingRoomCode)
         .then(() => {
-          window.history.replaceState({}, '', `/coop/${pendingRoomCode.toUpperCase()}`);
+          window.history.replaceState({}, '', `${coopBasePath}/${pendingRoomCode.toUpperCase()}`);
           setIsLoading(false);
           setWaitingForState(true);
         })
@@ -96,18 +122,18 @@ export function CoopModal({
   }, [open, waitingForState, autoJoinAttempted, initialState, leaveRoom]);
 
   const handleCreateRoom = async () => {
-    if (!cityName.trim()) return;
+    if (!roomName.trim()) return;
     
     setIsLoading(true);
     try {
-      // Use the current game state if provided, otherwise create a fresh city
-      const stateToShare = currentGameState 
-        ? { ...currentGameState, cityName } 
-        : createInitialGameState(DEFAULT_GRID_SIZE, cityName);
+      // Use the current game state if provided, otherwise create a fresh map
+      const stateToShare = currentGameState
+        ? applyName(currentGameState, roomName)
+        : buildInitialState(roomName);
       
-      const code = await createRoom(cityName, stateToShare);
+      const code = await createRoom(roomName, stateToShare);
       // Update URL to show room code
-      window.history.replaceState({}, '', `/coop/${code}`);
+      window.history.replaceState({}, '', `${coopBasePath}/${code}`);
       
       // Start the game immediately with the state and close the modal
       onStartGame(true, stateToShare, code);
@@ -128,7 +154,7 @@ export function CoopModal({
       // State will be loaded from Supabase database
       await joinRoom(joinCode);
       // Update URL to show room code
-      window.history.replaceState({}, '', `/coop/${joinCode.toUpperCase()}`);
+      window.history.replaceState({}, '', `${coopBasePath}/${joinCode.toUpperCase()}`);
       // Now wait for state to be received from provider
       setIsLoading(false);
       setWaitingForState(true);
@@ -168,7 +194,7 @@ export function CoopModal({
   const handleCopyLink = () => {
     if (!roomCode) return;
     
-    const url = `${window.location.origin}/coop/${roomCode}`;
+    const url = `${window.location.origin}${coopBasePath}/${roomCode}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -189,7 +215,7 @@ export function CoopModal({
     setIsLoading(false);
     leaveRoom();
     // Clear the URL parameter
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', fallbackHomePath);
     setMode('select');
   };
 
@@ -221,7 +247,7 @@ export function CoopModal({
                   setIsLoading(true);
                   joinRoom(pendingRoomCode)
                     .then(() => {
-                      window.history.replaceState({}, '', `/coop/${pendingRoomCode.toUpperCase()}`);
+                      window.history.replaceState({}, '', `${coopBasePath}/${pendingRoomCode.toUpperCase()}`);
                       setIsLoading(false);
                       setWaitingForState(true);
                     })
@@ -244,7 +270,7 @@ export function CoopModal({
               variant="outline"
               className="w-full py-4 text-base font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-none"
             >
-              <T>Create New City</T>
+              <T>Create New <Var>{resolvedLocationLabel}</Var></T>
             </Button>
             <Button
               onClick={() => {
@@ -258,7 +284,7 @@ export function CoopModal({
             </Button>
             <Button
               onClick={() => {
-                window.location.href = '/';
+                window.location.href = fallbackHomePath;
               }}
               variant="ghost"
               className="w-full py-4 text-base font-light text-slate-500 hover:text-white hover:bg-transparent"
@@ -281,7 +307,7 @@ export function CoopModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white" aria-describedby={undefined}>
           <VisuallyHidden.Root>
-            <DialogTitle><T>Joining Co-op City</T></DialogTitle>
+            <DialogTitle><T>Joining Co-op <Var>{resolvedLocationLabel}</Var></T></DialogTitle>
           </VisuallyHidden.Root>
           {/* Back button in top left */}
           <Button
@@ -300,7 +326,7 @@ export function CoopModal({
 
           <div className="flex flex-col items-center justify-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-slate-400 mb-4" />
-            <T><p className="text-slate-300">Joining city...</p></T>
+            <T><p className="text-slate-300">Joining <Var>{resolvedLocationLabelLower}</Var>...</p></T>
             <T><p className="text-slate-500 text-sm mt-1">Waiting for game state</p></T>
           </div>
         </DialogContent>
@@ -318,7 +344,7 @@ export function CoopModal({
               <T>Co-op Multiplayer</T>
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              <T>Build a city together with friends in real-time</T>
+              <T>Build a <Var>{resolvedLocationLabelLower}</Var> together with friends in real-time</T>
             </DialogDescription>
           </DialogHeader>
 
@@ -327,14 +353,14 @@ export function CoopModal({
               onClick={() => setMode('create')}
               className="w-full py-6 text-lg font-light bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
             >
-              <T>Create City</T>
+              <T>Create <Var>{resolvedLocationLabel}</Var></T>
             </Button>
             <Button
               onClick={() => setMode('join')}
               variant="outline"
               className="w-full py-6 text-lg font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-none"
             >
-              <T>Join City</T>
+              <T>Join <Var>{resolvedLocationLabel}</Var></T>
             </Button>
           </div>
         </DialogContent>
@@ -349,13 +375,13 @@ export function CoopModal({
         <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
           <DialogHeader>
             <DialogTitle className="text-2xl font-light text-white">
-              <T>Create Co-op City</T>
+              <T>Create Co-op <Var>{resolvedLocationLabel}</Var></T>
             </DialogTitle>
             <DialogDescription className="text-slate-400">
               {roomCode ? (
                 <T>Share the invite code with friends</T>
               ) : (
-                <T>Set up your co-op city</T>
+                <T>Set up your co-op <Var>{resolvedLocationLabelLower}</Var></T>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -363,14 +389,14 @@ export function CoopModal({
           {!roomCode ? (
             <div className="flex flex-col gap-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="cityName" className="text-slate-300">
-                  <T>City Name</T>
+                <Label htmlFor="roomName" className="text-slate-300">
+                  <T><Var>{resolvedLocationLabel}</Var> Name</T>
                 </Label>
                 <Input
-                  id="cityName"
-                  value={cityName}
-                  onChange={(e) => setCityName(e.target.value)}
-                  placeholder={gt('My Co-op City')}
+                  id="roomName"
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  placeholder={resolvedDefaultRoomName}
                   className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
                 />
               </div>
@@ -392,7 +418,7 @@ export function CoopModal({
                 </Button>
                 <Button
                   onClick={handleCreateRoom}
-                  disabled={isLoading || !cityName.trim()}
+                  disabled={isLoading || !roomName.trim()}
                   className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
                 >
                   {isLoading ? (
@@ -401,7 +427,7 @@ export function CoopModal({
                       Creating...
                     </T>
                   ) : (
-                    <T>Create City</T>
+                    <T>Create <Var>{resolvedLocationLabel}</Var></T>
                   )}
                 </Button>
               </div>
@@ -477,7 +503,7 @@ export function CoopModal({
       <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
         <DialogHeader>
           <DialogTitle className="text-2xl font-light text-white">
-            <T>Join Co-op City</T>
+            <T>Join Co-op <Var>{resolvedLocationLabel}</Var></T>
           </DialogTitle>
           <DialogDescription className="text-slate-400">
             <T>Enter the 5-character invite code to join</T>
@@ -542,7 +568,7 @@ export function CoopModal({
                   Joining...
                 </T>
               ) : (
-                <T>Join City</T>
+                <T>Join <Var>{resolvedLocationLabel}</Var></T>
               )}
             </Button>
           </div>

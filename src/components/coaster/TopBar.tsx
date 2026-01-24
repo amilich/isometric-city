@@ -46,7 +46,12 @@ function SuperFastIcon() {
 // TOPBAR COMPONENT
 // =============================================================================
 
-export function TopBar() {
+interface TopBarProps {
+  isMultiplayer?: boolean;
+  playerCount?: number;
+}
+
+export function TopBar({ isMultiplayer = false, playerCount = 0 }: TopBarProps) {
   const { state, setSpeed, setActivePanel, setParkSettings } = useCoaster();
   const { settings, stats, finances, year, month, day, hour, minute, speed } = state;
   
@@ -157,6 +162,12 @@ export function TopBar() {
       
       {/* Spacer */}
       <div className="flex-1" />
+
+      {isMultiplayer && (
+        <div className="px-2 py-1 text-xs text-slate-300 bg-slate-800/80 rounded-md">
+          Co-op: {playerCount} player{playerCount === 1 ? '' : 's'}
+        </div>
+      )}
       
       {/* Panel buttons */}
       <div className="flex items-center gap-2">

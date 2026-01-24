@@ -8,6 +8,7 @@ import { CoopModal } from '@/components/multiplayer/CoopModal';
 import { GameState } from '@/types/game';
 import { compressToUTF16 } from 'lz-string';
 import { useParams, useRouter } from 'next/navigation';
+import { MultiplayerState } from '@/lib/multiplayer/types';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
@@ -47,6 +48,14 @@ function saveCityToIndex(state: GameState, roomCode?: string): void {
   }
 }
 
+function resolveIsoCityState(state?: MultiplayerState): GameState | null {
+  if (!state || typeof state !== 'object') return null;
+  if ('cityName' in state && 'grid' in state && 'stats' in state) {
+    return state as GameState;
+  }
+  return null;
+}
+
 export default function CoopPage() {
   const params = useParams();
   const router = useRouter();
@@ -65,16 +74,17 @@ export default function CoopPage() {
   };
 
   // Handle co-op game start
-  const handleCoopStart = (isHost: boolean, initialState?: GameState, code?: string) => {
+  const handleCoopStart = (isHost: boolean, initialState?: MultiplayerState, code?: string) => {
     // Mark that we're intentionally starting the game (not closing to go home)
     isStartingGameRef.current = true;
+    const cityState = resolveIsoCityState(initialState);
     
-    if (isHost && initialState) {
+    if (isHost && cityState) {
       try {
-        const compressed = compressToUTF16(JSON.stringify(initialState));
+        const compressed = compressToUTF16(JSON.stringify(cityState));
         localStorage.setItem(STORAGE_KEY, compressed);
         if (code) {
-          saveCityToIndex(initialState, code);
+          saveCityToIndex(cityState, code);
         }
       } catch (e) {
         console.error('Failed to save co-op state:', e);
@@ -82,12 +92,12 @@ export default function CoopPage() {
       setStartFreshGame(false);
     } else if (isHost) {
       setStartFreshGame(true);
-    } else if (initialState) {
+    } else if (cityState) {
       try {
-        const compressed = compressToUTF16(JSON.stringify(initialState));
+        const compressed = compressToUTF16(JSON.stringify(cityState));
         localStorage.setItem(STORAGE_KEY, compressed);
         if (code) {
-          saveCityToIndex(initialState, code);
+          saveCityToIndex(cityState, code);
         }
       } catch (e) {
         console.error('Failed to save co-op state:', e);

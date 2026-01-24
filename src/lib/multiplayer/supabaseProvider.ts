@@ -8,6 +8,7 @@ import {
   generatePlayerId,
   generatePlayerColor,
   generatePlayerName,
+  MultiplayerState,
 } from './types';
 import {
   createGameRoom,
@@ -16,7 +17,6 @@ import {
   updatePlayerCount,
   CitySizeLimitError,
 } from './database';
-import { GameState } from '@/types/game';
 import { msg } from 'gt-next';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,11 +34,11 @@ export interface MultiplayerProviderOptions {
   roomCode: string;
   cityName: string;
   playerName?: string; // Optional - auto-generated if not provided
-  initialGameState?: GameState; // If provided, this player is creating the room
+  initialGameState?: MultiplayerState; // If provided, this player is creating the room
   onConnectionChange?: (connected: boolean, peerCount: number) => void;
   onPlayersChange?: (players: Player[]) => void;
   onAction?: (action: GameAction) => void;
-  onStateReceived?: (state: GameState) => void;
+  onStateReceived?: (state: MultiplayerState) => void;
   onError?: (error: string) => void;
 }
 
@@ -51,13 +51,13 @@ export class MultiplayerProvider {
   private player: Player;
   private options: MultiplayerProviderOptions;
   private players: Map<string, Player> = new Map();
-  private gameState: GameState | null = null;
+  private gameState: MultiplayerState | null = null;
   private destroyed = false;
   private hasReceivedInitialState = false; // Prevent multiple state-sync overwrites
   
   // State save throttling
   private lastStateSave = 0;
-  private pendingStateSave: GameState | null = null;
+  private pendingStateSave: MultiplayerState | null = null;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: MultiplayerProviderOptions) {
@@ -202,7 +202,7 @@ export class MultiplayerProvider {
       })
       // Broadcast: state sync from existing players (for new joiners)
       .on('broadcast', { event: 'state-sync' }, ({ payload }) => {
-        const { state, to, from } = payload as { state: GameState; to: string; from: string };
+        const { state, to, from } = payload as { state: MultiplayerState; to: string; from: string };
         // Only process if:
         // 1. It's meant for us
         // 2. We're NOT the creator (creators have the canonical state, should never be overwritten)
@@ -250,7 +250,7 @@ export class MultiplayerProvider {
   /**
    * Update the game state and save to database (throttled)
    */
-  updateGameState(state: GameState): void {
+  updateGameState(state: MultiplayerState): void {
     this.gameState = state;
     
     const now = Date.now();
@@ -275,7 +275,7 @@ export class MultiplayerProvider {
     }
   }
 
-  private saveStateToDatabase(state: GameState): void {
+  private saveStateToDatabase(state: MultiplayerState): void {
     this.lastStateSave = Date.now();
     updateGameRoom(this.roomCode, state).catch((e) => {
       if (e instanceof CitySizeLimitError) {

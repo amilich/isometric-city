@@ -4,7 +4,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useMultiplayerOptional } from '@/context/MultiplayerContext';
 import { useGame } from '@/context/GameContext';
 import { GameAction, GameActionInput } from '@/lib/multiplayer/types';
-import { Tool, Budget, GameState, SavedCityMeta } from '@/types/game';
+import { Tool, Budget, GameState as IsoCityGameState, SavedCityMeta } from '@/types/game';
 
 // Batch placement buffer for reducing message count during drags
 const BATCH_FLUSH_INTERVAL = 100; // ms - flush every 100ms during drag
@@ -14,7 +14,7 @@ const BATCH_MAX_SIZE = 100; // Max placements before force flush
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
 
 // Update the saved cities index with the current multiplayer city state
-function updateSavedCitiesIndex(state: GameState, roomCode: string): void {
+function updateSavedCitiesIndex(state: IsoCityGameState, roomCode: string): void {
   if (typeof window === 'undefined') return;
   try {
     // Load existing cities
@@ -49,6 +49,11 @@ function updateSavedCitiesIndex(state: GameState, roomCode: string): void {
   }
 }
 
+function isIsoCityState(state: unknown): state is IsoCityGameState {
+  if (!state || typeof state !== 'object') return false;
+  return 'cityName' in state && 'grid' in state && 'stats' in state;
+}
+
 /**
  * Hook to sync game actions with multiplayer.
  * 
@@ -78,6 +83,7 @@ export function useMultiplayerSync() {
   const lastInitialStateRef = useRef<string | null>(null);
   useEffect(() => {
     if (!multiplayer || !multiplayer.initialState) return;
+    if (!isIsoCityState(multiplayer.initialState)) return;
     
     // Only load if this is a new state (prevent duplicate loads of same state)
     const stateKey = JSON.stringify(multiplayer.initialState.tick || 0);

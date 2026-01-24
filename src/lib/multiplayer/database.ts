@@ -34,7 +34,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
-import { GameState } from '@/types/game';
+import { MultiplayerState } from '@/lib/multiplayer/types';
 import { serializeAndCompressForDBAsync } from '@/lib/saveWorkerManager';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -91,7 +91,7 @@ export interface GameRoomRow {
 export async function createGameRoom(
   roomCode: string,
   cityName: string,
-  gameState: GameState
+  gameState: MultiplayerState
 ): Promise<boolean> {
   if (!supabase) return false;
   try {
@@ -131,7 +131,7 @@ export async function createGameRoom(
  */
 export async function loadGameRoom(
   roomCode: string
-): Promise<{ gameState: GameState; cityName: string } | null> {
+): Promise<{ gameState: MultiplayerState; cityName: string } | null> {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase
@@ -151,7 +151,7 @@ export async function loadGameRoom(
       return null;
     }
 
-    const gameState = JSON.parse(decompressed) as GameState;
+    const gameState = JSON.parse(decompressed) as MultiplayerState;
     return { gameState, cityName: data.city_name };
   } catch (e) {
     console.error('[Database] Error loading room:', e);
@@ -166,7 +166,7 @@ export async function loadGameRoom(
  */
 export async function updateGameRoom(
   roomCode: string,
-  gameState: GameState
+  gameState: MultiplayerState
 ): Promise<boolean> {
   if (!supabase) return false;
   try {

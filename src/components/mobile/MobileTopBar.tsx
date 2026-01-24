@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
+import { MobileBar } from '@/components/mobile/MobileBar';
 import {
   PlayIcon,
   PauseIcon,
@@ -142,7 +143,7 @@ export function MobileTopBar({
   return (
     <>
       {/* Main Top Bar */}
-      <Card className="fixed top-0 left-0 right-0 z-40 rounded-none border-x-0 border-t-0 bg-card/95 backdrop-blur-sm safe-area-top">
+      <MobileBar position="top">
         <div className="flex items-center justify-between px-3 py-1.5">
           {/* Left: City name, date, Pop/Funds stats */}
           <button
@@ -375,7 +376,7 @@ export function MobileTopBar({
             </button>
           </div>
         )}
-      </Card>
+      </MobileBar>
 
       {/* Expanded Details Panel */}
       {showDetails && (

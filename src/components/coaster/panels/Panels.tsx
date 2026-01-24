@@ -14,7 +14,30 @@ function formatCurrency(value: number) {
   return `$${value.toLocaleString()}`;
 }
 
-function PanelWrapper({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+function PanelWrapper({
+  title,
+  children,
+  onClose,
+  isMobile = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  isMobile?: boolean;
+}) {
+  if (isMobile) {
+    return (
+      <Dialog open={true} onOpenChange={() => onClose()}>
+        <DialogContent className="max-w-[520px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">{children}</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Card className="absolute top-20 right-8 w-[360px] bg-slate-950/95 border-slate-700 shadow-xl z-50">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
@@ -30,12 +53,12 @@ function PanelWrapper({ title, children, onClose }: { title: string; children: R
   );
 }
 
-function FinancesPanel({ onClose }: { onClose: () => void }) {
+function FinancesPanel({ onClose, isMobile = false }: { onClose: () => void; isMobile?: boolean }) {
   const { state } = useCoaster();
   const { finances } = state;
   
   return (
-    <PanelWrapper title="Finances" onClose={onClose}>
+    <PanelWrapper title="Finances" onClose={onClose} isMobile={isMobile}>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <div className="text-white/50 text-xs uppercase">Cash</div>
@@ -350,11 +373,11 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function Panels() {
+export function Panels({ isMobile = false }: { isMobile?: boolean }) {
   const { state, setActivePanel } = useCoaster();
   
   if (state.activePanel === 'finances') {
-    return <FinancesPanel onClose={() => setActivePanel('none')} />;
+    return <FinancesPanel onClose={() => setActivePanel('none')} isMobile={isMobile} />;
   }
   
   if (state.activePanel === 'settings') {

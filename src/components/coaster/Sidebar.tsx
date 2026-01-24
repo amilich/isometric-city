@@ -9,6 +9,11 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { openCoasterCommandMenu } from '@/components/coaster/CommandMenu';
 import {
+  COASTER_TYPE_TOOL_MAP,
+  COASTER_TYPE_PRIMARY_COLORS,
+  TRACK_BUILD_TOOLS,
+} from '@/components/coaster/coasterTooling';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -566,51 +571,6 @@ interface SidebarProps {
   onExit?: () => void;
 }
 
-// Map coaster type tools to their CoasterType values
-const COASTER_TYPE_TOOL_MAP: Record<string, string> = {
-  'coaster_type_wooden_classic': 'wooden_classic',
-  'coaster_type_wooden_twister': 'wooden_twister',
-  'coaster_type_steel_sit_down': 'steel_sit_down',
-  'coaster_type_steel_standup': 'steel_standup',
-  'coaster_type_steel_inverted': 'steel_inverted',
-  'coaster_type_steel_floorless': 'steel_floorless',
-  'coaster_type_steel_wing': 'steel_wing',
-  'coaster_type_steel_flying': 'steel_flying',
-  'coaster_type_steel_4d': 'steel_4d',
-  'coaster_type_steel_spinning': 'steel_spinning',
-  'coaster_type_launch_coaster': 'launch_coaster',
-  'coaster_type_hyper_coaster': 'hyper_coaster',
-  'coaster_type_giga_coaster': 'giga_coaster',
-  'coaster_type_water_coaster': 'water_coaster',
-  'coaster_type_mine_train': 'mine_train',
-  'coaster_type_bobsled': 'bobsled',
-  'coaster_type_suspended': 'suspended',
-};
-
-// Primary colors for each coaster type (for UI display)
-const COASTER_TYPE_PRIMARY_COLORS: Record<string, string> = {
-  // Wooden coasters
-  wooden_classic: '#8B4513',
-  wooden_twister: '#A0522D',
-  // Steel coasters
-  steel_sit_down: '#dc2626',
-  steel_standup: '#7c3aed',
-  steel_inverted: '#2563eb',
-  steel_floorless: '#059669',
-  steel_wing: '#ea580c',
-  steel_flying: '#0891b2',
-  steel_4d: '#be123c',
-  steel_spinning: '#65a30d',
-  launch_coaster: '#e11d48',
-  hyper_coaster: '#0d9488',
-  giga_coaster: '#4f46e5',
-  // Water coaster
-  water_coaster: '#0ea5e9',
-  // Specialty coasters
-  mine_train: '#92400e',
-  bobsled: '#1d4ed8',
-  suspended: '#b45309',
-};
 
 export function Sidebar({ onExit }: SidebarProps) {
   const { state, setTool, saveGame, startCoasterBuild, cancelCoasterBuild } = useCoaster();
@@ -731,7 +691,7 @@ export function Sidebar({ onExit }: SidebarProps) {
           
           {/* Track tools - shown inline when building a coaster */}
           <div className="flex flex-col gap-0.5">
-            {(['coaster_build', 'coaster_track', 'coaster_turn_left', 'coaster_turn_right', 'coaster_slope_up', 'coaster_slope_down', 'coaster_loop', 'coaster_station'] as Tool[]).map(tool => {
+            {TRACK_BUILD_TOOLS.map(tool => {
               const info = TOOL_INFO[tool];
               if (!info) return null;
               const isSelected = selectedTool === tool;

@@ -6,6 +6,7 @@ import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { MobileBar } from '@/components/mobile/MobileBar';
 import {
   CloseIcon,
   RoadIcon,
@@ -279,32 +280,31 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
   return (
     <>
       {/* Bottom Toolbar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom">
-        <Card className="rounded-none border-x-0 border-b-0 bg-card/95 backdrop-blur-sm">
-          {/* Selected tool info - now above the toolbar */}
-          {selectedTool && TOOL_INFO[selectedTool] && (
-            <div className="flex items-center justify-between px-4 py-1.5 border-b border-sidebar-border/50 bg-secondary/30 text-xs">
-              <span className="text-foreground font-medium">
-                {m(TOOL_INFO[selectedTool].name)}
+      <MobileBar position="bottom">
+        {/* Selected tool info - now above the toolbar */}
+        {selectedTool && TOOL_INFO[selectedTool] && (
+          <div className="flex items-center justify-between px-4 py-1.5 border-b border-sidebar-border/50 bg-secondary/30 text-xs">
+            <span className="text-foreground font-medium">
+              {m(TOOL_INFO[selectedTool].name)}
+            </span>
+            {TOOL_INFO[selectedTool].cost > 0 && (
+              <span className={`font-mono ${stats.money >= TOOL_INFO[selectedTool].cost ? 'text-green-400' : 'text-red-400'}`}>
+                ${TOOL_INFO[selectedTool].cost}
               </span>
-              {TOOL_INFO[selectedTool].cost > 0 && (
-                <span className={`font-mono ${stats.money >= TOOL_INFO[selectedTool].cost ? 'text-green-400' : 'text-red-400'}`}>
-                  ${TOOL_INFO[selectedTool].cost}
-                </span>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          <div className="flex items-center justify-around px-2 py-2 gap-1">
-            {/* Quick access tools */}
-            <Button
-              variant={selectedTool === 'select' ? 'default' : 'ghost'}
-              size="icon"
-              className="h-11 w-11"
-              onClick={() => handleToolSelect('select')}
-            >
-              {QuickToolIcons.select}
-            </Button>
+        <div className="flex items-center justify-around px-2 py-2 gap-1">
+          {/* Quick access tools */}
+          <Button
+            variant={selectedTool === 'select' ? 'default' : 'ghost'}
+            size="icon"
+            className="h-11 w-11"
+            onClick={() => handleToolSelect('select')}
+          >
+            {QuickToolIcons.select}
+          </Button>
 
             <Button
               variant={selectedTool === 'bulldoze' ? 'default' : 'ghost'}
@@ -378,9 +378,8 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                 </svg>
               )}
             </Button>
-          </div>
-        </Card>
-      </div>
+        </div>
+      </MobileBar>
 
       {/* Expanded Tool Menu */}
       {showMenu && (

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Home, RollerCoaster, SplitSquareHorizontal, SplitSquareVertical, X, Loader2 } from 'lucide-react';
 
 // Game types
@@ -33,7 +33,7 @@ const GAMES: Record<GameType, GameConfig> = {
 interface PaneLeaf {
   type: 'leaf';
   id: string;
-  gameType: GameType;
+  gameType: GameType | null; // null = pending selection
 }
 
 interface PaneSplit {
@@ -50,6 +50,14 @@ type PaneNode = PaneLeaf | PaneSplit;
 let paneIdCounter = 0;
 const generatePaneId = () => `pane-${++paneIdCounter}`;
 
+// Extract all leaf panes from the tree (only those with a game selected)
+const collectActiveLeafPanes = (node: PaneNode): PaneLeaf[] => {
+  if (node.type === 'leaf') {
+    return node.gameType !== null ? [node] : [];
+  }
+  return node.children.flatMap(collectActiveLeafPanes);
+};
+
 function App() {
   const [activeGame, setActiveGame] = useState<GameType>('iso-city');
   const [paneTree, setPaneTree] = useState<PaneNode>({
@@ -58,18 +66,12 @@ function App() {
     gameType: 'iso-city',
   });
   const [tooltip, setTooltip] = useState<{ text: string; y: number } | null>(null);
+  
+  // Track pane container refs for positioning iframes
+  const paneRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Find a pane by ID in the tree
-  const findPane = useCallback((node: PaneNode, id: string): PaneNode | null => {
-    if (node.id === id) return node;
-    if (node.type === 'split') {
-      for (const child of node.children) {
-        const found = findPane(child, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  }, []);
+  // Get all leaf panes with games selected for stable iframe rendering
+  const leafPanes = useMemo(() => collectActiveLeafPanes(paneTree), [paneTree]);
 
   // Count total panes
   const countPanes = useCallback((node: PaneNode): number => {
@@ -82,17 +84,17 @@ function App() {
     setPaneTree((prevTree) => {
       const splitNode = (node: PaneNode): PaneNode => {
         if (node.id === paneId && node.type === 'leaf') {
-          // Create the split
+          // Create the split - keep original pane, add new one with pending selection
           return {
             type: 'split',
             id: generatePaneId(),
             direction,
             children: [
-              node,
+              node, // Keep original pane with same ID
               {
                 type: 'leaf',
                 id: generatePaneId(),
-                gameType: node.gameType, // Same game type as parent
+                gameType: null, // Pending game selection
               },
             ],
             sizes: [50, 50],
@@ -107,6 +109,25 @@ function App() {
         return node;
       };
       return splitNode(prevTree);
+    });
+  }, []);
+
+  // Set game type for a pane (used by game picker)
+  const setPaneGameType = useCallback((paneId: string, gameType: GameType) => {
+    setPaneTree((prevTree) => {
+      const updateNode = (node: PaneNode): PaneNode => {
+        if (node.type === 'leaf' && node.id === paneId) {
+          return { ...node, gameType };
+        }
+        if (node.type === 'split') {
+          return {
+            ...node,
+            children: node.children.map(updateNode),
+          };
+        }
+        return node;
+      };
+      return updateNode(prevTree);
     });
   }, []);
 
@@ -161,16 +182,26 @@ function App() {
     });
   };
 
-  // Render pane tree
-  const renderPaneTree = (node: PaneNode): React.ReactNode => {
+  // Render pane layout structure (just the containers, no iframes)
+  const renderPaneLayout = (node: PaneNode): React.ReactNode => {
     if (node.type === 'leaf') {
-      return <GamePane
-        key={node.id}
-        pane={node}
-        onSplit={splitPane}
-        onClose={closePane}
-        canClose={countPanes(paneTree) > 1}
-      />;
+      return (
+        <PanePlaceholder
+          key={node.id}
+          pane={node}
+          onSplit={splitPane}
+          onClose={closePane}
+          onSelectGame={setPaneGameType}
+          canClose={countPanes(paneTree) > 1}
+          ref={(el) => {
+            if (el) {
+              paneRefs.current.set(node.id, el);
+            } else {
+              paneRefs.current.delete(node.id);
+            }
+          }}
+        />
+      );
     }
 
     return (
@@ -189,7 +220,7 @@ function App() {
               minHeight: 0,
             }}
           >
-            {renderPaneTree(child)}
+            {renderPaneLayout(child)}
           </div>
         ))}
       </div>
@@ -231,85 +262,222 @@ function App() {
       {/* Main Content with Panes */}
       <div className="main-content">
         <div className="pane-container horizontal">
-          {renderPaneTree(paneTree)}
+          {renderPaneLayout(paneTree)}
         </div>
+        
+        {/* Stable iframe container - iframes rendered here won't remount on layout changes */}
+        <StableIframeContainer panes={leafPanes} paneRefs={paneRefs} />
       </div>
     </div>
   );
 }
 
-// Individual game pane component
-interface GamePaneProps {
+// Pane placeholder - just the header and a container for measuring position
+interface PanePlaceholderProps {
   pane: PaneLeaf;
   onSplit: (id: string, direction: 'horizontal' | 'vertical') => void;
   onClose: (id: string) => void;
+  onSelectGame: (id: string, gameType: GameType) => void;
   canClose: boolean;
 }
 
-function GamePane({ pane, onSplit, onClose, canClose }: GamePaneProps) {
+const PanePlaceholder = React.forwardRef<HTMLDivElement, PanePlaceholderProps>(
+  ({ pane, onSplit, onClose, onSelectGame, canClose }, ref) => {
+    const game = pane.gameType ? GAMES[pane.gameType] : null;
+
+    // Show game picker if no game selected
+    if (!game) {
+      return (
+        <div className="pane">
+          <div className="pane-header">
+            <div className="pane-title" style={{ color: '#888' }}>
+              <span>Select a Game</span>
+            </div>
+            <div className="pane-controls">
+              {canClose && (
+                <button
+                  className="pane-control-btn close"
+                  onClick={() => onClose(pane.id)}
+                  title="Close"
+                >
+                  <X />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="pane-content game-picker-container">
+            <GamePicker onSelect={(gameType) => onSelectGame(pane.id, gameType)} />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="pane">
+        <div className="pane-header">
+          <div className="pane-title" style={{ color: game.color }}>
+            {game.icon}
+            <span>{game.name}</span>
+          </div>
+          <div className="pane-controls">
+            <button
+              className="pane-control-btn"
+              onClick={() => onSplit(pane.id, 'horizontal')}
+              title="Split Right"
+            >
+              <SplitSquareHorizontal />
+            </button>
+            <button
+              className="pane-control-btn"
+              onClick={() => onSplit(pane.id, 'vertical')}
+              title="Split Down"
+            >
+              <SplitSquareVertical />
+            </button>
+            {canClose && (
+              <button
+                className="pane-control-btn close"
+                onClick={() => onClose(pane.id)}
+                title="Close"
+              >
+                <X />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="pane-content" ref={ref} data-pane-id={pane.id}>
+          {/* Iframe will be positioned over this via the stable container */}
+        </div>
+      </div>
+    );
+  }
+);
+
+// Game picker component shown in new panes
+interface GamePickerProps {
+  onSelect: (gameType: GameType) => void;
+}
+
+function GamePicker({ onSelect }: GamePickerProps) {
+  return (
+    <div className="game-picker">
+      <h2 className="game-picker-title">Choose a Game</h2>
+      <div className="game-picker-options">
+        {Object.values(GAMES).map((game) => (
+          <button
+            key={game.id}
+            className="game-picker-option"
+            onClick={() => onSelect(game.id)}
+            style={{ '--game-color': game.color } as React.CSSProperties}
+          >
+            <div className="game-picker-icon">
+              {game.icon}
+            </div>
+            <div className="game-picker-name">{game.name}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Stable iframe container - renders iframes in a flat list to prevent remounting
+interface StableIframeContainerProps {
+  panes: PaneLeaf[];
+  paneRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+}
+
+function StableIframeContainer({ panes, paneRefs }: StableIframeContainerProps) {
+  const [positions, setPositions] = useState<Map<string, DOMRect>>(new Map());
+  
+  // Update positions on resize and when panes change
+  useEffect(() => {
+    const updatePositions = () => {
+      const newPositions = new Map<string, DOMRect>();
+      paneRefs.current.forEach((el, id) => {
+        newPositions.set(id, el.getBoundingClientRect());
+      });
+      setPositions(newPositions);
+    };
+
+    // Initial position calculation
+    updatePositions();
+
+    // Listen for resize
+    window.addEventListener('resize', updatePositions);
+    
+    // Use ResizeObserver for more accurate tracking
+    const observer = new ResizeObserver(updatePositions);
+    paneRefs.current.forEach((el) => observer.observe(el));
+
+    return () => {
+      window.removeEventListener('resize', updatePositions);
+      observer.disconnect();
+    };
+  }, [panes, paneRefs]);
+
+  return (
+    <div className="stable-iframe-container">
+      {panes.map((pane) => (
+        <StableIframe
+          key={pane.id}
+          pane={pane}
+          position={positions.get(pane.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Individual stable iframe
+interface StableIframeProps {
+  pane: PaneLeaf;
+  position: DOMRect | undefined;
+}
+
+function StableIframe({ pane, position }: StableIframeProps) {
   const [isLoading, setIsLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const game = GAMES[pane.gameType];
-
-  useEffect(() => {
-    // Reset loading state when game changes
-    setIsLoading(true);
-  }, [pane.gameType]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
   };
 
+  if (!position) return null;
+
   return (
-    <div className="pane">
-      <div className="pane-header">
-        <div className="pane-title" style={{ color: game.color }}>
+    <div
+      className="stable-iframe-wrapper"
+      style={{
+        position: 'fixed',
+        top: position.top,
+        left: position.left,
+        width: position.width,
+        height: position.height,
+        pointerEvents: 'auto',
+      }}
+    >
+      {isLoading && (
+        <div className="pane-loading">
           {game.icon}
-          <span>{game.name}</span>
+          <div className="pane-loading-text">Loading {game.name}...</div>
+          <Loader2 style={{ width: 24, height: 24, animation: 'spin 1s linear infinite' }} />
         </div>
-        <div className="pane-controls">
-          <button
-            className="pane-control-btn"
-            onClick={() => onSplit(pane.id, 'horizontal')}
-            title="Split Right"
-          >
-            <SplitSquareHorizontal />
-          </button>
-          <button
-            className="pane-control-btn"
-            onClick={() => onSplit(pane.id, 'vertical')}
-            title="Split Down"
-          >
-            <SplitSquareVertical />
-          </button>
-          {canClose && (
-            <button
-              className="pane-control-btn close"
-              onClick={() => onClose(pane.id)}
-              title="Close"
-            >
-              <X />
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="pane-content">
-        {isLoading && (
-          <div className="pane-loading">
-            {game.icon}
-            <div className="pane-loading-text">Loading {game.name}...</div>
-            <Loader2 style={{ width: 24, height: 24, animation: 'spin 1s linear infinite' }} />
-          </div>
-        )}
-        <iframe
-          ref={iframeRef}
-          src={game.url}
-          onLoad={handleIframeLoad}
-          style={{ opacity: isLoading ? 0 : 1 }}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-storage-access-by-user-activation"
-        />
-      </div>
+      )}
+      <iframe
+        ref={iframeRef}
+        src={game.url}
+        onLoad={handleIframeLoad}
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          opacity: isLoading ? 0 : 1,
+        }}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-storage-access-by-user-activation"
+      />
     </div>
   );
 }

@@ -350,6 +350,172 @@ function findStationTile(
   return trackTiles[0];
 }
 
+// =============================================================================
+// TERRAIN GENERATION
+// =============================================================================
+
+// Perlin-like noise for terrain generation (shared with IsoCity style)
+function noise2D(x: number, y: number, seed: number = 42): number {
+  const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453123;
+  return n - Math.floor(n);
+}
+
+function smoothNoise(x: number, y: number, seed: number): number {
+  const corners = (noise2D(x - 1, y - 1, seed) + noise2D(x + 1, y - 1, seed) +
+    noise2D(x - 1, y + 1, seed) + noise2D(x + 1, y + 1, seed)) / 16;
+  const sides = (noise2D(x - 1, y, seed) + noise2D(x + 1, y, seed) +
+    noise2D(x, y - 1, seed) + noise2D(x, y + 1, seed)) / 8;
+  const center = noise2D(x, y, seed) / 4;
+  return corners + sides + center;
+}
+
+function interpolatedNoise(x: number, y: number, seed: number): number {
+  const intX = Math.floor(x);
+  const fracX = x - intX;
+  const intY = Math.floor(y);
+  const fracY = y - intY;
+
+  const v1 = smoothNoise(intX, intY, seed);
+  const v2 = smoothNoise(intX + 1, intY, seed);
+  const v3 = smoothNoise(intX, intY + 1, seed);
+  const v4 = smoothNoise(intX + 1, intY + 1, seed);
+
+  const i1 = v1 * (1 - fracX) + v2 * fracX;
+  const i2 = v3 * (1 - fracX) + v4 * fracX;
+
+  return i1 * (1 - fracY) + i2 * fracY;
+}
+
+function perlinNoise(x: number, y: number, seed: number, octaves: number = 4): number {
+  let total = 0;
+  let frequency = 0.05;
+  let amplitude = 1;
+  let maxValue = 0;
+
+  for (let i = 0; i < octaves; i++) {
+    total += interpolatedNoise(x * frequency, y * frequency, seed + i * 100) * amplitude;
+    maxValue += amplitude;
+    amplitude *= 0.5;
+    frequency *= 2;
+  }
+
+  return total / maxValue;
+}
+
+function generateRandomLakes(grid: Tile[][], size: number, seed: number): void {
+  const lakeNoise = (x: number, y: number) => perlinNoise(x, y, seed + 1000, 3);
+  const lakeCenters: { x: number; y: number; noise: number }[] = [];
+  const minDistFromEdge = Math.max(8, Math.floor(size * 0.15));
+  const safeEdge = Math.min(minDistFromEdge, Math.max(1, Math.floor(size / 2) - 1));
+  const minDistBetweenLakes = Math.max(size * 0.2, 10);
+
+  let threshold = 0.5;
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  while (lakeCenters.length < 2 && attempts < maxAttempts) {
+    lakeCenters.length = 0;
+
+    for (let y = safeEdge; y < size - safeEdge; y++) {
+      for (let x = safeEdge; x < size - safeEdge; x++) {
+        const noiseVal = lakeNoise(x, y);
+        if (noiseVal < threshold) {
+          let tooClose = false;
+          for (const center of lakeCenters) {
+            const dist = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+            if (dist < minDistBetweenLakes) {
+              tooClose = true;
+              break;
+            }
+          }
+
+          if (!tooClose) {
+            lakeCenters.push({ x, y, noise: noiseVal });
+          }
+        }
+      }
+    }
+
+    if (lakeCenters.length >= 2) break;
+    threshold += 0.1;
+    attempts++;
+  }
+
+  if (lakeCenters.length === 0) {
+    const safeZone = safeEdge + 5;
+    const quarterSize = Math.max(safeZone, Math.floor(size / 4));
+    const threeQuarterSize = Math.min(size - safeZone, Math.floor(size * 3 / 4));
+    lakeCenters.push(
+      { x: quarterSize, y: quarterSize, noise: 0 },
+      { x: threeQuarterSize, y: threeQuarterSize, noise: 0 }
+    );
+  } else if (lakeCenters.length === 1) {
+    const existing = lakeCenters[0];
+    const safeZone = safeEdge + 5;
+    const quarterSize = Math.max(safeZone, Math.floor(size / 4));
+    const threeQuarterSize = Math.min(size - safeZone, Math.floor(size * 3 / 4));
+    const newX = existing.x > size / 2 ? quarterSize : threeQuarterSize;
+    const newY = existing.y > size / 2 ? quarterSize : threeQuarterSize;
+    lakeCenters.push({ x: newX, y: newY, noise: 0 });
+  }
+
+  lakeCenters.sort((a, b) => a.noise - b.noise);
+  const numLakes = 2 + Math.floor(Math.random() * 2);
+  const selectedCenters = lakeCenters.slice(0, Math.min(numLakes, lakeCenters.length));
+
+  for (const center of selectedCenters) {
+    const targetSize = 40 + Math.floor(Math.random() * 41);
+    const lakeTiles: { x: number; y: number }[] = [{ x: center.x, y: center.y }];
+    const candidates: { x: number; y: number; dist: number; noise: number }[] = [];
+
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+    for (const [dx, dy] of directions) {
+      const nx = center.x + dx;
+      const ny = center.y + dy;
+      if (nx >= safeEdge && nx < size - safeEdge && ny >= safeEdge && ny < size - safeEdge) {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const noise = lakeNoise(nx, ny);
+        candidates.push({ x: nx, y: ny, dist, noise });
+      }
+    }
+
+    while (lakeTiles.length < targetSize && candidates.length > 0) {
+      candidates.sort((a, b) => {
+        if (Math.abs(a.dist - b.dist) < 0.5) {
+          return a.noise - b.noise;
+        }
+        return a.dist - b.dist;
+      });
+
+      const pickIndex = Math.floor(Math.random() * Math.min(5, candidates.length));
+      const picked = candidates.splice(pickIndex, 1)[0];
+
+      if (lakeTiles.some(t => t.x === picked.x && t.y === picked.y)) continue;
+      if (grid[picked.y][picked.x].terrain === 'water') continue;
+
+      lakeTiles.push({ x: picked.x, y: picked.y });
+
+      for (const [dx, dy] of directions) {
+        const nx = picked.x + dx;
+        const ny = picked.y + dy;
+        if (nx >= safeEdge && nx < size - safeEdge &&
+            ny >= safeEdge && ny < size - safeEdge &&
+            !lakeTiles.some(t => t.x === nx && t.y === ny) &&
+            !candidates.some(c => c.x === nx && c.y === ny)) {
+          const dist = Math.sqrt((nx - center.x) ** 2 + (ny - center.y) ** 2);
+          const noise = lakeNoise(nx, ny);
+          candidates.push({ x: nx, y: ny, dist, noise });
+        }
+      }
+    }
+
+    for (const tile of lakeTiles) {
+      grid[tile.y][tile.x].terrain = 'water';
+      grid[tile.y][tile.x].building = { ...createEmptyBuilding(), type: 'water' };
+    }
+  }
+}
+
 function createInitialGameState(parkName: string = 'My Theme Park', gridSize: number = DEFAULT_GRID_SIZE): GameState {
   // Create empty grid
   const grid: Tile[][] = [];
@@ -361,21 +527,8 @@ function createInitialGameState(parkName: string = 'My Theme Park', gridSize: nu
     grid.push(row);
   }
   
-  // Add some water tiles for variety (a small lake in the corner)
-  const lakeX = Math.floor(gridSize * 0.7);
-  const lakeY = Math.floor(gridSize * 0.7);
-  const lakeRadius = 5;
-  for (let y = lakeY - lakeRadius; y <= lakeY + lakeRadius; y++) {
-    for (let x = lakeX - lakeRadius; x <= lakeX + lakeRadius; x++) {
-      if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
-        const dist = Math.sqrt(Math.pow(x - lakeX, 2) + Math.pow(y - lakeY, 2));
-        if (dist <= lakeRadius) {
-          grid[y][x].terrain = 'water';
-          grid[y][x].building = { ...createEmptyBuilding(), type: 'water' };
-        }
-      }
-    }
-  }
+  const terrainSeed = Math.random() * 1000;
+  generateRandomLakes(grid, gridSize, terrainSeed);
   
   return {
     id: generateUUID(),

@@ -8,6 +8,9 @@
     "build": "npm run compress-images && next build",
     "start": "next start",
     "lint": "eslint .",
+    "desktop:dev": "python3 -m http.server 4173 --directory desktop",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "crop-screenshots": "bash scripts/crop-screenshots.sh",
     "compress-images": "node scripts/compress-images.mjs"
   },
@@ -40,6 +43,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@tauri-apps/cli": "^2.9.6",
     "@types/lz-string": "^1.3.34",
     "@types/node": "^22",
     "@types/react": "^19",

@@ -12,6 +12,9 @@
 /.next/
 /out/
 
+# tauri
+/src-tauri/target/
+
 # production
 /build
 

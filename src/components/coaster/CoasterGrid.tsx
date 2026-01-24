@@ -2419,6 +2419,7 @@ interface CoasterGridProps {
     zoom: number;
     canvasSize: { width: number; height: number };
   }) => void;
+  isMobile?: boolean;
 }
 
 export function CoasterGrid({
@@ -2427,6 +2428,7 @@ export function CoasterGrid({
   navigationTarget,
   onNavigationComplete,
   onViewportChange,
+  isMobile = false,
 }: CoasterGridProps) {
   const { state, latestStateRef, placeAtTile, bulldozeTile, placeTrackLine } = useCoaster();
   const { grid, gridSize, selectedTool, tick, coasters } = state;

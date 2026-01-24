@@ -53,16 +53,19 @@ body {
   border-right: 1px solid var(--pane-border);
 }
 
-/* Drag region for moving window - sits at the top */
-.drag-region {
+/* Top drag strip - 1px trigger that expands on hover */
+.top-drag-strip {
   position: fixed;
   top: 0;
-  left: 0;
+  left: var(--sidebar-width);
   right: 0;
-  height: var(--titlebar-height);
-  -webkit-app-region: drag;
-  app-region: drag;
-  z-index: 100;
+  height: 1px;
+  z-index: 9999;
+}
+
+.top-drag-strip:hover {
+  height: 32px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 /* Ensure interactive elements are not draggable */
@@ -150,22 +153,27 @@ a {
 .resize-handle {
   flex-shrink: 0;
   background: transparent;
-  transition: background 0.15s ease;
   z-index: 10;
+  position: relative;
 }
 
 .resize-handle.horizontal {
-  width: 6px;
+  width: 4px;
   cursor: col-resize;
 }
 
 .resize-handle.vertical {
-  height: 6px;
+  height: 4px;
   cursor: row-resize;
 }
 
-.resize-handle:hover {
+.resize-handle:hover,
+.resize-handle.dragging {
   background: hsl(210 60% 50%);
+}
+
+.resize-handle.dragging {
+  background: hsl(210 70% 60%);
 }
 
 /* Individual Pane */
@@ -190,9 +198,7 @@ a {
   flex-shrink: 0;
   border-bottom: 1px solid var(--pane-border);
   position: relative;
-  z-index: 50;
-  -webkit-app-region: drag;
-  app-region: drag;
+  z-index: 150;
 }
 
 .pane-title {
@@ -201,6 +207,8 @@ a {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 1;
+  cursor: default;
 }
 
 .pane-title svg {
@@ -211,6 +219,8 @@ a {
 .pane-controls {
   display: flex;
   gap: 2px;
+  position: relative;
+  z-index: 200;
 }
 
 .pane-control-btn {
@@ -370,8 +380,13 @@ a {
 }
 
 .stable-iframe-wrapper {
-  pointer-events: auto;
+  pointer-events: none;
   overflow: hidden;
+  z-index: 1;
+}
+
+.stable-iframe-wrapper iframe {
+  pointer-events: auto;
 }
 
 .stable-iframe-wrapper .pane-loading {

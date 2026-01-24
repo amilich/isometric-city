@@ -1,5 +1,15 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Home, RollerCoaster, SplitSquareHorizontal, SplitSquareVertical, X, Loader2 } from 'lucide-react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
+// Start window drag
+const startDrag = async () => {
+  try {
+    await getCurrentWindow().startDragging();
+  } catch (e) {
+    console.error('Failed to start dragging:', e);
+  }
+};
 
 // Game types
 type GameType = 'iso-city' | 'iso-coaster';
@@ -65,47 +75,56 @@ interface ResizeHandleProps {
 }
 
 function ResizeHandle({ direction, onResize }: ResizeHandleProps) {
-  const handleRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const startPos = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startPosRef = useRef(0);
+  const onResizeRef = useRef(onResize);
+  const directionRef = useRef(direction);
+  
+  // Keep callback ref updated (this is fine, refs don't trigger re-renders)
+  onResizeRef.current = onResize;
+  directionRef.current = direction;
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    isDragging.current = true;
-    startPos.current = direction === 'horizontal' ? e.clientX : e.clientY;
-    document.body.style.cursor = direction === 'horizontal' ? 'col-resize' : 'row-resize';
-    document.body.style.userSelect = 'none';
-  }, [direction]);
+    e.stopPropagation();
+    setIsDragging(true);
+    startPosRef.current = directionRef.current === 'horizontal' ? e.clientX : e.clientY;
+  };
 
   useEffect(() => {
+    if (!isDragging) return;
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
-      const currentPos = direction === 'horizontal' ? e.clientX : e.clientY;
-      const delta = currentPos - startPos.current;
-      if (Math.abs(delta) > 2) {
-        onResize(delta);
-        startPos.current = currentPos;
+      const currentPos = directionRef.current === 'horizontal' ? e.clientX : e.clientY;
+      const delta = currentPos - startPosRef.current;
+      if (delta !== 0) {
+        onResizeRef.current(delta);
+        startPosRef.current = currentPos;
       }
     };
 
     const handleMouseUp = () => {
-      isDragging.current = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      setIsDragging(false);
     };
+
+    // Set cursor styles
+    document.body.style.cursor = directionRef.current === 'horizontal' ? 'col-resize' : 'row-resize';
+    document.body.style.userSelect = 'none';
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    
     return () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [direction, onResize]);
+  }, [isDragging]); // Only depend on isDragging
 
   return (
     <div
-      ref={handleRef}
-      className={`resize-handle ${direction}`}
+      className={`resize-handle ${direction}${isDragging ? ' dragging' : ''}`}
       onMouseDown={handleMouseDown}
     />
   );
@@ -328,6 +347,9 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Thin drag strip at top - expands on hover */}
+      <div className="top-drag-strip" onMouseDown={startDrag} />
+      
       {/* Sidebar */}
       <div className="sidebar">
         {Object.values(GAMES).map((game) => (
@@ -389,10 +411,24 @@ const PanePlaceholder = React.forwardRef<HTMLDivElement, PanePlaceholderProps>(
       return (
         <div className="pane">
           <div className="pane-header">
-            <div className="pane-title" style={{ color: '#888' }}>
+            <div className="pane-title" style={{ color: '#888' }} onMouseDown={startDrag}>
               <span>Select a Game</span>
             </div>
             <div className="pane-controls">
+              <button
+                className="pane-control-btn"
+                onClick={() => onSplit(pane.id, 'horizontal')}
+                title="Split Right"
+              >
+                <SplitSquareHorizontal />
+              </button>
+              <button
+                className="pane-control-btn"
+                onClick={() => onSplit(pane.id, 'vertical')}
+                title="Split Down"
+              >
+                <SplitSquareVertical />
+              </button>
               {canClose && (
                 <button
                   className="pane-control-btn close"
@@ -414,7 +450,7 @@ const PanePlaceholder = React.forwardRef<HTMLDivElement, PanePlaceholderProps>(
     return (
       <div className="pane">
         <div className="pane-header">
-          <div className="pane-title" style={{ color: game.color }}>
+          <div className="pane-title" style={{ color: game.color }} onMouseDown={startDrag}>
             {game.icon}
             <span>{game.name}</span>
           </div>

@@ -102,7 +102,6 @@ const WeatherDisplay = React.memo(function WeatherDisplay({
 
 // Hover Submenu Component for collapsible tool categories
 // Implements triangle-rule safe zone for forgiving cursor navigation
-const ITEMS_PER_PAGE = 5; // Show 5 items initially, then 5 more each time
 
 const HoverSubmenu = React.memo(function HoverSubmenu({
   label,
@@ -121,7 +120,6 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, buttonHeight: 0, openUpward: false });
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -214,17 +212,6 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
     };
   }, []);
   
-  // Reset visible count when menu closes
-  useEffect(() => {
-    if (!isOpen) {
-      setVisibleCount(ITEMS_PER_PAGE);
-    }
-  }, [isOpen]);
-  
-  const visibleTools = tools.slice(0, visibleCount);
-  const hasMore = visibleCount < tools.length;
-  const remainingCount = tools.length - visibleCount;
-  
   return (
     <div 
       className="relative"
@@ -286,8 +273,8 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
           <div className="px-3 py-2 border-b border-sidebar-border/50 bg-muted/30">
             <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">{label}</span>
           </div>
-          <div className="p-1.5 flex flex-col gap-0.5 max-h-64 overflow-y-auto">
-            {visibleTools.map(tool => {
+          <div className="p-1.5 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+            {tools.map(tool => {
               const info = TOOL_INFO[tool];
               if (!info) return null;
               const isSelected = selectedTool === tool;
@@ -309,21 +296,6 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                 </Button>
               );
             })}
-            {hasMore && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setVisibleCount(prev => prev + ITEMS_PER_PAGE);
-                }}
-                variant="ghost"
-                className="w-full justify-center gap-1 px-3 py-1.5 h-auto text-xs text-muted-foreground hover:text-foreground border-t border-sidebar-border/30 mt-1 rounded-none"
-              >
-                <span>Show {Math.min(remainingCount, ITEMS_PER_PAGE)} more</span>
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </Button>
-            )}
           </div>
         </div>
       )}

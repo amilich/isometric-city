@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useCoaster } from '@/context/CoasterContext';
+import { useMobile } from '@/hooks/useMobile';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 function formatCurrency(value: number) {
   return `$${value.toLocaleString()}`;
@@ -30,12 +32,12 @@ function PanelWrapper({ title, children, onClose }: { title: string; children: R
   );
 }
 
-function FinancesPanel({ onClose }: { onClose: () => void }) {
+function FinancesPanel({ onClose, isMobile = false }: { onClose: () => void; isMobile?: boolean }) {
   const { state } = useCoaster();
   const { finances } = state;
-  
-  return (
-    <PanelWrapper title="Finances" onClose={onClose}>
+
+  const content = (
+    <>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <div className="text-white/50 text-xs uppercase">Cash</div>
@@ -48,7 +50,7 @@ function FinancesPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-2 text-sm">
         <div className="flex items-center justify-between text-white/80">
           <span>Admissions</span>
@@ -67,7 +69,7 @@ function FinancesPanel({ onClose }: { onClose: () => void }) {
           <span className="text-green-300">{formatCurrency(finances.incomeShops)}</span>
         </div>
       </div>
-      
+
       <div className="border-t border-slate-800 pt-3 space-y-2 text-sm">
         <div className="flex items-center justify-between text-white/70">
           <span>Upkeep</span>
@@ -78,7 +80,7 @@ function FinancesPanel({ onClose }: { onClose: () => void }) {
           <span className="text-red-300">{formatCurrency(finances.expenseWages)}</span>
         </div>
       </div>
-      
+
       {finances.history.length > 0 && (
         <div>
           <div className="text-xs uppercase text-white/50 tracking-wide mb-2">Recent Months</div>
@@ -94,6 +96,25 @@ function FinancesPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Dialog open={true} onOpenChange={() => onClose()}>
+        <DialogContent className="w-[96vw] max-w-[480px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Finances</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">{content}</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <PanelWrapper title="Finances" onClose={onClose}>
+      {content}
     </PanelWrapper>
   );
 }
@@ -125,7 +146,7 @@ async function loadExampleState(
   }
 }
 
-function SettingsPanel({ onClose }: { onClose: () => void }) {
+function SettingsPanel({ onClose, isMobile = false }: { onClose: () => void; isMobile?: boolean }) {
   const { state, setParkSettings, exportState, loadState, setActivePanel, newGame, addMoney, clearGuests } = useCoaster();
   const { settings, gridSize } = state;
   
@@ -160,7 +181,12 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   
   return (
     <Dialog open={true} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-[400px] max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        className={cn(
+          'max-h-[85vh] overflow-y-auto',
+          isMobile ? 'w-[96vw] max-w-[96vw]' : 'max-w-[400px]'
+        )}
+      >
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
@@ -352,13 +378,15 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
 
 export function Panels() {
   const { state, setActivePanel } = useCoaster();
+  const { isMobileDevice, isSmallScreen } = useMobile();
+  const isMobile = isMobileDevice || isSmallScreen;
   
   if (state.activePanel === 'finances') {
-    return <FinancesPanel onClose={() => setActivePanel('none')} />;
+    return <FinancesPanel onClose={() => setActivePanel('none')} isMobile={isMobile} />;
   }
   
   if (state.activePanel === 'settings') {
-    return <SettingsPanel onClose={() => setActivePanel('none')} />;
+    return <SettingsPanel onClose={() => setActivePanel('none')} isMobile={isMobile} />;
   }
   
   return null;

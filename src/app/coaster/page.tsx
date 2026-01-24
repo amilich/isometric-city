@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CoasterProvider } from '@/context/CoasterContext';
 import CoasterGame from '@/components/coaster/Game';
 import { X } from 'lucide-react';
+import { useMobile } from '@/hooks/useMobile';
 import {
   buildSavedParkMeta,
   COASTER_AUTOSAVE_KEY,
@@ -237,6 +238,8 @@ export default function CoasterPage() {
   const [isChecking, setIsChecking] = useState(true);
   const [savedParks, setSavedParks] = useState<SavedParkMeta[]>([]);
   const [loadParkId, setLoadParkId] = useState<string | null>(null);
+  const { isMobileDevice, isSmallScreen } = useMobile();
+  const isMobile = isMobileDevice || isSmallScreen;
 
   const refreshSavedParks = useCallback(() => {
     let parks = readSavedParksIndex();
@@ -288,6 +291,108 @@ export default function CoasterPage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex items-center justify-center">
         <div className="text-white/60">Loading...</div>
+      </main>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <main className="h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
+        <div className="flex-shrink-0 h-4 sm:h-8" />
+
+        <h1 className="text-4xl sm:text-5xl font-light tracking-wider text-white/90 mb-4 sm:mb-6 flex-shrink-0">
+          IsoCoaster
+        </h1>
+
+        <div className="mb-4 sm:mb-6 flex-shrink-0">
+          <CoasterSpriteGallery count={9} cols={3} cellSize={56} />
+        </div>
+
+        <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-xs flex-shrink-0">
+          <Button 
+            onClick={() => {
+              if (hasSaved && savedParks.length > 0) {
+                setStartFresh(false);
+                setLoadParkId(savedParks[0].id);
+              } else {
+                setStartFresh(true);
+                setLoadParkId(null);
+              }
+              setShowGame(true);
+            }}
+            className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+          >
+            {hasSaved ? 'Continue' : 'New Park'}
+          </Button>
+
+          {hasSaved && (
+            <Button 
+              onClick={() => {
+                setStartFresh(true);
+                setLoadParkId(null);
+                setShowGame(true);
+              }}
+              variant="outline"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/60 hover:text-white border border-white/20 rounded-none transition-all duration-300"
+            >
+              New Park
+            </Button>
+          )}
+
+          <Button
+            onClick={async () => {
+              try {
+                const response = await fetch('/example-states-coaster/example_state.json');
+                const exampleState = await response.json();
+                saveCoasterStateToStorage(COASTER_AUTOSAVE_KEY, exampleState);
+                refreshSavedParks();
+                setStartFresh(false);
+                setLoadParkId(null);
+                setShowGame(true);
+              } catch (e) {
+                console.error('Failed to load example state:', e);
+              }
+            }}
+            variant="outline"
+            className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+          >
+            Load Example
+          </Button>
+
+          <a
+            href="/"
+            className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+          >
+            Back to IsoCity
+          </a>
+        </div>
+
+        {savedParks.length > 0 && (
+          <div className="w-full max-w-xs mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col">
+            <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 flex-shrink-0">
+              Saved Parks
+            </h2>
+            <div
+              className="flex flex-col gap-2 flex-1 overflow-y-auto overscroll-y-contain"
+              style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+            >
+              {savedParks.slice(0, 5).map((park) => (
+                <SavedParkCard
+                  key={park.id}
+                  park={park}
+                  onLoad={() => {
+                    setStartFresh(false);
+                    setLoadParkId(park.id);
+                    setShowGame(true);
+                  }}
+                  onDelete={() => handleDeletePark(park)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex-shrink-0 h-2" />
       </main>
     );
   }

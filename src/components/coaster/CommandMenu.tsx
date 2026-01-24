@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
+import { COASTER_TYPE_TOOL_MAP } from '@/components/coaster/tooling';
 
 // Global callback to open the command menu
 let openCoasterCommandMenuCallback: (() => void) | null = null;
@@ -50,27 +51,6 @@ const CATEGORY_LABELS = MENU_CATEGORIES.reduce<Record<string, string>>((acc, cat
   acc[category.key] = category.label;
   return acc;
 }, {});
-
-// Map coaster type tools to their CoasterType values
-const COASTER_TYPE_TOOL_MAP: Record<string, string> = {
-  coaster_type_wooden_classic: 'wooden_classic',
-  coaster_type_wooden_twister: 'wooden_twister',
-  coaster_type_steel_sit_down: 'steel_sit_down',
-  coaster_type_steel_standup: 'steel_standup',
-  coaster_type_steel_inverted: 'steel_inverted',
-  coaster_type_steel_floorless: 'steel_floorless',
-  coaster_type_steel_wing: 'steel_wing',
-  coaster_type_steel_flying: 'steel_flying',
-  coaster_type_steel_4d: 'steel_4d',
-  coaster_type_steel_spinning: 'steel_spinning',
-  coaster_type_launch_coaster: 'launch_coaster',
-  coaster_type_hyper_coaster: 'hyper_coaster',
-  coaster_type_giga_coaster: 'giga_coaster',
-  coaster_type_water_coaster: 'water_coaster',
-  coaster_type_mine_train: 'mine_train',
-  coaster_type_bobsled: 'bobsled',
-  coaster_type_suspended: 'suspended',
-};
 
 function buildMenuItems(): MenuItem[] {
   const items: MenuItem[] = [];

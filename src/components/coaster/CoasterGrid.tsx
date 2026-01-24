@@ -2419,6 +2419,7 @@ interface CoasterGridProps {
     zoom: number;
     canvasSize: { width: number; height: number };
   }) => void;
+  isMobile?: boolean;
 }
 
 export function CoasterGrid({
@@ -2427,6 +2428,7 @@ export function CoasterGrid({
   navigationTarget,
   onNavigationComplete,
   onViewportChange,
+  isMobile = false,
 }: CoasterGridProps) {
   const { state, latestStateRef, placeAtTile, bulldozeTile, placeTrackLine } = useCoaster();
   const { grid, gridSize, selectedTool, tick, coasters } = state;
@@ -2538,8 +2540,8 @@ export function CoasterGrid({
   const cloudIdRef = useRef(0);
   const cloudSpawnTimerRef = useRef(0);
   
-  const [offset, setOffset] = useState({ x: 620, y: 160 });
-  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: isMobile ? 200 : 620, y: isMobile ? 100 : 160 });
+  const [zoom, setZoom] = useState(isMobile ? 0.6 : 1);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
@@ -2553,6 +2555,12 @@ export function CoasterGrid({
   const [trackDragDirection, setTrackDragDirection] = useState<'h' | 'v' | null>(null);
   const [trackDragPreviewTiles, setTrackDragPreviewTiles] = useState<{ x: number; y: number }[]>([]);
   const placedTrackTilesRef = useRef<Set<string>>(new Set());
+
+  // Touch gesture state for mobile
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const initialPinchDistanceRef = useRef<number | null>(null);
+  const initialZoomRef = useRef(zoom);
+  const lastTouchCenterRef = useRef<{ x: number; y: number } | null>(null);
   
   // Load sprite sheets in parallel for faster loading
   useEffect(() => {
@@ -2603,7 +2611,7 @@ export function CoasterGrid({
       offset,
       zoom,
       hour: state.hour,
-      isMobile: false,
+      isMobile,
     },
     {
       cloudsRef,
@@ -3344,9 +3352,133 @@ const tile = grid[y][x];
     });
     setZoom(newZoom);
   }, [zoom, offset]);
+
+  // Touch handlers for mobile
+  const getTouchDistance = useCallback((touch1: React.Touch, touch2: React.Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+
+  const getTouchCenter = useCallback((touch1: React.Touch, touch2: React.Touch) => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    };
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+      setDragStart({ x: touch.clientX - offset.x, y: touch.clientY - offset.y });
+      setIsDragging(true);
+    } else if (e.touches.length === 2) {
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      initialPinchDistanceRef.current = distance;
+      initialZoomRef.current = zoom;
+      lastTouchCenterRef.current = getTouchCenter(e.touches[0], e.touches[1]);
+      setIsDragging(false);
+    }
+  }, [offset, zoom, getTouchDistance, getTouchCenter]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+
+    if (e.touches.length === 1 && isDragging && !initialPinchDistanceRef.current) {
+      const touch = e.touches[0];
+      setOffset({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y,
+      });
+    } else if (e.touches.length === 2 && initialPinchDistanceRef.current !== null) {
+      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const scale = currentDistance / initialPinchDistanceRef.current;
+      const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, initialZoomRef.current * scale));
+
+      const currentCenter = getTouchCenter(e.touches[0], e.touches[1]);
+      const rect = containerRef.current?.getBoundingClientRect();
+
+      if (rect && lastTouchCenterRef.current) {
+        const centerX = currentCenter.x - rect.left;
+        const centerY = currentCenter.y - rect.top;
+
+        const worldX = (centerX - offset.x) / zoom;
+        const worldY = (centerY - offset.y) / zoom;
+
+        const newOffsetX = centerX - worldX * newZoom;
+        const newOffsetY = centerY - worldY * newZoom;
+
+        const panDeltaX = currentCenter.x - lastTouchCenterRef.current.x;
+        const panDeltaY = currentCenter.y - lastTouchCenterRef.current.y;
+
+        setOffset({
+          x: newOffsetX + panDeltaX,
+          y: newOffsetY + panDeltaY,
+        });
+        setZoom(newZoom);
+        lastTouchCenterRef.current = currentCenter;
+      }
+    }
+  }, [isDragging, dragStart, zoom, offset, getTouchDistance, getTouchCenter]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touchStart = touchStartRef.current;
+
+    if (e.touches.length === 0) {
+      if (touchStart && e.changedTouches.length === 1) {
+        const touch = e.changedTouches[0];
+        const deltaX = Math.abs(touch.clientX - touchStart.x);
+        const deltaY = Math.abs(touch.clientY - touchStart.y);
+        const deltaTime = Date.now() - touchStart.time;
+
+        if (deltaTime < 300 && deltaX < 10 && deltaY < 10) {
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            const mouseX = (touch.clientX - rect.left) / zoom;
+            const mouseY = (touch.clientY - rect.top) / zoom;
+            const { gridX, gridY } = screenToGrid(
+              mouseX,
+              mouseY,
+              offset.x / zoom,
+              offset.y / zoom
+            );
+
+            if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+              if (selectedTool === 'select') {
+                setSelectedTile({ x: gridX, y: gridY });
+              } else if (selectedTool === 'bulldoze') {
+                bulldozeTile(gridX, gridY);
+              } else {
+                placeAtTile(gridX, gridY);
+              }
+            }
+          }
+        }
+      }
+
+      setIsDragging(false);
+      touchStartRef.current = null;
+      initialPinchDistanceRef.current = null;
+      lastTouchCenterRef.current = null;
+    } else if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setDragStart({ x: touch.clientX - offset.x, y: touch.clientY - offset.y });
+      setIsDragging(true);
+      initialPinchDistanceRef.current = null;
+      lastTouchCenterRef.current = null;
+    }
+  }, [zoom, offset, gridSize, selectedTool, placeAtTile, bulldozeTile, setSelectedTile]);
   
   return (
-    <div ref={containerRef} className="w-full h-full relative">
+    <div
+      ref={containerRef}
+      className="w-full h-full relative touch-none"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+    >
       <canvas
         ref={canvasRef}
         className="block cursor-grab active:cursor-grabbing absolute inset-0"

@@ -9,13 +9,16 @@ import { TopBar } from './TopBar';
 import { MiniMap } from './MiniMap';
 import { Panels } from './panels/Panels';
 import { CoasterCommandMenu } from '@/components/coaster/CommandMenu';
+import { useMobile } from '@/hooks/useMobile';
+import { MobileTopBar } from '@/components/coaster/mobile/MobileTopBar';
+import { MobileToolbar } from '@/components/coaster/mobile/MobileToolbar';
 
 interface GameProps {
   onExit?: () => void;
 }
 
 export default function CoasterGame({ onExit }: GameProps) {
-  const { state, isStateReady, setTool, setSpeed } = useCoaster();
+  const { state, isStateReady, setTool, setSpeed, setActivePanel } = useCoaster();
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{
     offset: { x: number; y: number };
@@ -23,6 +26,8 @@ export default function CoasterGame({ onExit }: GameProps) {
     canvasSize: { width: number; height: number };
   } | null>(null);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
+  const { isMobileDevice, isSmallScreen } = useMobile();
+  const isMobile = isMobileDevice || isSmallScreen;
   
   // Keyboard shortcuts
   useEffect(() => {
@@ -57,6 +62,33 @@ export default function CoasterGame({ onExit }: GameProps) {
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-950 via-indigo-900 to-purple-950">
         <div className="text-white/60">Loading park...</div>
       </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <TooltipProvider>
+        <div className="w-full h-full overflow-hidden bg-background flex flex-col">
+          <MobileTopBar
+            selectedTile={selectedTile ? state.grid[selectedTile.y]?.[selectedTile.x] ?? null : null}
+            closeTileAction={() => setSelectedTile(null)}
+            exitAction={onExit}
+          />
+
+          <div className="flex-1 relative overflow-hidden" style={{ paddingTop: '72px', paddingBottom: '76px' }}>
+            <CoasterGrid
+              selectedTile={selectedTile}
+              setSelectedTile={setSelectedTile}
+              isMobile={true}
+            />
+          </div>
+
+          <MobileToolbar onOpenPanel={(panel) => setActivePanel(panel)} />
+
+          <Panels />
+          <CoasterCommandMenu />
+        </div>
+      </TooltipProvider>
     );
   }
   

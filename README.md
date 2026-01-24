@@ -13,7 +13,7 @@ Open-source isometric simulation games built with **Next.js**, **TypeScript**, a
 </tr>
 <tr>
 <td align="center">City builder with trains, planes, cars, and pedestrians<br><a href="https://iso-city.com">iso-city.com</a></td>
-<td align="center">Theme park builder with roller coasters, rides, and guests<br><a href="https://iso-coaster.com">iso-coaster.com</a></td>
+<td align="center">Build theme parks with roller coasters, rides, and guests<br><a href="https://iso-coaster.com">iso-coaster.com</a></td>
 </tr>
 </table>
 

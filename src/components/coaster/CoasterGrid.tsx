@@ -2783,21 +2783,23 @@ export function CoasterGrid({
           if (trackIndex < 0 || trackIndex >= trackLen) return;
           
           const trackTile = coaster.trackTiles[trackIndex];
-          const trackPiece = coaster.track[trackIndex];
-          if (!trackTile || !trackPiece) return;
+          if (!trackTile) return;
           
-          // Verify the grid tile still has a track piece with the correct coaster ID
-          // This catches cases where the track was deleted but coaster state is stale
+          // Get the ACTUAL track piece from the grid (not the cached one in coaster.track)
+          // This ensures the car is positioned on the track as it's actually drawn
           const gridTile = state.grid[trackTile.y]?.[trackTile.x];
           if (!gridTile?.trackPiece || gridTile.coasterTrackId !== coaster.id) return;
+          
+          // Use the grid's track piece for positioning to match the rendered track
+          const actualTrackPiece = gridTile.trackPiece;
 
           const { screenX, screenY } = gridToScreen(trackTile.x, trackTile.y, 0, 0);
           const centerX = screenX + TILE_WIDTH / 2;
           const centerY = screenY + TILE_HEIGHT / 2;
-          const pos = getTrackPoint(trackPiece, centerX, centerY, t);
+          const pos = getTrackPoint(actualTrackPiece, centerX, centerY, t);
           
           // Calculate actual travel direction based on track piece type and position
-          const travelDirection = getCarTravelDirection(trackPiece, coaster.trackTiles, trackIndex, t);
+          const travelDirection = getCarTravelDirection(actualTrackPiece, coaster.trackTiles, trackIndex, t);
 
           const key = `${trackTile.x},${trackTile.y}`;
           const existing = carsByTile.get(key);

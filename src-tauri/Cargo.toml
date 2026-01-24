@@ -1,0 +1,18 @@
+[package]
+name = "isocity-desktop"
+version = "0.1.0"
+description = "IsoCity and IsoCoaster desktop shell"
+authors = ["IsoCity"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = "2"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

@@ -6,6 +6,7 @@ import { Tool, TOOL_INFO } from '@/games/coaster/types';
 import { COASTER_TYPE_STATS, getCoasterCategory } from '@/games/coaster/types/tracks';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { T, useGT, msg, useMessages } from 'gt-next';
 
 // =============================================================================
 // ICONS
@@ -59,17 +60,17 @@ const QuickToolIcons: Partial<Record<Tool, React.ReactNode>> = {
 const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   {
     key: 'paths',
-    label: 'Paths',
+    label: msg('Paths'),
     tools: ['path', 'queue'],
   },
   {
     key: 'terrain',
-    label: 'Terrain',
+    label: msg('Terrain'),
     tools: ['zone_water', 'zone_land'],
   },
   {
     key: 'trees',
-    label: 'Trees',
+    label: msg('Trees'),
     tools: [
       'tree_oak', 'tree_maple', 'tree_pine', 'tree_palm', 'tree_cherry',
       'bush_hedge', 'bush_flowering', 'topiary_ball',
@@ -77,12 +78,12 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'flowers',
-    label: 'Flowers',
+    label: msg('Flowers'),
     tools: ['flowers_bed', 'flowers_planter', 'flowers_wild', 'ground_cover'],
   },
   {
     key: 'furniture',
-    label: 'Furniture',
+    label: msg('Furniture'),
     tools: [
       'bench_wooden', 'bench_metal', 'bench_ornate',
       'lamp_victorian', 'lamp_modern', 'lamp_pathway',
@@ -91,7 +92,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'fountains',
-    label: 'Fountains',
+    label: msg('Fountains'),
     tools: [
       'fountain_small_1', 'fountain_small_2', 'fountain_small_3',
       'fountain_medium_1', 'fountain_medium_2', 'fountain_medium_3',
@@ -102,7 +103,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'food',
-    label: 'Food & Drink',
+    label: msg('Food & Drink'),
     tools: [
       'food_hotdog', 'food_burger', 'food_fries', 'food_corndog', 'food_pretzel',
       'food_icecream', 'food_cotton_candy', 'food_candy_apple', 'food_churros', 'food_funnel_cake',
@@ -114,7 +115,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'shops',
-    label: 'Shops & Services',
+    label: msg('Shops & Services'),
     tools: [
       'shop_souvenir', 'shop_emporium', 'shop_photo', 'shop_ticket', 'shop_collectibles',
       'shop_toys', 'shop_plush', 'shop_apparel', 'shop_bricks', 'shop_rc',
@@ -126,7 +127,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'rides_small',
-    label: 'Small Rides',
+    label: msg('Small Rides'),
     tools: [
       'ride_kiddie_coaster', 'ride_kiddie_train', 'ride_kiddie_planes', 'ride_kiddie_boats', 'ride_kiddie_cars',
       'ride_teacups', 'ride_scrambler', 'ride_tilt_a_whirl', 'ride_spinning_apples', 'ride_whirlwind',
@@ -138,7 +139,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'rides_large',
-    label: 'Large Rides',
+    label: msg('Large Rides'),
     tools: [
       'ride_ferris_classic', 'ride_ferris_modern', 'ride_ferris_observation', 'ride_ferris_double', 'ride_ferris_led',
       'ride_drop_tower', 'ride_space_shot', 'ride_observation_tower', 'ride_sky_swing', 'ride_star_flyer',
@@ -150,7 +151,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'coasters_wooden',
-    label: 'Wooden Coasters',
+    label: msg('Wooden Coasters'),
     tools: [
       'coaster_type_wooden_classic',
       'coaster_type_wooden_twister',
@@ -158,7 +159,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'coasters_steel',
-    label: 'Steel Coasters',
+    label: msg('Steel Coasters'),
     tools: [
       'coaster_type_steel_sit_down',
       'coaster_type_steel_standup',
@@ -175,14 +176,14 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'coasters_water',
-    label: 'Water Coasters',
+    label: msg('Water Coasters'),
     tools: [
       'coaster_type_water_coaster',
     ],
   },
   {
     key: 'coasters_specialty',
-    label: 'Specialty Coasters',
+    label: msg('Specialty Coasters'),
     tools: [
       'coaster_type_mine_train',
       'coaster_type_bobsled',
@@ -191,7 +192,7 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
   },
   {
     key: 'infrastructure',
-    label: 'Infrastructure',
+    label: msg('Infrastructure'),
     tools: ['park_entrance', 'staff_building'],
   },
 ];
@@ -249,6 +250,7 @@ interface CoasterTrackToolsProps {
 function CoasterTrackToolsPanel({ onClose }: CoasterTrackToolsProps) {
   const { state, setTool, cancelCoasterBuild } = useCoaster();
   const { selectedTool, finances, buildingCoasterType } = state;
+  const gt = useGT();
   
   const trackTools: Tool[] = [
     'coaster_build', 'coaster_track', 'coaster_turn_left', 'coaster_turn_right',
@@ -271,7 +273,7 @@ function CoasterTrackToolsPanel({ onClose }: CoasterTrackToolsProps) {
               {COASTER_TYPE_STATS[buildingCoasterType]?.name ?? 'Custom Coaster'}
             </div>
             <div className="text-[10px] text-muted-foreground capitalize">
-              {getCoasterCategory(buildingCoasterType)} coaster
+              {gt('{category} coaster', { category: getCoasterCategory(buildingCoasterType) })}
             </div>
           </div>
         </div>
@@ -285,7 +287,7 @@ function CoasterTrackToolsPanel({ onClose }: CoasterTrackToolsProps) {
           }}
           className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
         >
-          Cancel
+          <T>Cancel</T>
         </Button>
       </div>
       
@@ -335,6 +337,8 @@ export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps)
   const { selectedTool, finances, buildingCoasterType } = state;
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const gt = useGT();
+  const m = useMessages();
 
   const handleCategoryClick = (category: string) => {
     if (expandedCategory === category) {
@@ -470,7 +474,7 @@ export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps)
             {/* Park Management section at top */}
             <div className="p-3 border-b border-border flex-shrink-0">
               <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                Park Management
+                {gt('Park Management')}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -479,7 +483,7 @@ export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps)
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('finances'); setShowMenu(false); }}
                 >
-                  Finances
+                  <T>Finances</T>
                 </Button>
                 <Button
                   variant="ghost"
@@ -487,7 +491,7 @@ export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps)
                   className="h-10 w-full text-xs"
                   onClick={() => { onOpenPanel('settings'); setShowMenu(false); }}
                 >
-                  Settings
+                  <T>Settings</T>
                 </Button>
               </div>
             </div>
@@ -502,7 +506,7 @@ export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps)
                       className="w-full justify-start gap-3 h-12"
                       onClick={() => handleCategoryClick(category.key)}
                     >
-                      <span className="flex-1 text-left font-medium">{category.label}</span>
+                      <span className="flex-1 text-left font-medium">{m(category.label)}</span>
                       <svg
                         className={`w-4 h-4 transition-transform ${expandedCategory === category.key ? 'rotate-180' : ''}`}
                         viewBox="0 0 24 24"

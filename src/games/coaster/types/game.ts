@@ -176,7 +176,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   coaster_slope_up: { name: 'Track: Slope Up', cost: 30, description: 'Place a rising track segment', category: 'coasters' },
   coaster_slope_down: { name: 'Track: Slope Down', cost: 30, description: 'Place a descending track segment', category: 'coasters' },
   coaster_loop: { name: 'Track: Loop', cost: 150, description: 'Place a vertical loop element', category: 'coasters' },
-  coaster_station: { name: 'Coaster Station', cost: 500, description: 'Place coaster station', category: 'coasters', size: { width: 2, height: 1 } },
+  coaster_station: { name: 'Coaster Station', cost: 500, description: 'Place coaster station', category: 'coasters', size: { width: 1, height: 1 } },
   
   // Wooden Coasters
   coaster_type_wooden_classic: { name: 'Classic Wooden', cost: 50, description: 'Traditional wooden coaster with airtime hills', category: 'coasters' },

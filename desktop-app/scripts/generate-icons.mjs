@@ -67,4 +67,7 @@ async function generateIcons() {
   console.log('Done!');
 }
 
-generateIcons().catch(console.error);
+generateIcons().catch((err) => {
+  console.error('Error generating icons:', err);
+  process.exit(1);
+});

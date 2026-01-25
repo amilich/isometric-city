@@ -113,12 +113,36 @@ export function drawRoad(
   const westDy = (westEdgeY - cy) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
   
   const getPerp = (dx: number, dy: number) => ({ nx: -dy, ny: dx });
+  const sidewalkInset = sidewalkWidth * (h / w);
   
   // Diamond corners
   const topCorner = { x: x + w / 2, y: y };
   const rightCorner = { x: x + w, y: y + h / 2 };
   const bottomCorner = { x: x + w / 2, y: y + h };
   const leftCorner = { x: x, y: y + h / 2 };
+  
+  const getEdgeInwardNormal = (startX: number, startY: number, endX: number, endY: number) => {
+    const edgeDx = endX - startX;
+    const edgeDy = endY - startY;
+    const edgeLen = Math.hypot(edgeDx, edgeDy);
+    if (edgeLen === 0) return { nx: 0, ny: 0 };
+    
+    const edgeDirX = edgeDx / edgeLen;
+    const edgeDirY = edgeDy / edgeLen;
+    const perp = { nx: -edgeDirY, ny: edgeDirX };
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+    const toCenterX = cx - midX;
+    const toCenterY = cy - midY;
+    const dot = perp.nx * toCenterX + perp.ny * toCenterY;
+    
+    return dot >= 0 ? perp : { nx: -perp.nx, ny: -perp.ny };
+  };
+  
+  const northInward = getEdgeInwardNormal(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y);
+  const eastInward = getEdgeInwardNormal(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y);
+  const southInward = getEdgeInwardNormal(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y);
+  const westInward = getEdgeInwardNormal(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y);
   
   // ============================================
   // DRAW SIDEWALKS (only on outer edges of merged roads)
@@ -154,7 +178,7 @@ export function drawRoad(
     shortenEnd: boolean = false
   ) => {
     const swWidth = sidewalkWidth;
-    const shortenDist = swWidth * 0.707;
+    const shortenDist = sidewalkInset;
     
     const edgeDx = endX - startX;
     const edgeDy = endY - startY;
@@ -193,21 +217,21 @@ export function drawRoad(
   
   // Draw sidewalks on edges without roads (only on outer edges for merged roads)
   if (showSidewalks && !north && isOuterEdge('north')) {
-    drawSidewalkEdge(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707, !west && isOuterEdge('west'), !east && isOuterEdge('east'));
+    drawSidewalkEdge(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, northInward.nx, northInward.ny, !west && isOuterEdge('west'), !east && isOuterEdge('east'));
   }
   if (showSidewalks && !east && isOuterEdge('east')) {
-    drawSidewalkEdge(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707, !north && isOuterEdge('north'), !south && isOuterEdge('south'));
+    drawSidewalkEdge(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, eastInward.nx, eastInward.ny, !north && isOuterEdge('north'), !south && isOuterEdge('south'));
   }
   if (showSidewalks && !south && isOuterEdge('south')) {
-    drawSidewalkEdge(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707, !east && isOuterEdge('east'), !west && isOuterEdge('west'));
+    drawSidewalkEdge(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, southInward.nx, southInward.ny, !east && isOuterEdge('east'), !west && isOuterEdge('west'));
   }
   if (showSidewalks && !west && isOuterEdge('west')) {
-    drawSidewalkEdge(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707, !south && isOuterEdge('south'), !north && isOuterEdge('north'));
+    drawSidewalkEdge(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, westInward.nx, westInward.ny, !south && isOuterEdge('south'), !north && isOuterEdge('north'));
   }
   
   // Corner sidewalk pieces
   const swWidth = sidewalkWidth;
-  const shortenDist = swWidth * 0.707;
+  const shortenDist = sidewalkInset;
   ctx.fillStyle = sidewalkColor;
   
   const getShortenedInnerEndpoint = (cornerX: number, cornerY: number, otherCornerX: number, otherCornerY: number, inwardDx: number, inwardDy: number) => {
@@ -223,8 +247,8 @@ export function drawRoad(
   
   // Draw corner pieces only for outer edges (when zoomed in enough)
   if (showSidewalks && !north && !east && isOuterEdge('north') && isOuterEdge('east')) {
-    const northInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, leftCorner.x, leftCorner.y, 0.707, 0.707);
-    const eastInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707);
+    const northInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, leftCorner.x, leftCorner.y, northInward.nx, northInward.ny);
+    const eastInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, eastInward.nx, eastInward.ny);
     ctx.beginPath();
     ctx.moveTo(topCorner.x, topCorner.y);
     ctx.lineTo(northInner.x, northInner.y);
@@ -233,8 +257,8 @@ export function drawRoad(
     ctx.fill();
   }
   if (showSidewalks && !east && !south && isOuterEdge('east') && isOuterEdge('south')) {
-    const eastInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, topCorner.x, topCorner.y, -0.707, 0.707);
-    const southInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707);
+    const eastInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, topCorner.x, topCorner.y, eastInward.nx, eastInward.ny);
+    const southInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, southInward.nx, southInward.ny);
     ctx.beginPath();
     ctx.moveTo(rightCorner.x, rightCorner.y);
     ctx.lineTo(eastInner.x, eastInner.y);
@@ -243,8 +267,8 @@ export function drawRoad(
     ctx.fill();
   }
   if (showSidewalks && !south && !west && isOuterEdge('south') && isOuterEdge('west')) {
-    const southInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, rightCorner.x, rightCorner.y, -0.707, -0.707);
-    const westInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707);
+    const southInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, rightCorner.x, rightCorner.y, southInward.nx, southInward.ny);
+    const westInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, westInward.nx, westInward.ny);
     ctx.beginPath();
     ctx.moveTo(bottomCorner.x, bottomCorner.y);
     ctx.lineTo(southInner.x, southInner.y);
@@ -253,8 +277,8 @@ export function drawRoad(
     ctx.fill();
   }
   if (showSidewalks && !west && !north && isOuterEdge('west') && isOuterEdge('north')) {
-    const westInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, bottomCorner.x, bottomCorner.y, 0.707, -0.707);
-    const northInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707);
+    const westInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, bottomCorner.x, bottomCorner.y, westInward.nx, westInward.ny);
+    const northInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, northInward.nx, northInward.ny);
     ctx.beginPath();
     ctx.moveTo(leftCorner.x, leftCorner.y);
     ctx.lineTo(westInner.x, westInner.y);

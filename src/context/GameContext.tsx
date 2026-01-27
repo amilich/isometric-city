@@ -64,11 +64,12 @@ type GameContextValue = {
   setTaxRate: (rate: number) => void;
   setActivePanel: (panel: GameState['activePanel']) => void;
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
-  upgradeServiceBuilding: (x: number, y: number) => boolean; // Returns true if upgrade succeeded
+  upgradeServiceBuilding: (x: number, y: number, isRemote?: boolean) => boolean; // Returns true if upgrade succeeded
   placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
   setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => void;
   finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void; // Create bridges after road/rail drag
   setBridgeCallback: (callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => void;
+  setUpgradeCallback: (callback: ((args: { x: number; y: number }) => void) | null) => void;
   connectToCity: (cityId: string) => void;
   discoverCity: (cityId: string) => void;
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
@@ -659,6 +660,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // Callback for multiplayer action broadcast
   const placeCallbackRef = useRef<((args: { x: number; y: number; tool: Tool }) => void) | null>(null);
   const bridgeCallbackRef = useRef<((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null>(null);
+  const upgradeCallbackRef = useRef<((args: { x: number; y: number }) => void) | null>(null);
   
   // Sprite pack state
   const [currentSpritePack, setCurrentSpritePack] = useState<SpritePack>(() => getSpritePack(DEFAULT_SPRITE_PACK_ID));
@@ -687,12 +689,23 @@ export function GameProvider({ children, startFresh = false }: { children: React
     
     // Load game state (unless startFresh is true - used for co-op to start with a new city)
     if (!startFresh) {
-      const saved = loadGameState();
-      if (saved) {
-        skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
-        setState(saved);
-        setHasExistingGame(true);
+      // Check if we're in multiplayer mode (joining/creating a room)
+      const isMultiplayerMode = typeof window !== 'undefined' && 
+        (window.location.pathname.includes('/coop/') || localStorage.getItem('pending-room-code'));
+      
+      // In multiplayer mode, skip localStorage and wait for network state
+      // This prevents stale localStorage from overwriting fresh Supabase state
+      if (!isMultiplayerMode) {
+        const saved = loadGameState();
+        if (saved) {
+          skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
+          setState(saved);
+          setHasExistingGame(true);
+        } else {
+          setHasExistingGame(false);
+        }
       } else {
+        console.log('[GameContext] Multiplayer mode detected - skipping localStorage, waiting for network state');
         setHasExistingGame(false);
       }
     } else {
@@ -974,7 +987,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }
   }, []);
 
-  const upgradeServiceBuildingHandler = useCallback((x: number, y: number) => {
+  const upgradeServiceBuildingHandler = useCallback((x: number, y: number, isRemote = false) => {
     let upgradeSucceeded = false;
     setState((prev) => {
       const upgradedState = upgradeServiceBuilding(prev, x, y);
@@ -984,6 +997,12 @@ export function GameProvider({ children, startFresh = false }: { children: React
       }
       return prev;
     });
+    
+    // Broadcast to multiplayer if this is a local action (not remote)
+    if (!isRemote && upgradeSucceeded && upgradeCallbackRef.current) {
+      upgradeCallbackRef.current({ x, y });
+    }
+    
     return upgradeSucceeded;
   }, []);
 
@@ -1103,6 +1122,10 @@ export function GameProvider({ children, startFresh = false }: { children: React
 
   const setBridgeCallback = useCallback((callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => {
     bridgeCallbackRef.current = callback;
+  }, []);
+  
+  const setUpgradeCallback = useCallback((callback: ((args: { x: number; y: number }) => void) | null) => {
+    upgradeCallbackRef.current = callback;
   }, []);
 
   const setSpritePack = useCallback((packId: string) => {
@@ -1641,6 +1664,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     setPlaceCallback,
     finishTrackDrag,
     setBridgeCallback,
+    setUpgradeCallback,
     connectToCity,
     discoverCity,
     checkAndDiscoverCities,

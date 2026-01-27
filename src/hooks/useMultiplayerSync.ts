@@ -5,6 +5,7 @@ import { useMultiplayerOptional } from '@/context/MultiplayerContext';
 import { useGame } from '@/context/GameContext';
 import { GameAction, GameActionInput } from '@/lib/multiplayer/types';
 import { Tool, Budget, GameState, SavedCityMeta } from '@/types/game';
+import { compressToUTF16 } from 'lz-string';
 
 // Batch placement buffer for reducing message count during drags
 const BATCH_FLUSH_INTERVAL = 100; // ms - flush every 100ms during drag
@@ -92,6 +93,18 @@ export function useMultiplayerSync() {
     if (success) {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
+      
+      // Phase 3: Immediately save to localStorage to keep it in sync with network state
+      // This prevents stale localStorage from being loaded on refresh
+      if (typeof window !== 'undefined') {
+        try {
+          const compressed = compressToUTF16(stateString);
+          localStorage.setItem('isocity-game-state', compressed);
+          console.log('[useMultiplayerSync] Saved network state to localStorage');
+        } catch (e) {
+          console.error('[useMultiplayerSync] Failed to save network state to localStorage:', e);
+        }
+      }
     }
   }, [multiplayer?.initialState, game]);
 
@@ -148,6 +161,11 @@ export function useMultiplayerSync() {
       case 'createBridges':
         // Create bridges along a drag path (for road/rail drags across water)
         game.finishTrackDrag(action.pathTiles, action.trackType, true); // isRemote = true
+        break;
+        
+      case 'upgrade':
+        // Apply service building upgrade from another player
+        game.upgradeServiceBuilding(action.x, action.y, true); // isRemote = true
         break;
         
       case 'fullState':
@@ -257,6 +275,22 @@ export function useMultiplayerSync() {
     
     return () => {
       game.setBridgeCallback(null);
+    };
+  }, [multiplayer, multiplayer?.connectionState, game]);
+
+  // Register callback to broadcast upgrades
+  useEffect(() => {
+    if (!multiplayer || multiplayer.connectionState !== 'connected') {
+      game.setUpgradeCallback(null);
+      return;
+    }
+    
+    game.setUpgradeCallback(({ x, y }) => {
+      multiplayer.dispatchAction({ type: 'upgrade', x, y });
+    });
+    
+    return () => {
+      game.setUpgradeCallback(null);
     };
   }, [multiplayer, multiplayer?.connectionState, game]);
 

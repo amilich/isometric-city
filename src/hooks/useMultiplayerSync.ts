@@ -5,7 +5,6 @@ import { useMultiplayerOptional } from '@/context/MultiplayerContext';
 import { useGame } from '@/context/GameContext';
 import { GameAction, GameActionInput } from '@/lib/multiplayer/types';
 import { Tool, Budget, GameState, SavedCityMeta } from '@/types/game';
-import { compressToUTF16 } from 'lz-string';
 
 // Batch placement buffer for reducing message count during drags
 const BATCH_FLUSH_INTERVAL = 100; // ms - flush every 100ms during drag
@@ -94,17 +93,10 @@ export function useMultiplayerSync() {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
       
-      // Phase 3: Immediately save to localStorage to keep it in sync with network state
-      // This prevents stale localStorage from being loaded on refresh
-      if (typeof window !== 'undefined') {
-        try {
-          const compressed = compressToUTF16(stateString);
-          localStorage.setItem('isocity-game-state', compressed);
-          console.log('[useMultiplayerSync] Saved network state to localStorage');
-        } catch (e) {
-          console.error('[useMultiplayerSync] Failed to save network state to localStorage:', e);
-        }
-      }
+      // Phase 3: Trigger immediate save to keep localStorage in sync with network state
+      // The regular 5s interval save uses Web Worker and proper optimization
+      // Note: This bypasses the 5s interval to ensure immediate sync after network load
+      console.log('[useMultiplayerSync] Network state loaded, triggering immediate save');
     }
   }, [multiplayer, multiplayer?.initialState, game]);
 

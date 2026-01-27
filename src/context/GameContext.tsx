@@ -689,13 +689,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
     
     // Load game state (unless startFresh is true - used for co-op to start with a new city)
     if (!startFresh) {
-      // Check if we're in multiplayer mode (joining/creating a room)
-      const isMultiplayerMode = typeof window !== 'undefined' && 
-        (window.location.pathname.includes('/coop/') || localStorage.getItem('pending-room-code'));
+      // Skip localStorage ONLY if we have a pending room code (waiting to connect)
+      // Once connected, CoopModal saves the initial state to localStorage before showing game
+      const hasPendingRoomCode = typeof window !== 'undefined' && localStorage.getItem('pending-room-code');
       
-      // In multiplayer mode, skip localStorage and wait for network state
-      // This prevents stale localStorage from overwriting fresh Supabase state
-      if (!isMultiplayerMode) {
+      if (!hasPendingRoomCode) {
         const saved = loadGameState();
         if (saved) {
           skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
@@ -705,7 +703,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
           setHasExistingGame(false);
         }
       } else {
-        console.log('[GameContext] Multiplayer mode detected - skipping localStorage, waiting for network state');
+        console.log('[GameContext] Pending room connection - skipping localStorage, waiting for network state');
         setHasExistingGame(false);
       }
     } else {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { T, useGT, Var, DateTime } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { CoasterProvider } from '@/context/CoasterContext';
 import { MultiplayerContextProvider } from '@/context/MultiplayerContext';
@@ -62,7 +63,7 @@ function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {
 }
 
 // Shuffle array using Fisher-Yates algorithm
-function shuffleArray<T>(array: T[]): T[] {
+function shuffleArray<U>(array: U[]): U[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -225,9 +226,9 @@ function CoasterSpriteGallery({ count: defaultCount = 16, cols: defaultCols = 4,
 
 // Saved Park Card Component
 function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad: () => void; onDelete?: () => void }) {
+  const gt = useGT();
   const savedDate = new Date(park.savedAt);
-  const dateLabel = savedDate.toLocaleDateString();
-  
+
   return (
     <div className="relative group">
       <button
@@ -240,14 +241,18 @@ function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad
           </h3>
           {park.roomCode && (
             <span className="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded shrink-0">
-              Co-op
+              <T context="Cooperative multiplayer mode label">Co-op</T>
             </span>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-          <span>Guests: {park.guests.toLocaleString()}</span>
-          <span>Rating: {park.rating}</span>
-          <span>{dateLabel}</span>
+          <T>
+            <span>Guests: <Var>{park.guests.toLocaleString()}</Var></span>
+          </T>
+          <T>
+            <span>Rating: <Var>{park.rating}</Var></span>
+          </T>
+          <span><DateTime>{savedDate}</DateTime></span>
           {park.roomCode && <span className="text-emerald-400/60">{park.roomCode}</span>}
         </div>
       </button>
@@ -258,7 +263,7 @@ function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad
             onDelete();
           }}
           className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
-          title="Delete park"
+          title={gt('Delete park')}
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -351,7 +356,7 @@ export default function CoasterPage() {
         </CoasterProvider>
       ) : isChecking ? (
         <main className="min-h-screen bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex items-center justify-center">
-          <div className="text-white/60">Loading...</div>
+          <T><div className="text-white/60">Loading...</div></T>
         </main>
       ) : (
         <>
@@ -359,12 +364,14 @@ export default function CoasterPage() {
             <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Left - Title and Buttons */}
               <div className="flex flex-col items-center lg:items-start justify-center space-y-8 lg:space-y-12">
-                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-wider text-white/90">
-                  IsoCoaster
-                </h1>
+                <T>
+                  <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-wider text-white/90">
+                    IsoCoaster
+                  </h1>
+                </T>
 
                 <div className="flex flex-col gap-3 w-full max-w-64">
-                  <Button 
+                  <Button
                     onClick={() => {
                       if (hasSaved && savedParks.length > 0) {
                         setStartFresh(false);
@@ -377,11 +384,11 @@ export default function CoasterPage() {
                     }}
                     className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
                   >
-                    {hasSaved ? 'Continue' : 'New Park'}
+                    {hasSaved ? <T>Continue</T> : <T>New Park</T>}
                   </Button>
 
                   {hasSaved && (
-                    <Button 
+                    <Button
                       onClick={() => {
                         setStartFresh(true);
                         setLoadParkId(null);
@@ -390,16 +397,16 @@ export default function CoasterPage() {
                       variant="outline"
                       className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/60 hover:text-white border border-white/20 rounded-none transition-all duration-300"
                     >
-                      New Park
+                      <T>New Park</T>
                     </Button>
                   )}
 
-                  <Button 
+                  <Button
                     onClick={() => setShowCoopModal(true)}
                     variant="outline"
                     className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/15 rounded-none transition-all duration-300"
                   >
-                    Co-op
+                    <T context="Cooperative multiplayer mode button">Co-op</T>
                   </Button>
 
                   <Button
@@ -419,23 +426,27 @@ export default function CoasterPage() {
                     variant="outline"
                     className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
                   >
-                    Load Example
+                    <T>Load Example</T>
                   </Button>
 
-                  <a
-                    href="/"
-                    className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
-                  >
-                    Back to IsoCity
-                  </a>
+                  <T>
+                    <a
+                      href="/"
+                      className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                    >
+                      Back to IsoCity
+                    </a>
+                  </T>
                 </div>
 
                 {/* Saved Parks */}
                 {savedParks.length > 0 && (
                   <div className="w-full max-w-64">
-                    <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                      Saved Parks
-                    </h2>
+                    <T>
+                      <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+                        Saved Parks
+                      </h2>
+                    </T>
                     <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
                       {savedParks.slice(0, 5).map((park) => (
                         <SavedParkCard

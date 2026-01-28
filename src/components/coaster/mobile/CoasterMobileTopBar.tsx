@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Users } from 'lucide-react';
+import { useGT, useMessages, msg } from 'gt-next';
 
 // =============================================================================
 // ICONS
@@ -59,16 +60,16 @@ function CloseIcon({ size = 12 }: { size?: number }) {
 // =============================================================================
 
 const UI_LABELS = {
-  cash: 'Cash',
-  guests: 'Guests',
-  rating: 'Rating',
-  ticket: 'Ticket',
-  ticketPrice: 'Ticket Price',
-  exitToMainMenu: 'Exit to Main Menu',
-  exitDialogTitle: 'Exit to Main Menu',
-  exitDialogDescription: 'Would you like to save your park before exiting?',
-  exitWithoutSaving: 'Exit Without Saving',
-  saveAndExit: 'Save & Exit',
+  cash: msg('Cash'),
+  guests: msg('Guests'),
+  rating: msg('Rating'),
+  ticket: msg('Ticket'),
+  ticketPrice: msg('Ticket Price'),
+  exitToMainMenu: msg('Exit to Main Menu'),
+  exitDialogTitle: msg('Exit to Main Menu'),
+  exitDialogDescription: msg('Would you like to save your park before exiting?'),
+  exitWithoutSaving: msg('Exit Without Saving'),
+  saveAndExit: msg('Save & Exit'),
 };
 
 // =============================================================================
@@ -106,7 +107,7 @@ interface CoasterMobileTopBarProps {
   onExit?: () => void;
 }
 
-export function CoasterMobileTopBar({ 
+export function CoasterMobileTopBar({
   selectedTile,
   onCloseTile,
   onShare,
@@ -117,6 +118,8 @@ export function CoasterMobileTopBar({
   const [showDetails, setShowDetails] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showTicketSlider, setShowTicketSlider] = useState(false);
+  const gt = useGT();
+  const m = useMessages();
 
   const handleSaveAndExit = useCallback(() => {
     saveGame();
@@ -129,7 +132,10 @@ export function CoasterMobileTopBar({
     onExit?.();
   }, [onExit]);
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = [
+    gt('Jan'), gt('Feb'), gt('Mar'), gt('Apr'), gt('May'), gt('Jun'),
+    gt('Jul'), gt('Aug'), gt('Sep'), gt('Oct'), gt('Nov'), gt('Dec')
+  ];
   
   // Format time
   const displayMinute = Math.floor(minute);
@@ -157,20 +163,20 @@ export function CoasterMobileTopBar({
                 <span className="text-base" title={weatherDisplay.name}>{weatherDisplay.icon}</span>
               </div>
               <span className="text-muted-foreground text-[10px] font-mono">
-                {monthNames[month - 1]} {day}, Y{year}
+                {gt('{month} {day}, Y{year}', { month: monthNames[month - 1], day, year })}
               </span>
             </div>
             <div className="flex flex-col items-start">
               <span className={`text-xs font-mono font-semibold ${finances.cash < 0 ? 'text-red-500' : finances.cash < 1000 ? 'text-amber-500' : 'text-green-500'}`}>
                 ${finances.cash >= 1000000 ? `${(finances.cash / 1000000).toFixed(1)}M` : finances.cash >= 1000 ? `${(finances.cash / 1000).toFixed(0)}k` : finances.cash.toLocaleString()}
               </span>
-              <span className="text-[9px] text-muted-foreground">{UI_LABELS.cash}</span>
+              <span className="text-[9px] text-muted-foreground">{m(UI_LABELS.cash)}</span>
             </div>
             <div className="flex flex-col items-start">
               <span className="text-xs font-mono font-semibold text-blue-400">
                 {stats.guestsInPark}
               </span>
-              <span className="text-[9px] text-muted-foreground">{UI_LABELS.guests}</span>
+              <span className="text-[9px] text-muted-foreground">{m(UI_LABELS.guests)}</span>
             </div>
           </button>
 
@@ -182,7 +188,7 @@ export function CoasterMobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Pause"
+                title={gt('Pause')}
               >
                 <PauseIcon size={12} />
               </button>
@@ -191,7 +197,7 @@ export function CoasterMobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="Normal speed"
+                title={gt('Normal speed')}
               >
                 <PlayIcon size={12} />
               </button>
@@ -200,7 +206,7 @@ export function CoasterMobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="2x speed"
+                title={gt('2x speed')}
               >
                 <div className="flex items-center -space-x-[5px]">
                   <PlayIcon size={12} />
@@ -212,7 +218,7 @@ export function CoasterMobileTopBar({
                 className={`h-6 w-6 min-w-6 p-0 m-0 flex items-center justify-center rounded-none ${
                   speed === 3 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/20'
                 }`}
-                title="3x speed"
+                title={gt('3x speed')}
               >
                 <div className="flex items-center -space-x-[7px]">
                   <PlayIcon size={12} />
@@ -226,7 +232,7 @@ export function CoasterMobileTopBar({
               <button
                 onClick={onShare}
                 className="h-6 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
-                title="Invite Players"
+                title={gt('Invite Players')}
               >
                 <Users className="w-3.5 h-3.5" />
               </button>
@@ -236,7 +242,7 @@ export function CoasterMobileTopBar({
               <button
                 onClick={() => setShowExitDialog(true)}
                 className="h-6 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
-                title="Exit to Main Menu"
+                title={gt('Exit to Main Menu')}
               >
                 <svg 
                   className="w-3 h-3 -scale-x-100" 
@@ -255,7 +261,7 @@ export function CoasterMobileTopBar({
         <div className="flex items-center justify-between px-3 py-1 border-t border-sidebar-border/50 bg-secondary/30">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <span className="text-[9px] text-muted-foreground">{UI_LABELS.rating}</span>
+              <span className="text-[9px] text-muted-foreground">{m(UI_LABELS.rating)}</span>
               <span className={`text-[10px] font-mono font-semibold ${
                 stats.parkRating >= 700 ? 'text-green-400' : 
                 stats.parkRating >= 400 ? 'text-amber-400' : 'text-red-400'
@@ -273,7 +279,7 @@ export function CoasterMobileTopBar({
               }
             }}
           >
-            <span className="text-[9px] text-muted-foreground">{UI_LABELS.ticket}</span>
+            <span className="text-[9px] text-muted-foreground">{m(UI_LABELS.ticket)}</span>
             <span className="text-[10px] font-mono text-green-400">${settings.entranceFee}</span>
           </button>
 
@@ -285,7 +291,7 @@ export function CoasterMobileTopBar({
         {/* Ticket Price Slider Row */}
         {showTicketSlider && !selectedTile && (
           <div className="border-t border-sidebar-border/50 bg-secondary/30 px-3 py-0.5 flex items-center gap-2 text-[10px]">
-            <span className="text-muted-foreground whitespace-nowrap">{UI_LABELS.ticketPrice}</span>
+            <span className="text-muted-foreground whitespace-nowrap">{m(UI_LABELS.ticketPrice)}</span>
             <Slider
               value={[settings.entranceFee]}
               onValueChange={(value) => setParkSettings({ entranceFee: value[0] })}
@@ -315,7 +321,7 @@ export function CoasterMobileTopBar({
             {/* Operating status */}
             {selectedTile.building.operating !== undefined && (
               <span className={`shrink-0 ${selectedTile.building.operating ? 'text-green-400' : 'text-muted-foreground/60'}`}>
-                {selectedTile.building.operating ? 'Open' : 'Closed'}
+                {selectedTile.building.operating ? gt('Open') : gt('Closed')}
               </span>
             )}
             
@@ -352,14 +358,14 @@ export function CoasterMobileTopBar({
                     {weatherDisplay.name}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {Math.round(weather.temperature)}°C
+                    {gt('{temp}°C', { temp: Math.round(weather.temperature) })}
                   </div>
                 </div>
               </div>
               <div className="flex-1 text-right">
                 <div className="text-sm font-mono">{timeString}</div>
                 <div className="text-xs text-muted-foreground">
-                  {monthNames[month - 1]} {day}, Year {year}
+                  {gt('{month} {day}, Year {year}', { month: monthNames[month - 1], day, year })}
                 </div>
               </div>
             </div>
@@ -368,25 +374,25 @@ export function CoasterMobileTopBar({
             <div className="p-4 grid grid-cols-4 gap-3">
               <StatItem
                 icon={<span className="text-green-400">$</span>}
-                label={UI_LABELS.cash}
+                label={m(UI_LABELS.cash)}
                 value={finances.cash}
                 color={finances.cash < 0 ? 'text-red-500' : 'text-green-500'}
               />
               <StatItem
                 icon={<span className="text-blue-400">👤</span>}
-                label={UI_LABELS.guests}
+                label={m(UI_LABELS.guests)}
                 value={stats.guestsInPark}
                 color="text-blue-400"
               />
               <StatItem
                 icon={<span className="text-yellow-400">⭐</span>}
-                label={UI_LABELS.rating}
+                label={m(UI_LABELS.rating)}
                 value={stats.parkRating}
                 color={stats.parkRating >= 700 ? 'text-green-400' : stats.parkRating >= 400 ? 'text-amber-400' : 'text-red-400'}
               />
               <StatItem
                 icon={<span className="text-purple-400">🎢</span>}
-                label="Rides"
+                label={gt('Rides')}
                 value={stats.totalRides}
                 color="text-purple-400"
               />
@@ -397,15 +403,15 @@ export function CoasterMobileTopBar({
             {/* Detailed finances */}
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Guests (all time)</span>
+                <span className="text-sm text-muted-foreground">{gt('Total Guests (all time)')}</span>
                 <span className="text-sm font-mono text-foreground">{stats.guestsTotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Park Value</span>
+                <span className="text-sm text-muted-foreground">{gt('Park Value')}</span>
                 <span className="text-sm font-mono text-foreground">${stats.parkValue.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Profit</span>
+                <span className="text-sm text-muted-foreground">{gt('Monthly Profit')}</span>
                 <span className={`text-sm font-mono ${finances.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   ${finances.profit.toLocaleString()}
                 </span>
@@ -417,7 +423,7 @@ export function CoasterMobileTopBar({
             {/* Ticket price slider */}
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">{UI_LABELS.ticketPrice}</span>
+                <span className="text-sm text-muted-foreground">{m(UI_LABELS.ticketPrice)}</span>
                 <span className="text-sm font-mono text-foreground">${settings.entranceFee}</span>
               </div>
               <Slider
@@ -429,8 +435,8 @@ export function CoasterMobileTopBar({
                 className="w-full"
               />
               <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-                <span>$0</span>
-                <span>$100</span>
+                <span>{gt('$0')}</span>
+                <span>{gt('$100')}</span>
               </div>
             </div>
           </Card>
@@ -441,9 +447,9 @@ export function CoasterMobileTopBar({
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{UI_LABELS.exitDialogTitle}</DialogTitle>
+            <DialogTitle>{m(UI_LABELS.exitDialogTitle)}</DialogTitle>
             <DialogDescription>
-              {UI_LABELS.exitDialogDescription}
+              {m(UI_LABELS.exitDialogDescription)}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -452,13 +458,13 @@ export function CoasterMobileTopBar({
               onClick={handleExitWithoutSaving}
               className="w-full sm:w-auto"
             >
-              {UI_LABELS.exitWithoutSaving}
+              {m(UI_LABELS.exitWithoutSaving)}
             </Button>
             <Button
               onClick={handleSaveAndExit}
               className="w-full sm:w-auto"
             >
-              {UI_LABELS.saveAndExit}
+              {m(UI_LABELS.saveAndExit)}
             </Button>
           </DialogFooter>
         </DialogContent>

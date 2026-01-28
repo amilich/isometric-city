@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useMultiplayer } from '@/context/MultiplayerContext';
 import { useCoaster } from '@/context/CoasterContext';
 import { Copy, Check, Loader2, AlertCircle } from 'lucide-react';
+import { T } from 'gt-next';
 
 interface ShareModalProps {
   open: boolean;
@@ -75,10 +76,10 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
       <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-white">
-            Invite Players
+            <T>Invite Players</T>
           </DialogTitle>
           <DialogDescription className="text-slate-400">
-            Share this link with friends to build your park together
+            <T>Share this link with friends to build your park together</T>
           </DialogDescription>
         </DialogHeader>
 
@@ -89,7 +90,7 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
                 <div className="text-4xl font-mono font-bold tracking-widest text-white mb-2">
                   {roomCode}
                 </div>
-                <div className="text-sm text-slate-400">Invite Code</div>
+                <div className="text-sm text-slate-400"><T>Invite Code</T></div>
               </div>
 
               <div className="space-y-2 overflow-hidden">
@@ -102,15 +103,15 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
                   className="w-full border-slate-600 hover:bg-slate-700"
                 >
                   {copied ? (
-                    <>
+                    <T>
                       <Check className="w-4 h-4 mr-2 text-green-400" />
                       Copied!
-                    </>
+                    </T>
                   ) : (
-                    <>
+                    <T>
                       <Copy className="w-4 h-4 mr-2" />
                       Copy Invite Link
-                    </>
+                    </T>
                   )}
                 </Button>
               </div>
@@ -119,7 +120,7 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
                 onClick={() => onOpenChange(false)}
                 className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600"
               >
-                Close
+                <T>Close</T>
               </Button>
             </>
           ) : createError ? (
@@ -134,20 +135,20 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
                   variant="outline"
                   className="flex-1 border-slate-600 hover:bg-slate-700"
                 >
-                  Close
+                  <T>Close</T>
                 </Button>
                 <Button
                   onClick={attemptCreateRoom}
                   className="flex-1 bg-slate-700 hover:bg-slate-600 text-white border border-slate-600"
                 >
-                  Retry
+                  <T>Retry</T>
                 </Button>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 py-8">
               <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-              <span className="text-slate-400">Creating co-op session...</span>
+              <span className="text-slate-400"><T>Creating co-op session...</T></span>
             </div>
           )}
         </div>

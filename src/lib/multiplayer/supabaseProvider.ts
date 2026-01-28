@@ -17,7 +17,6 @@ import {
   updatePlayerCount,
   CitySizeLimitError,
 } from './database';
-import { msg } from 'gt-next';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -105,8 +104,8 @@ export class MultiplayerProvider {
           this.gameState
         );
         if (!success) {
-          this.options.onError?.(msg('Failed to create room in database'));
-          throw new Error(msg('Failed to create room in database'));
+          this.options.onError?.('Failed to create room in database');
+          throw new Error('Failed to create room in database');
         }
       } catch (e) {
         if (e instanceof CitySizeLimitError) {
@@ -119,8 +118,8 @@ export class MultiplayerProvider {
       // Joining an existing room - load state from database
       const roomData = await loadGameRoom(this.roomCode);
       if (!roomData) {
-        this.options.onError?.(msg('Room not found'));
-        throw new Error(msg('Room not found'));
+        this.options.onError?.('Room not found');
+        throw new Error('Room not found');
       }
       this.gameState = roomData.gameState;
       // Note: We do NOT set hasReceivedInitialState here because we want to

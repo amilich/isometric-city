@@ -87,16 +87,16 @@ export function useMultiplayerSync() {
     
     // Use loadState to load the received game state
     const stateString = JSON.stringify(multiplayer.initialState);
-    const success = game.loadState(stateString);
+    const loadedState = game.loadState(stateString);
     
-    if (success) {
+    if (loadedState) {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
       
       // Trigger an immediate save so localStorage matches the network state right away
       // Pass the freshly loaded state to avoid saving a stale ref before React applies setState
       console.log('[useMultiplayerSync] Network state loaded, triggering immediate save');
-      game.saveNow?.(multiplayer.initialState as GameState);
+      game.saveNow?.(loadedState);
     }
   }, [multiplayer, multiplayer?.initialState, game]);
 

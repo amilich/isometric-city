@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
-import { SavedCityMeta } from '@/types/game';
+import { SavedCityMeta, GameState } from '@/types/game';
 import { LocaleSelector } from 'gt-next';
 
 // Translatable UI labels
@@ -96,7 +96,7 @@ function formatPopulation(pop: number): string {
 // Helper function to load example state with proper error handling
 async function loadExampleState(
   filename: string,
-  loadState: (stateString: string) => boolean,
+  loadState: (stateString: string) => GameState | null,
   setActivePanel: (panel: 'none' | 'budget' | 'statistics' | 'advisors' | 'settings') => void
 ): Promise<void> {
   try {

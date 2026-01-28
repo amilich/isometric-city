@@ -75,7 +75,7 @@ type GameContextValue = {
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
   setDisastersEnabled: (enabled: boolean) => void;
   newGame: (name?: string, size?: number) => void;
-  loadState: (stateString: string) => boolean;
+  loadState: (stateString: string) => GameState | null;
   saveNow: (stateOverride?: GameState) => Promise<void>;
   exportState: () => string;
   generateRandomCity: () => void;
@@ -1175,7 +1175,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }));
   }, []);
 
-  const loadState = useCallback((stateString: string): boolean => {
+  const loadState = useCallback((stateString: string): GameState | null => {
     try {
       const parsed = JSON.parse(stateString);
       // Validate it has essential properties
@@ -1242,17 +1242,19 @@ export function GameProvider({ children, startFresh = false }: { children: React
           }
         }
         // Increment gameVersion to clear vehicles/entities when loading a new state
-        setState((prev) => ({
+        const migratedState: GameState = {
           ...(parsed as GameState),
-          gameVersion: (prev.gameVersion ?? 0) + 1,
-        }));
-        return true;
+          gameVersion: (state.gameVersion ?? 0) + 1,
+        };
+
+        setState(migratedState);
+        return migratedState;
       }
-      return false;
+      return null;
     } catch {
-      return false;
+      return null;
     }
-  }, []);
+  }, [state.gameVersion]);
 
   const exportState = useCallback((): string => {
     return JSON.stringify(state);

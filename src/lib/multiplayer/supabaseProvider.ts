@@ -106,7 +106,7 @@ export class MultiplayerProvider {
         );
         if (!success) {
           this.options.onError?.(msg('Failed to create room in database'));
-          throw new Error(msg('Failed to create room in database'));
+          throw new Error('Failed to create room in database');
         }
       } catch (e) {
         if (e instanceof CitySizeLimitError) {
@@ -120,7 +120,7 @@ export class MultiplayerProvider {
       const roomData = await loadGameRoom(this.roomCode);
       if (!roomData) {
         this.options.onError?.(msg('Room not found'));
-        throw new Error(msg('Room not found'));
+        throw new Error('Room not found');
       }
       this.gameState = roomData.gameState;
       // Note: We do NOT set hasReceivedInitialState here because we want to

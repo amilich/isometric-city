@@ -1,7 +1,7 @@
 // Consolidated GameContext for the SimCity-like game
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 import { serializeAndCompressAsync } from '@/lib/saveWorkerManager';
 import { simulateTick } from '@/lib/simulation';
@@ -76,6 +76,7 @@ type GameContextValue = {
   setDisastersEnabled: (enabled: boolean) => void;
   newGame: (name?: string, size?: number) => void;
   loadState: (stateString: string) => boolean;
+  saveNow: () => Promise<void>;
   exportState: () => string;
   generateRandomCity: () => void;
   expandCity: () => void;
@@ -689,21 +690,12 @@ export function GameProvider({ children, startFresh = false }: { children: React
     
     // Load game state (unless startFresh is true - used for co-op to start with a new city)
     if (!startFresh) {
-      // Skip localStorage ONLY if we have a pending room code (waiting to connect)
-      // Once connected, CoopModal saves the initial state to localStorage before showing game
-      const hasPendingRoomCode = typeof window !== 'undefined' && localStorage.getItem('pending-room-code');
-      
-      if (!hasPendingRoomCode) {
-        const saved = loadGameState();
-        if (saved) {
-          skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
-          setState(saved);
-          setHasExistingGame(true);
-        } else {
-          setHasExistingGame(false);
-        }
+      const saved = loadGameState();
+      if (saved) {
+        skipNextSaveRef.current = true; // Set skip flag BEFORE updating state
+        setState(saved);
+        setHasExistingGame(true);
       } else {
-        console.log('[GameContext] Pending room connection - skipping localStorage, waiting for network state');
         setHasExistingGame(false);
       }
     } else {
@@ -724,9 +716,13 @@ export function GameProvider({ children, startFresh = false }: { children: React
   const stateChangedRef = useRef(false);
   const latestStateRef = useRef(state);
   
-  useEffect(() => {
+  // CRITICAL: Use useLayoutEffect for synchronous update before paint
+  // This ensures placeAtTile multiplayer broadcasts always read current tool, not stale ref
+  useLayoutEffect(() => {
     latestStateRef.current = state;
-    
+  }, [state]);
+  
+  useEffect(() => {
     if (!hasLoadedRef.current) {
       return;
     }
@@ -798,6 +794,27 @@ export function GameProvider({ children, startFresh = false }: { children: React
         clearInterval(saveIntervalRef.current);
       }
     };
+  }, []);
+
+  // Allow callers (e.g., multiplayer sync) to trigger an immediate save to localStorage
+  const saveNow = useCallback(async () => {
+    if (!hasLoadedRef.current) return;
+    if (saveInProgressRef.current) return;
+
+    saveInProgressRef.current = true;
+    stateChangedRef.current = false;
+    setIsSaving(true);
+
+    try {
+      await saveGameStateAsync(latestStateRef.current);
+      setHasExistingGame(true);
+      lastSaveTimeRef.current = Date.now();
+    } catch (e) {
+      console.error('Immediate save failed:', e);
+    } finally {
+      saveInProgressRef.current = false;
+      setIsSaving(false);
+    }
   }, []);
 
   // PERF: Track tick count to only sync UI-visible changes to React periodically
@@ -1670,6 +1687,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     setDisastersEnabled,
     newGame,
     loadState,
+    saveNow,
     exportState,
     generateRandomCity,
     expandCity,

@@ -93,10 +93,10 @@ export function useMultiplayerSync() {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
       
-      // Phase 3: Trigger immediate save to keep localStorage in sync with network state
-      // The regular 5s interval save uses Web Worker and proper optimization
-      // Note: This bypasses the 5s interval to ensure immediate sync after network load
+      // Trigger an immediate save so localStorage matches the network state right away
+      // This avoids losing the freshly synced city if the user refreshes before the 5s interval
       console.log('[useMultiplayerSync] Network state loaded, triggering immediate save');
+      game.saveNow?.();
     }
   }, [multiplayer, multiplayer?.initialState, game]);
 

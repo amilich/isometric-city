@@ -269,17 +269,12 @@ import { saveParkToIndex } from '@/games/coaster/saveUtils';
      }
    }, [multiplayer, coaster.state]);
 
-   const isMultiplayer = multiplayer?.connectionState === 'connected';
-   const roomCode = multiplayer?.roomCode ?? null;
-   const connectionState = multiplayer?.connectionState ?? 'disconnected';
+  const isMultiplayer = multiplayer?.connectionState === 'connected';
+  const roomCode = multiplayer?.roomCode ?? null;
 
-   return {
-     isMultiplayer,
-     connectionState,
-     roomCode,
-     players: multiplayer?.players ?? [],
-     playerCount: multiplayer?.players.length ?? 0,
-     isHost: multiplayer?.isHost ?? false,
-     leaveRoom: multiplayer?.leaveRoom ?? (() => {}),
-   };
+  return {
+    isMultiplayer,
+    roomCode,
+    players: multiplayer?.players ?? [],
+  };
  }

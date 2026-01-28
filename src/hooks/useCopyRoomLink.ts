@@ -6,6 +6,14 @@ export function useCopyRoomLink(roomCode: string | null | undefined, path: strin
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const resetCopied = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setCopied(false);
+  }, []);
+
   const handleCopyRoomLink = useCallback(() => {
     if (!roomCode || typeof window === 'undefined') return;
     const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
@@ -17,10 +25,9 @@ export function useCopyRoomLink(roomCode: string | null | undefined, path: strin
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(() => {
-      setCopied(false);
-      timeoutRef.current = null;
+      resetCopied();
     }, 2000);
-  }, [roomCode, path]);
+  }, [roomCode, path, resetCopied]);
 
   useEffect(() => {
     return () => {
@@ -30,5 +37,5 @@ export function useCopyRoomLink(roomCode: string | null | undefined, path: strin
     };
   }, []);
 
-  return { copied, handleCopyRoomLink };
+  return { copied, handleCopyRoomLink, resetCopied };
 }

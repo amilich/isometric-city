@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useMultiplayer } from '@/context/MultiplayerContext';
 import { useCoaster } from '@/context/CoasterContext';
+import { useCopyRoomLink } from '@/hooks/useCopyRoomLink';
 import { Copy, Check, Loader2, AlertCircle } from 'lucide-react';
 
 interface ShareModalProps {
@@ -19,13 +20,13 @@ interface ShareModalProps {
 }
 
 export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
-  const [copied, setCopied] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const hasAttemptedCreateRef = useRef(false);
 
   const { roomCode, createRoom } = useMultiplayer();
   const { state, isStateReady } = useCoaster();
+  const { copied: copiedRoomLink, handleCopyRoomLink, resetCopied } = useCopyRoomLink(roomCode, 'coaster/coop');
 
   const attemptCreateRoom = useCallback(() => {
     if (isCreating || roomCode || !isStateReady) return;
@@ -47,7 +48,7 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
 
   useEffect(() => {
     if (!open) {
-      setCopied(false);
+      resetCopied();
       setCreateError(null);
       hasAttemptedCreateRef.current = false;
       return;
@@ -57,16 +58,7 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
       hasAttemptedCreateRef.current = true;
       attemptCreateRoom();
     }
-  }, [open, roomCode, isCreating, isStateReady, createError, attemptCreateRoom]);
-
-  const handleCopyLink = () => {
-    if (!roomCode) return;
-
-    const url = `${window.location.origin}/coaster/coop/${roomCode}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  }, [open, roomCode, isCreating, isStateReady, createError, attemptCreateRoom, resetCopied]);
 
   const inviteUrl = roomCode ? `${window.location.origin}/coaster/coop/${roomCode}` : '';
 
@@ -97,11 +89,11 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
                   {inviteUrl}
                 </div>
                 <Button
-                  onClick={handleCopyLink}
+                  onClick={handleCopyRoomLink}
                   variant="outline"
                   className="w-full border-slate-600 hover:bg-slate-700"
                 >
-                  {copied ? (
+                  {copiedRoomLink ? (
                     <>
                       <Check className="w-4 h-4 mr-2 text-green-400" />
                       Copied!

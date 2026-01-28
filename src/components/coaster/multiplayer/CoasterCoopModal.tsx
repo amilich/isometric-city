@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useMultiplayer } from '@/context/MultiplayerContext';
 import { GameState as CoasterGameState } from '@/games/coaster/types';
 import { createInitialCoasterGameState } from '@/context/CoasterContext';
+import { useCopyRoomLink } from '@/hooks/useCopyRoomLink';
 import { Copy, Check, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { T, useGT, Plural, Var } from 'gt-next';
 
@@ -22,7 +23,6 @@ interface CoopModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStartGame: (isHost: boolean, initialState?: CoasterGameState, roomCode?: string) => void;
-  currentGameState?: CoasterGameState;
   pendingRoomCode?: string | null;
 }
 
@@ -32,14 +32,12 @@ export function CoasterCoopModal({
   open,
   onOpenChange,
   onStartGame,
-  currentGameState,
   pendingRoomCode,
 }: CoopModalProps) {
   const gt = useGT();
   const [mode, setMode] = useState<Mode>('select');
   const [parkName, setParkName] = useState(gt('My Co-op Park'));
   const [joinCode, setJoinCode] = useState('');
-  const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
   const [waitingForState, setWaitingForState] = useState(false);
@@ -55,6 +53,7 @@ export function CoasterCoopModal({
     leaveRoom,
     initialState,
   } = useMultiplayer();
+  const { copied: copiedRoomLink, handleCopyRoomLink, resetCopied } = useCopyRoomLink(roomCode, 'coaster/coop');
 
   useEffect(() => {
     if (open && pendingRoomCode && !autoJoinAttempted) {
@@ -83,21 +82,19 @@ export function CoasterCoopModal({
       }
       setMode('select');
       setIsLoading(false);
-      setCopied(false);
+      resetCopied();
       setAutoJoinAttempted(false);
       setWaitingForState(false);
       setAutoJoinError(null);
     }
-  }, [open, waitingForState, autoJoinAttempted, initialState, leaveRoom]);
+  }, [open, waitingForState, autoJoinAttempted, initialState, leaveRoom, resetCopied]);
 
   const handleCreateRoom = async () => {
     if (!parkName.trim()) return;
 
     setIsLoading(true);
     try {
-      const stateToShare = currentGameState
-        ? { ...currentGameState, settings: { ...currentGameState.settings, name: parkName } }
-        : createInitialCoasterGameState(parkName);
+      const stateToShare = createInitialCoasterGameState(parkName);
 
       const code = await createRoom(parkName, stateToShare);
       window.history.replaceState({}, '', `/coaster/coop/${code}`);
@@ -149,15 +146,6 @@ export function CoasterCoopModal({
 
     return () => clearTimeout(timeout);
   }, [waitingForState, initialState, leaveRoom]);
-
-  const handleCopyLink = () => {
-    if (!roomCode) return;
-
-    const url = `${window.location.origin}/coaster/coop/${roomCode}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleBack = () => {
     if (roomCode) {
@@ -392,11 +380,11 @@ export function CoasterCoopModal({
               </div>
 
               <Button
-                onClick={handleCopyLink}
+                onClick={handleCopyRoomLink}
                 variant="outline"
                 className="w-full bg-transparent hover:bg-white/10 text-white border-white/20 rounded-none"
               >
-                {copied ? (
+                {copiedRoomLink ? (
                   <T>
                     <Check className="w-4 h-4 mr-2" />
                     Copied!

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { T, useGT } from 'gt-next';
 import { useCoaster } from '@/context/CoasterContext';
 import { useMultiplayerOptional } from '@/context/MultiplayerContext';
 import { useMobile } from '@/hooks/useMobile';
@@ -22,6 +23,7 @@ interface GameProps {
 }
 
 export default function CoasterGame({ onExit }: GameProps) {
+  const gt = useGT();
   const { state, isStateReady, setTool, setSpeed, setActivePanel } = useCoaster();
   const { isMultiplayer, roomCode, players } = useCoasterMultiplayerSync();
   const multiplayer = useMultiplayerOptional();
@@ -78,7 +80,7 @@ export default function CoasterGame({ onExit }: GameProps) {
   if (!isStateReady) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-950 via-indigo-900 to-purple-950">
-        <div className="text-white/60">Loading park...</div>
+        <T><div className="text-white/60">Loading park...</div></T>
       </div>
     );
   }
@@ -121,7 +123,7 @@ export default function CoasterGame({ onExit }: GameProps) {
                         <button
                           onClick={handleCopyRoomLink}
                           className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                          title="Copy invite link"
+                          title={gt('Copy invite link')}
                         >
                           {copiedRoomLink ? (
                             <Check className="w-3 h-3 text-green-400" />
@@ -197,7 +199,7 @@ export default function CoasterGame({ onExit }: GameProps) {
                         <button
                           onClick={handleCopyRoomLink}
                           className="p-1 hover:bg-white/10 rounded transition-colors"
-                          title="Copy invite link"
+                          title={gt('Copy invite link')}
                         >
                           {copiedRoomLink ? (
                             <Check className="w-3.5 h-3.5 text-green-400" />

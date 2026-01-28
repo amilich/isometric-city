@@ -94,9 +94,9 @@ export function useMultiplayerSync() {
       lastInitialStateRef.current = stateKey;
       
       // Trigger an immediate save so localStorage matches the network state right away
-      // This avoids losing the freshly synced city if the user refreshes before the 5s interval
+      // Pass the freshly loaded state to avoid saving a stale ref before React applies setState
       console.log('[useMultiplayerSync] Network state loaded, triggering immediate save');
-      game.saveNow?.();
+      game.saveNow?.(multiplayer.initialState as GameState);
     }
   }, [multiplayer, multiplayer?.initialState, game]);
 

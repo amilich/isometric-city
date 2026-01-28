@@ -76,7 +76,7 @@ type GameContextValue = {
   setDisastersEnabled: (enabled: boolean) => void;
   newGame: (name?: string, size?: number) => void;
   loadState: (stateString: string) => boolean;
-  saveNow: () => Promise<void>;
+  saveNow: (stateOverride?: GameState) => Promise<void>;
   exportState: () => string;
   generateRandomCity: () => void;
   expandCity: () => void;
@@ -797,7 +797,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
   }, []);
 
   // Allow callers (e.g., multiplayer sync) to trigger an immediate save to localStorage
-  const saveNow = useCallback(async () => {
+  const saveNow = useCallback(async (stateOverride?: GameState) => {
     if (!hasLoadedRef.current) return;
     if (saveInProgressRef.current) return;
 
@@ -806,7 +806,8 @@ export function GameProvider({ children, startFresh = false }: { children: React
     setIsSaving(true);
 
     try {
-      await saveGameStateAsync(latestStateRef.current);
+      const stateToSave = stateOverride ?? latestStateRef.current;
+      await saveGameStateAsync(stateToSave);
       setHasExistingGame(true);
       lastSaveTimeRef.current = Date.now();
     } catch (e) {

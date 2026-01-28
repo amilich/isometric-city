@@ -348,7 +348,7 @@ const RIDES_SMALL_SHEET: SpriteSheet = {
     { name: 'ride_bumper_boats', row: 4, col: 0, offsetY: 80, scale: 0.52 }, // 3x2
     { name: 'ride_paddle_boats', row: 4, col: 1, offsetY: 80, scale: 0.5 }, // 3x2
     { name: 'ride_lazy_river', row: 4, col: 2, offsetY: 80, scale: 0.55 }, // 3x2
-    { name: 'ride_water_play', row: 4, col: 3, offsetY: 100, scale: 0.65 }, // 3x3
+    { name: 'ride_water_play', row: 4, col: 3, offsetY: 205, scale: 0.65 }, // 3x3 (offset down 1 tile)
     { name: 'ride_splash_zone', row: 4, col: 4, offsetY: 70, scale: 0.55 }, // 2x2
     // Row 5: Dark rides (3x3 buildings - large dark ride buildings)
     { name: 'ride_haunted_house', row: 5, col: 0, offsetY: 100, scale: 0.85 },

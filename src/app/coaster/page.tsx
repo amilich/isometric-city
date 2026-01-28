@@ -3,7 +3,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { CoasterProvider } from '@/context/CoasterContext';
+import { CoasterMultiplayerContextProvider } from '@/context/CoasterMultiplayerContext';
 import CoasterGame from '@/components/coaster/Game';
+import { CoasterCoopModal } from '@/components/coaster/multiplayer/CoasterCoopModal';
+import { GameState } from '@/games/coaster/types';
 import { X } from 'lucide-react';
 import {
   buildSavedParkMeta,
@@ -19,6 +22,146 @@ import {
   saveCoasterStateToStorage,
 } from '@/games/coaster/saveUtils';
 import { COASTER_SPRITE_PACK, getSpriteInfo, getSpriteRect } from '@/games/coaster/lib/coasterRenderConfig';
+import { compressToUTF16 } from 'lz-string';
+
+// Save a park to the saved parks index (for multiplayer parks)
+function saveParkToIndex(state: GameState, roomCode?: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const parks = readSavedParksIndex();
+    
+    const parkMeta = buildSavedParkMeta(state);
+    // Add room code
+    const parkMetaWithRoom = {
+      ...parkMeta,
+      roomCode: roomCode,
+    };
+    
+    const existingIndex = parks.findIndex((p: unknown) => 
+      (p as { id: string; roomCode?: string }).id === parkMeta.id || 
+      (roomCode && (p as { roomCode?: string }).roomCode === roomCode)
+    );
+    
+    if (existingIndex >= 0) {
+      parks[existingIndex] = parkMetaWithRoom;
+    } else {
+      parks.unshift(parkMetaWithRoom);
+    }
+    
+    writeSavedParksIndex(parks.slice(0, 20));
+  } catch (e) {
+    console.error('Failed to save park to index:', e);
+  }
+}
+
+// Create initial game state factory for co-op
+function createInitialParkState(parkName?: string): GameState {
+  const gridSize = 60;
+  const grid: GameState['grid'] = [];
+  
+  for (let y = 0; y < gridSize; y++) {
+    const row = [];
+    for (let x = 0; x < gridSize; x++) {
+      row.push({
+        x,
+        y,
+        terrain: 'grass' as const,
+        building: {
+          type: 'empty' as const,
+          level: 0,
+          variant: 0,
+          excitement: 0,
+          intensity: 0,
+          nausea: 0,
+          capacity: 0,
+          cycleTime: 0,
+          price: 0,
+          operating: false,
+          broken: false,
+          age: 0,
+          constructionProgress: 100,
+        },
+        path: false,
+        queue: false,
+        queueRideId: null,
+        hasCoasterTrack: false,
+        coasterTrackId: null,
+        trackPiece: null,
+        elevation: 0,
+      });
+    }
+    grid.push(row);
+  }
+  
+  return {
+    id: `park-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    grid,
+    gridSize,
+    year: 1,
+    month: 3,
+    day: 1,
+    hour: 8,
+    minute: 0,
+    tick: 0,
+    speed: 1,
+    weather: {
+      current: 'sunny',
+      temperature: 22,
+      nextChange: 200,
+      forecast: ['sunny', 'partly_cloudy', 'sunny'],
+    },
+    settings: {
+      name: parkName || 'Co-op Park',
+      entranceFee: 50,
+      payPerRide: false,
+      openHour: 8,
+      closeHour: 22,
+      loanInterest: 0.1,
+      landCost: 100,
+      objectives: [],
+    },
+    stats: {
+      guestsInPark: 0,
+      guestsTotal: 0,
+      guestsSatisfied: 0,
+      guestsUnsatisfied: 0,
+      averageHappiness: 50,
+      totalRides: 0,
+      totalRidesRidden: 0,
+      averageQueueTime: 0,
+      parkValue: 0,
+      companyValue: 0,
+      parkRating: 500,
+    },
+    finances: {
+      cash: 100000,
+      incomeAdmissions: 0,
+      incomeRides: 0,
+      incomeFood: 0,
+      incomeShops: 0,
+      incomeTotal: 0,
+      expenseWages: 0,
+      expenseUpkeep: 0,
+      expenseMarketing: 0,
+      expenseResearch: 0,
+      expenseTotal: 0,
+      profit: 0,
+      history: [],
+    },
+    guests: [],
+    staff: [],
+    coasters: [],
+    selectedTool: 'select',
+    activePanel: 'none',
+    notifications: [],
+    buildingCoasterId: null,
+    buildingCoasterPath: [],
+    buildingCoasterHeight: 0,
+    buildingCoasterLastDirection: null,
+    buildingCoasterType: null,
+    gameVersion: 1,
+  };
+}
 
 // Background color to filter from sprite sheets (red)
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -262,6 +405,8 @@ export default function CoasterPage() {
   const [isChecking, setIsChecking] = useState(true);
   const [savedParks, setSavedParks] = useState<SavedParkMeta[]>([]);
   const [loadParkId, setLoadParkId] = useState<string | null>(null);
+  const [showCoopModal, setShowCoopModal] = useState(false);
+  const [isMultiplayer, setIsMultiplayer] = useState(false);
 
   const refreshSavedParks = useCallback(() => {
     let parks = readSavedParksIndex();
@@ -284,7 +429,45 @@ export default function CoasterPage() {
     setShowGame(false);
     setStartFresh(false);
     setLoadParkId(null);
+    setIsMultiplayer(false);
     refreshSavedParks();
+  };
+
+  // Handle co-op game start
+  const handleCoopStart = (isHost: boolean, initialState?: GameState, roomCode?: string) => {
+    setIsMultiplayer(true);
+    
+    if (isHost && initialState) {
+      try {
+        const compressed = compressToUTF16(JSON.stringify(initialState));
+        localStorage.setItem(COASTER_AUTOSAVE_KEY, compressed);
+        if (roomCode) {
+          saveParkToIndex(initialState, roomCode);
+        }
+      } catch (e) {
+        console.error('Failed to save co-op state:', e);
+      }
+      setStartFresh(false);
+    } else if (isHost) {
+      setStartFresh(true);
+    } else if (initialState) {
+      try {
+        const compressed = compressToUTF16(JSON.stringify(initialState));
+        localStorage.setItem(COASTER_AUTOSAVE_KEY, compressed);
+        if (roomCode) {
+          saveParkToIndex(initialState, roomCode);
+        }
+      } catch (e) {
+        console.error('Failed to save co-op state:', e);
+      }
+      setStartFresh(false);
+    } else {
+      setStartFresh(true);
+    }
+    
+    setLoadParkId(null);
+    setShowGame(true);
+    setShowCoopModal(false);
   };
 
   const handleDeletePark = (park: SavedParkMeta) => {
@@ -300,6 +483,19 @@ export default function CoasterPage() {
   };
 
   if (showGame) {
+    // Wrap with multiplayer context if in multiplayer mode
+    if (isMultiplayer) {
+      return (
+        <CoasterMultiplayerContextProvider>
+          <CoasterProvider startFresh={startFresh} loadParkId={loadParkId}>
+            <main className="h-screen w-screen overflow-hidden">
+              <CoasterGame onExit={handleExitGame} />
+            </main>
+          </CoasterProvider>
+        </CoasterMultiplayerContextProvider>
+      );
+    }
+    
     return (
       <CoasterProvider startFresh={startFresh} loadParkId={loadParkId}>
         <main className="h-screen w-screen overflow-hidden">
@@ -360,6 +556,14 @@ export default function CoasterPage() {
             )}
             
             <Button
+              onClick={() => setShowCoopModal(true)}
+              variant="outline"
+              className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/60 hover:text-white border border-white/20 rounded-none transition-all duration-300"
+            >
+              Co-op
+            </Button>
+            
+            <Button
               onClick={async () => {
                 try {
                   const response = await fetch('/example-states-coaster/example_state.json');
@@ -416,6 +620,16 @@ export default function CoasterPage() {
           <CoasterSpriteGallery count={16} />
         </div>
       </div>
+      
+      {/* Co-op Modal */}
+      <CoasterMultiplayerContextProvider>
+        <CoasterCoopModal
+          open={showCoopModal}
+          onOpenChange={setShowCoopModal}
+          onStartGame={handleCoopStart}
+          createInitialState={createInitialParkState}
+        />
+      </CoasterMultiplayerContextProvider>
     </main>
   );
 }

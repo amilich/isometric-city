@@ -331,7 +331,7 @@ interface CoasterMobileToolbarProps {
 }
 
 export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps) {
-  const { state, setTool, startCoasterBuild } = useCoaster();
+  const { state, setTool, startCoasterBuild, expandTerrain, shrinkTerrain } = useCoaster();
   const { selectedTool, finances, buildingCoasterType } = state;
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -360,6 +360,19 @@ export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps)
       setShowMenu(false);
     }
   }, [selectedTool, setTool, startCoasterBuild]);
+
+  const handleExpandTerrain = useCallback(() => {
+    expandTerrain();
+    setShowMenu(false);
+  }, [expandTerrain]);
+
+  const handleShrinkTerrain = useCallback(() => {
+    const success = shrinkTerrain();
+    if (!success) {
+      alert('Cannot shrink terrain further - minimum size reached.');
+    }
+    setShowMenu(false);
+  }, [shrinkTerrain]);
 
   return (
     <>
@@ -517,6 +530,25 @@ export function CoasterMobileToolbar({ onOpenPanel }: CoasterMobileToolbarProps)
                     {/* Expanded tools */}
                     {expandedCategory === category.key && (
                       <div className="pl-4 py-1 space-y-0.5">
+                        {category.key === 'terrain' && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start gap-3 h-11"
+                              onClick={handleExpandTerrain}
+                            >
+                              <span className="flex-1 text-left">Expand Terrain (+30x30)</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start gap-3 h-11"
+                              onClick={handleShrinkTerrain}
+                            >
+                              <span className="flex-1 text-left">Shrink Terrain (-30x30)</span>
+                            </Button>
+                            <div className="my-1 h-px bg-border/60" />
+                          </>
+                        )}
                         {category.tools.map((tool) => {
                           const info = TOOL_INFO[tool];
                           if (!info) return null;

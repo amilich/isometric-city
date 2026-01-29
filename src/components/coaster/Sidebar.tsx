@@ -109,6 +109,7 @@ const WeatherDisplay = React.memo(function WeatherDisplay({
 const HoverSubmenu = React.memo(function HoverSubmenu({
   label,
   tools,
+  actions,
   selectedTool,
   cash,
   onSelectTool,
@@ -116,6 +117,7 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
 }: {
   label: string;
   tools: Tool[];
+  actions?: { key: string; name: string; description: string; onClick: () => void; disabled?: boolean }[];
   selectedTool: Tool;
   cash: number;
   onSelectTool: (tool: Tool) => void;
@@ -277,6 +279,26 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
             <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">{label}</span>
           </div>
           <div className="p-1.5 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+            {actions && actions.length > 0 && (
+              <>
+                <div className="px-2 py-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                  Resize
+                </div>
+                {actions.map(action => (
+                  <Button
+                    key={action.key}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    variant="ghost"
+                    className="w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-colors hover:bg-muted/60"
+                    title={action.description}
+                  >
+                    <span className="flex-1 text-left">{action.name}</span>
+                  </Button>
+                ))}
+                <div className="my-1 h-px bg-sidebar-border/50" />
+              </>
+            )}
             {tools.map(tool => {
               const info = TOOL_INFO[tool];
               if (!info) return null;
@@ -588,7 +610,7 @@ const COASTER_TYPE_PRIMARY_COLORS: Record<string, string> = {
 };
 
 export function Sidebar({ onExit }: SidebarProps) {
-  const { state, setTool, saveGame, startCoasterBuild, cancelCoasterBuild } = useCoaster();
+  const { state, setTool, saveGame, startCoasterBuild, cancelCoasterBuild, expandTerrain, shrinkTerrain } = useCoaster();
   const { selectedTool, finances, weather, buildingCoasterType } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -618,6 +640,28 @@ export function Sidebar({ onExit }: SidebarProps) {
       setTool(tool);
     }
   }, [setTool, startCoasterBuild]);
+
+  const handleShrinkTerrain = useCallback(() => {
+    const success = shrinkTerrain();
+    if (!success) {
+      alert('Cannot shrink terrain further - minimum size reached.');
+    }
+  }, [shrinkTerrain]);
+
+  const terrainActions = React.useMemo(() => ([
+    {
+      key: 'expand_terrain',
+      name: 'Expand Terrain (+30x30)',
+      description: 'Add 15 tiles on each edge of the park.',
+      onClick: expandTerrain,
+    },
+    {
+      key: 'shrink_terrain',
+      name: 'Shrink Terrain (-30x30)',
+      description: 'Remove 15 tiles from each edge of the park.',
+      onClick: handleShrinkTerrain,
+    },
+  ]), [expandTerrain, handleShrinkTerrain]);
 
   useEffect(() => {
     const isHost = multiplayer?.connectionState === 'connected' && multiplayer?.roomCode && !multiplayer?.initialState;
@@ -801,6 +845,7 @@ export function Sidebar({ onExit }: SidebarProps) {
               key={category.key}
               label={category.label}
               tools={category.tools}
+              actions={category.key === 'terrain' ? terrainActions : undefined}
               selectedTool={selectedTool}
               cash={finances.cash}
               onSelectTool={handleSelectTool}

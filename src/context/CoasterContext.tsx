@@ -32,6 +32,226 @@ import {
 // =============================================================================
 
 const DEFAULT_GRID_SIZE = 60;
+const TERRAIN_RESIZE_STEP = 15;
+const MIN_TERRAIN_SIZE = 30;
+
+const clampValue = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const isInBounds = (x: number, y: number, size: number) => x >= 0 && y >= 0 && x < size && y < size;
+
+function shiftPoint(point: { x: number; y: number }, delta: number) {
+  return { x: point.x + delta, y: point.y + delta };
+}
+
+function copyTileWithCoordinates(tile: Tile, x: number, y: number): Tile {
+  return {
+    ...tile,
+    x,
+    y,
+    building: { ...tile.building },
+    trackPiece: tile.trackPiece ? { ...tile.trackPiece } : null,
+  };
+}
+
+function createTerrainTile(x: number, y: number, terrain: Tile['terrain']): Tile {
+  const tile = createEmptyTile(x, y);
+  if (terrain === 'water') {
+    tile.terrain = 'water';
+    tile.building = { ...createEmptyBuilding(), type: 'water' };
+  } else {
+    tile.terrain = terrain;
+  }
+  return tile;
+}
+
+function expandCoasterGrid(
+  currentGrid: Tile[][],
+  currentSize: number,
+  expansion: number
+): { grid: Tile[][]; newSize: number } {
+  const newSize = currentSize + expansion * 2;
+  const grid: Tile[][] = [];
+
+  for (let y = 0; y < newSize; y++) {
+    const row: Tile[] = [];
+    for (let x = 0; x < newSize; x++) {
+      const oldX = x - expansion;
+      const oldY = y - expansion;
+      const wasInOldGrid = oldX >= 0 && oldY >= 0 && oldX < currentSize && oldY < currentSize;
+
+      if (wasInOldGrid) {
+        row.push(copyTileWithCoordinates(currentGrid[oldY][oldX], x, y));
+      } else {
+        const edgeX = clampValue(oldX, 0, currentSize - 1);
+        const edgeY = clampValue(oldY, 0, currentSize - 1);
+        const edgeTile = currentGrid[edgeY]?.[edgeX];
+        const edgeTerrain = edgeTile?.terrain ?? 'grass';
+        row.push(createTerrainTile(x, y, edgeTerrain));
+      }
+    }
+    grid.push(row);
+  }
+
+  return { grid, newSize };
+}
+
+function shrinkCoasterGrid(
+  currentGrid: Tile[][],
+  currentSize: number,
+  shrinkAmount: number
+): { grid: Tile[][]; newSize: number } | null {
+  const newSize = currentSize - shrinkAmount * 2;
+  if (newSize < MIN_TERRAIN_SIZE) {
+    return null;
+  }
+
+  const grid: Tile[][] = [];
+  for (let y = 0; y < newSize; y++) {
+    const row: Tile[] = [];
+    for (let x = 0; x < newSize; x++) {
+      const oldX = x + shrinkAmount;
+      const oldY = y + shrinkAmount;
+      row.push(copyTileWithCoordinates(currentGrid[oldY][oldX], x, y));
+    }
+    grid.push(row);
+  }
+
+  return { grid, newSize };
+}
+
+function shiftBuildingId(id: string | null, delta: number): string | null {
+  if (!id) return null;
+  const [xStr, yStr] = id.split(',');
+  if (xStr === undefined || yStr === undefined) return id;
+  const x = Number(xStr);
+  const y = Number(yStr);
+  if (Number.isNaN(x) || Number.isNaN(y)) return id;
+  return `${x + delta},${y + delta}`;
+}
+
+function shiftGuests(
+  guests: Guest[],
+  delta: number,
+  newSize: number,
+  resetNavigation: boolean
+): Guest[] {
+  return guests.flatMap(guest => {
+    const tileX = guest.tileX + delta;
+    const tileY = guest.tileY + delta;
+    if (!isInBounds(tileX, tileY, newSize)) return [];
+
+    const targetTileX = guest.targetTileX + delta;
+    const targetTileY = guest.targetTileY + delta;
+    const path = guest.path.map(point => shiftPoint(point, delta));
+    const targetInBounds = isInBounds(targetTileX, targetTileY, newSize);
+    const pathInBounds = path.every(point => isInBounds(point.x, point.y, newSize));
+
+    let updatedGuest: Guest = {
+      ...guest,
+      tileX,
+      tileY,
+      targetTileX,
+      targetTileY,
+      path,
+      pathIndex: Math.min(guest.pathIndex, path.length),
+    };
+
+    if (resetNavigation || !targetInBounds || !pathInBounds) {
+      updatedGuest = {
+        ...updatedGuest,
+        targetTileX: tileX,
+        targetTileY: tileY,
+        path: [],
+        pathIndex: 0,
+        progress: 0,
+        state: 'walking',
+        lastState: 'walking',
+        targetBuildingId: null,
+        targetBuildingKind: null,
+        queueRideId: null,
+        queuePosition: 0,
+        queueTimer: 0,
+      };
+    } else {
+      updatedGuest = {
+        ...updatedGuest,
+        targetBuildingId: shiftBuildingId(updatedGuest.targetBuildingId, delta),
+        queueRideId: shiftBuildingId(updatedGuest.queueRideId, delta),
+      };
+    }
+
+    return [updatedGuest];
+  });
+}
+
+function shiftStaff(
+  staff: Staff[],
+  delta: number,
+  newSize: number
+): Staff[] {
+  return staff.flatMap(member => {
+    const tileX = member.tileX + delta;
+    const tileY = member.tileY + delta;
+    if (!isInBounds(tileX, tileY, newSize)) return [];
+
+    const patrol = member.patrol
+      .map(point => shiftPoint(point, delta))
+      .filter(point => isInBounds(point.x, point.y, newSize));
+
+    return [{
+      ...member,
+      tileX,
+      tileY,
+      patrol: patrol.length > 0 ? patrol : [{ x: tileX, y: tileY }],
+    }];
+  });
+}
+
+function shiftNotifications(
+  notifications: Notification[],
+  delta: number,
+  newSize: number
+): Notification[] {
+  return notifications.map(notification => {
+    if (notification.tileX === undefined || notification.tileY === undefined) {
+      return notification;
+    }
+
+    const tileX = notification.tileX + delta;
+    const tileY = notification.tileY + delta;
+    if (!isInBounds(tileX, tileY, newSize)) {
+      return { ...notification, tileX: undefined, tileY: undefined };
+    }
+
+    return { ...notification, tileX, tileY };
+  });
+}
+
+function rebuildCoastersFromGrid(
+  grid: Tile[][],
+  gridSize: number,
+  coasters: Coaster[]
+): Coaster[] {
+  return coasters.flatMap(coaster => {
+    const { tiles: trackTiles, pieces: trackPieces } = collectCoasterTrack(grid, coaster.id);
+    if (trackTiles.length === 0) return [];
+
+    const stationTile = findStationTile(grid, trackTiles, gridSize) || trackTiles[0];
+    const stationIdx = trackTiles.findIndex(tile => tile.x === stationTile.x && tile.y === stationTile.y);
+    const effectiveStationIdx = stationIdx >= 0 ? stationIdx : 0;
+    const trains = coaster.trains.length === 0
+      ? createTrainsForCoaster(trackPieces.length, coaster.type)
+      : normalizeTrainsForTrackChange(coaster.trains, coaster.track.length, trackPieces.length, effectiveStationIdx);
+
+    return [{
+      ...coaster,
+      track: trackPieces,
+      trackTiles,
+      stationTileX: stationTile.x,
+      stationTileY: stationTile.y,
+      trains,
+    }];
+  });
+}
 
 // Weather change interval in ticks (roughly every 2-4 in-game hours)
 const WEATHER_CHANGE_MIN_TICKS = 120; // ~2 hours at normal speed
@@ -374,6 +594,8 @@ interface CoasterContextValue {
   setTool: (tool: Tool) => void;
   setSpeed: (speed: 0 | 1 | 2 | 3, isRemote?: boolean) => void;
   setActivePanel: (panel: GameState['activePanel']) => void;
+  expandTerrain: () => void;
+  shrinkTerrain: () => boolean;
   
   // Placement
   placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
@@ -2071,6 +2293,92 @@ export function CoasterProvider({
   const setActivePanel = useCallback((panel: GameState['activePanel']) => {
     setState(prev => ({ ...prev, activePanel: panel }));
   }, []);
+
+  const expandTerrain = useCallback(() => {
+    setState(prev => {
+      const { grid: expandedGrid, newSize } = expandCoasterGrid(prev.grid, prev.gridSize, TERRAIN_RESIZE_STEP);
+      const offset = TERRAIN_RESIZE_STEP;
+
+      const shiftedCoasters = prev.coasters.map(coaster => ({
+        ...coaster,
+        trackTiles: coaster.trackTiles.map(tile => shiftPoint(tile, offset)),
+        stationTileX: coaster.stationTileX + offset,
+        stationTileY: coaster.stationTileY + offset,
+      }));
+
+      const { grid: fixedGrid, coasters: fixedCoasters } = ensureAllTracksHaveCoasters(expandedGrid, shiftedCoasters);
+      const updatedCoasters = rebuildCoastersFromGrid(fixedGrid, newSize, fixedCoasters);
+
+      const shiftedPath = prev.buildingCoasterPath.map(tile => shiftPoint(tile, offset));
+      const hasBuildingCoaster = prev.buildingCoasterId
+        ? updatedCoasters.some(coaster => coaster.id === prev.buildingCoasterId)
+        : false;
+
+      return {
+        ...prev,
+        grid: fixedGrid,
+        gridSize: newSize,
+        coasters: updatedCoasters,
+        guests: shiftGuests(prev.guests, offset, newSize, false),
+        staff: shiftStaff(prev.staff, offset, newSize),
+        notifications: shiftNotifications(prev.notifications, offset, newSize),
+        buildingCoasterId: hasBuildingCoaster ? prev.buildingCoasterId : null,
+        buildingCoasterPath: hasBuildingCoaster ? shiftedPath : [],
+        buildingCoasterHeight: hasBuildingCoaster ? prev.buildingCoasterHeight : 0,
+        buildingCoasterLastDirection: hasBuildingCoaster ? prev.buildingCoasterLastDirection : null,
+        buildingCoasterType: hasBuildingCoaster ? prev.buildingCoasterType : null,
+      };
+    });
+  }, []);
+
+  const shrinkTerrain = useCallback((): boolean => {
+    let success = false;
+    setState(prev => {
+      const result = shrinkCoasterGrid(prev.grid, prev.gridSize, TERRAIN_RESIZE_STEP);
+      if (!result) {
+        return prev;
+      }
+
+      success = true;
+      const offset = -TERRAIN_RESIZE_STEP;
+      const { grid: shrunkenGrid, newSize } = result;
+
+      const shiftedCoasters = prev.coasters.map(coaster => ({
+        ...coaster,
+        trackTiles: coaster.trackTiles
+          .map(tile => shiftPoint(tile, offset))
+          .filter(tile => isInBounds(tile.x, tile.y, newSize)),
+        stationTileX: coaster.stationTileX + offset,
+        stationTileY: coaster.stationTileY + offset,
+      }));
+
+      const { grid: fixedGrid, coasters: fixedCoasters } = ensureAllTracksHaveCoasters(shrunkenGrid, shiftedCoasters);
+      const updatedCoasters = rebuildCoastersFromGrid(fixedGrid, newSize, fixedCoasters);
+
+      const pathWasTrimmed = prev.buildingCoasterPath.some(tile => !isInBounds(tile.x + offset, tile.y + offset, newSize));
+      const shiftedPath = pathWasTrimmed ? [] : prev.buildingCoasterPath.map(tile => shiftPoint(tile, offset));
+      const hasBuildingCoaster = prev.buildingCoasterId
+        ? updatedCoasters.some(coaster => coaster.id === prev.buildingCoasterId)
+        : false;
+      const shouldKeepBuilding = !pathWasTrimmed && hasBuildingCoaster;
+
+      return {
+        ...prev,
+        grid: fixedGrid,
+        gridSize: newSize,
+        coasters: updatedCoasters,
+        guests: shiftGuests(prev.guests, offset, newSize, true),
+        staff: shiftStaff(prev.staff, offset, newSize),
+        notifications: shiftNotifications(prev.notifications, offset, newSize),
+        buildingCoasterId: shouldKeepBuilding ? prev.buildingCoasterId : null,
+        buildingCoasterPath: shouldKeepBuilding ? shiftedPath : [],
+        buildingCoasterHeight: shouldKeepBuilding ? prev.buildingCoasterHeight : 0,
+        buildingCoasterLastDirection: shouldKeepBuilding ? prev.buildingCoasterLastDirection : null,
+        buildingCoasterType: shouldKeepBuilding ? prev.buildingCoasterType : null,
+      };
+    });
+    return success;
+  }, []);
   
   const placeAtTile = useCallback((x: number, y: number, isRemote: boolean = false) => {
     const currentTool = latestStateRef.current.selectedTool;
@@ -3536,6 +3844,8 @@ export function CoasterProvider({
     setTool,
     setSpeed,
     setActivePanel,
+    expandTerrain,
+    shrinkTerrain,
     
     placeAtTile,
     bulldozeTile,

@@ -16,6 +16,7 @@ import { drawGuest } from '@/components/coaster/guests';
 import { useCoasterLightingSystem } from '@/components/coaster/lightingSystem';
 import { useCoasterCloudSystem, Cloud } from '@/components/coaster/cloudSystem';
 import { drawBeachOnWater } from '@/components/game/drawing';
+import { KEY_PAN_SPEED } from '@/components/game/types';
 
 // Track tools that support drag-to-draw
 const TRACK_DRAG_TOOLS: Tool[] = [
@@ -53,7 +54,6 @@ const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
 const ZOOM_MIN = 0.3;
 const ZOOM_MAX = 2.5;
 const HEIGHT_UNIT = 20;
-const KEY_PAN_SPEED = 520; // pixels per second (same as city game)
 
 // Water texture path (same as city game)
 const WATER_ASSET_PATH = '/assets/water.png';
@@ -2624,6 +2624,10 @@ export function CoasterGrid({
       pressed.delete(key);
     };
 
+    const handleBlur = () => {
+      pressed.clear();
+    };
+
     let animationFrameId = 0;
     let lastTime = performance.now();
 
@@ -2664,11 +2668,13 @@ export function CoasterGrid({
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
     animationFrameId = requestAnimationFrame(tick);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
       cancelAnimationFrame(animationFrameId);
       pressed.clear();
     };

@@ -53,6 +53,7 @@ const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
 const ZOOM_MIN = 0.3;
 const ZOOM_MAX = 2.5;
 const HEIGHT_UNIT = 20;
+const KEY_PAN_SPEED = 520; // pixels per second (same as city game)
 
 // Water texture path (same as city game)
 const WATER_ASSET_PATH = '/assets/water.png';
@@ -2511,6 +2512,7 @@ export function CoasterGrid({
   const initialPinchDistanceRef = useRef<number | null>(null);
   const initialZoomRef = useRef(1);
   const lastTouchCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const keysPressedRef = useRef<Set<string>>(new Set());
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [spriteSheets, setSpriteSheets] = useState<Map<string, HTMLCanvasElement>>(new Map());
@@ -2599,6 +2601,78 @@ export function CoasterGrid({
   useEffect(() => {
     onViewportChange?.({ offset, zoom, canvasSize });
   }, [offset, zoom, canvasSize, onViewportChange]);
+
+  // Keyboard panning (WASD / arrow keys) - same as city game
+  useEffect(() => {
+    const pressed = keysPressedRef.current;
+    const isTypingTarget = (target: EventTarget | null) => {
+      const el = target as HTMLElement | null;
+      return !!el?.closest('input, textarea, select, [contenteditable="true"]');
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target)) return;
+      const key = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
+        pressed.add(key);
+        e.preventDefault();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      pressed.delete(key);
+    };
+
+    let animationFrameId = 0;
+    let lastTime = performance.now();
+
+    const tick = (time: number) => {
+      animationFrameId = requestAnimationFrame(tick);
+      const delta = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
+      if (!pressed.size) return;
+
+      let dx = 0;
+      let dy = 0;
+      if (pressed.has('w') || pressed.has('arrowup')) dy += KEY_PAN_SPEED * delta;
+      if (pressed.has('s') || pressed.has('arrowdown')) dy -= KEY_PAN_SPEED * delta;
+      if (pressed.has('a') || pressed.has('arrowleft')) dx += KEY_PAN_SPEED * delta;
+      if (pressed.has('d') || pressed.has('arrowright')) dx -= KEY_PAN_SPEED * delta;
+
+      if (dx !== 0 || dy !== 0) {
+        const n = latestStateRef.current.gridSize;
+        const currentZoom = zoom;
+        const cs = canvasSize;
+        // Calculate bounds inline
+        const padding = 100;
+        const mapLeft = -(n - 1) * TILE_WIDTH / 2;
+        const mapRight = (n - 1) * TILE_WIDTH / 2;
+        const mapTop = 0;
+        const mapBottom = (n - 1) * TILE_HEIGHT;
+        const minOffsetX = padding - mapRight * currentZoom;
+        const maxOffsetX = cs.width - padding - mapLeft * currentZoom;
+        const minOffsetY = padding - mapBottom * currentZoom;
+        const maxOffsetY = cs.height - padding - mapTop * currentZoom;
+
+        setOffset(prev => ({
+          x: Math.max(minOffsetX, Math.min(maxOffsetX, prev.x + dx)),
+          y: Math.max(minOffsetY, Math.min(maxOffsetY, prev.y + dy)),
+        }));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    animationFrameId = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      cancelAnimationFrame(animationFrameId);
+      pressed.clear();
+    };
+  }, [zoom, canvasSize, latestStateRef]);
   
   // Navigate to target
   useEffect(() => {

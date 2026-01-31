@@ -23,6 +23,11 @@
   "0a75e464d833bca8": "Ayarlar",
   "0ad556bd75d20fa9": "Otomatik Kayıt",
   "0b14267b74622302": "Şehir Yönetimi",
+  "0b7f36a93ca42662": {
+    "c": "Kayıtlı Parklar",
+    "i": 1,
+    "t": "h2"
+  },
   "0ba4f8589e36ca76": "Eğitim",
   "0c26fce8dc4990eb": "Su",
   "0c8b71eedbf075f5": "Boş arsa",
@@ -79,7 +84,13 @@
   "1f30c00e03eeca50": "Yol",
   "2052aad231d5a7a0": "Şehrin şu anda sorunsuz işliyor.",
   "20b6960f6549e2ce": "Net",
+  "2139f3a924c1e3f9": {
+    "c": "Yükleniyor...",
+    "i": 1,
+    "t": "div"
+  },
   "22afa76a44fbcefd": "Go-Kart Pisti",
+  "22b6447b8bb2f39c": "Kooperatif",
   "232eb7f71021bb7c": "Fonlar",
   "236b49842190cde3": "Yangınlarla mücadele et",
   "244e7898107e1ee5": "Gündüz/Gece Modu",
@@ -91,6 +102,7 @@
       "t": "ArrowRight"
     }
   ],
+  "2630e7b58f5f271b": "Devam et",
   "265faf7d02352750": "Bu oda mevcut değil veya süresi dolmuş olabilir.",
   "26830a19552c9fa6": "Gerçek zamanlı olarak birlikte bir tema parkı inşa edin",
   "26c08edf08a8fd43": "Şehri Genişlet (+30x30)",
@@ -118,6 +130,11 @@
   "38f4bf88be0f7fb8": "Park Kapısı",
   "39582dc021bd9785": "Gelir",
   "39ecf0d809cf7519": "Geliştirici Araçları",
+  "3a6eba02ecf5bba2": {
+    "c": "IsoCity'ye Dön",
+    "i": 1,
+    "t": "a"
+  },
   "3a6eca7252adb9a5": "{toolName} - {width}x{height} boyutunda alan",
   "3c4c4d97d5e66b21": "Sağlık",
   "3ce15d2f4c961d10": "Yeterli veri yok. Geçmiş eğilimleri görmek için oynamaya devam et.",
@@ -210,6 +227,7 @@
   "62f43adf29906dd6": "Futbol Sahası",
   "6366c3e6926eb31f": "Şehri genişlet",
   "644d112397a9d946": "Yükle",
+  "64d749f21a435824": "Yeni Park",
   "668bac01a99df249": "Polis",
   "67b416f395bcb015": "Vatandaşlarınızın sağlık ve eğitimini iyileştirmek için hastaneler ve okullar inşa edin.",
   "67f7439638ec898d": "Topluluk",
@@ -258,6 +276,11 @@
   "8a3ebfe5eefa1f3a": "Hizmetler",
   "8b5e8de8f4c85850": "Yükseköğrenim (3x3)",
   "8b9192b9f5e25ab9": "Binaların görsel stilini seç",
+  "8cf8b2e7760808b5": {
+    "c": "GitHub'ı Aç",
+    "i": 1,
+    "t": "a"
+  },
   "8cfe5cbc808ec9b6": "Bölge talebini takip et. Talebin eksiye düşmesi binaların terk edilmesine yol açabilir.",
   "8de7ba6ed1fcb79c": "Bu park odası mevcut değil veya süresi dolmuş olabilir.",
   "8e1b26faa1066903": [
@@ -283,6 +306,7 @@
   "955389bd727d0995": "Futbol Stadyumu (2x2)",
   "956afb617989348a": "Özel",
   "961afdfa1ffd458a": "Oyun başarıyla yüklendi!",
+  "9623fe89547f52b2": "Örnek Yükle",
   "973809b714422052": {
     "c": "Şehir Keşfedildi!",
     "i": 1,
@@ -291,6 +315,7 @@
   "97513d561bf53e55": "Metro İstasyonu",
   "97c7b3a9fd235ee5": "Nüfus",
   "9963ed45f2043cb8": "Sera Bahçesi",
+  "9ae9a8155bc41bd2": "Yeni park",
   "9bd3d3242f1ed87e": "Elektrik yok",
   "9c47942e96f87eff": "Ana Menüye Dön",
   "9d254026827d7830": "Tribünlü Saha",
@@ -312,6 +337,7 @@
   "a7894306a08bac01": "Konut",
   "a7cc8ff7202beca4": "Rustik dağ evi tatil yeri",
   "a83f273f0a35b2f5": "Gider",
+  "a8c8fb2bb501cc26": "Parkı kaldır",
   "a916da3428403968": "Kaykay Parkı",
   "a9749078f63948e2": "Yeni şehir adı...",
   "aa29c7e2f00fb24d": "Mutluluğu ve arazi değerini artırır (1x1)",
@@ -374,6 +400,18 @@
   "caf697c48a419488": "Yeni Şehir Oluştur",
   "cb91c05c442d6da0": "Sahil iskelesi (suya bitişik yerleştirilmelidir)",
   "cba582095df8e4d9": "Mini Golf",
+  "cd443395b7fcff74": {
+    "c": [
+      "Misafirler: ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "cd69d8784e9ce625": "Felaketler",
   "ce17b8c1c26494e0": "Kamp alanı",
   "cf5babe756808083": "Marina",
@@ -434,6 +472,18 @@
   "e41b7f26a2f7453b": "Odaya Katılınamadı",
   "e4ca1c349676657c": "Gece",
   "e4f07cb539c8b592": "Benim Ortak Şehrim",
+  "e55e037e87785a94": {
+    "c": [
+      "Değerlendirme: ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "e78b04c25599cd81": {
     "c": "Davet Kodu",
     "i": 1,

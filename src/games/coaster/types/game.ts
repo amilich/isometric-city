@@ -26,6 +26,8 @@ export type Tool =
   | 'coaster_track'
   | 'coaster_turn_left'
   | 'coaster_turn_right'
+  | 'coaster_turn_banked_left'
+  | 'coaster_turn_banked_right'
   | 'coaster_slope_up'
   | 'coaster_slope_down'
   | 'coaster_loop'
@@ -173,6 +175,8 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   coaster_track: { name: 'Track: Straight', cost: 20, description: 'Place straight track segments', category: 'coasters' },
   coaster_turn_left: { name: 'Track: Left Turn', cost: 25, description: 'Place a left turn segment', category: 'coasters' },
   coaster_turn_right: { name: 'Track: Right Turn', cost: 25, description: 'Place a right turn segment', category: 'coasters' },
+  coaster_turn_banked_left: { name: 'Track: Banked Left', cost: 35, description: 'Place a banked left turn (tilted rails)', category: 'coasters' },
+  coaster_turn_banked_right: { name: 'Track: Banked Right', cost: 35, description: 'Place a banked right turn (tilted rails)', category: 'coasters' },
   coaster_slope_up: { name: 'Track: Slope Up', cost: 30, description: 'Place a rising track segment', category: 'coasters' },
   coaster_slope_down: { name: 'Track: Slope Down', cost: 30, description: 'Place a descending track segment', category: 'coasters' },
   coaster_loop: { name: 'Track: Loop', cost: 150, description: 'Place a vertical loop element', category: 'coasters' },

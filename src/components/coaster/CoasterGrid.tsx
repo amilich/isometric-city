@@ -11,7 +11,7 @@ function getToolBuildingSize(tool: Tool): { width: number; height: number } {
   const info = TOOL_INFO[tool];
   return info?.size ?? { width: 1, height: 1 };
 }
-import { drawStraightTrack, drawCurvedTrack, drawSlopeTrack, drawLoopTrack, drawChainLift } from '@/components/coaster/tracks';
+import { drawStraightTrack, drawCurvedTrack, drawBankedCurvedTrack, drawSlopeTrack, drawLoopTrack, drawChainLift } from '@/components/coaster/tracks';
 import { drawGuest } from '@/components/coaster/guests';
 import { useCoasterLightingSystem } from '@/components/coaster/lightingSystem';
 import { useCoasterCloudSystem, Cloud } from '@/components/coaster/cloudSystem';
@@ -1573,6 +1573,12 @@ function drawTrackSegment(
     drawStraightTrack(ctx, x, y, direction, startHeight, effectiveTrackColor, effectiveStrutStyle, coasterCategory, tick);
   } else if (type === 'turn_left_flat' || type === 'turn_right_flat') {
     drawCurvedTrack(ctx, x, y, direction, type === 'turn_right_flat', startHeight, effectiveTrackColor, effectiveStrutStyle, coasterCategory, tick);
+  } else if (type === 'turn_banked_left' || type === 'turn_banked_right' || 
+             type === 'turn_banked_left_large' || type === 'turn_banked_right_large') {
+    // Banked turns - use the track piece's bank angle or default to 45 degrees
+    const bankAngle = trackPiece.bankAngle || 45;
+    const turnRight = type === 'turn_banked_right' || type === 'turn_banked_right_large';
+    drawBankedCurvedTrack(ctx, x, y, direction, turnRight, startHeight, bankAngle, effectiveTrackColor, effectiveStrutStyle, coasterCategory, tick);
   } else if (type === 'slope_up_small' || type === 'slope_down_small') {
     drawSlopeTrack(ctx, x, y, direction, startHeight, endHeight, effectiveTrackColor, effectiveStrutStyle, coasterCategory, tick);
   } else if (type === 'loop_vertical') {
@@ -1598,13 +1604,14 @@ function drawTrackSegment(
 /**
  * Get a point along a track piece at parameter t (0 to 1)
  * Uses the SAME geometry as the track drawing functions
+ * Returns position, pitch (for slopes/loops), and roll (for banking)
  */
 function getTrackPoint(
   trackPiece: NonNullable<Tile['trackPiece']>,
   centerX: number,
   centerY: number,
   t: number
-): { x: number; y: number; pitch: number } {
+): { x: number; y: number; pitch: number; roll: number } {
   const w = TILE_WIDTH;
   const h = TILE_HEIGHT;
   
@@ -1623,8 +1630,14 @@ function getTrackPoint(
   
   const { type, direction } = trackPiece;
   
-  if (type === 'turn_left_flat' || type === 'turn_right_flat') {
-    const turnRight = type === 'turn_right_flat';
+  // Handle all turn types (flat and banked)
+  const isTurnLeft = type === 'turn_left_flat' || type === 'turn_banked_left' || type === 'turn_banked_left_large';
+  const isTurnRight = type === 'turn_right_flat' || type === 'turn_banked_right' || type === 'turn_banked_right_large';
+  const isBankedTurn = type === 'turn_banked_left' || type === 'turn_banked_right' || 
+                       type === 'turn_banked_left_large' || type === 'turn_banked_right_large';
+  
+  if (isTurnLeft || isTurnRight) {
+    const turnRight = isTurnRight;
     
     // Determine which edges to connect based on direction and turn
     // This MUST match drawCurvedTrack logic exactly
@@ -1647,10 +1660,25 @@ function getTrackPoint(
     
     // Quadratic bezier with center as control point (same as drawCurvedTrack)
     const u = 1 - t;
+    
+    // Calculate roll (banking) for banked turns
+    // Banking is strongest in the middle of the curve (sin curve)
+    let roll = 0;
+    if (isBankedTurn) {
+      // Get bank angle from track piece, default to 45 degrees
+      const bankDegrees = trackPiece.bankAngle || 45;
+      const maxRoll = (bankDegrees * Math.PI) / 180;
+      // Banking follows a sinusoidal curve: 0 at edges, max in middle
+      const bankProgress = Math.sin(t * Math.PI);
+      // Negative roll for right turns, positive for left turns (tilt into the turn)
+      roll = maxRoll * bankProgress * (turnRight ? 1 : -1);
+    }
+    
     return {
       x: u * u * fromEdge.x + 2 * u * t * center.x + t * t * toEdge.x,
       y: u * u * fromEdge.y + 2 * u * t * center.y + t * t * toEdge.y,
       pitch: 0, // Flat turns have no pitch
+      roll,
     };
   }
   
@@ -1707,6 +1735,7 @@ function getTrackPoint(
       x: forwardX + bulgeX,
       y: forwardY + bulgeY - loopHeightOffset - elevation,
       pitch: loopPitch,
+      roll: 0, // Loops don't have banking (they invert via pitch)
     };
   }
   
@@ -1727,28 +1756,28 @@ function getTrackPoint(
     const fromY = startY + h * 0.25 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.75;
     const toY = startY + h * 0.75 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch, roll: 0 };
   } else if (direction === 'north') {
     // North: enter from south edge (bottom-right), exit to north edge (top-left)
     const fromX = startX + w * 0.75;
     const fromY = startY + h * 0.75 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.25;
     const toY = startY + h * 0.25 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch, roll: 0 };
   } else if (direction === 'west') {
     // West: enter from east edge (top-right), exit to west edge (bottom-left)
     const fromX = startX + w * 0.75;
     const fromY = startY + h * 0.25 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.25;
     const toY = startY + h * 0.75 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch, roll: 0 };
   } else {
     // East: enter from west edge (bottom-left), exit to east edge (top-right)
     const fromX = startX + w * 0.25;
     const fromY = startY + h * 0.75 - trackPiece.startHeight * HEIGHT_UNIT;
     const toX = startX + w * 0.75;
     const toY = startY + h * 0.25 - trackPiece.endHeight * HEIGHT_UNIT;
-    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch };
+    return { x: fromX + (toX - fromX) * t, y: fromY + (toY - fromY) * t, pitch: slopePitch, roll: 0 };
   }
 }
 
@@ -2299,6 +2328,7 @@ function drawCoasterCar(
   y: number, 
   direction: string,
   pitch: number = 0,
+  roll: number = 0,
   carIndex: number = 0,
   isLoading: boolean = false,
   guestCount: number = 4,
@@ -2315,12 +2345,29 @@ function drawCoasterCar(
   const pitchScale = Math.cos(pitch);
   const pitchYOffset = Math.sin(pitch) * carLength * 0.3;
   
+  // Banking (roll) creates a visual tilt effect
+  // In isometric view, we simulate this with a combination of:
+  // - Slight Y offset (car appears to rise on outer edge)
+  // - Scale adjustment to show tilting into the turn
+  const rollScale = Math.cos(roll);
+  const rollYOffset = Math.sin(Math.abs(roll)) * carWidth * 0.8;
+  
   ctx.save();
-  ctx.translate(x, y + pitchYOffset);
+  ctx.translate(x, y + pitchYOffset - rollYOffset);
   ctx.rotate(yawAngle);
   
+  // Apply pitch scaling
   if (Math.abs(pitch) > 0.01) {
     ctx.scale(1, Math.max(0.3, pitchScale));
+  }
+  
+  // Apply roll as a skew transform to show the car tilting into the turn
+  // This creates the visual of the car banking sideways
+  if (Math.abs(roll) > 0.01) {
+    // Skew in the X direction based on roll angle
+    // This makes the car appear to lean into the turn
+    const skewAmount = Math.sin(roll) * 0.4;
+    ctx.transform(1, skewAmount, 0, Math.max(0.7, rollScale), 0, 0);
   }
   
   // Dispatch to appropriate drawing function based on coaster type
@@ -2669,12 +2716,13 @@ export function CoasterGrid({
       }
     });
     
-    // Enhanced car data with loading state, guest info, and pitch for slopes
+    // Enhanced car data with loading state, guest info, pitch for slopes, and roll for banking
     interface CarRenderData {
       x: number;
       y: number;
       direction: string;
       pitch: number; // Pitch angle in radians for slopes
+      roll: number; // Roll angle in radians for banking
       carIndex: number;
       isLoading: boolean;
       guestCount: number;
@@ -2780,6 +2828,7 @@ export function CoasterGrid({
             x: pos.x, 
             y: pos.y,
             pitch: pos.pitch,
+            roll: pos.roll,
             direction: travelDirection,
             carIndex: carIdx,
             isLoading,
@@ -2959,7 +3008,7 @@ const tile = grid[y][x];
         const cars = carsByTile.get(`${x},${y}`);
         if (cars) {
           cars.forEach(car => {
-            drawCoasterCar(ctx, car.x, car.y, car.direction, car.pitch, car.carIndex, car.isLoading, car.guestCount, tick, car.coasterType, car.primaryColor);
+            drawCoasterCar(ctx, car.x, car.y, car.direction, car.pitch, car.roll, car.carIndex, car.isLoading, car.guestCount, tick, car.coasterType, car.primaryColor);
           });
         }
         

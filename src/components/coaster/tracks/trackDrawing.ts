@@ -594,6 +594,221 @@ export function drawCurvedTrack(
 }
 
 /**
+ * Draw a banked curved track segment (turn with banking)
+ * Banking tilts the rails so the outer rail is higher than the inner rail
+ * This creates the classic roller coaster banked turn look
+ * @param bankAngle - Bank angle in degrees (0, 15, 30, 45, 60, 90)
+ */
+export function drawBankedCurvedTrack(
+  ctx: CanvasRenderingContext2D,
+  startX: number,
+  startY: number,
+  startDir: TrackDirection,
+  turnRight: boolean,
+  height: number,
+  bankAngle: number = 45,
+  trackColor: string = COLORS.rail,
+  strutStyle: StrutStyle = 'metal',
+  coasterCategory?: CoasterCategory,
+  _tick: number = 0
+) {
+  const w = TILE_WIDTH;
+  const h = TILE_HEIGHT;
+  const heightOffset = height * HEIGHT_UNIT;
+  
+  // Edge midpoints - MUST match where straight tracks end
+  const northEdge = { x: startX + w * 0.25, y: startY + h * 0.25 - heightOffset };
+  const eastEdge = { x: startX + w * 0.75, y: startY + h * 0.25 - heightOffset };
+  const southEdge = { x: startX + w * 0.75, y: startY + h * 0.75 - heightOffset };
+  const westEdge = { x: startX + w * 0.25, y: startY + h * 0.75 - heightOffset };
+  const center = { x: startX + w / 2, y: startY + h / 2 - heightOffset };
+  
+  // Determine which edges to connect based on direction and turn
+  let fromEdge: Point;
+  let toEdge: Point;
+  
+  if (startDir === 'north') {
+    fromEdge = northEdge;
+    toEdge = turnRight ? eastEdge : westEdge;
+  } else if (startDir === 'south') {
+    fromEdge = southEdge;
+    toEdge = turnRight ? westEdge : eastEdge;
+  } else if (startDir === 'east') {
+    fromEdge = eastEdge;
+    toEdge = turnRight ? southEdge : northEdge;
+  } else { // west
+    fromEdge = westEdge;
+    toEdge = turnRight ? northEdge : southEdge;
+  }
+  
+  // Draw support if elevated
+  if (height > 0) {
+    const midT = 0.5;
+    const u = 1 - midT;
+    const curveMid = {
+      x: u * u * fromEdge.x + 2 * u * midT * center.x + midT * midT * toEdge.x,
+      y: u * u * fromEdge.y + 2 * u * midT * center.y + midT * midT * toEdge.y,
+    };
+    if (coasterCategory === 'wooden' || strutStyle === 'wood') {
+      drawWoodenCrossBracing(ctx, curveMid.x, curveMid.y + heightOffset, height, 0, 0);
+    } else {
+      drawSupport(ctx, curveMid.x, curveMid.y + heightOffset, height, undefined, strutStyle);
+    }
+  }
+  
+  // Banking calculations
+  // Bank angle determines how much the outer rail is raised
+  // In isometric view, this manifests as a Y offset (higher = more negative Y)
+  const bankRadians = (bankAngle * Math.PI) / 180;
+  const maxBankHeight = TRACK_WIDTH * Math.sin(bankRadians) * 1.5; // Visual exaggeration
+  
+  // For a right turn, the left rail (outer) goes up, right rail (inner) goes down
+  // For a left turn, it's reversed
+  const outerRailUp = turnRight ? -1 : 1; // Which side goes up (-1 = left, 1 = right)
+  
+  // Draw crossties along the curve - banked ties tilt with the track
+  const numTies = 5; // Slightly more ties to show banking better
+  if (coasterCategory === 'wooden' || strutStyle === 'wood') {
+    ctx.strokeStyle = COLORS.woodAccent;
+  } else {
+    ctx.strokeStyle = COLORS.tie;
+  }
+  ctx.lineWidth = 1.5;
+  
+  for (let i = 0; i <= numTies; i++) {
+    const t = i / numTies;
+    const u = 1 - t;
+    
+    // Banking is strongest in the middle of the curve
+    const bankProgress = Math.sin(t * Math.PI); // 0 at start/end, 1 in middle
+    const currentBankHeight = maxBankHeight * bankProgress;
+    
+    // Quadratic bezier point
+    const pt = {
+      x: u * u * fromEdge.x + 2 * u * t * center.x + t * t * toEdge.x,
+      y: u * u * fromEdge.y + 2 * u * t * center.y + t * t * toEdge.y,
+    };
+    
+    // Quadratic bezier tangent
+    const tangent = {
+      x: 2 * (1 - t) * (center.x - fromEdge.x) + 2 * t * (toEdge.x - center.x),
+      y: 2 * (1 - t) * (center.y - fromEdge.y) + 2 * t * (toEdge.y - center.y),
+    };
+    const len = Math.sqrt(tangent.x * tangent.x + tangent.y * tangent.y);
+    const perpX = -tangent.y / len;
+    const perpY = tangent.x / len;
+    
+    // Calculate tie endpoints with banking
+    // Outer rail side is raised (negative Y), inner rail side is lowered
+    const leftY = pt.y - perpY * TIE_LENGTH / 2 + (outerRailUp < 0 ? -currentBankHeight : currentBankHeight * 0.3);
+    const rightY = pt.y + perpY * TIE_LENGTH / 2 + (outerRailUp > 0 ? -currentBankHeight : currentBankHeight * 0.3);
+    
+    ctx.beginPath();
+    ctx.moveTo(pt.x - perpX * TIE_LENGTH / 2, leftY);
+    ctx.lineTo(pt.x + perpX * TIE_LENGTH / 2, rightY);
+    ctx.stroke();
+  }
+  
+  // Draw rails with banking - outer rail higher, inner rail lower
+  const railOffset = TRACK_WIDTH / 2;
+  const segments = 20; // More segments for smooth banking transition
+  
+  ctx.strokeStyle = trackColor;
+  ctx.lineWidth = RAIL_WIDTH;
+  ctx.lineCap = 'round';
+  
+  // Left and right rail paths with banking
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const u = 1 - t;
+      
+      // Banking is strongest in the middle of the curve
+      const bankProgress = Math.sin(t * Math.PI);
+      const currentBankHeight = maxBankHeight * bankProgress;
+      
+      // Quadratic bezier point
+      const pt = {
+        x: u * u * fromEdge.x + 2 * u * t * center.x + t * t * toEdge.x,
+        y: u * u * fromEdge.y + 2 * u * t * center.y + t * t * toEdge.y,
+      };
+      
+      // Quadratic bezier tangent
+      const tangent = {
+        x: 2 * (1 - t) * (center.x - fromEdge.x) + 2 * t * (toEdge.x - center.x),
+        y: 2 * (1 - t) * (center.y - fromEdge.y) + 2 * t * (toEdge.y - center.y),
+      };
+      const len = Math.sqrt(tangent.x * tangent.x + tangent.y * tangent.y);
+      const perpX = -tangent.y / len;
+      const perpY = tangent.x / len;
+      
+      // Apply banking height offset based on which side of the track
+      // For right turn: left rail (-1) goes up, right rail (+1) goes down
+      // For left turn: right rail (+1) goes up, left rail (-1) goes down
+      let bankHeightOffset = 0;
+      if (side === outerRailUp) {
+        bankHeightOffset = -currentBankHeight; // Outer rail raised (negative Y = up)
+      } else {
+        bankHeightOffset = currentBankHeight * 0.3; // Inner rail slightly lowered
+      }
+      
+      const rx = pt.x + perpX * railOffset * side;
+      const ry = pt.y + perpY * railOffset * side + bankHeightOffset;
+      
+      if (i === 0) {
+        ctx.moveTo(rx, ry);
+      } else {
+        ctx.lineTo(rx, ry);
+      }
+    }
+    
+    ctx.stroke();
+  }
+  
+  // Draw vertical struts connecting the banked rails at the peak of banking
+  // This adds visual depth and shows the track structure
+  const strutCount = 3;
+  ctx.strokeStyle = strutStyle === 'wood' ? COLORS.woodDark : COLORS.metalDark;
+  ctx.lineWidth = 1;
+  
+  for (let i = 1; i < strutCount + 1; i++) {
+    const t = i / (strutCount + 1);
+    const u = 1 - t;
+    
+    const bankProgress = Math.sin(t * Math.PI);
+    const currentBankHeight = maxBankHeight * bankProgress;
+    
+    if (currentBankHeight < 1) continue; // Skip if banking is minimal
+    
+    const pt = {
+      x: u * u * fromEdge.x + 2 * u * t * center.x + t * t * toEdge.x,
+      y: u * u * fromEdge.y + 2 * u * t * center.y + t * t * toEdge.y,
+    };
+    
+    const tangent = {
+      x: 2 * (1 - t) * (center.x - fromEdge.x) + 2 * t * (toEdge.x - center.x),
+      y: 2 * (1 - t) * (center.y - fromEdge.y) + 2 * t * (toEdge.y - center.y),
+    };
+    const len = Math.sqrt(tangent.x * tangent.x + tangent.y * tangent.y);
+    const perpX = -tangent.y / len;
+    const perpY = tangent.x / len;
+    
+    // Draw small vertical strut between rails
+    const innerX = pt.x + perpX * railOffset * (-outerRailUp);
+    const innerY = pt.y + perpY * railOffset * (-outerRailUp) + currentBankHeight * 0.3;
+    const outerX = pt.x + perpX * railOffset * outerRailUp;
+    const outerY = pt.y + perpY * railOffset * outerRailUp - currentBankHeight;
+    
+    ctx.beginPath();
+    ctx.moveTo(innerX, innerY);
+    ctx.lineTo(outerX, outerY);
+    ctx.stroke();
+  }
+}
+
+/**
  * Draw a sloped track segment
  */
 export function drawSlopeTrack(

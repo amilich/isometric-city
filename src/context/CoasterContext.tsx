@@ -713,7 +713,7 @@ function calculateStaffWages(staff: Staff[]): number {
 function getExitDirection(piece: TrackPiece): TrackDirection {
   const { type, direction } = piece;
   
-  if (type === 'turn_right_flat' || type === 'turn_right_large_flat') {
+  if (type === 'turn_right_flat' || type === 'turn_right_large_flat' || type === 'turn_banked_right' || type === 'turn_banked_right_large') {
     // Right turn: north->east, east->south, south->west, west->north
     const rightTurn: Record<TrackDirection, TrackDirection> = {
       north: 'east', east: 'south', south: 'west', west: 'north'
@@ -721,7 +721,7 @@ function getExitDirection(piece: TrackPiece): TrackDirection {
     return rightTurn[direction];
   }
   
-  if (type === 'turn_left_flat' || type === 'turn_left_large_flat') {
+  if (type === 'turn_left_flat' || type === 'turn_left_large_flat' || type === 'turn_banked_left' || type === 'turn_banked_left_large') {
     // Left turn: north->west, west->south, south->east, east->north
     const leftTurn: Record<TrackDirection, TrackDirection> = {
       north: 'west', west: 'south', south: 'east', east: 'north'
@@ -763,8 +763,9 @@ function calculateCorrectDirection(
 ): TrackPiece {
   const { type } = piece;
   
-  // For turns, we need to calculate based on entry direction
-  if (type === 'turn_left_flat' || type === 'turn_right_flat' || type === 'turn_left_large_flat' || type === 'turn_right_large_flat') {
+  // For turns (including banked), we need to calculate based on entry direction
+  if (type === 'turn_left_flat' || type === 'turn_right_flat' || type === 'turn_left_large_flat' || type === 'turn_right_large_flat' ||
+      type === 'turn_banked_left' || type === 'turn_banked_right' || type === 'turn_banked_left_large' || type === 'turn_banked_right_large') {
     if (prevTile) {
       // Calculate entry direction (where we came FROM)
       const dx = currTile.x - prevTile.x;
@@ -2144,6 +2145,8 @@ export function CoasterProvider({
         'coaster_track',
         'coaster_turn_left',
         'coaster_turn_right',
+        'coaster_turn_banked_left',
+        'coaster_turn_banked_right',
         'coaster_slope_up',
         'coaster_slope_down',
         'coaster_loop',
@@ -2192,19 +2195,25 @@ export function CoasterProvider({
               const adjPiece = adjTile.trackPiece;
               
               // Calculate entry and exit directions for the adjacent piece
-              // Turns store entry direction; straights/slopes store exit direction.
-              const isFlatTurn =
+              // Turns (including banked) store entry direction; straights/slopes store exit direction.
+              const isTurn =
                 adjPiece.type === 'turn_left_flat' ||
                 adjPiece.type === 'turn_right_flat' ||
                 adjPiece.type === 'turn_left_large_flat' ||
-                adjPiece.type === 'turn_right_large_flat';
-              const entryDir = isFlatTurn ? adjPiece.direction : OPPOSITE_DIRECTION[adjPiece.direction];
+                adjPiece.type === 'turn_right_large_flat' ||
+                adjPiece.type === 'turn_banked_left' ||
+                adjPiece.type === 'turn_banked_right' ||
+                adjPiece.type === 'turn_banked_left_large' ||
+                adjPiece.type === 'turn_banked_right_large';
+              const entryDir = isTurn ? adjPiece.direction : OPPOSITE_DIRECTION[adjPiece.direction];
               
               // Exit direction depends on track type
               let exitDir = adjPiece.direction;
-              if (adjPiece.type === 'turn_left_flat' || adjPiece.type === 'turn_left_large_flat') {
+              if (adjPiece.type === 'turn_left_flat' || adjPiece.type === 'turn_left_large_flat' || 
+                  adjPiece.type === 'turn_banked_left' || adjPiece.type === 'turn_banked_left_large') {
                 exitDir = rotateDirection(adjPiece.direction, 'left');
-              } else if (adjPiece.type === 'turn_right_flat' || adjPiece.type === 'turn_right_large_flat') {
+              } else if (adjPiece.type === 'turn_right_flat' || adjPiece.type === 'turn_right_large_flat' ||
+                         adjPiece.type === 'turn_banked_right' || adjPiece.type === 'turn_banked_right_large') {
                 exitDir = rotateDirection(adjPiece.direction, 'right');
               }
               
@@ -2315,6 +2324,28 @@ export function CoasterProvider({
             if (connectingToEntry) {
               // For turn_right: exit = rotateDirection(entry, 'right')
               // So: entry = rotateDirection(exit, 'left')
+              startDirection = rotateDirection(adjacentDirection, 'left');
+            } else {
+              startDirection = OPPOSITE_DIRECTION[adjacentDirection];
+            }
+          }
+          endDirection = rotateDirection(startDirection, 'right');
+        } else if (tool === 'coaster_turn_banked_left') {
+          // Banked left turn - same direction logic as regular left turn but with banking
+          pieceType = 'turn_banked_left';
+          if (adjacentDirection) {
+            if (connectingToEntry) {
+              startDirection = rotateDirection(adjacentDirection, 'right');
+            } else {
+              startDirection = OPPOSITE_DIRECTION[adjacentDirection];
+            }
+          }
+          endDirection = rotateDirection(startDirection, 'left');
+        } else if (tool === 'coaster_turn_banked_right') {
+          // Banked right turn - same direction logic as regular right turn but with banking
+          pieceType = 'turn_banked_right';
+          if (adjacentDirection) {
+            if (connectingToEntry) {
               startDirection = rotateDirection(adjacentDirection, 'left');
             } else {
               startDirection = OPPOSITE_DIRECTION[adjacentDirection];
@@ -3189,10 +3220,12 @@ export function CoasterProvider({
               const adjPiece = adjTile.trackPiece;
               let exitDir = adjPiece.direction;
               
-              // For turns, calculate the actual exit direction
-              if (adjPiece.type === 'turn_left_flat') {
+              // For turns (including banked), calculate the actual exit direction
+              if (adjPiece.type === 'turn_left_flat' || adjPiece.type === 'turn_banked_left' || 
+                  adjPiece.type === 'turn_left_large_flat' || adjPiece.type === 'turn_banked_left_large') {
                 exitDir = rotateDirection(adjPiece.direction, 'left');
-              } else if (adjPiece.type === 'turn_right_flat') {
+              } else if (adjPiece.type === 'turn_right_flat' || adjPiece.type === 'turn_banked_right' ||
+                         adjPiece.type === 'turn_right_large_flat' || adjPiece.type === 'turn_banked_right_large') {
                 exitDir = rotateDirection(adjPiece.direction, 'right');
               }
               

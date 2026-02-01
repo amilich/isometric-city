@@ -479,6 +479,8 @@ const SUBMENU_CATEGORIES: { key: string; label: string; tools: Tool[] }[] = [
       'coaster_track',
       'coaster_turn_left',
       'coaster_turn_right',
+      'coaster_turn_banked_left',
+      'coaster_turn_banked_right',
       'coaster_slope_up',
       'coaster_slope_down',
       'coaster_loop',
@@ -728,7 +730,7 @@ export function Sidebar({ onExit }: SidebarProps) {
           
           {/* Track tools - shown inline when building a coaster */}
           <div className="flex flex-col gap-0.5">
-            {(['coaster_build', 'coaster_track', 'coaster_turn_left', 'coaster_turn_right', 'coaster_slope_up', 'coaster_slope_down', 'coaster_loop', 'coaster_station'] as Tool[]).map(tool => {
+            {(['coaster_build', 'coaster_track', 'coaster_turn_left', 'coaster_turn_right', 'coaster_turn_banked_left', 'coaster_turn_banked_right', 'coaster_slope_up', 'coaster_slope_down', 'coaster_loop', 'coaster_station'] as Tool[]).map(tool => {
               const info = TOOL_INFO[tool];
               if (!info) return null;
               const isSelected = selectedTool === tool;

@@ -122,61 +122,65 @@ impl Game {
         
         // Apply zoom and offset transformations
         self.canvas.save();
-        self.canvas.scale(self.zoom * self.pixel_ratio, self.zoom * self.pixel_ratio)?;
-        
-        // Render terrain (grass, water, paths)
-        render::terrain::render_terrain(
-            &self.canvas,
-            &self.state,
-            self.offset_x / self.zoom,
-            self.offset_y / self.zoom,
-            self.zoom,
-            &self.sprites,
-        )?;
-        
-        // Render buildings
-        render::buildings::render_buildings(
-            &self.canvas,
-            &self.state,
-            self.offset_x / self.zoom,
-            self.offset_y / self.zoom,
-            self.zoom,
-            &self.sprites,
-        )?;
-        
-        // Render coaster tracks
-        render::tracks::render_tracks(
-            &self.canvas,
-            &self.state,
-            self.offset_x / self.zoom,
-            self.offset_y / self.zoom,
-            self.zoom,
-            &self.sprites,
-        )?;
-        
-        // Render trains
-        render::tracks::render_trains(
-            &self.canvas,
-            &self.state,
-            self.offset_x / self.zoom,
-            self.offset_y / self.zoom,
-            self.zoom,
-            self.tick_count,
-        )?;
-        
-        // Render guests
-        render::guests::render_guests(
-            &self.canvas,
-            &self.state,
-            self.offset_x / self.zoom,
-            self.offset_y / self.zoom,
-            self.zoom,
-            self.tick_count,
-        )?;
-        
+        let render_result = (|| {
+            self.canvas.scale(self.zoom * self.pixel_ratio, self.zoom * self.pixel_ratio)?;
+            
+            // Render terrain (grass, water, paths)
+            render::terrain::render_terrain(
+                &self.canvas,
+                &self.state,
+                self.offset_x / self.zoom,
+                self.offset_y / self.zoom,
+                self.zoom,
+                &self.sprites,
+            )?;
+            
+            // Render buildings
+            render::buildings::render_buildings(
+                &self.canvas,
+                &self.state,
+                self.offset_x / self.zoom,
+                self.offset_y / self.zoom,
+                self.zoom,
+                &self.sprites,
+            )?;
+            
+            // Render coaster tracks
+            render::tracks::render_tracks(
+                &self.canvas,
+                &self.state,
+                self.offset_x / self.zoom,
+                self.offset_y / self.zoom,
+                self.zoom,
+                &self.sprites,
+            )?;
+            
+            // Render trains
+            render::tracks::render_trains(
+                &self.canvas,
+                &self.state,
+                self.offset_x / self.zoom,
+                self.offset_y / self.zoom,
+                self.zoom,
+                self.tick_count,
+            )?;
+            
+            // Render guests
+            render::guests::render_guests(
+                &self.canvas,
+                &self.state,
+                self.offset_x / self.zoom,
+                self.offset_y / self.zoom,
+                self.zoom,
+                self.tick_count,
+            )?;
+            
+            Ok(())
+        })();
+
         self.canvas.restore();
         
-        Ok(())
+        render_result
     }
 
     fn find_nearest_track_tile(&self, world_x: f64, world_y: f64) -> Option<(i32, i32)> {

@@ -2,9 +2,10 @@
 
 use wasm_bindgen::prelude::*;
 use crate::game::state::GameState;
-use crate::game::coaster::{TrackPieceType, TrackDirection, StrutStyle, Coaster};
+use crate::game::coaster::{TrackPieceType, TrackDirection, StrutStyle, Coaster, CoasterType};
 use super::canvas::Canvas;
 use super::isometric::{tile_center, TILE_WIDTH, TILE_HEIGHT, HEIGHT_UNIT};
+use super::sprites::SpriteManager;
 
 /// Render all coaster tracks
 pub fn render_tracks(
@@ -13,9 +14,10 @@ pub fn render_tracks(
     offset_x: f64,
     offset_y: f64,
     _zoom: f64,
+    sprites: &SpriteManager,
 ) -> Result<(), JsValue> {
     for coaster in &state.coasters {
-        render_coaster_track(canvas, coaster, offset_x, offset_y)?;
+        render_coaster_track(canvas, coaster, offset_x, offset_y, sprites)?;
     }
     Ok(())
 }
@@ -26,6 +28,7 @@ fn render_coaster_track(
     coaster: &Coaster,
     offset_x: f64,
     offset_y: f64,
+    sprites: &SpriteManager,
 ) -> Result<(), JsValue> {
     // First pass: draw supports
     for (i, &(tile_x, tile_y)) in coaster.track_tiles.iter().enumerate() {
@@ -60,9 +63,24 @@ fn render_coaster_track(
             &coaster.color.primary,
             &coaster.color.secondary,
         )?;
+
+        if piece.piece_type == TrackPieceType::Station {
+            let sprite_name = station_sprite_for_type(&coaster.coaster_type);
+            sprites.draw_sprite(canvas, "stations", sprite_name, cx, cy - height_offset)?;
+        }
     }
     
     Ok(())
+}
+
+fn station_sprite_for_type(coaster_type: &CoasterType) -> &'static str {
+    match coaster_type {
+        CoasterType::WoodenClassic | CoasterType::WoodenTwister => "station_wooden_1",
+        CoasterType::SteelInverted | CoasterType::SteelFlying => "station_inverted_1",
+        CoasterType::WaterCoaster => "station_water_1",
+        CoasterType::MineTrain => "station_mine_1",
+        _ => "station_steel_1",
+    }
 }
 
 /// Draw track supports/struts

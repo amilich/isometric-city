@@ -146,6 +146,7 @@ impl Game {
             self.offset_x / self.zoom,
             self.offset_y / self.zoom,
             self.zoom,
+            &self.sprites,
         )?;
         
         // Render trains

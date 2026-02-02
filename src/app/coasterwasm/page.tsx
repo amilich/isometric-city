@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { T, msg, useMessages, useGT } from 'gt-next';
 
 // Sprite sheet configuration matching the original game
 const SPRITE_SHEETS = [
@@ -21,68 +22,68 @@ const SPRITE_SHEETS = [
 // Tool categories for the sidebar
 const TOOL_CATEGORIES = [
   {
-    name: 'Basic',
+    name: msg('Basic'),
     tools: [
-      { id: 'select', name: 'Select', icon: '👆' },
-      { id: 'bulldoze', name: 'Bulldoze', icon: '🚜' },
-      { id: 'path', name: 'Path', icon: '🛤️' },
-      { id: 'queue', name: 'Queue', icon: '🚧' },
+      { id: 'select', name: msg('Select'), icon: '👆' },
+      { id: 'bulldoze', name: msg('Bulldoze'), icon: '🚜' },
+      { id: 'path', name: msg('Path'), icon: '🛤️' },
+      { id: 'queue', name: msg('Queue'), icon: '🚧' },
     ],
   },
   {
-    name: 'Trees',
+    name: msg('Trees'),
     tools: [
-      { id: 'tree_oak', name: 'Oak Tree', icon: '🌳' },
-      { id: 'tree_pine', name: 'Pine Tree', icon: '🌲' },
-      { id: 'tree_palm', name: 'Palm Tree', icon: '🌴' },
-      { id: 'bush_hedge', name: 'Hedge', icon: '🌿' },
-      { id: 'flowers_bed', name: 'Flowers', icon: '🌸' },
+      { id: 'tree_oak', name: msg('Oak Tree'), icon: '🌳' },
+      { id: 'tree_pine', name: msg('Pine Tree'), icon: '🌲' },
+      { id: 'tree_palm', name: msg('Palm Tree'), icon: '🌴' },
+      { id: 'bush_hedge', name: msg('Hedge'), icon: '🌿' },
+      { id: 'flowers_bed', name: msg('Flowers'), icon: '🌸' },
     ],
   },
   {
-    name: 'Food',
+    name: msg('Food'),
     tools: [
-      { id: 'food_hotdog', name: 'Hot Dogs', icon: '🌭' },
-      { id: 'food_burger', name: 'Burgers', icon: '🍔' },
-      { id: 'food_icecream', name: 'Ice Cream', icon: '🍦' },
-      { id: 'drink_soda', name: 'Drinks', icon: '🥤' },
-      { id: 'snack_popcorn', name: 'Popcorn', icon: '🍿' },
+      { id: 'food_hotdog', name: msg('Hot Dogs'), icon: '🌭' },
+      { id: 'food_burger', name: msg('Burgers'), icon: '🍔' },
+      { id: 'food_icecream', name: msg('Ice Cream'), icon: '🍦' },
+      { id: 'drink_soda', name: msg('Drinks'), icon: '🥤' },
+      { id: 'snack_popcorn', name: msg('Popcorn'), icon: '🍿' },
     ],
   },
   {
-    name: 'Shops',
+    name: msg('Shops'),
     tools: [
-      { id: 'shop_souvenir', name: 'Souvenirs', icon: '🎁' },
-      { id: 'shop_toys', name: 'Toys', icon: '🧸' },
-      { id: 'restroom', name: 'Restroom', icon: '🚻' },
-      { id: 'first_aid', name: 'First Aid', icon: '🏥' },
+      { id: 'shop_souvenir', name: msg('Souvenirs'), icon: '🎁' },
+      { id: 'shop_toys', name: msg('Toys'), icon: '🧸' },
+      { id: 'restroom', name: msg('Restroom'), icon: '🚻' },
+      { id: 'first_aid', name: msg('First Aid'), icon: '🏥' },
     ],
   },
   {
-    name: 'Rides',
+    name: msg('Rides'),
     tools: [
-      { id: 'ride_carousel', name: 'Carousel', icon: '🎠' },
-      { id: 'ride_teacups', name: 'Teacups', icon: '☕' },
-      { id: 'ride_ferris_classic', name: 'Ferris Wheel', icon: '🎡' },
-      { id: 'ride_bumper_cars', name: 'Bumper Cars', icon: '🚗' },
+      { id: 'ride_carousel', name: msg('Carousel'), icon: '🎠' },
+      { id: 'ride_teacups', name: msg('Teacups'), icon: '☕' },
+      { id: 'ride_ferris_classic', name: msg('Ferris Wheel'), icon: '🎡' },
+      { id: 'ride_bumper_cars', name: msg('Bumper Cars'), icon: '🚗' },
     ],
   },
   {
-    name: 'Fountains',
+    name: msg('Fountains'),
     tools: [
-      { id: 'fountain_small_1', name: 'Small Fountain', icon: '⛲' },
-      { id: 'fountain_medium_1', name: 'Medium Fountain', icon: '💧' },
+      { id: 'fountain_small_1', name: msg('Small Fountain'), icon: '⛲' },
+      { id: 'fountain_medium_1', name: msg('Medium Fountain'), icon: '💧' },
     ],
   },
   {
-    name: 'Coaster',
+    name: msg('Coaster'),
     tools: [
-      { id: 'coaster_station', name: 'Station', icon: '🚉' },
-      { id: 'coaster_track_straight', name: 'Straight Track', icon: '➖' },
-      { id: 'coaster_track_turn_left', name: 'Turn Left', icon: '↩️' },
-      { id: 'coaster_track_turn_right', name: 'Turn Right', icon: '↪️' },
-      { id: 'coaster_track_slope_up', name: 'Slope Up', icon: '⬆️' },
-      { id: 'coaster_track_slope_down', name: 'Slope Down', icon: '⬇️' },
+      { id: 'coaster_station', name: msg('Station'), icon: '🚉' },
+      { id: 'coaster_track_straight', name: msg('Straight Track'), icon: '➖' },
+      { id: 'coaster_track_turn_left', name: msg('Turn Left'), icon: '↩️' },
+      { id: 'coaster_track_turn_right', name: msg('Turn Right'), icon: '↪️' },
+      { id: 'coaster_track_slope_up', name: msg('Slope Up'), icon: '⬆️' },
+      { id: 'coaster_track_slope_down', name: msg('Slope Down'), icon: '⬇️' },
     ],
   },
 ];
@@ -91,14 +92,17 @@ export default function CoasterWasmPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<any>(null);
   const animationRef = useRef<number | null>(null);
-  
+
+  const m = useMessages();
+  const gt = useGT();
+
   const [loading, setLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState('Initializing WASM...');
+  const [loadingMessage, setLoadingMessage] = useState(gt('Initializing WASM...'));
   const [error, setError] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState('select');
   const [speed, setSpeed] = useState(1);
   const [stats, setStats] = useState({ cash: 50000, guests: 0, rating: 500, time: 'Year 1, Mar 1, 09:00' });
-  const [expandedCategory, setExpandedCategory] = useState<string | null>('Basic');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(TOOL_CATEGORIES[0].name);
 
   // Load sprite image
   const loadImage = useCallback((src: string): Promise<HTMLImageElement> => {
@@ -116,32 +120,32 @@ export default function CoasterWasmPage() {
 
     async function init() {
       try {
-        setLoadingMessage('Loading WASM module...');
-        
+        setLoadingMessage(gt('Loading WASM module...'));
+
         // Dynamic import of WASM module
         const wasm = await import('../../../wasm/pkg/isocoaster_wasm');
         await wasm.default();
-        
+
         if (!mounted) return;
-        
-        setLoadingMessage('Creating game...');
-        
+
+        setLoadingMessage(gt('Creating game...'));
+
         const canvas = canvasRef.current;
         if (!canvas) {
           throw new Error('Canvas not found');
         }
-        
+
         // Set canvas size
         canvas.width = window.innerWidth - 240; // Account for sidebar
         canvas.height = window.innerHeight;
-        
+
         // Create game instance
         const game = new wasm.Game(canvas, 50); // 50x50 grid
         gameRef.current = game;
-        
+
         // Load sprite sheets
-        setLoadingMessage('Loading sprites...');
-        
+        setLoadingMessage(gt('Loading sprites...'));
+
         for (const sheet of SPRITE_SHEETS) {
           try {
             const img = await loadImage(sheet.src);
@@ -150,7 +154,7 @@ export default function CoasterWasmPage() {
             console.warn(`Failed to load sprite sheet ${sheet.id}:`, e);
           }
         }
-        
+
         // Load water texture
         try {
           const waterImg = await loadImage('/assets/water.png');
@@ -158,10 +162,10 @@ export default function CoasterWasmPage() {
         } catch (e) {
           console.warn('Failed to load water texture:', e);
         }
-        
+
         if (!mounted) return;
-        
-        setLoadingMessage('Starting game loop...');
+
+        setLoadingMessage(gt('Starting game loop...'));
         
         // Start game loop
         let lastTick = performance.now();
@@ -222,7 +226,7 @@ export default function CoasterWasmPage() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [loadImage]);
+  }, [loadImage, gt]);
 
   // Handle window resize
   useEffect(() => {
@@ -298,11 +302,15 @@ export default function CoasterWasmPage() {
     return (
       <div className="h-screen w-screen bg-gradient-to-br from-red-950 via-red-900 to-red-950 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl text-white mb-4">Error Loading Game</h1>
+          <T>
+            <h1 className="text-4xl text-white mb-4">Error Loading Game</h1>
+          </T>
           <p className="text-red-300 mb-8">{error}</p>
-          <a href="/coaster" className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded">
-            Go to Regular Version
-          </a>
+          <T>
+            <a href="/coaster" className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded">
+              Go to Regular Version
+            </a>
+          </T>
         </div>
       </div>
     );
@@ -315,21 +323,29 @@ export default function CoasterWasmPage() {
         {/* Header */}
         <div className="p-4 border-b border-slate-700">
           <h1 className="text-xl font-bold text-white">IsoCoaster</h1>
-          <p className="text-xs text-slate-400">WebAssembly Edition</p>
+          <T>
+            <p className="text-xs text-slate-400">WebAssembly Edition</p>
+          </T>
         </div>
 
         {/* Stats */}
         <div className="p-4 border-b border-slate-700 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Cash:</span>
+            <T>
+              <span className="text-slate-400">Cash:</span>
+            </T>
             <span className="text-green-400">${stats.cash.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Guests:</span>
+            <T>
+              <span className="text-slate-400">Guests:</span>
+            </T>
             <span className="text-blue-400">{stats.guests}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Rating:</span>
+            <T>
+              <span className="text-slate-400">Rating:</span>
+            </T>
             <span className="text-yellow-400">{stats.rating}</span>
           </div>
           <div className="text-xs text-slate-500 text-center pt-1">
@@ -366,12 +382,12 @@ export default function CoasterWasmPage() {
                 )}
                 className="w-full p-3 flex justify-between items-center text-sm text-slate-300 hover:bg-slate-700"
               >
-                <span>{category.name}</span>
+                <span>{m(category.name)}</span>
                 <span className="text-slate-500">
                   {expandedCategory === category.name ? '▼' : '▶'}
                 </span>
               </button>
-              
+
               {expandedCategory === category.name && (
                 <div className="pb-2 px-2">
                   {category.tools.map(tool => (
@@ -385,7 +401,7 @@ export default function CoasterWasmPage() {
                       }`}
                     >
                       <span>{tool.icon}</span>
-                      <span>{tool.name}</span>
+                      <span>{m(tool.name)}</span>
                     </button>
                   ))}
                 </div>
@@ -396,12 +412,14 @@ export default function CoasterWasmPage() {
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-700">
-          <a
-            href="/coaster"
-            className="block text-center text-sm text-slate-400 hover:text-white"
-          >
-            ← Back to Regular Version
-          </a>
+          <T>
+            <a
+              href="/coaster"
+              className="block text-center text-sm text-slate-400 hover:text-white"
+            >
+              ← Back to Regular Version
+            </a>
+          </T>
         </div>
       </div>
 

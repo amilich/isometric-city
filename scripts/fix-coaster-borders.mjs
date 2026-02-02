@@ -29,17 +29,13 @@ const SHEETS_TO_FIX = {
   'trees.png': { cols: 6, rows: 6 },
 };
 
-// How many pixels to clear on each cell edge
-const CELL_BORDER_SIZE = 1;
+// Radius (in pixels) to clear around each boundary line
+const BOUNDARY_CLEAR_RADIUS = 1;
 
 // Background threshold percentile for flood fill
 const BACKGROUND_PERCENTILE = 0.95;
 const BACKGROUND_THRESHOLD_FALLBACK = 60;
 
-// Line detection thresholds
-const LINE_DIFF_THRESHOLD = 80;
-const LINE_VARIANCE_THRESHOLD = 1000;
-const LINE_SAMPLE_STEP = 4;
 
 // WebP compression quality
 const WEBP_QUALITY = 80;
@@ -178,99 +174,28 @@ async function fixImage(filename, grid) {
     if (y < height - 1) pushIfBackground(x, y + 1);
   }
 
-  // Clear a 1px border around each cell to eliminate edge artifacts
-  for (let row = 0; row < grid.rows; row++) {
-    const yStart = Math.round(row * cellHeight);
-    const yEnd = Math.round((row + 1) * cellHeight);
-
-    for (let col = 0; col < grid.cols; col++) {
-      const xStart = Math.round(col * cellWidth);
-      const xEnd = Math.round((col + 1) * cellWidth);
-
-      // Top border
-      for (let y = yStart; y < Math.min(yStart + CELL_BORDER_SIZE, yEnd); y++) {
-        for (let x = xStart; x < xEnd; x++) {
-          setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
-          linePixelsCleared++;
-        }
-      }
-
-      // Bottom border
-      for (let y = Math.max(yEnd - CELL_BORDER_SIZE, yStart); y < yEnd; y++) {
-        for (let x = xStart; x < xEnd; x++) {
-          setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
-          linePixelsCleared++;
-        }
-      }
-
-      // Left border
-      for (let x = xStart; x < Math.min(xStart + CELL_BORDER_SIZE, xEnd); x++) {
-        for (let y = yStart; y < yEnd; y++) {
-          setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
-          linePixelsCleared++;
-        }
-      }
-
-      // Right border
-      for (let x = Math.max(xEnd - CELL_BORDER_SIZE, xStart); x < xEnd; x++) {
-        for (let y = yStart; y < yEnd; y++) {
-          setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
-          linePixelsCleared++;
-        }
+  // Clear boundary strips to eliminate grid lines
+  for (let row = 1; row < grid.rows; row++) {
+    const boundaryY = Math.round(row * cellHeight);
+    for (let dy = -BOUNDARY_CLEAR_RADIUS; dy <= BOUNDARY_CLEAR_RADIUS; dy++) {
+      const y = boundaryY + dy;
+      if (y < 0 || y >= height) continue;
+      for (let x = 0; x < width; x++) {
+        setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
+        linePixelsCleared++;
       }
     }
   }
 
-  // Detect and clear uniform grid lines (rows/cols with high diff + low variance)
-  const lineRows = [];
-  for (let y = 0; y < height; y++) {
-    let sumDiff = 0;
-    let sumDiffSq = 0;
-    let count = 0;
-    for (let x = 0; x < width; x += LINE_SAMPLE_STEP) {
-      const idx = (y * width + x) * channels;
-      const d = colorDifference(pixels[idx], pixels[idx + 1], pixels[idx + 2], bg.r, bg.g, bg.b);
-      sumDiff += d;
-      sumDiffSq += d * d;
-      count++;
-    }
-    const avgDiff = sumDiff / count;
-    const variance = sumDiffSq / count - avgDiff * avgDiff;
-    if (avgDiff > LINE_DIFF_THRESHOLD && variance < LINE_VARIANCE_THRESHOLD) {
-      lineRows.push(y);
-    }
-  }
-
-  const lineCols = [];
-  for (let x = 0; x < width; x++) {
-    let sumDiff = 0;
-    let sumDiffSq = 0;
-    let count = 0;
-    for (let y = 0; y < height; y += LINE_SAMPLE_STEP) {
-      const idx = (y * width + x) * channels;
-      const d = colorDifference(pixels[idx], pixels[idx + 1], pixels[idx + 2], bg.r, bg.g, bg.b);
-      sumDiff += d;
-      sumDiffSq += d * d;
-      count++;
-    }
-    const avgDiff = sumDiff / count;
-    const variance = sumDiffSq / count - avgDiff * avgDiff;
-    if (avgDiff > LINE_DIFF_THRESHOLD && variance < LINE_VARIANCE_THRESHOLD) {
-      lineCols.push(x);
-    }
-  }
-
-  for (const y of lineRows) {
-    for (let x = 0; x < width; x++) {
-      setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
-      linePixelsCleared++;
-    }
-  }
-
-  for (const x of lineCols) {
-    for (let y = 0; y < height; y++) {
-      setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
-      linePixelsCleared++;
+  for (let col = 1; col < grid.cols; col++) {
+    const boundaryX = Math.round(col * cellWidth);
+    for (let dx = -BOUNDARY_CLEAR_RADIUS; dx <= BOUNDARY_CLEAR_RADIUS; dx++) {
+      const x = boundaryX + dx;
+      if (x < 0 || x >= width) continue;
+      for (let y = 0; y < height; y++) {
+        setPixel(pixels, x, y, width, channels, bg.r, bg.g, bg.b);
+        linePixelsCleared++;
+      }
     }
   }
   

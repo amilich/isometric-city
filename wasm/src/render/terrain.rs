@@ -90,16 +90,16 @@ pub fn render_terrain(
             // Draw path overlay
             if tile.path {
                 draw_path_tile(canvas, screen_x, screen_y, x as i32, y as i32, state);
+
+                // Draw entrance gate at edge path tiles
+                if tile.is_edge(grid_size) {
+                    draw_entrance_gate(canvas, screen_x, screen_y, x as i32, y as i32, grid_size);
+                }
             }
             
             // Draw queue overlay
             if tile.queue {
                 draw_queue_tile(canvas, screen_x, screen_y, x as i32, y as i32, state);
-            }
-            
-            // Draw entrance gate at edge path tiles
-            if tile.path && tile.is_edge(grid_size) {
-                draw_entrance_gate(canvas, screen_x, screen_y, x as i32, y as i32, grid_size);
             }
         }
     }
@@ -549,54 +549,166 @@ fn draw_entrance_gate(canvas: &Canvas, x: f64, y: f64, grid_x: i32, grid_y: i32,
     let w = TILE_WIDTH;
     let h = TILE_HEIGHT;
     let size = grid_size as i32;
-    
-    // Determine which edge this is on
+
     let at_north = grid_x == 0;
     let at_east = grid_y == 0;
     let at_south = grid_x == size - 1;
     let at_west = grid_y == size - 1;
-    
+
     if !at_north && !at_east && !at_south && !at_west {
         return;
     }
-    
-    // Gate arch colors
+
     let arch_stone = "#78716c";
-    let arch_dark = "#57534e";
+    let arch_highlight = "#a8a29e";
+    let arch_shadow = "#57534e";
+    let post_base = "#44403c";
     let gate_color = "#b91c1c";
-    
-    // Draw simple arch
-    canvas.set_fill_color(arch_stone);
-    
-    let arch_width = 20.0;
-    let arch_height = 25.0;
-    
-    // Position based on edge
-    let (arch_x, arch_y) = if at_north {
-        (x + w / 2.0, y + h / 4.0)
-    } else if at_south {
-        (x + w / 2.0, y + 3.0 * h / 4.0)
+    let gate_highlight = "#dc2626";
+    let sign_color = "#fef3c7";
+    let sign_text = "#1c1917";
+    let flag_pole = "#d6d3d1";
+    let flag_red = "#dc2626";
+    let flag_yellow = "#fbbf24";
+
+    canvas.save();
+
+    let post_height = 32.0;
+    let post_width = 3.0;
+    let arch_thickness = 4.0;
+
+    let primary_edge = if at_north {
+        "north"
     } else if at_east {
-        (x + 3.0 * w / 4.0, y + h / 2.0)
+        "east"
+    } else if at_south {
+        "south"
     } else {
-        (x + w / 4.0, y + h / 2.0)
+        "west"
     };
-    
-    // Draw arch posts
-    canvas.fill_rect(arch_x - arch_width / 2.0 - 3.0, arch_y - arch_height, 6.0, arch_height);
-    canvas.fill_rect(arch_x + arch_width / 2.0 - 3.0, arch_y - arch_height, 6.0, arch_height);
-    
-    // Draw arch top
-    canvas.set_fill_color(arch_dark);
-    canvas.fill_rect(arch_x - arch_width / 2.0 - 3.0, arch_y - arch_height - 4.0, arch_width + 6.0, 4.0);
-    
-    // Draw gate bars
+
+    let tile_center_x = x + w * 0.5;
+    let tile_center_y = y + h * 0.5;
+
+    let (edge_mid_x, edge_mid_y) = match primary_edge {
+        "north" => (x + w * 0.25, y + h * 0.25),
+        "east" => (x + w * 0.75, y + h * 0.25),
+        "south" => (x + w * 0.75, y + h * 0.75),
+        _ => (x + w * 0.25, y + h * 0.75),
+    };
+
+    let edge_to_center_ratio = 0.35;
+    let center_x = edge_mid_x + (tile_center_x - edge_mid_x) * edge_to_center_ratio;
+    let center_y = edge_mid_y + (tile_center_y - edge_mid_y) * edge_to_center_ratio;
+
+    let post_offset = 9.0;
+    let (left_post_x, left_post_y, right_post_x, right_post_y) = match primary_edge {
+        "north" | "south" => (
+            center_x + post_offset * 0.85,
+            center_y - post_offset * 0.5,
+            center_x - post_offset * 0.85,
+            center_y + post_offset * 0.5,
+        ),
+        _ => (
+            center_x - post_offset * 0.85,
+            center_y - post_offset * 0.5,
+            center_x + post_offset * 0.85,
+            center_y + post_offset * 0.5,
+        ),
+    };
+
+    draw_gate_post(canvas, left_post_x, left_post_y, post_width, post_height, arch_stone, arch_highlight, post_base);
+    draw_gate_post(canvas, right_post_x, right_post_y, post_width, post_height, arch_stone, arch_highlight, post_base);
+
+    canvas.set_fill_color(arch_stone);
+    canvas.fill_rect(
+        left_post_x.min(right_post_x),
+        (left_post_y.min(right_post_y)) - post_height,
+        (left_post_x - right_post_x).abs(),
+        arch_thickness,
+    );
+
+    canvas.set_fill_color(arch_shadow);
+    canvas.fill_rect(
+        left_post_x.min(right_post_x),
+        (left_post_y.min(right_post_y)) - post_height - arch_thickness,
+        (left_post_x - right_post_x).abs(),
+        arch_thickness,
+    );
+
+    let sign_width = 16.0;
+    let sign_height = 6.0;
+    let sign_x = center_x - sign_width / 2.0;
+    let sign_y = center_y - post_height + 6.0;
+    canvas.set_fill_color(sign_color);
+    canvas.fill_rect(sign_x, sign_y, sign_width, sign_height);
+    canvas.set_stroke_color(arch_shadow);
+    canvas.set_line_width(0.5);
+    canvas.stroke_rect(sign_x, sign_y, sign_width, sign_height);
+    canvas.set_fill_color(sign_text);
+    canvas.set_font("4px sans-serif");
+    let _ = canvas.fill_text("ENTR", sign_x + 2.0, sign_y + 4.5);
+
+    // Gate bars
     canvas.set_fill_color(gate_color);
-    canvas.set_line_width(2.0);
     for i in 0..3 {
-        let bar_x = arch_x - arch_width / 4.0 + i as f64 * arch_width / 4.0;
-        canvas.fill_rect(bar_x - 1.0, arch_y - arch_height + 5.0, 2.0, arch_height - 10.0);
+        let bar_x = center_x - 4.0 + i as f64 * 4.0;
+        canvas.fill_rect(bar_x, center_y - post_height + 10.0, 1.5, post_height - 14.0);
     }
+    canvas.set_fill_color(gate_highlight);
+    canvas.fill_rect(center_x - 4.0, center_y - post_height + 10.0, 1.0, post_height - 14.0);
+
+    // Flags
+    canvas.set_stroke_color(flag_pole);
+    canvas.set_line_width(1.0);
+    canvas.begin_path();
+    canvas.move_to(left_post_x - 2.0, left_post_y - post_height - 2.0);
+    canvas.line_to(left_post_x - 2.0, left_post_y - post_height - 10.0);
+    canvas.stroke();
+    canvas.set_fill_color(flag_red);
+    canvas.begin_path();
+    canvas.move_to(left_post_x - 2.0, left_post_y - post_height - 10.0);
+    canvas.line_to(left_post_x - 6.0, left_post_y - post_height - 8.0);
+    canvas.line_to(left_post_x - 2.0, left_post_y - post_height - 6.0);
+    canvas.close_path();
+    canvas.fill();
+    canvas.set_fill_color(flag_yellow);
+    canvas.begin_path();
+    canvas.move_to(left_post_x - 2.0, left_post_y - post_height - 10.0);
+    canvas.line_to(left_post_x - 4.5, left_post_y - post_height - 8.5);
+    canvas.line_to(left_post_x - 2.0, left_post_y - post_height - 7.0);
+    canvas.close_path();
+    canvas.fill();
+
+    canvas.restore();
+}
+
+fn draw_gate_post(
+    canvas: &Canvas,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    stone: &str,
+    highlight: &str,
+    base: &str,
+) {
+    canvas.set_fill_color(stone);
+    canvas.fill_rect(x - width / 2.0, y - height, width, height);
+    canvas.set_fill_color(highlight);
+    canvas.fill_rect(x - width / 2.0, y - height, 1.0, height);
+    canvas.set_fill_color(highlight);
+    canvas.fill_rect(x - width / 2.0 - 1.0, y - height - 2.0, width + 2.0, 3.0);
+    canvas.set_fill_color(base);
+    canvas.fill_rect(x - width / 2.0 - 1.0, y - 2.0, width + 2.0, 3.0);
+    canvas.set_fill_color(stone);
+    canvas.begin_path();
+    let _ = canvas.arc(x, y - height - 3.0, 2.0, 0.0, std::f64::consts::PI * 2.0);
+    canvas.fill();
+    canvas.set_fill_color(highlight);
+    canvas.begin_path();
+    let _ = canvas.arc(x - 0.5, y - height - 3.5, 0.8, 0.0, std::f64::consts::PI * 2.0);
+    canvas.fill();
 }
 
 #[derive(Clone, Copy)]

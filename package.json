@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "crop-screenshots": "bash scripts/crop-screenshots.sh",
     "compress-images": "node scripts/compress-images.mjs",
-    "wasm:build": "cd wasm && wasm-pack build --target web --out-dir pkg"
+    "wasm:build": "command -v wasm-pack >/dev/null 2>&1 && cd wasm && wasm-pack build --target web --out-dir pkg || ([ -d wasm/pkg ] && echo 'wasm-pack not found, using pre-built pkg' || (echo 'ERROR: wasm-pack not found and wasm/pkg does not exist' && exit 1))"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",

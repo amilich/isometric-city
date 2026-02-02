@@ -187,7 +187,7 @@ export default function CoasterWasmPage() {
         
         // Start game loop
         let lastTick = performance.now();
-        const tickInterval = 50; // 50ms per tick at normal speed
+        const speedIntervals = [0, 50, 25, 16]; // match original speed timing
         
         function gameLoop(time: number) {
           if (!mounted || !gameRef.current) return;
@@ -197,7 +197,7 @@ export default function CoasterWasmPage() {
           // Tick based on speed
           const currentSpeed = game.get_speed();
           if (currentSpeed > 0) {
-            const interval = tickInterval / currentSpeed;
+            const interval = speedIntervals[currentSpeed] ?? 50;
             if (time - lastTick >= interval) {
               game.tick();
               lastTick = time;

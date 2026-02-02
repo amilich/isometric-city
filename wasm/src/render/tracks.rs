@@ -10,10 +10,24 @@ use super::sprites::SpriteManager;
 const TRACK_WIDTH: f64 = 5.0;
 const RAIL_WIDTH: f64 = 2.0;
 const TIE_LENGTH: f64 = 8.0;
-const TIE_HEIGHT: f64 = 2.0;
 const TIE_SPACING: f64 = 8.0;
 const TIE_COLOR_METAL: &str = "#2d3748";
 const TIE_COLOR_WOOD: &str = "#654321";
+
+fn track_direction_vector(direction: &TrackDirection) -> (f64, f64) {
+    let (base_x, base_y): (f64, f64) = match direction {
+        TrackDirection::North | TrackDirection::South => (1.0, 0.6),
+        TrackDirection::East | TrackDirection::West => (-1.0, 0.6),
+    };
+    let len = (base_x * base_x + base_y * base_y).sqrt();
+    (base_x / len, base_y / len)
+}
+
+fn track_length() -> f64 {
+    let half_w = TILE_WIDTH * 0.25;
+    let half_h = TILE_HEIGHT * 0.25;
+    (half_w * half_w + half_h * half_h).sqrt() * 2.0
+}
 
 /// Render all coaster tracks
 pub fn render_tracks(
@@ -201,43 +215,53 @@ fn draw_straight_track(
 ) -> Result<(), JsValue> {
     let rail_width = RAIL_WIDTH;
     let rail_spacing = TRACK_WIDTH;
-    let track_length = TILE_WIDTH * 0.8;
+    let track_length = track_length();
     
-    // Calculate direction vectors
-    let (dx, dy) = match direction {
-        TrackDirection::North | TrackDirection::South => (1.0, 0.6),
-        TrackDirection::East | TrackDirection::West => (-1.0, 0.6),
-    };
+    let (dx, dy) = track_direction_vector(direction);
+    let perp_x = -dy;
+    let perp_y = dx;
+
+    let start_x = x - track_length / 2.0 * dx;
+    let start_y = y - track_length / 2.0 * dy;
+    let end_x = x + track_length / 2.0 * dx;
+    let end_y = y + track_length / 2.0 * dy;
     
     // Draw ties (cross pieces)
     let tie_color = match strut_style {
         StrutStyle::Wood => TIE_COLOR_WOOD,
         StrutStyle::Metal => TIE_COLOR_METAL,
     };
-    canvas.set_fill_color(tie_color);
+    canvas.set_stroke_color(tie_color);
+    canvas.set_line_width(1.5);
+    canvas.ctx().set_line_cap("butt");
     let tie_count = (track_length / TIE_SPACING).floor().max(3.0) as i32;
     for i in 0..tie_count {
         let t = (i as f64 + 0.5) / tie_count as f64;
-        let tie_x = x - track_length / 2.0 * dx + track_length * dx * t;
-        let tie_y = y - track_length / 2.0 * dy + track_length * dy * t;
-        
-        canvas.fill_rect(tie_x - TIE_LENGTH / 2.0, tie_y - TIE_HEIGHT / 2.0, TIE_LENGTH, TIE_HEIGHT);
+        let tie_x = start_x + (end_x - start_x) * t;
+        let tie_y = start_y + (end_y - start_y) * t;
+        let half = TIE_LENGTH / 2.0;
+
+        canvas.begin_path();
+        canvas.move_to(tie_x - perp_x * half, tie_y - perp_y * half);
+        canvas.line_to(tie_x + perp_x * half, tie_y + perp_y * half);
+        canvas.stroke();
     }
     
     // Draw rails
     canvas.set_stroke_color(primary_color);
     canvas.set_line_width(rail_width);
+    canvas.ctx().set_line_cap("round");
     
     // Left rail
     canvas.begin_path();
-    canvas.move_to(x - track_length / 2.0 * dx - rail_spacing / 2.0, y - track_length / 2.0 * dy);
-    canvas.line_to(x + track_length / 2.0 * dx - rail_spacing / 2.0, y + track_length / 2.0 * dy);
+    canvas.move_to(start_x - perp_x * rail_spacing / 2.0, start_y - perp_y * rail_spacing / 2.0);
+    canvas.line_to(end_x - perp_x * rail_spacing / 2.0, end_y - perp_y * rail_spacing / 2.0);
     canvas.stroke();
     
     // Right rail
     canvas.begin_path();
-    canvas.move_to(x - track_length / 2.0 * dx + rail_spacing / 2.0, y - track_length / 2.0 * dy);
-    canvas.line_to(x + track_length / 2.0 * dx + rail_spacing / 2.0, y + track_length / 2.0 * dy);
+    canvas.move_to(start_x + perp_x * rail_spacing / 2.0, start_y + perp_y * rail_spacing / 2.0);
+    canvas.line_to(end_x + perp_x * rail_spacing / 2.0, end_y + perp_y * rail_spacing / 2.0);
     canvas.stroke();
     
     Ok(())
@@ -329,27 +353,32 @@ fn draw_slope_track(
     primary_color: &str,
 ) -> Result<(), JsValue> {
     let rail_spacing = 8.0;
-    let track_length = TILE_WIDTH * 0.8;
+    let track_length = track_length();
     let height_change = -height_delta;
     
-    let (dx, dy) = match direction {
-        TrackDirection::North | TrackDirection::South => (1.0, 0.6),
-        TrackDirection::East | TrackDirection::West => (-1.0, 0.6),
-    };
+    let (dx, dy) = track_direction_vector(direction);
+    let perp_x = -dy;
+    let perp_y = dx;
+
+    let start_x = x - track_length / 2.0 * dx;
+    let start_y = y - track_length / 2.0 * dy;
+    let end_x = x + track_length / 2.0 * dx;
+    let end_y = y + track_length / 2.0 * dy + height_change;
     
     canvas.set_stroke_color(primary_color);
     canvas.set_line_width(2.0);
+    canvas.ctx().set_line_cap("round");
     
     // Left rail (sloped)
     canvas.begin_path();
-    canvas.move_to(x - track_length / 2.0 * dx - rail_spacing / 2.0, y - track_length / 2.0 * dy);
-    canvas.line_to(x + track_length / 2.0 * dx - rail_spacing / 2.0, y + track_length / 2.0 * dy + height_change);
+    canvas.move_to(start_x - perp_x * rail_spacing / 2.0, start_y - perp_y * rail_spacing / 2.0);
+    canvas.line_to(end_x - perp_x * rail_spacing / 2.0, end_y - perp_y * rail_spacing / 2.0);
     canvas.stroke();
     
     // Right rail (sloped)
     canvas.begin_path();
-    canvas.move_to(x - track_length / 2.0 * dx + rail_spacing / 2.0, y - track_length / 2.0 * dy);
-    canvas.line_to(x + track_length / 2.0 * dx + rail_spacing / 2.0, y + track_length / 2.0 * dy + height_change);
+    canvas.move_to(start_x + perp_x * rail_spacing / 2.0, start_y + perp_y * rail_spacing / 2.0);
+    canvas.line_to(end_x + perp_x * rail_spacing / 2.0, end_y + perp_y * rail_spacing / 2.0);
     canvas.stroke();
     
     Ok(())
@@ -363,21 +392,23 @@ fn draw_chain_lift(
     direction: &TrackDirection,
 ) -> Result<(), JsValue> {
     let chain_color = "#9ca3af";
-    let track_length = TILE_WIDTH * 0.7;
+    let track_length = track_length() * 0.9;
 
-    let (dx, dy) = match direction {
-        TrackDirection::North | TrackDirection::South => (1.0, 0.6),
-        TrackDirection::East | TrackDirection::West => (-1.0, 0.6),
-    };
+    let (dx, dy) = track_direction_vector(direction);
+    let start_x = x - track_length / 2.0 * dx;
+    let start_y = y - track_length / 2.0 * dy;
+    let end_x = x + track_length / 2.0 * dx;
+    let end_y = y + track_length / 2.0 * dy;
 
     canvas.set_stroke_color(chain_color);
     canvas.set_line_width(1.0);
+    canvas.ctx().set_line_cap("round");
 
     let link_count = 6;
     for i in 0..link_count {
         let t = (i as f64 + 0.5) / link_count as f64;
-        let link_x = x - track_length / 2.0 * dx + track_length * dx * t;
-        let link_y = y - track_length / 2.0 * dy + track_length * dy * t;
+        let link_x = start_x + (end_x - start_x) * t;
+        let link_y = start_y + (end_y - start_y) * t;
         canvas.begin_path();
         canvas.arc(link_x, link_y, 1.0, 0.0, std::f64::consts::PI * 2.0)?;
         canvas.stroke();

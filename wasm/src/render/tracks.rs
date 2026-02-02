@@ -2,9 +2,9 @@
 
 use wasm_bindgen::prelude::*;
 use crate::game::state::GameState;
-use crate::game::coaster::{TrackPieceType, TrackDirection, StrutStyle, Coaster, TrainState};
+use crate::game::coaster::{TrackPieceType, TrackDirection, StrutStyle, Coaster};
 use super::canvas::Canvas;
-use super::isometric::{grid_to_screen_offset, tile_center, TILE_WIDTH, TILE_HEIGHT, HEIGHT_UNIT};
+use super::isometric::{tile_center, TILE_WIDTH, TILE_HEIGHT, HEIGHT_UNIT};
 
 /// Render all coaster tracks
 pub fn render_tracks(
@@ -12,10 +12,10 @@ pub fn render_tracks(
     state: &GameState,
     offset_x: f64,
     offset_y: f64,
-    zoom: f64,
+    _zoom: f64,
 ) -> Result<(), JsValue> {
     for coaster in &state.coasters {
-        render_coaster_track(canvas, coaster, offset_x, offset_y, zoom)?;
+        render_coaster_track(canvas, coaster, offset_x, offset_y)?;
     }
     Ok(())
 }
@@ -26,7 +26,6 @@ fn render_coaster_track(
     coaster: &Coaster,
     offset_x: f64,
     offset_y: f64,
-    zoom: f64,
 ) -> Result<(), JsValue> {
     // First pass: draw supports
     for (i, &(tile_x, tile_y)) in coaster.track_tiles.iter().enumerate() {
@@ -299,7 +298,7 @@ fn draw_slope_track(
     direction: &TrackDirection,
     going_up: bool,
     primary_color: &str,
-    secondary_color: &str,
+    _secondary_color: &str,
 ) -> Result<(), JsValue> {
     let rail_spacing = 8.0;
     let track_length = TILE_WIDTH * 0.8;
@@ -455,15 +454,15 @@ pub fn render_trains(
     state: &GameState,
     offset_x: f64,
     offset_y: f64,
-    zoom: f64,
-    tick: u32,
+    _zoom: f64,
+    _tick: u32,
 ) -> Result<(), JsValue> {
     for coaster in &state.coasters {
         if !coaster.operating || coaster.track_pieces.is_empty() {
             continue;
         }
         
-        render_coaster_trains(canvas, coaster, offset_x, offset_y, zoom, tick)?;
+        render_coaster_trains(canvas, coaster, offset_x, offset_y)?;
     }
     Ok(())
 }
@@ -474,8 +473,6 @@ fn render_coaster_trains(
     coaster: &Coaster,
     offset_x: f64,
     offset_y: f64,
-    zoom: f64,
-    tick: u32,
 ) -> Result<(), JsValue> {
     let track_len = coaster.track_pieces.len() as f32;
     if track_len < 1.0 {

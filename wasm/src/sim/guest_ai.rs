@@ -3,7 +3,7 @@
 use crate::game::state::GameState;
 use crate::game::guest::{Guest, GuestState, Direction, TargetKind};
 use crate::game::building::BuildingType;
-use super::pathfinding::{find_path, find_path_to_building};
+use super::pathfinding::find_path_to_building;
 
 /// Update all guests
 pub fn update_guests(state: &mut GameState) {

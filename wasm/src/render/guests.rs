@@ -12,7 +12,7 @@ pub fn render_guests(
     state: &GameState,
     offset_x: f64,
     offset_y: f64,
-    zoom: f64,
+    _zoom: f64,
     tick: u32,
 ) -> Result<(), JsValue> {
     // Sort guests by depth for proper rendering

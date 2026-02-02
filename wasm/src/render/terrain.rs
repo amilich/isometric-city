@@ -97,7 +97,7 @@ fn draw_water_tile(
     y: f64,
     grid_x: i32,
     grid_y: i32,
-    state: &GameState,
+    _state: &GameState,
     sprites: &SpriteManager,
 ) {
     // Check if we have water texture

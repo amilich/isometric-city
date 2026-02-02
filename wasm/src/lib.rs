@@ -3,7 +3,7 @@
 //! This module provides the main game entry point and WASM bindings.
 
 use wasm_bindgen::prelude::*;
-use web_sys::{HtmlCanvasElement, CanvasRenderingContext2d, HtmlImageElement};
+use web_sys::{HtmlCanvasElement, HtmlImageElement};
 
 pub mod game;
 pub mod render;
@@ -28,7 +28,6 @@ pub struct Game {
     canvas: Canvas,
     sprites: SpriteManager,
     tick_count: u32,
-    last_render_time: f64,
     
     // Viewport state
     offset_x: f64,
@@ -66,7 +65,6 @@ impl Game {
             canvas: canvas_obj,
             sprites,
             tick_count: 0,
-            last_render_time: 0.0,
             offset_x: center_x,
             offset_y: center_y,
             zoom: 1.0,

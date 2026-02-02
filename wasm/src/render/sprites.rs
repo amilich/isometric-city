@@ -100,7 +100,7 @@ impl SpriteManager {
         image: HtmlImageElement,
         cols: u32,
         rows: u32,
-        canvas: &Canvas,
+        _canvas: &Canvas,
     ) -> Result<(), JsValue> {
         let width = image.natural_width();
         let height = image.natural_height();
@@ -264,7 +264,7 @@ fn filter_background(image_data: &ImageData) -> Result<ImageData, JsValue> {
 }
 
 /// Create default sprite mappings for a sheet
-fn create_default_sprites(sheet_id: &str, cols: u32, rows: u32) -> HashMap<String, SpriteInfo> {
+fn create_default_sprites(sheet_id: &str, _cols: u32, _rows: u32) -> HashMap<String, SpriteInfo> {
     let mut sprites = HashMap::new();
     
     match sheet_id {

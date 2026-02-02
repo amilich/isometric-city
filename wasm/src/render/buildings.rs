@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 use crate::game::state::GameState;
 use crate::game::building::BuildingType;
 use super::canvas::Canvas;
-use super::isometric::{grid_to_screen_offset, tile_center, TILE_WIDTH, TILE_HEIGHT};
+use super::isometric::tile_center;
 use super::sprites::SpriteManager;
 
 /// Render all buildings
@@ -13,7 +13,7 @@ pub fn render_buildings(
     state: &GameState,
     offset_x: f64,
     offset_y: f64,
-    zoom: f64,
+    _zoom: f64,
     sprites: &SpriteManager,
 ) -> Result<(), JsValue> {
     let grid_size = state.grid_size;

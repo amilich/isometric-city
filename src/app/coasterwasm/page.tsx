@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { T, Var, msg, useMessages, useGT } from 'gt-next';
 
 // Sprite sheet configuration matching the original game
 const SPRITE_SHEETS = [
@@ -21,140 +22,140 @@ const SPRITE_SHEETS = [
 // Tool categories for the sidebar
 const TOOL_CATEGORIES = [
   {
-    name: 'Basic',
+    name: msg('Basic'),
     tools: [
-      { id: 'select', name: 'Select', icon: '👆' },
-      { id: 'bulldoze', name: 'Bulldoze', icon: '🚜' },
-      { id: 'path', name: 'Path', icon: '🛤️' },
-      { id: 'queue', name: 'Queue', icon: '🚧' },
+      { id: 'select', name: msg('Select'), icon: '👆' },
+      { id: 'bulldoze', name: msg('Bulldoze'), icon: '🚜' },
+      { id: 'path', name: msg('Path'), icon: '🛤️' },
+      { id: 'queue', name: msg('Queue'), icon: '🚧' },
     ],
   },
   {
-    name: 'Trees',
+    name: msg('Trees'),
     tools: [
-      { id: 'tree_oak', name: 'Oak Tree', icon: '🌳' },
-      { id: 'tree_maple', name: 'Maple Tree', icon: '🍁' },
-      { id: 'tree_birch', name: 'Birch Tree', icon: '🌳' },
-      { id: 'tree_willow', name: 'Willow Tree', icon: '🌳' },
-      { id: 'tree_pine', name: 'Pine Tree', icon: '🌲' },
-      { id: 'tree_palm', name: 'Palm Tree', icon: '🌴' },
-      { id: 'tree_bamboo', name: 'Bamboo', icon: '🎋' },
-      { id: 'tree_tropical', name: 'Tropical Tree', icon: '🌴' },
-      { id: 'tree_cherry', name: 'Cherry Tree', icon: '🌸' },
-      { id: 'tree_magnolia', name: 'Magnolia', icon: '🌸' },
-      { id: 'bush_hedge', name: 'Hedge', icon: '🌿' },
+      { id: 'tree_oak', name: msg('Oak Tree'), icon: '🌳' },
+      { id: 'tree_maple', name: msg('Maple Tree'), icon: '🍁' },
+      { id: 'tree_birch', name: msg('Birch Tree'), icon: '🌳' },
+      { id: 'tree_willow', name: msg('Willow Tree'), icon: '🌳' },
+      { id: 'tree_pine', name: msg('Pine Tree'), icon: '🌲' },
+      { id: 'tree_palm', name: msg('Palm Tree'), icon: '🌴' },
+      { id: 'tree_bamboo', name: msg('Bamboo'), icon: '🎋' },
+      { id: 'tree_tropical', name: msg('Tropical Tree'), icon: '🌴' },
+      { id: 'tree_cherry', name: msg('Cherry Tree'), icon: '🌸' },
+      { id: 'tree_magnolia', name: msg('Magnolia'), icon: '🌸' },
+      { id: 'bush_hedge', name: msg('Hedge'), icon: '🌿' },
     ],
   },
   {
-    name: 'Landscaping',
+    name: msg('Landscaping'),
     tools: [
-      { id: 'bush_flowering', name: 'Flowering Bush', icon: '🌺' },
-      { id: 'topiary_ball', name: 'Topiary Ball', icon: '🌳' },
-      { id: 'topiary_spiral', name: 'Topiary Spiral', icon: '🌳' },
-      { id: 'topiary_animal', name: 'Topiary Animal', icon: '🐾' },
-      { id: 'flowers_bed', name: 'Flower Bed', icon: '🌸' },
-      { id: 'flowers_planter', name: 'Flower Planter', icon: '🪴' },
-      { id: 'flowers_hanging', name: 'Hanging Flowers', icon: '🌼' },
-      { id: 'flowers_wild', name: 'Wildflowers', icon: '🌻' },
-      { id: 'ground_cover', name: 'Ground Cover', icon: '🍃' },
+      { id: 'bush_flowering', name: msg('Flowering Bush'), icon: '🌺' },
+      { id: 'topiary_ball', name: msg('Topiary Ball'), icon: '🌳' },
+      { id: 'topiary_spiral', name: msg('Topiary Spiral'), icon: '🌳' },
+      { id: 'topiary_animal', name: msg('Topiary Animal'), icon: '🐾' },
+      { id: 'flowers_bed', name: msg('Flower Bed'), icon: '🌸' },
+      { id: 'flowers_planter', name: msg('Flower Planter'), icon: '🪴' },
+      { id: 'flowers_hanging', name: msg('Hanging Flowers'), icon: '🌼' },
+      { id: 'flowers_wild', name: msg('Wildflowers'), icon: '🌻' },
+      { id: 'ground_cover', name: msg('Ground Cover'), icon: '🍃' },
     ],
   },
   {
-    name: 'Furniture',
+    name: msg('Furniture'),
     tools: [
-      { id: 'bench_wooden', name: 'Bench', icon: '🪑' },
-      { id: 'bench_metal', name: 'Metal Bench', icon: '🪑' },
-      { id: 'lamp_victorian', name: 'Lamp', icon: '💡' },
-      { id: 'lamp_modern', name: 'Modern Lamp', icon: '💡' },
-      { id: 'trash_can_basic', name: 'Trash Can', icon: '🗑️' },
-      { id: 'trash_can_fancy', name: 'Fancy Bin', icon: '🗑️' },
+      { id: 'bench_wooden', name: msg('Bench'), icon: '🪑' },
+      { id: 'bench_metal', name: msg('Metal Bench'), icon: '🪑' },
+      { id: 'lamp_victorian', name: msg('Lamp'), icon: '💡' },
+      { id: 'lamp_modern', name: msg('Modern Lamp'), icon: '💡' },
+      { id: 'trash_can_basic', name: msg('Trash Can'), icon: '🗑️' },
+      { id: 'trash_can_fancy', name: msg('Fancy Bin'), icon: '🗑️' },
     ],
   },
   {
-    name: 'Food',
+    name: msg('Food'),
     tools: [
-      { id: 'food_hotdog', name: 'Hot Dogs', icon: '🌭' },
-      { id: 'food_burger', name: 'Burgers', icon: '🍔' },
-      { id: 'food_fries', name: 'Fries', icon: '🍟' },
-      { id: 'food_pretzel', name: 'Pretzel', icon: '🥨' },
-      { id: 'food_icecream', name: 'Ice Cream', icon: '🍦' },
-      { id: 'drink_soda', name: 'Drinks', icon: '🥤' },
-      { id: 'drink_lemonade', name: 'Lemonade', icon: '🍋' },
-      { id: 'drink_coffee', name: 'Coffee', icon: '☕' },
-      { id: 'snack_popcorn', name: 'Popcorn', icon: '🍿' },
-      { id: 'snack_nachos', name: 'Nachos', icon: '🧀' },
-      { id: 'snack_pizza', name: 'Pizza', icon: '🍕' },
-      { id: 'cart_pirate', name: 'Pirate Cart', icon: '🏴‍☠️' },
+      { id: 'food_hotdog', name: msg('Hot Dogs'), icon: '🌭' },
+      { id: 'food_burger', name: msg('Burgers'), icon: '🍔' },
+      { id: 'food_fries', name: msg('Fries'), icon: '🍟' },
+      { id: 'food_pretzel', name: msg('Pretzel'), icon: '🥨' },
+      { id: 'food_icecream', name: msg('Ice Cream'), icon: '🍦' },
+      { id: 'drink_soda', name: msg('Drinks'), icon: '🥤' },
+      { id: 'drink_lemonade', name: msg('Lemonade'), icon: '🍋' },
+      { id: 'drink_coffee', name: msg('Coffee'), icon: '☕' },
+      { id: 'snack_popcorn', name: msg('Popcorn'), icon: '🍿' },
+      { id: 'snack_nachos', name: msg('Nachos'), icon: '🧀' },
+      { id: 'snack_pizza', name: msg('Pizza'), icon: '🍕' },
+      { id: 'cart_pirate', name: msg('Pirate Cart'), icon: '🏴‍☠️' },
     ],
   },
   {
-    name: 'Shops',
+    name: msg('Shops'),
     tools: [
-      { id: 'shop_souvenir', name: 'Souvenirs', icon: '🎁' },
-      { id: 'shop_toys', name: 'Toys', icon: '🧸' },
-      { id: 'shop_photo', name: 'Photo Shop', icon: '📸' },
-      { id: 'shop_ticket', name: 'Tickets', icon: '🎟️' },
-      { id: 'shop_plush', name: 'Plush', icon: '🧸' },
-      { id: 'shop_collectibles', name: 'Collectibles', icon: '🎁' },
-      { id: 'shop_candy', name: 'Candy', icon: '🍬' },
-      { id: 'arcade_building', name: 'Arcade', icon: '🕹️' },
-      { id: 'restroom', name: 'Restroom', icon: '🚻' },
-      { id: 'first_aid', name: 'First Aid', icon: '🏥' },
-      { id: 'atm', name: 'ATM', icon: '🏧' },
+      { id: 'shop_souvenir', name: msg('Souvenirs'), icon: '🎁' },
+      { id: 'shop_toys', name: msg('Toys'), icon: '🧸' },
+      { id: 'shop_photo', name: msg('Photo Shop'), icon: '📸' },
+      { id: 'shop_ticket', name: msg('Tickets'), icon: '🎟️' },
+      { id: 'shop_plush', name: msg('Plush'), icon: '🧸' },
+      { id: 'shop_collectibles', name: msg('Collectibles'), icon: '🎁' },
+      { id: 'shop_candy', name: msg('Candy'), icon: '🍬' },
+      { id: 'arcade_building', name: msg('Arcade'), icon: '🕹️' },
+      { id: 'restroom', name: msg('Restroom'), icon: '🚻' },
+      { id: 'first_aid', name: msg('First Aid'), icon: '🏥' },
+      { id: 'atm', name: msg('ATM'), icon: '🏧' },
     ],
   },
   {
-    name: 'Rides',
+    name: msg('Rides'),
     tools: [
-      { id: 'ride_carousel', name: 'Carousel', icon: '🎠' },
-      { id: 'ride_teacups', name: 'Teacups', icon: '☕' },
-      { id: 'ride_ferris_classic', name: 'Ferris Wheel', icon: '🎡' },
-      { id: 'ride_bumper_cars', name: 'Bumper Cars', icon: '🚗' },
-      { id: 'ride_drop_tower', name: 'Drop Tower', icon: '🗼' },
-      { id: 'ride_log_flume', name: 'Log Flume', icon: '🛶' },
-      { id: 'ride_scrambler', name: 'Scrambler', icon: '🎢' },
-      { id: 'ride_haunted_house', name: 'Haunted House', icon: '🏚️' },
-      { id: 'ride_ferris_modern', name: 'Modern Ferris', icon: '🎡' },
+      { id: 'ride_carousel', name: msg('Carousel'), icon: '🎠' },
+      { id: 'ride_teacups', name: msg('Teacups'), icon: '☕' },
+      { id: 'ride_ferris_classic', name: msg('Ferris Wheel'), icon: '🎡' },
+      { id: 'ride_bumper_cars', name: msg('Bumper Cars'), icon: '🚗' },
+      { id: 'ride_drop_tower', name: msg('Drop Tower'), icon: '🗼' },
+      { id: 'ride_log_flume', name: msg('Log Flume'), icon: '🛶' },
+      { id: 'ride_scrambler', name: msg('Scrambler'), icon: '🎢' },
+      { id: 'ride_haunted_house', name: msg('Haunted House'), icon: '🏚️' },
+      { id: 'ride_ferris_modern', name: msg('Modern Ferris'), icon: '🎡' },
     ],
   },
   {
-    name: 'Fountains',
+    name: msg('Fountains'),
     tools: [
-      { id: 'fountain_small_1', name: 'Small Fountain', icon: '⛲' },
-      { id: 'fountain_medium_1', name: 'Medium Fountain', icon: '💧' },
-      { id: 'fountain_large_1', name: 'Large Fountain', icon: '⛲' },
-      { id: 'pond_small', name: 'Pond', icon: '🐟' },
+      { id: 'fountain_small_1', name: msg('Small Fountain'), icon: '⛲' },
+      { id: 'fountain_medium_1', name: msg('Medium Fountain'), icon: '💧' },
+      { id: 'fountain_large_1', name: msg('Large Fountain'), icon: '⛲' },
+      { id: 'pond_small', name: msg('Pond'), icon: '🐟' },
     ],
   },
   {
-    name: 'Theming',
+    name: msg('Theming'),
     tools: [
-      { id: 'theme_castle_tower', name: 'Castle Tower', icon: '🏰' },
-      { id: 'theme_pirate_ship', name: 'Pirate Ship', icon: '🏴‍☠️' },
-      { id: 'theme_temple_ruins', name: 'Temple Ruins', icon: '🛕' },
-      { id: 'theme_haunted_tree', name: 'Haunted Tree', icon: '👻' },
-      { id: 'theme_circus_tent', name: 'Circus Tent', icon: '🎪' },
-      { id: 'theme_geometric', name: 'Geometric Art', icon: '🔷' },
+      { id: 'theme_castle_tower', name: msg('Castle Tower'), icon: '🏰' },
+      { id: 'theme_pirate_ship', name: msg('Pirate Ship'), icon: '🏴‍☠️' },
+      { id: 'theme_temple_ruins', name: msg('Temple Ruins'), icon: '🛕' },
+      { id: 'theme_haunted_tree', name: msg('Haunted Tree'), icon: '👻' },
+      { id: 'theme_circus_tent', name: msg('Circus Tent'), icon: '🎪' },
+      { id: 'theme_geometric', name: msg('Geometric Art'), icon: '🔷' },
     ],
   },
   {
-    name: 'Queue Decor',
+    name: msg('Queue Decor'),
     tools: [
-      { id: 'queue_post_metal', name: 'Queue Post', icon: '🚧' },
-      { id: 'queue_rope', name: 'Queue Rope', icon: '🧵' },
-      { id: 'queue_wait_sign', name: 'Wait Sign', icon: '🪧' },
-      { id: 'queue_canopy', name: 'Queue Canopy', icon: '⛱️' },
+      { id: 'queue_post_metal', name: msg('Queue Post'), icon: '🚧' },
+      { id: 'queue_rope', name: msg('Queue Rope'), icon: '🧵' },
+      { id: 'queue_wait_sign', name: msg('Wait Sign'), icon: '🪧' },
+      { id: 'queue_canopy', name: msg('Queue Canopy'), icon: '⛱️' },
     ],
   },
   {
-    name: 'Coaster',
+    name: msg('Coaster'),
     tools: [
-      { id: 'coaster_station', name: 'Station', icon: '🚉' },
-      { id: 'coaster_track_straight', name: 'Straight Track', icon: '➖' },
-      { id: 'coaster_track_turn_left', name: 'Turn Left', icon: '↩️' },
-      { id: 'coaster_track_turn_right', name: 'Turn Right', icon: '↪️' },
-      { id: 'coaster_track_slope_up', name: 'Slope Up', icon: '⬆️' },
-      { id: 'coaster_track_slope_down', name: 'Slope Down', icon: '⬇️' },
+      { id: 'coaster_station', name: msg('Station'), icon: '🚉' },
+      { id: 'coaster_track_straight', name: msg('Straight Track'), icon: '➖' },
+      { id: 'coaster_track_turn_left', name: msg('Turn Left'), icon: '↩️' },
+      { id: 'coaster_track_turn_right', name: msg('Turn Right'), icon: '↪️' },
+      { id: 'coaster_track_slope_up', name: msg('Slope Up'), icon: '⬆️' },
+      { id: 'coaster_track_slope_down', name: msg('Slope Down'), icon: '⬇️' },
     ],
   },
 ];
@@ -163,14 +164,17 @@ export default function CoasterWasmPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<any>(null);
   const animationRef = useRef<number | null>(null);
-  
+
+  const gt = useGT();
+  const m = useMessages();
+
   const [loading, setLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState('Initializing WASM...');
+  const [loadingMessage, setLoadingMessage] = useState(gt('Initializing WASM...'));
   const [error, setError] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState('select');
   const [speed, setSpeed] = useState(1);
   const [stats, setStats] = useState({ cash: 50000, guests: 0, rating: 500, time: 'Year 1, Mar 1, 09:00' });
-  const [expandedCategory, setExpandedCategory] = useState<string | null>('Basic');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(msg('Basic'));
 
   // Load sprite image
   const loadImage = useCallback((src: string): Promise<HTMLImageElement> => {
@@ -188,15 +192,15 @@ export default function CoasterWasmPage() {
 
     async function init() {
       try {
-        setLoadingMessage('Loading WASM module...');
-        
+        setLoadingMessage(gt('Loading WASM module...'));
+
         // Dynamic import of WASM module
         const wasm = await import('../../../wasm/pkg/isocoaster_wasm');
         await wasm.default();
-        
+
         if (!mounted) return;
-        
-        setLoadingMessage('Creating game...');
+
+        setLoadingMessage(gt('Creating game...'));
         
         const canvas = canvasRef.current;
         if (!canvas) {
@@ -217,7 +221,7 @@ export default function CoasterWasmPage() {
         gameRef.current = game;
         
         // Load sprite sheets
-        setLoadingMessage('Loading sprites...');
+        setLoadingMessage(gt('Loading sprites...'));
         
         for (const sheet of SPRITE_SHEETS) {
           try {
@@ -238,7 +242,7 @@ export default function CoasterWasmPage() {
         
         if (!mounted) return;
         
-        setLoadingMessage('Starting game loop...');
+        setLoadingMessage(gt('Starting game loop...'));
         
         // Start game loop
         let lastTick = performance.now();
@@ -299,7 +303,7 @@ export default function CoasterWasmPage() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [loadImage]);
+  }, [loadImage, gt]);
 
   // Handle window resize
   useEffect(() => {
@@ -376,15 +380,17 @@ export default function CoasterWasmPage() {
 
   if (error) {
     return (
-      <div className="h-screen w-screen bg-gradient-to-br from-red-950 via-red-900 to-red-950 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl text-white mb-4">Error Loading Game</h1>
-          <p className="text-red-300 mb-8">{error}</p>
-          <a href="/coaster" className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded">
-            Go to Regular Version
-          </a>
+      <T>
+        <div className="h-screen w-screen bg-gradient-to-br from-red-950 via-red-900 to-red-950 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl text-white mb-4">Error Loading Game</h1>
+            <p className="text-red-300 mb-8"><Var>{error}</Var></p>
+            <a href="/coaster" className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded">
+              Go to Regular Version
+            </a>
+          </div>
         </div>
-      </div>
+      </T>
     );
   }
 
@@ -393,29 +399,33 @@ export default function CoasterWasmPage() {
       {/* Sidebar */}
       <div className="w-60 bg-slate-800 border-r border-slate-700 flex flex-col h-full">
         {/* Header */}
-        <div className="p-4 border-b border-slate-700">
-          <h1 className="text-xl font-bold text-white">IsoCoaster</h1>
-          <p className="text-xs text-slate-400">WebAssembly Edition</p>
-        </div>
+        <T>
+          <div className="p-4 border-b border-slate-700">
+            <h1 className="text-xl font-bold text-white">IsoCoaster</h1>
+            <p className="text-xs text-slate-400">WebAssembly Edition</p>
+          </div>
+        </T>
 
         {/* Stats */}
-        <div className="p-4 border-b border-slate-700 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Cash:</span>
-            <span className="text-green-400">${stats.cash.toLocaleString()}</span>
+        <T>
+          <div className="p-4 border-b border-slate-700 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Cash:</span>
+              <span className="text-green-400"><Var>${stats.cash.toLocaleString()}</Var></span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Guests:</span>
+              <span className="text-blue-400"><Var>{stats.guests}</Var></span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Rating:</span>
+              <span className="text-yellow-400"><Var>{stats.rating}</Var></span>
+            </div>
+            <div className="text-xs text-slate-500 text-center pt-1">
+              <Var>{stats.time}</Var>
+            </div>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Guests:</span>
-            <span className="text-blue-400">{stats.guests}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Rating:</span>
-            <span className="text-yellow-400">{stats.rating}</span>
-          </div>
-          <div className="text-xs text-slate-500 text-center pt-1">
-            {stats.time}
-          </div>
-        </div>
+        </T>
 
         {/* Speed controls */}
         <div className="p-4 border-b border-slate-700">
@@ -439,19 +449,19 @@ export default function CoasterWasmPage() {
         {/* Tools */}
         <div className="flex-1 overflow-y-auto">
           {TOOL_CATEGORIES.map(category => (
-            <div key={category.name} className="border-b border-slate-700">
+            <div key={m(category.name)} className="border-b border-slate-700">
               <button
                 onClick={() => setExpandedCategory(
                   expandedCategory === category.name ? null : category.name
                 )}
                 className="w-full p-3 flex justify-between items-center text-sm text-slate-300 hover:bg-slate-700"
               >
-                <span>{category.name}</span>
+                <span>{m(category.name)}</span>
                 <span className="text-slate-500">
                   {expandedCategory === category.name ? '▼' : '▶'}
                 </span>
               </button>
-              
+
               {expandedCategory === category.name && (
                 <div className="pb-2 px-2">
                   {category.tools.map(tool => (
@@ -465,7 +475,7 @@ export default function CoasterWasmPage() {
                       }`}
                     >
                       <span>{tool.icon}</span>
-                      <span>{tool.name}</span>
+                      <span>{m(tool.name)}</span>
                     </button>
                   ))}
                 </div>
@@ -475,26 +485,30 @@ export default function CoasterWasmPage() {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-700">
-          <a
-            href="/coaster"
-            className="block text-center text-sm text-slate-400 hover:text-white"
-          >
-            ← Back to Regular Version
-          </a>
-        </div>
+        <T>
+          <div className="p-4 border-t border-slate-700">
+            <a
+              href="/coaster"
+              className="block text-center text-sm text-slate-400 hover:text-white"
+            >
+              Back to Regular Version
+            </a>
+          </div>
+        </T>
       </div>
 
       {/* Main canvas area */}
       <div className="flex-1 relative">
         {loading && (
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex flex-col items-center justify-center z-50">
-            <h1 className="text-4xl font-light text-white mb-8">IsoCoaster WASM</h1>
-            <div className="text-white/60 mb-4">{loadingMessage}</div>
-            <div className="w-64 h-2 bg-white/10 rounded overflow-hidden">
-              <div className="h-full bg-emerald-500 animate-pulse" style={{ width: '60%' }} />
+          <T>
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex flex-col items-center justify-center z-50">
+              <h1 className="text-4xl font-light text-white mb-8">IsoCoaster WASM</h1>
+              <div className="text-white/60 mb-4"><Var>{loadingMessage}</Var></div>
+              <div className="w-64 h-2 bg-white/10 rounded overflow-hidden">
+                <div className="h-full bg-emerald-500 animate-pulse" style={{ width: '60%' }} />
+              </div>
             </div>
-          </div>
+          </T>
         )}
         
         <canvas

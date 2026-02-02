@@ -39,7 +39,11 @@ pub fn update_trains(state: &mut GameState) {
                     }
                     // Keep cars at station
                     for (i, car) in train.cars.iter_mut().enumerate() {
-                        car.track_progress = (station_idx as f32 + i as f32 * car_spacing) % track_len;
+                        let mut progress = station_idx as f32 - i as f32 * car_spacing;
+                        if progress < 0.0 {
+                            progress = (progress % track_len + track_len) % track_len;
+                        }
+                        car.track_progress = progress;
                         car.velocity = 0.0;
                     }
                 }
@@ -112,7 +116,10 @@ pub fn update_trains(state: &mut GameState) {
             
             // Maintain car spacing
             for i in 1..train.cars.len() {
-                let target = (train.cars[0].track_progress + i as f32 * car_spacing) % track_len;
+                let mut target = train.cars[0].track_progress - i as f32 * car_spacing;
+                if target < 0.0 {
+                    target = (target % track_len + track_len) % track_len;
+                }
                 train.cars[i].track_progress = target;
             }
         }

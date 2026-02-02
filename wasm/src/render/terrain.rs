@@ -48,9 +48,12 @@ pub fn render_terrain(
     let grid_size = state.grid_size;
     
     // Render in isometric order (back to front)
-    for sum in 0..((grid_size * 2) as i32) {
+    for sum in 0..(grid_size * 2) {
         for x in 0..grid_size {
-            let y = sum as usize - x;
+            if x > sum {
+                continue;
+            }
+            let y = sum - x;
             if y >= grid_size {
                 continue;
             }

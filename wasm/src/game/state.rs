@@ -346,26 +346,41 @@ impl GameState {
             }
 
             Tool::Bulldoze => {
+                if self.cash < cost as i64 {
+                    return;
+                }
+
                 let has_building = self.grid[y][x].building.is_some();
                 let has_path = self.grid[y][x].path;
                 let has_queue = self.grid[y][x].queue;
+                let mut did_remove = false;
 
                 if has_building {
                     self.grid[y][x].building = None;
+                    did_remove = true;
                 } else if has_path {
                     self.grid[y][x].path = false;
+                    did_remove = true;
                 } else if has_queue {
                     self.grid[y][x].queue = false;
                     self.grid[y][x].queue_ride_id = None;
+                    did_remove = true;
                 } else {
-                    if !self.clear_track_tile(grid_x, grid_y) {
+                    if self.clear_track_tile(grid_x, grid_y) {
+                        did_remove = true;
+                    } else {
                         let neighbors = [(1, 0), (-1, 0), (0, 1), (0, -1)];
                         for (dx, dy) in neighbors {
                             if self.clear_track_tile(grid_x + dx, grid_y + dy) {
+                                did_remove = true;
                                 break;
                             }
                         }
                     }
+                }
+
+                if did_remove {
+                    self.cash -= cost as i64;
                 }
             }
 

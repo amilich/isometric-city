@@ -67,6 +67,8 @@ impl Tile {
     pub fn can_place_path(&self) -> bool {
         self.terrain == Terrain::Grass
             && self.building.is_none()
+            && !self.path
+            && !self.queue
             && !self.has_coaster_track
     }
     

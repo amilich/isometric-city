@@ -229,10 +229,16 @@ pub struct Train {
 }
 
 impl Train {
-    pub fn new(id: u32, num_cars: usize, start_progress: f32) -> Self {
+    pub fn new(id: u32, num_cars: usize, start_progress: f32, track_len: f32) -> Self {
         let car_spacing = 0.18;
         let cars = (0..num_cars)
-            .map(|i| TrainCar::new(start_progress + i as f32 * car_spacing))
+            .map(|i| {
+                let mut progress = start_progress - i as f32 * car_spacing;
+                if progress < 0.0 {
+                    progress = (progress % track_len + track_len) % track_len;
+                }
+                TrainCar::new(progress)
+            })
             .collect();
         
         Train {
@@ -291,18 +297,18 @@ impl Coaster {
             return false;
         }
         
-        // Check if last tile connects to first
-        let first = self.track_tiles.first();
-        let last = self.track_tiles.last();
-        
-        match (first, last) {
-            (Some(&(fx, fy)), Some(&(lx, ly))) => {
-                let dx = (fx - lx).abs();
-                let dy = (fy - ly).abs();
-                (dx == 1 && dy == 0) || (dx == 0 && dy == 1)
+        let len = self.track_tiles.len();
+        for i in 0..len {
+            let (ax, ay) = self.track_tiles[i];
+            let (bx, by) = self.track_tiles[(i + 1) % len];
+            let dx = (ax - bx).abs();
+            let dy = (ay - by).abs();
+            if !((dx == 1 && dy == 0) || (dx == 0 && dy == 1)) {
+                return false;
             }
-            _ => false,
         }
+
+        true
     }
     
     /// Add trains to the coaster
@@ -315,7 +321,8 @@ impl Coaster {
         self.trains.clear();
         for i in 0..count {
             let start_progress = (i as f32 * track_len / count as f32) % track_len;
-            self.trains.push(Train::new(i as u32, cars_per_train, start_progress));
+            self.trains
+                .push(Train::new(i as u32, cars_per_train, start_progress, track_len));
         }
     }
 }

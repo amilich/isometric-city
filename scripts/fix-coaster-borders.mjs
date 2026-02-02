@@ -30,10 +30,10 @@ const SHEETS_TO_FIX = {
 };
 
 // How many pixels from boundary to check/fix
-const BOUNDARY_RADIUS = 3;
+const BOUNDARY_RADIUS = 2;
 
 // Color difference threshold - pixels differing more than this from background are replaced
-const COLOR_THRESHOLD = 30;
+const COLOR_THRESHOLD = 20;
 
 // WebP compression quality
 const WEBP_QUALITY = 80;
@@ -46,48 +46,13 @@ function colorDifference(r1, g1, b1, r2, g2, b2) {
 }
 
 /**
- * Check if a pixel should be replaced with background
- * We want to replace:
- * 1. Pixels that are "almost red" but with elevated G/B (anti-aliased red)
- * 2. Pixels that are dark/grayish (anti-aliased boundaries)
- * 
- * We want to preserve:
- * 1. Pixels that are already the correct background red
- * 2. Pixels that are clearly sprite content (colorful, high saturation non-red)
+ * Check if a pixel should be replaced with background.
+ * We replace any pixel near a grid boundary whose color differs
+ * from the background by more than COLOR_THRESHOLD.
  */
 function shouldReplacePixel(r, g, b, bgR, bgG, bgB) {
   const diff = colorDifference(r, g, b, bgR, bgG, bgB);
-  
-  // If pixel matches background well, no need to replace
-  if (diff < COLOR_THRESHOLD) {
-    return false;
-  }
-  
-  // Type 1: Pinkish pixels (high R, elevated G/B from anti-aliasing)
-  // These are blends between red background and grayish sprite edges
-  if (r > 180 && g > 50 && b > 50 && g < 250 && b < 250) {
-    return true;
-  }
-  
-  // Type 2: Dark anti-aliasing (all channels are low-medium and similar)
-  // This catches dark/grayish/brownish boundary artifacts
-  const maxChannel = Math.max(r, g, b);
-  const minChannel = Math.min(r, g, b);
-  const saturation = maxChannel > 0 ? (maxChannel - minChannel) / maxChannel : 0;
-  
-  // Low-ish saturation and relatively dark = likely artifact
-  // Increased threshold to catch brownish tones like RGB(49,52,36)
-  if (saturation < 0.5 && maxChannel < 200 && maxChannel > 20) {
-    return true;
-  }
-  
-  // Type 3: Slightly off-red (R is dominant but not quite right)
-  // High red, low-ish green/blue, but not matching background
-  if (r > 180 && g < 80 && b < 80 && diff > COLOR_THRESHOLD) {
-    return true;
-  }
-  
-  return false;
+  return diff > COLOR_THRESHOLD;
 }
 
 /**

@@ -5,11 +5,14 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
+    "predev": "npm run wasm:build",
     "build": "npm run compress-images && next build",
+    "prebuild": "npm run wasm:build",
     "start": "next start",
     "lint": "eslint .",
     "crop-screenshots": "bash scripts/crop-screenshots.sh",
-    "compress-images": "node scripts/compress-images.mjs"
+    "compress-images": "node scripts/compress-images.mjs",
+    "wasm:build": "cd wasm && wasm-pack build --target web --out-dir pkg"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",

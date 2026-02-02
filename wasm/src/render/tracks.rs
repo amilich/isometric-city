@@ -7,6 +7,11 @@ use super::canvas::Canvas;
 use super::isometric::{tile_center, TILE_WIDTH, TILE_HEIGHT, HEIGHT_UNIT};
 use super::sprites::SpriteManager;
 
+const TRACK_WIDTH: f64 = 5.0;
+const RAIL_WIDTH: f64 = 2.0;
+const TIE_LENGTH: f64 = 8.0;
+const TIE_HEIGHT: f64 = 2.0;
+const TIE_SPACING: f64 = 8.0;
 const TIE_COLOR_METAL: &str = "#2d3748";
 const TIE_COLOR_WOOD: &str = "#654321";
 
@@ -194,8 +199,8 @@ fn draw_straight_track(
     strut_style: &StrutStyle,
     primary_color: &str,
 ) -> Result<(), JsValue> {
-    let rail_width = 2.0;
-    let rail_spacing = 8.0;
+    let rail_width = RAIL_WIDTH;
+    let rail_spacing = TRACK_WIDTH;
     let track_length = TILE_WIDTH * 0.8;
     
     // Calculate direction vectors
@@ -210,13 +215,13 @@ fn draw_straight_track(
         StrutStyle::Metal => TIE_COLOR_METAL,
     };
     canvas.set_fill_color(tie_color);
-    let tie_count = 4;
+    let tie_count = (track_length / TIE_SPACING).floor().max(3.0) as i32;
     for i in 0..tie_count {
         let t = (i as f64 + 0.5) / tie_count as f64;
         let tie_x = x - track_length / 2.0 * dx + track_length * dx * t;
         let tie_y = y - track_length / 2.0 * dy + track_length * dy * t;
         
-        canvas.fill_rect(tie_x - 6.0, tie_y - 1.5, 12.0, 3.0);
+        canvas.fill_rect(tie_x - TIE_LENGTH / 2.0, tie_y - TIE_HEIGHT / 2.0, TIE_LENGTH, TIE_HEIGHT);
     }
     
     // Draw rails

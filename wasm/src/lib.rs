@@ -97,32 +97,23 @@ impl Game {
     
     /// Advance game simulation by one tick
     pub fn tick(&mut self) {
-        let steps = match self.state.speed {
-            0 => 0,
-            1 => 1,
-            2 => 2,
-            _ => 3,
-        };
-
-        if steps == 0 {
+        if self.state.speed == 0 {
             return;
         }
 
-        for _ in 0..steps {
-            self.tick_count = self.tick_count.wrapping_add(1);
+        self.tick_count = self.tick_count.wrapping_add(1);
 
-            // Advance game time
-            self.state.advance_time();
+        // Advance game time
+        self.state.advance_time();
 
-            // Update guests
-            sim::guest_ai::update_guests(&mut self.state);
+        // Update guests
+        sim::guest_ai::update_guests(&mut self.state);
 
-            // Spawn new guests
-            sim::guest_ai::spawn_guests(&mut self.state);
+        // Spawn new guests
+        sim::guest_ai::spawn_guests(&mut self.state);
 
-            // Update coaster trains
-            sim::trains::update_trains(&mut self.state);
-        }
+        // Update coaster trains
+        sim::trains::update_trains(&mut self.state);
     }
     
     /// Render the current game state

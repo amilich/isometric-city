@@ -20,8 +20,14 @@ pub const PATH_SURFACE: &str = "#9ca3af";
 pub const PATH_EDGE: &str = "#6b7280";
 
 /// Queue line colors
-pub const QUEUE_SURFACE: &str = "#a8a29e";
-pub const QUEUE_EDGE: &str = "#78716c";
+pub const QUEUE_SURFACE: &str = "#a1a1aa";
+pub const QUEUE_SURFACE_EDGE: &str = "#71717a";
+pub const QUEUE_POST_BASE: &str = "#52525b";
+pub const QUEUE_POST_POLE: &str = "#a1a1aa";
+pub const QUEUE_POST_TOP: &str = "#d4d4d8";
+pub const QUEUE_POST_SHADOW: &str = "rgba(0,0,0,0.3)";
+pub const QUEUE_BELT_COLOR: &str = "#dc2626";
+pub const QUEUE_BELT_SHADOW: &str = "rgba(0,0,0,0.15)";
 
 /// Beach colors for water edges
 pub const BEACH_FILL: &str = "#d4a574";
@@ -88,7 +94,7 @@ pub fn render_terrain(
             
             // Draw queue overlay
             if tile.queue {
-                draw_queue_tile(canvas, screen_x, screen_y);
+                draw_queue_tile(canvas, screen_x, screen_y, x as i32, y as i32, state);
             }
             
             // Draw entrance gate at edge path tiles
@@ -330,36 +336,212 @@ fn draw_path_tile(canvas: &Canvas, x: f64, y: f64, grid_x: i32, grid_y: i32, sta
 }
 
 /// Draw a queue tile
-fn draw_queue_tile(canvas: &Canvas, x: f64, y: f64) {
+fn draw_queue_tile(canvas: &Canvas, x: f64, y: f64, grid_x: i32, grid_y: i32, state: &GameState) {
     let w = TILE_WIDTH;
     let h = TILE_HEIGHT;
-    
-    // Draw queue surface (slightly different color from path)
-    let inset = 4.0;
-    canvas.set_fill_color(QUEUE_SURFACE);
-    canvas.begin_path();
-    canvas.move_to(x + w / 2.0, y + inset);
-    canvas.line_to(x + w - inset, y + h / 2.0);
-    canvas.line_to(x + w / 2.0, y + h - inset);
-    canvas.line_to(x + inset, y + h / 2.0);
-    canvas.close_path();
-    canvas.fill();
-    
-    // Draw edge
-    canvas.set_stroke_color(QUEUE_EDGE);
-    canvas.set_line_width(1.0);
-    canvas.stroke();
-    
-    // Draw queue posts at corners
-    let post_color = "#44403c";
-    canvas.set_fill_color(post_color);
-    
-    // Corner posts
-    let post_size = 2.0;
-    let _ = canvas.arc(x + w / 2.0, y + 6.0, post_size, 0.0, std::f64::consts::PI * 2.0);
-    canvas.fill();
-    let _ = canvas.arc(x + w - 6.0, y + h / 2.0, post_size, 0.0, std::f64::consts::PI * 2.0);
-    canvas.fill();
+    let cx = x + w / 2.0;
+    let cy = y + h / 2.0;
+
+    draw_grass_tile(canvas, x, y, 1.0);
+
+    let size = state.grid_size as i32;
+    let has_queue = |gx: i32, gy: i32| -> bool {
+        if gx < 0 || gy < 0 || gx >= size || gy >= size {
+            return false;
+        }
+        state.grid[gy as usize][gx as usize].queue
+    };
+
+    let has_path = |gx: i32, gy: i32| -> bool {
+        if gx < 0 || gy < 0 || gx >= size || gy >= size {
+            return false;
+        }
+        state.grid[gy as usize][gx as usize].path
+    };
+
+    let north = has_queue(grid_x - 1, grid_y) || has_path(grid_x - 1, grid_y);
+    let east = has_queue(grid_x, grid_y - 1) || has_path(grid_x, grid_y - 1);
+    let south = has_queue(grid_x + 1, grid_y) || has_path(grid_x + 1, grid_y);
+    let west = has_queue(grid_x, grid_y + 1) || has_path(grid_x, grid_y + 1);
+
+    let queue_width_ratio = 0.14;
+    let queue_w = w * queue_width_ratio;
+    let half_width = queue_w * 0.5;
+    let barrier_offset = half_width * 0.85;
+    let edge_stop = 1.15;
+
+    let north_edge_x = x + w * 0.25;
+    let north_edge_y = y + h * 0.25;
+    let east_edge_x = x + w * 0.75;
+    let east_edge_y = y + h * 0.25;
+    let south_edge_x = x + w * 0.75;
+    let south_edge_y = y + h * 0.75;
+    let west_edge_x = x + w * 0.25;
+    let west_edge_y = y + h * 0.75;
+
+    let north_len = ((north_edge_x - cx).powi(2) + (north_edge_y - cy).powi(2)).sqrt();
+    let east_len = ((east_edge_x - cx).powi(2) + (east_edge_y - cy).powi(2)).sqrt();
+    let south_len = ((south_edge_x - cx).powi(2) + (south_edge_y - cy).powi(2)).sqrt();
+    let west_len = ((west_edge_x - cx).powi(2) + (west_edge_y - cy).powi(2)).sqrt();
+
+    let north_dx = (north_edge_x - cx) / north_len;
+    let north_dy = (north_edge_y - cy) / north_len;
+    let east_dx = (east_edge_x - cx) / east_len;
+    let east_dy = (east_edge_y - cy) / east_len;
+    let south_dx = (south_edge_x - cx) / south_len;
+    let south_dy = (south_edge_y - cy) / south_len;
+    let west_dx = (west_edge_x - cx) / west_len;
+    let west_dy = (west_edge_y - cy) / west_len;
+
+    let get_perp = |dx: f64, dy: f64| -> (f64, f64) { (-dy, dx) };
+
+    let draw_surface = |dir_dx: f64, dir_dy: f64, edge_x: f64, edge_y: f64| {
+        let (perp_x, perp_y) = get_perp(dir_dx, dir_dy);
+        let stop_x = cx + (edge_x - cx) * edge_stop;
+        let stop_y = cy + (edge_y - cy) * edge_stop;
+
+        canvas.set_fill_color(QUEUE_SURFACE);
+        canvas.begin_path();
+        canvas.move_to(cx + perp_x * half_width, cy + perp_y * half_width);
+        canvas.line_to(stop_x + perp_x * half_width, stop_y + perp_y * half_width);
+        canvas.line_to(stop_x - perp_x * half_width, stop_y - perp_y * half_width);
+        canvas.line_to(cx - perp_x * half_width, cy - perp_y * half_width);
+        canvas.close_path();
+        canvas.fill();
+    };
+
+    if north {
+        draw_surface(north_dx, north_dy, north_edge_x, north_edge_y);
+    }
+    if east {
+        draw_surface(east_dx, east_dy, east_edge_x, east_edge_y);
+    }
+    if south {
+        draw_surface(south_dx, south_dy, south_edge_x, south_edge_y);
+    }
+    if west {
+        draw_surface(west_dx, west_dy, west_edge_x, west_edge_y);
+    }
+
+    let connection_count = (north as i32 + east as i32 + south as i32 + west as i32) as i32;
+    if connection_count == 0 {
+        canvas.set_fill_color(QUEUE_SURFACE);
+        canvas.begin_path();
+        let _ = canvas.arc(cx, cy, half_width, 0.0, std::f64::consts::PI * 2.0);
+        canvas.fill();
+    }
+
+    let draw_edge_lines = |dir_dx: f64, dir_dy: f64, edge_x: f64, edge_y: f64| {
+        let (perp_x, perp_y) = get_perp(dir_dx, dir_dy);
+        let stop_x = cx + (edge_x - cx) * edge_stop;
+        let stop_y = cy + (edge_y - cy) * edge_stop;
+
+        canvas.set_stroke_color(QUEUE_SURFACE_EDGE);
+        canvas.set_line_width(0.5);
+        canvas.begin_path();
+        canvas.move_to(cx + perp_x * half_width, cy + perp_y * half_width);
+        canvas.line_to(stop_x + perp_x * half_width, stop_y + perp_y * half_width);
+        canvas.stroke();
+
+        canvas.begin_path();
+        canvas.move_to(cx - perp_x * half_width, cy - perp_y * half_width);
+        canvas.line_to(stop_x - perp_x * half_width, stop_y - perp_y * half_width);
+        canvas.stroke();
+    };
+
+    if north {
+        draw_edge_lines(north_dx, north_dy, north_edge_x, north_edge_y);
+    }
+    if east {
+        draw_edge_lines(east_dx, east_dy, east_edge_x, east_edge_y);
+    }
+    if south {
+        draw_edge_lines(south_dx, south_dy, south_edge_x, south_edge_y);
+    }
+    if west {
+        draw_edge_lines(west_dx, west_dy, west_edge_x, west_edge_y);
+    }
+
+    let draw_barrier = |x1: f64, y1: f64, x2: f64, y2: f64| {
+        canvas.set_stroke_color(QUEUE_BELT_SHADOW);
+        canvas.set_line_width(2.0);
+        canvas.ctx().set_line_cap("round");
+        canvas.begin_path();
+        canvas.move_to(x1 + 0.5, y1 + 1.0);
+        canvas.line_to(x2 + 0.5, y2 + 1.0);
+        canvas.stroke();
+
+        canvas.set_stroke_color(QUEUE_BELT_COLOR);
+        canvas.set_line_width(1.5);
+        canvas.begin_path();
+        canvas.move_to(x1, y1);
+        canvas.line_to(x2, y2);
+        canvas.stroke();
+    };
+
+    let draw_post = |px: f64, py: f64| {
+        let post_h = 5.0;
+        let post_r = 1.0;
+
+        canvas.set_stroke_color(QUEUE_POST_SHADOW);
+        canvas.set_line_width(2.0);
+        canvas.begin_path();
+        canvas.move_to(px + 0.5, py + 1.0);
+        canvas.line_to(px + 0.5, py - post_h + 1.0);
+        canvas.stroke();
+
+        canvas.set_stroke_color(QUEUE_POST_POLE);
+        canvas.set_line_width(1.5);
+        canvas.begin_path();
+        canvas.move_to(px, py);
+        canvas.line_to(px, py - post_h);
+        canvas.stroke();
+
+        canvas.set_fill_color(QUEUE_POST_TOP);
+        canvas.begin_path();
+        let _ = canvas.arc(px, py - post_h, post_r, 0.0, std::f64::consts::PI * 2.0);
+        canvas.fill();
+
+        canvas.set_fill_color(QUEUE_POST_BASE);
+        canvas.begin_path();
+        let _ = canvas.arc(px, py + 0.2, post_r + 0.3, 0.0, std::f64::consts::PI * 2.0);
+        canvas.fill();
+    };
+
+    let draw_edge_barriers = |dir_dx: f64, dir_dy: f64, edge_x: f64, edge_y: f64| {
+        let (perp_x, perp_y) = get_perp(dir_dx, dir_dy);
+        let stop_x = cx + (edge_x - cx) * edge_stop;
+        let stop_y = cy + (edge_y - cy) * edge_stop;
+
+        let left_start_x = cx + perp_x * barrier_offset;
+        let left_start_y = cy + perp_y * barrier_offset;
+        let left_end_x = stop_x + perp_x * barrier_offset;
+        let left_end_y = stop_y + perp_y * barrier_offset;
+        draw_barrier(left_start_x, left_start_y, left_end_x, left_end_y);
+        draw_post(left_start_x, left_start_y);
+        draw_post(left_end_x, left_end_y);
+
+        let right_start_x = cx - perp_x * barrier_offset;
+        let right_start_y = cy - perp_y * barrier_offset;
+        let right_end_x = stop_x - perp_x * barrier_offset;
+        let right_end_y = stop_y - perp_y * barrier_offset;
+        draw_barrier(right_start_x, right_start_y, right_end_x, right_end_y);
+        draw_post(right_start_x, right_start_y);
+        draw_post(right_end_x, right_end_y);
+    };
+
+    if north {
+        draw_edge_barriers(north_dx, north_dy, north_edge_x, north_edge_y);
+    }
+    if east {
+        draw_edge_barriers(east_dx, east_dy, east_edge_x, east_edge_y);
+    }
+    if south {
+        draw_edge_barriers(south_dx, south_dy, south_edge_x, south_edge_y);
+    }
+    if west {
+        draw_edge_barriers(west_dx, west_dy, west_edge_x, west_edge_y);
+    }
 }
 
 /// Draw entrance gate at edge tiles

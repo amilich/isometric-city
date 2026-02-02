@@ -75,9 +75,16 @@ const TOOL_CATEGORIES = [
     tools: [
       { id: 'food_hotdog', name: 'Hot Dogs', icon: '🌭' },
       { id: 'food_burger', name: 'Burgers', icon: '🍔' },
+      { id: 'food_fries', name: 'Fries', icon: '🍟' },
+      { id: 'food_pretzel', name: 'Pretzel', icon: '🥨' },
       { id: 'food_icecream', name: 'Ice Cream', icon: '🍦' },
       { id: 'drink_soda', name: 'Drinks', icon: '🥤' },
+      { id: 'drink_lemonade', name: 'Lemonade', icon: '🍋' },
+      { id: 'drink_coffee', name: 'Coffee', icon: '☕' },
       { id: 'snack_popcorn', name: 'Popcorn', icon: '🍿' },
+      { id: 'snack_nachos', name: 'Nachos', icon: '🧀' },
+      { id: 'snack_pizza', name: 'Pizza', icon: '🍕' },
+      { id: 'cart_pirate', name: 'Pirate Cart', icon: '🏴‍☠️' },
     ],
   },
   {
@@ -85,8 +92,15 @@ const TOOL_CATEGORIES = [
     tools: [
       { id: 'shop_souvenir', name: 'Souvenirs', icon: '🎁' },
       { id: 'shop_toys', name: 'Toys', icon: '🧸' },
+      { id: 'shop_photo', name: 'Photo Shop', icon: '📸' },
+      { id: 'shop_ticket', name: 'Tickets', icon: '🎟️' },
+      { id: 'shop_plush', name: 'Plush', icon: '🧸' },
+      { id: 'shop_collectibles', name: 'Collectibles', icon: '🎁' },
+      { id: 'shop_candy', name: 'Candy', icon: '🍬' },
+      { id: 'arcade_building', name: 'Arcade', icon: '🕹️' },
       { id: 'restroom', name: 'Restroom', icon: '🚻' },
       { id: 'first_aid', name: 'First Aid', icon: '🏥' },
+      { id: 'atm', name: 'ATM', icon: '🏧' },
     ],
   },
   {
@@ -98,6 +112,9 @@ const TOOL_CATEGORIES = [
       { id: 'ride_bumper_cars', name: 'Bumper Cars', icon: '🚗' },
       { id: 'ride_drop_tower', name: 'Drop Tower', icon: '🗼' },
       { id: 'ride_log_flume', name: 'Log Flume', icon: '🛶' },
+      { id: 'ride_scrambler', name: 'Scrambler', icon: '🎢' },
+      { id: 'ride_haunted_house', name: 'Haunted House', icon: '🏚️' },
+      { id: 'ride_ferris_modern', name: 'Modern Ferris', icon: '🎡' },
     ],
   },
   {

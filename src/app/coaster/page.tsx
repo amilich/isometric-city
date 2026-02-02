@@ -8,6 +8,7 @@ import { MultiplayerContextProvider, useMultiplayerOptional } from '@/context/Mu
 import CoasterGame from '@/components/coaster/Game';
 import { CoasterCoopModal } from '@/components/coaster/multiplayer/CoasterCoopModal';
 import { X } from 'lucide-react';
+import { T, useGT, Var } from 'gt-next';
 import {
   buildSavedParkMeta,
   COASTER_AUTOSAVE_KEY,
@@ -63,7 +64,7 @@ function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {
 }
 
 // Shuffle array using Fisher-Yates algorithm
-function shuffleArray<T>(array: T[]): T[] {
+function shuffleArray<TItem>(array: TItem[]): TItem[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -226,9 +227,10 @@ function CoasterSpriteGallery({ count: defaultCount = 16, cols: defaultCols = 4,
 
 // Saved Park Card Component
 function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad: () => void; onDelete?: () => void }) {
+  const gt = useGT();
   const savedDate = new Date(park.savedAt);
   const dateLabel = savedDate.toLocaleDateString();
-  
+
   return (
     <div className="relative group">
       <button
@@ -241,13 +243,13 @@ function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad
           </h3>
           {park.roomCode && (
             <span className="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded shrink-0">
-              Co-op
+              <T>Co-op</T>
             </span>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-          <span>Guests: {park.guests.toLocaleString()}</span>
-          <span>Rating: {park.rating}</span>
+          <T><span>Guests: <Var>{park.guests.toLocaleString()}</Var></span></T>
+          <T><span>Rating: <Var>{park.rating}</Var></span></T>
           <span>{dateLabel}</span>
           {park.roomCode && <span className="text-emerald-400/60">{park.roomCode}</span>}
         </div>
@@ -259,7 +261,7 @@ function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad
             onDelete();
           }}
           className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
-          title="Delete park"
+          title={gt('Delete park')}
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -269,6 +271,7 @@ function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad
 }
 
 function CoasterPageContent() {
+  const gt = useGT();
   const multiplayer = useMultiplayerOptional();
   const router = useRouter();
   const [showGame, setShowGame] = useState(false);
@@ -294,13 +297,23 @@ function CoasterPageContent() {
   }, []);
 
   useEffect(() => {
-    refreshSavedParks();
+    let parks = readSavedParksIndex();
+    const autosaveState = loadCoasterStateFromStorage(COASTER_AUTOSAVE_KEY);
+    if (autosaveState) {
+      const autosaveMeta = buildSavedParkMeta(autosaveState);
+      parks = upsertSavedParkMeta(autosaveMeta, parks);
+      writeSavedParksIndex(parks);
+    }
+    setSavedParks(parks);
+    setHasSaved(parks.length > 0);
+    setIsChecking(false);
+
     const params = new URLSearchParams(window.location.search);
     const roomCode = params.get('room');
     if (roomCode && roomCode.length === 5) {
       window.location.replace(`/coaster/coop/${roomCode.toUpperCase()}`);
     }
-  }, [refreshSavedParks]);
+  }, []);
 
   const handleExitGame = () => {
     multiplayer?.leaveRoom();
@@ -361,7 +374,7 @@ function CoasterPageContent() {
       </CoasterProvider>
     ) : isChecking ? (
       <main className="min-h-screen bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex items-center justify-center">
-        <div className="text-white/60">Loading...</div>
+        <T><div className="text-white/60">Loading...</div></T>
       </main>
     ) : (
       <>
@@ -374,7 +387,7 @@ function CoasterPageContent() {
               </h1>
 
               <div className="flex flex-col gap-3 w-full max-w-64">
-                <Button 
+                <Button
                   onClick={() => {
                     if (hasSaved && savedParks.length > 0) {
                       setStartFresh(false);
@@ -387,11 +400,11 @@ function CoasterPageContent() {
                   }}
                   className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
                 >
-                  {hasSaved ? 'Continue' : 'New Park'}
+                  {hasSaved ? gt('Continue') : gt('New Park')}
                 </Button>
 
                 {hasSaved && (
-                  <Button 
+                  <Button
                     onClick={() => {
                       setStartFresh(true);
                       setLoadParkId(null);
@@ -400,16 +413,16 @@ function CoasterPageContent() {
                     variant="outline"
                     className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/60 hover:text-white border border-white/20 rounded-none transition-all duration-300"
                   >
-                    New Park
+                    <T>New Park</T>
                   </Button>
                 )}
 
-                <Button 
+                <Button
                   onClick={() => setShowCoopModal(true)}
                   variant="outline"
                   className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/15 rounded-none transition-all duration-300"
                 >
-                  Co-op
+                  <T>Co-op</T>
                 </Button>
 
                 <Button
@@ -429,7 +442,7 @@ function CoasterPageContent() {
                   variant="outline"
                   className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
                 >
-                  Load Example
+                  <T>Load Example</T>
                 </Button>
 
                 <button
@@ -437,7 +450,7 @@ function CoasterPageContent() {
                   onClick={handleBackToIsoCity}
                   className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                 >
-                  Back to IsoCity
+                  <T>Back to IsoCity</T>
                 </button>
                 <a
                   href="https://github.com/amilich/isometric-city"
@@ -445,16 +458,18 @@ function CoasterPageContent() {
                   rel="noopener noreferrer"
                   className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                 >
-                  Open GitHub
+                  <T>Open GitHub</T>
                 </a>
               </div>
 
               {/* Saved Parks */}
               {savedParks.length > 0 && (
                 <div className="w-full max-w-64">
-                  <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                    Saved Parks
-                  </h2>
+                  <T>
+                    <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+                      Saved Parks
+                    </h2>
+                  </T>
                   <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
                     {savedParks.slice(0, 5).map((park) => (
                       <SavedParkCard

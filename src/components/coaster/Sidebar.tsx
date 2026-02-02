@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useCoaster } from '@/context/CoasterContext';
 import { useMultiplayerOptional } from '@/context/MultiplayerContext';
 import { Tool, TOOL_INFO } from '@/games/coaster/types';
@@ -528,6 +529,14 @@ function ExitDialog({
             Save & Exit
           </Button>
         </DialogFooter>
+        <div className="pt-2 border-t border-border mt-2">
+          <Link
+            href="/"
+            className="block w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Back to IsoCity
+          </Link>
+        </div>
       </DialogContent>
     </Dialog>
   );

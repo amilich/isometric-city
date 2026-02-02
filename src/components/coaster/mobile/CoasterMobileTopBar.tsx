@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import Link from 'next/link';
 import { useCoaster } from '@/context/CoasterContext';
 import { Tile, TOOL_INFO } from '@/games/coaster/types';
 import { WEATHER_DISPLAY } from '@/games/coaster/types/economy';
@@ -461,6 +462,14 @@ export function CoasterMobileTopBar({
               {UI_LABELS.saveAndExit}
             </Button>
           </DialogFooter>
+          <div className="pt-2 border-t border-border mt-2">
+            <Link
+              href="/"
+              className="block w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Back to IsoCity
+            </Link>
+          </div>
         </DialogContent>
       </Dialog>
     </>

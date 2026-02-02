@@ -206,6 +206,14 @@ pub enum BuildingType {
     ShowDolphin,
     ShowAmphitheater,
     ShowParadeFloat,
+
+    // Theming
+    ThemeCastleTower,
+    ThemePirateShip,
+    ThemeTempleRuins,
+    ThemeHauntedTree,
+    ThemeCircusTent,
+    ThemeGeometric,
     
     // Coaster Stations
     StationWooden1,
@@ -333,6 +341,14 @@ impl BuildingType {
             BuildingType::RideRapids | BuildingType::RideTrainStation | BuildingType::RideMonorailStation |
             BuildingType::RideChairlift | BuildingType::Show4d | BuildingType::ShowStunt |
             BuildingType::ShowDolphin | BuildingType::ShowAmphitheater | BuildingType::ShowParadeFloat => Some("rides_large"),
+
+            // Theming
+            BuildingType::ThemeCastleTower | BuildingType::ThemePirateShip | BuildingType::ThemeTempleRuins => {
+                Some("theme_classic")
+            }
+            BuildingType::ThemeHauntedTree | BuildingType::ThemeCircusTent | BuildingType::ThemeGeometric => {
+                Some("theme_modern")
+            }
             
             // Stations
             BuildingType::StationWooden1 | BuildingType::StationWooden2 | BuildingType::StationWooden3 |
@@ -543,6 +559,12 @@ impl BuildingType {
             BuildingType::ShowDolphin => "show_dolphin",
             BuildingType::ShowAmphitheater => "show_amphitheater",
             BuildingType::ShowParadeFloat => "show_parade_float",
+            BuildingType::ThemeCastleTower => "theme_castle_tower",
+            BuildingType::ThemePirateShip => "theme_pirate_ship",
+            BuildingType::ThemeTempleRuins => "theme_temple_ruins",
+            BuildingType::ThemeHauntedTree => "theme_haunted_tree",
+            BuildingType::ThemeCircusTent => "theme_circus_tent",
+            BuildingType::ThemeGeometric => "theme_geometric",
             BuildingType::StationWooden1 => "station_wooden_1",
             BuildingType::StationWooden2 => "station_wooden_2",
             BuildingType::StationWooden3 => "station_wooden_3",
@@ -733,6 +755,13 @@ impl BuildingType {
             BuildingType::ShowDolphin => 20000,
             BuildingType::ShowAmphitheater => 18000,
             BuildingType::ShowParadeFloat => 8000,
+            // Theming
+            BuildingType::ThemeCastleTower => 800,
+            BuildingType::ThemePirateShip => 700,
+            BuildingType::ThemeTempleRuins => 650,
+            BuildingType::ThemeHauntedTree => 400,
+            BuildingType::ThemeCircusTent => 800,
+            BuildingType::ThemeGeometric => 450,
             // Stations
             BuildingType::StationWooden1 | BuildingType::StationWooden2 | BuildingType::StationWooden3 |
             BuildingType::StationWooden4 | BuildingType::StationWooden5 => 500,

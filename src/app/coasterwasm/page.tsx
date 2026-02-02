@@ -92,6 +92,17 @@ const TOOL_CATEGORIES = [
     ],
   },
   {
+    name: 'Theming',
+    tools: [
+      { id: 'theme_castle_tower', name: 'Castle Tower', icon: '🏰' },
+      { id: 'theme_pirate_ship', name: 'Pirate Ship', icon: '🏴‍☠️' },
+      { id: 'theme_temple_ruins', name: 'Temple Ruins', icon: '🛕' },
+      { id: 'theme_haunted_tree', name: 'Haunted Tree', icon: '👻' },
+      { id: 'theme_circus_tent', name: 'Circus Tent', icon: '🎪' },
+      { id: 'theme_geometric', name: 'Geometric Art', icon: '🔷' },
+    ],
+  },
+  {
     name: 'Coaster',
     tools: [
       { id: 'coaster_station', name: 'Station', icon: '🚉' },

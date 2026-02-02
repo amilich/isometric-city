@@ -24,16 +24,19 @@
   "0ad556bd75d20fa9": "Sauvegarde automatique",
   "0b14267b74622302": "Gestion de la ville",
   "0ba4f8589e36ca76": "Éducation",
+  "0bd0a3b612a453b4": "Chêne",
   "0c26fce8dc4990eb": "Eau",
   "0c8b71eedbf075f5": "Terrain vacant",
   "0cb408081b45c212": "Afficher les calques",
   "0cc2c983267b6a33": "Front de mer",
   "0df552c71ceffdea": "Terrain de basket en plein air",
+  "0ed850de38c02f43": "Nourriture",
   "11e592ce36623118": "Hôtel de ville",
   "13b2402c6c023ebc": "Aller à la page d'accueil",
   "13fcc02124829d6c": "Impossible de créer la pièce",
   "146b7a76457cbdc5": "Créer une ville coopérative",
   "153aa8e9d1ddfa9d": "Rejoindre un parc coopératif",
+  "15a53176b638350d": "Hot-dogs",
   "1681a6233ff22e03": [
     "Code de salle : ",
     {
@@ -75,11 +78,50 @@
   },
   "1a15d36ef2a49924": "Impossible de rejoindre le parc",
   "1b1481a79d72b160": "cargaison",
+  "1bc5bea6efef4f8c": [
+    {
+      "c": "IsoCoaster",
+      "i": 1,
+      "t": "h1"
+    },
+    {
+      "c": "Édition WebAssembly",
+      "i": 2,
+      "t": "p"
+    }
+  ],
+  "1d2a78bf5a0826f7": "Gare",
   "1d322b583a4b0247": "Augmente la demande commerciale (3x3)",
+  "1e446452c351e21f": {
+    "c": [
+      {
+        "c": "Erreur de chargement",
+        "i": 2,
+        "t": "h1"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_value_4",
+          "v": "v"
+        },
+        "i": 3,
+        "t": "p"
+      },
+      {
+        "c": "Aller à la version normale",
+        "i": 5,
+        "t": "a"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "1e5fcd19bdbca49e": "Départ de sentier de randonnée (3x3)",
   "1f30c00e03eeca50": "Route",
   "2052aad231d5a7a0": "Votre ville tourne sans accroc.",
   "20b6960f6549e2ce": "Solde",
+  "2272973892415b6f": "Toilettes",
   "22afa76a44fbcefd": "Piste de karting",
   "232eb7f71021bb7c": "Finances",
   "236b49842190cde3": "Combattre les incendies",
@@ -92,6 +134,7 @@
       "t": "ArrowRight"
     }
   ],
+  "24644bd93cfcabae": "Souvenirs",
   "265faf7d02352750": "Cette salle n'existe pas ou a peut-être expiré.",
   "26830a19552c9fa6": "Construisez un parc d'attractions ensemble en temps réel",
   "26c08edf08a8fd43": "Agrandir la ville (+30 x 30)",
@@ -109,16 +152,20 @@
     "t": "p"
   },
   "315f62fadaa37351": "Améliorer la santé (2x2)",
+  "319e5736ec848655": "Virage à gauche",
+  "31a22883b53cd9c9": "Boutiques",
   "32957fce34b7e56b": "Terraformation terrestre",
   "32db31f0dc62bec8": "Connexion...",
   "33421e8d33bce805": "Code d'invitation",
   "361b52252c485db1": "Éducation de base (2x2)",
+  "3654c3fd23d8aee1": "Grande roue",
   "36999eca1aa6a62d": "Panneaux",
   "3713fd8f06b7bdbd": "Raser",
   "37974ce5901faca4": "Scène en plein air (2x2)",
   "38f4bf88be0f7fb8": "Portail de parc",
   "39582dc021bd9785": "Revenus",
   "39ecf0d809cf7519": "Outils développeur",
+  "3a232048d48637d6": "Popcorn",
   "3a6eca7252adb9a5": "{toolName} - zone {width}x{height}",
   "3c4c4d97d5e66b21": "Santé",
   "3ce15d2f4c961d10": "Pas encore assez de données. Continuez à jouer pour afficher les tendances historiques.",
@@ -167,6 +214,7 @@
     "t": "p"
   },
   "46bcf1a804883ab0": "Espace de jardinage communautaire",
+  "47c59ae02cdad26c": "IsoCoaster WASM - Parc d’attractions WebAssembly",
   "482a95b964ba67dc": "Départ de sentier",
   "482ea0cd55a6de89": "Jardin communautaire",
   "4862ed8532afdefe": "Génère de l'électricité (2x2)",
@@ -174,19 +222,23 @@
   "4abc7c18f4193dec": "Zone d’habitation",
   "4b2cc49f7ddb97d8": "Villes sauvegardées",
   "4b6098b15618c700": "Métro",
+  "4b7fb18d7c25eb9f": "Allée",
   "4c059835fa726e47": "Copiez l’état de votre partie pour la partager ou la sauvegarder.",
   "4ca435219460c2ac": "Attraction à sensations (2x2)",
   "4e0be86689616403": "Créer un parc",
   "4f39d404387890b1": "Créer un nouveau parc",
   "4f7921f3fd81b8b8": "Les bâtiments ont besoin d’électricité, d’eau et d’une route avant de pouvoir être construits.",
+  "5087bc344fd6e40f": "Premiers secours",
   "50e2a364d74d785c": "Revenu net hebdomadaire",
   "5151b5e97cd737af": "Centre communautaire",
   "51ba70d622cd0090": "Amphithéâtre",
   "5307628f223147b6": "Centre communautaire local",
   "5346721dd34606cc": "Centrale électrique",
   "5346848488eb3e6d": "Grande aire de jeux",
+  "542b50e61c2697bb": "Fleurs",
   "5584c3a28c29fea7": "Pack de sprites",
   "55b6968db17e61eb": "Votre ville a été sauvegardée avant d’ouvrir une ville partagée.",
+  "56d1c45ddea507cb": "Chargement du module WASM…",
   "56e589e66d790077": "Supprimer les bâtiments et les zones",
   "570f15ad126ec582": "{toolName} à ({x}, {y})",
   "5710fcf3d552b2e4": "Caserne de pompiers",
@@ -194,6 +246,9 @@
   "57a3b5a61e0ff28c": "Partage le code d'invitation avec tes amis",
   "5842190480e1e770": "Alimenté en eau",
   "58b631994c014e93": "Bienvenue ! Commencez par définir des zones pour les bâtiments Résidentiel, Commercial et Industriel. Ajoutez ensuite des routes, de l’électricité et de l’eau pour développer votre ville.",
+  "58ca7f4572db1800": "Pente descendante",
+  "593b4053ac116509": "Fontaine moyenne",
+  "59c74176829a3ae2": "Rail droit",
   "5a08b8941a037d58": "Terrain de baseball local (2x2)",
   "5bf5088caf591468": "Terrain de sport avec gradins",
   "5c26a3826c8eebd9": "Population",
@@ -214,10 +269,12 @@
   "668bac01a99df249": "Police",
   "67b416f395bcb015": "Construisez des hôpitaux et des écoles pour améliorer la santé et l’éducation de vos citoyens.",
   "67f7439638ec898d": "Communauté",
+  "6818c3478e87a445": "Virage à droite",
   "68c8018cb5797990": "Collez l’état de la partie ici…",
   "693839da902125cb": "Jetée",
   "69ba5155e6e2ef95": "Renommer",
   "6b2711965c0aecca": "Sports",
+  "6b670f61964a5760": "Montagnes russes",
   "6bbf388c7005fa30": "Université",
   "6c45a87bca570dfb": "Environnement",
   "6d966a4f4fb838a2": "Salle introuvable",
@@ -241,6 +298,7 @@
   "7a2dd3bc72dfe4a0": "Terrain de football américain",
   "7ab9534f0cd01856": "Minicarte",
   "7af04611900a2ec1": "matériaux en vrac",
+  "7cef8b40f78a72d9": "Palmier",
   "7db45eab1e6e4c9e": "Grand parc",
   "7f248a14247b63c3": "Construisez une ville ensemble avec vos amis en temps réel",
   "7fb5371007f7f493": "Statistiques",
@@ -248,6 +306,7 @@
   "830e21fdb11a5d4a": "Fournit de l'eau",
   "8422fd86fad87d61": "Accès au réseau de métro",
   "845da39023dc8d69": "Fermer l’aide",
+  "845e7f34c156ffd4": "File d’attente",
   "84b3fc230d753c82": "Gare ferroviaire",
   "84bfc3db1e596cce": "Parc de l'étang",
   "85c943b4a30a4c69": "Bonheur",
@@ -259,6 +318,7 @@
   "8a3ebfe5eefa1f3a": "Services",
   "8b5e8de8f4c85850": "Enseignement supérieur (3x3)",
   "8b9192b9f5e25ab9": "Choisir le style visuel des bâtiments",
+  "8cefb3c2480b3234": "Fontaines",
   "8cfe5cbc808ec9b6": "Gardez un œil sur la demande de zones. Une demande négative peut entraîner l’abandon de bâtiments.",
   "8de7ba6ed1fcb79c": "Cette salle de parc n'existe pas ou a peut-être expiré.",
   "8e1b26faa1066903": [
@@ -279,10 +339,85 @@
     "k": "_gt_value_1",
     "v": "v"
   },
+  "94155cd0b541e6ac": [
+    {
+      "c": [
+        {
+          "c": "Argent :",
+          "i": 2,
+          "t": "span"
+        },
+        {
+          "c": [
+            "$",
+            {
+              "i": 4,
+              "k": "_gt_n_4",
+              "v": "n"
+            }
+          ],
+          "i": 3,
+          "t": "span"
+        }
+      ],
+      "i": 1,
+      "t": "div"
+    },
+    {
+      "c": [
+        {
+          "c": "Visiteurs :",
+          "i": 6,
+          "t": "span"
+        },
+        {
+          "c": {
+            "i": 8,
+            "k": "_gt_n_8",
+            "v": "n"
+          },
+          "i": 7,
+          "t": "span"
+        }
+      ],
+      "i": 5,
+      "t": "div"
+    },
+    {
+      "c": [
+        {
+          "c": "Note :",
+          "i": 10,
+          "t": "span"
+        },
+        {
+          "c": {
+            "i": 12,
+            "k": "_gt_n_12",
+            "v": "n"
+          },
+          "i": 11,
+          "t": "span"
+        }
+      ],
+      "i": 9,
+      "t": "div"
+    },
+    {
+      "c": {
+        "i": 14,
+        "k": "_gt_value_14",
+        "v": "v"
+      },
+      "i": 13,
+      "t": "div"
+    }
+  ],
   "942af069571719cf": "Dépenses mensuelles",
   "947b31327f9622d3": "Commencer une nouvelle partie",
   "955389bd727d0995": "Stade de football américain (2x2)",
   "956afb617989348a": "Spécial",
+  "95ee435025d683e9": "Chargement des sprites…",
   "961afdfa1ffd458a": "Partie chargée avec succès !",
   "973809b714422052": {
     "c": "Ville découverte !",
@@ -294,8 +429,10 @@
   "9963ed45f2043cb8": "Jardin sous serre",
   "9bd3d3242f1ed87e": "Sans électricité",
   "9c47942e96f87eff": "Retour au menu principal",
+  "9d138e0dbb0778f9": "Création de la partie…",
   "9d254026827d7830": "Terrain avec gradins",
   "9db16884c1c9d324": "Retour",
+  "9e272feae1a28c58": "Pin",
   "9e7842be401ec868": "Multijoueur coopératif",
   "9f2ba8acaf861529": "Voulez-vous sauvegarder votre ville avant de quitter ?",
   "9f624c646a344dd9": "Serre botanique (2x2)",
@@ -309,11 +446,13 @@
   ],
   "a1fe3b85fd8e6410": "Réduire la ville (-30 x 30)",
   "a251f31bd82b46e3": "Nom de la ville",
+  "a74da69bcb8174c5": "Haie",
   "a757c44bab1bfc4d": "Une cargaison de {cargoName} vient d’arriver à la Marina. +${cargoValue} de recettes commerciales.",
   "a7894306a08bac01": "Résidentiel",
   "a7cc8ff7202beca4": "Chalet rustique",
   "a83f273f0a35b2f5": "Dépenses",
   "a916da3428403968": "Skatepark",
+  "a93e378d13009ebc": "Burgers",
   "a9749078f63948e2": "Nouveau nom de la ville…",
   "aa29c7e2f00fb24d": "Augmente le bonheur et la valeur foncière (1x1)",
   "abaacba7b0f79fe8": "Réinitialiser",
@@ -327,6 +466,7 @@
   "b43d25aa91aa1edd": "Modifier l’apparence jour/nuit sans affecter l’écoulement du temps",
   "b453abc6c0aa9847": "Terrain de baseball",
   "b4619e9087ef77c7": "Programme spatial",
+  "b6d3158622fa683f": "Attractions",
   "b7383a44b9c31f2e": [
     {
       "i": 1,
@@ -348,7 +488,9 @@
   },
   "b7cc80c6e92b9484": "Sauvegardez plusieurs villes et passez de l'une à l'autre",
   "b821113430f5f0af": "Voie ferrée",
+  "b86feabfb6c7c571": "Carrousel",
   "b8ffa77d868a668b": "Nom de la ville",
+  "b98ea59dd158fa60": "Jouets",
   "b9b4a7ace7016881": "Rejoindre un parc coopératif",
   "bad59346a21883a3": "Aéroport",
   "bc1312ca9875c6db": "Rejoindre un autre salon",
@@ -357,10 +499,14 @@
   "bd81be63d5902150": "Rejoindre une ville coopérative",
   "bec33fd7ba69166e": "Mon parc en coop",
   "bf03c9d6ae13442a": "Impossible de réduire davantage la ville : taille minimale atteinte.",
+  "c01f016045f1dcd2": "Tasses folles",
+  "c0f3e30fff938922": "Petite fontaine",
   "c1118dc21f1a3a70": "Terrain de football",
   "c374929bd865ac52": "Chalet de montagne (2x2)",
+  "c3858d233557230e": "Boissons",
   "c49fb569cf0344a1": "Reliez votre ville",
   "c56f5cbb6dbe8edb": "Chalet",
+  "c62c4052ec05da00": "Démarrage de la boucle de jeu…",
   "c6fa2905d56a750c": "Sauvegardée",
   "c73a2100c4004277": [
     {
@@ -378,6 +524,11 @@
   "cd69d8784e9ce625": "Catastrophes",
   "ce17b8c1c26494e0": "Camping",
   "cf5babe756808083": "Marina",
+  "d04badbed2888d2e": {
+    "c": "← Retour à la version normale",
+    "i": 1,
+    "t": "a"
+  },
   "d062c71072c029de": "Code de triche rétro activé !",
   "d08f67cf675a3159": "Stade de baseball professionnel (3x3)",
   "d1acbf32e4fd9c19": "Incident",
@@ -435,12 +586,40 @@
   "e41b7f26a2f7453b": "Impossible de rejoindre le salon",
   "e4ca1c349676657c": "Nuit",
   "e4f07cb539c8b592": "Ma ville coop",
+  "e66b16b782ddbff7": "Auto-tamponneuses",
+  "e698e61f5dbb414f": "Basique",
+  "e74d41767a0adc98": "Arbres",
   "e78b04c25599cd81": {
     "c": "Code d'invitation",
     "i": 1,
     "t": "p"
   },
   "e79d3dd997b03f78": "Sans eau",
+  "e7ba69dddc8f6d1e": "Glace",
+  "e7c41f5e08f1e65b": [
+    {
+      "c": "IsoCoaster WASM",
+      "i": 1,
+      "t": "h1"
+    },
+    {
+      "c": {
+        "i": 3,
+        "k": "_gt_value_3",
+        "v": "v"
+      },
+      "i": 2,
+      "t": "div"
+    },
+    {
+      "c": {
+        "i": 5,
+        "t": "div"
+      },
+      "i": 4,
+      "t": "div"
+    }
+  ],
   "e94b8809e7637224": "Options de jeu",
   "e9574dcabfdab036": "Quitter sans sauvegarder",
   "e9f3a9337aab62c6": "Hebdomadaire",
@@ -461,6 +640,7 @@
   "f2faf4aaea86ae97": "Terrains de basket",
   "f313b32c80899b3a": "Ajoutez des casernes de pompiers et des commissariats de Police pour protéger votre ville contre la criminalité et les incendies.",
   "f34a6940381f60d6": "Incident signalé.",
+  "f363d311f5f4736f": "Pente ascendante",
   "f3e6f71a8bc19b40": "Collez un état de partie pour le charger",
   "f62db7ca5ce71d28": "Activé",
   "f69724f1685d216d": "Enclos pour animaux",
@@ -473,6 +653,7 @@
     "i": 1,
     "t": "p"
   },
+  "fa3697fc44f590af": "Construisez le parc d’attractions de vos rêves en WebAssembly ! Un simulateur isométrique de parc d’attractions ultra performant.",
   "fa51c4a3c559da90": "Ajouter 15 cases de chaque côté",
   "fb373c7e167e81f2": "Note globale de la ville",
   "fb6c8a01b4a60b2b": "Ville sauvegardée !",

@@ -123,7 +123,7 @@ pub struct TrackPiece {
 impl TrackPiece {
     pub fn new(piece_type: TrackPieceType, direction: TrackDirection, height: i32) -> Self {
         let (start_h, end_h) = match piece_type {
-            TrackPieceType::SlopeUpSmall => (height, height + 1),
+            TrackPieceType::SlopeUpSmall | TrackPieceType::LiftHill => (height, height + 1),
             TrackPieceType::SlopeUpMedium => (height, height + 2),
             TrackPieceType::SlopeDownSmall => (height, height - 1),
             TrackPieceType::SlopeDownMedium => (height, height - 2),

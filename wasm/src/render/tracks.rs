@@ -2,7 +2,7 @@
 
 use wasm_bindgen::prelude::*;
 use crate::game::state::GameState;
-use crate::game::coaster::{TrackPieceType, TrackDirection, StrutStyle, Coaster, CoasterType};
+use crate::game::coaster::{TrackPiece, TrackPieceType, TrackDirection, StrutStyle, Coaster, CoasterType};
 use super::canvas::Canvas;
 use super::isometric::{tile_center, TILE_WIDTH, TILE_HEIGHT, HEIGHT_UNIT};
 use super::sprites::SpriteManager;
@@ -39,8 +39,9 @@ fn render_coaster_track(
         let piece = &coaster.track_pieces[i];
         let (cx, cy) = tile_center(tile_x, tile_y, offset_x, offset_y);
         
-        if piece.start_height > 0 {
-            draw_track_supports(canvas, cx, cy, piece.start_height, &piece.strut_style, &coaster.color.supports);
+        let support_height = piece.start_height.max(piece.end_height);
+        if support_height > 0 {
+            draw_track_supports(canvas, cx, cy, support_height, &piece.strut_style, &coaster.color.supports);
         }
     }
     
@@ -58,8 +59,7 @@ fn render_coaster_track(
             canvas,
             cx,
             cy - height_offset,
-            &piece.piece_type,
-            &piece.direction,
+            piece,
             &coaster.color.primary,
             &coaster.color.secondary,
         )?;
@@ -142,41 +142,42 @@ fn draw_track_piece(
     canvas: &Canvas,
     x: f64,
     y: f64,
-    piece_type: &TrackPieceType,
-    direction: &TrackDirection,
+    piece: &TrackPiece,
     primary_color: &str,
     secondary_color: &str,
 ) -> Result<(), JsValue> {
-    match piece_type {
+    let height_delta = (piece.end_height - piece.start_height) as f64 * HEIGHT_UNIT;
+
+    match piece.piece_type {
         TrackPieceType::StraightFlat => {
-            draw_straight_track(canvas, x, y, direction, primary_color, secondary_color)?;
+            draw_straight_track(canvas, x, y, &piece.direction, primary_color, secondary_color)?;
         }
         TrackPieceType::Station => {
-            draw_station_track(canvas, x, y, direction, primary_color, secondary_color)?;
+            draw_station_track(canvas, x, y, &piece.direction, primary_color, secondary_color)?;
         }
         TrackPieceType::TurnLeftFlat => {
-            draw_curved_track(canvas, x, y, direction, true, primary_color)?;
+            draw_curved_track(canvas, x, y, &piece.direction, true, primary_color)?;
         }
         TrackPieceType::TurnRightFlat => {
-            draw_curved_track(canvas, x, y, direction, false, primary_color)?;
+            draw_curved_track(canvas, x, y, &piece.direction, false, primary_color)?;
         }
         TrackPieceType::SlopeUpSmall | TrackPieceType::SlopeUpMedium | TrackPieceType::LiftHill => {
-            draw_slope_track(canvas, x, y, direction, true, primary_color, secondary_color)?;
-            if matches!(piece_type, TrackPieceType::LiftHill) {
-                draw_chain_lift(canvas, x, y, direction)?;
+            draw_slope_track(canvas, x, y, &piece.direction, height_delta, primary_color, secondary_color)?;
+            if matches!(piece.piece_type, TrackPieceType::LiftHill) {
+                draw_chain_lift(canvas, x, y, &piece.direction)?;
             }
         }
         TrackPieceType::SlopeDownSmall | TrackPieceType::SlopeDownMedium => {
-            draw_slope_track(canvas, x, y, direction, false, primary_color, secondary_color)?;
+            draw_slope_track(canvas, x, y, &piece.direction, height_delta, primary_color, secondary_color)?;
         }
         TrackPieceType::LoopVertical => {
             draw_loop_track(canvas, x, y, primary_color)?;
         }
         TrackPieceType::Brakes => {
-            draw_brake_track(canvas, x, y, direction, primary_color, secondary_color)?;
+            draw_brake_track(canvas, x, y, &piece.direction, primary_color, secondary_color)?;
         }
         TrackPieceType::Corkscrew => {
-            draw_corkscrew_track(canvas, x, y, direction, primary_color)?;
+            draw_corkscrew_track(canvas, x, y, &piece.direction, primary_color)?;
         }
     }
     
@@ -314,13 +315,13 @@ fn draw_slope_track(
     x: f64,
     y: f64,
     direction: &TrackDirection,
-    going_up: bool,
+    height_delta: f64,
     primary_color: &str,
     _secondary_color: &str,
 ) -> Result<(), JsValue> {
     let rail_spacing = 8.0;
     let track_length = TILE_WIDTH * 0.8;
-    let height_change = if going_up { -HEIGHT_UNIT } else { HEIGHT_UNIT };
+    let height_change = -height_delta;
     
     let (dx, dy) = match direction {
         TrackDirection::North | TrackDirection::South => (1.0, 0.6),

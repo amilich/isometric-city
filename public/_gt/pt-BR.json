@@ -81,6 +81,7 @@
   "2052aad231d5a7a0": "Sua cidade está rodando sem problemas.",
   "20b6960f6549e2ce": "Saldo",
   "22afa76a44fbcefd": "Pista de Kart",
+  "22b6447b8bb2f39c": "Cooperativo",
   "232eb7f71021bb7c": "Fundos",
   "236b49842190cde3": "Combater incêndios",
   "244e7898107e1ee5": "Modo dia/noite",
@@ -92,6 +93,8 @@
       "t": "ArrowRight"
     }
   ],
+  "24f7c9f97fcf1c96": "Voltar para IsoCity",
+  "2630e7b58f5f271b": "Continuar",
   "265faf7d02352750": "Esta sala não existe ou pode ter expirado.",
   "26830a19552c9fa6": "Construa um parque temático juntos em tempo real",
   "26c08edf08a8fd43": "Expandir cidade (+30x30)",
@@ -170,6 +173,14 @@
   "482a95b964ba67dc": "Início da trilha",
   "482ea0cd55a6de89": "Horta comunitária",
   "4862ed8532afdefe": "Gera eletricidade (2x2)",
+  "4a3360cdcc94b452": [
+    "Visitantes: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "4a55fb07d843e6b3": "Terraformação de água",
   "4abc7c18f4193dec": "Zonear para moradias",
   "4b2cc49f7ddb97d8": "Cidades salvas",
@@ -177,6 +188,7 @@
   "4c059835fa726e47": "Copie o estado do jogo para compartilhar ou criar um backup",
   "4ca435219460c2ac": "Brinquedo radical (2x2)",
   "4e0be86689616403": "Criar Parque",
+  "4e1f4ac5a68578c2": "Parques Salvos",
   "4f39d404387890b1": "Criar Novo Parque",
   "4f7921f3fd81b8b8": "Os prédios precisam de energia, água e ruas para começarem a ser construídos.",
   "50e2a364d74d785c": "Saldo semanal",
@@ -198,6 +210,7 @@
   "5bf5088caf591468": "Campo esportivo com arquibancadas para o público",
   "5c26a3826c8eebd9": "População",
   "5c6aa4f2a08f5808": "Segurança",
+  "5cd89cfd9ef6a613": "Carregando...",
   "5d55c4129177872e": "Com energia",
   "5dbd90f586ba6162": "Renda mensal",
   "5e16578196ee8412": "Empregos",
@@ -211,6 +224,7 @@
   "62f43adf29906dd6": "Campo de futebol",
   "6366c3e6926eb31f": "Expandir a cidade",
   "644d112397a9d946": "Carregar",
+  "64d749f21a435824": "Novo Parque",
   "668bac01a99df249": "Polícia",
   "67b416f395bcb015": "Construa hospitais e escolas para melhorar a saúde e a educação dos seus cidadãos.",
   "67f7439638ec898d": "Comunidade",
@@ -244,6 +258,7 @@
   "7db45eab1e6e4c9e": "Parque grande",
   "7f248a14247b63c3": "Construa uma cidade junto com amigos em tempo real",
   "7fb5371007f7f493": "Estatísticas",
+  "8028771b447e0eec": "IsoCoaster",
   "825d7120d9e5c572": "contêineres",
   "830e21fdb11a5d4a": "Fornece água",
   "8422fd86fad87d61": "Acesso à rede de metrô",
@@ -284,6 +299,7 @@
   "955389bd727d0995": "Estádio (2x2)",
   "956afb617989348a": "Especial",
   "961afdfa1ffd458a": "Jogo carregado com sucesso!",
+  "9623fe89547f52b2": "Carregar Exemplo",
   "973809b714422052": {
     "c": "Cidade Descoberta!",
     "i": 1,
@@ -292,13 +308,23 @@
   "97513d561bf53e55": "Estação de Metrô",
   "97c7b3a9fd235ee5": "População",
   "9963ed45f2043cb8": "Jardim Estufa",
+  "9ae9a8155bc41bd2": "Novo parque",
   "9bd3d3242f1ed87e": "Sem energia",
   "9c47942e96f87eff": "Voltar ao menu principal",
   "9d254026827d7830": "Campo com Arquibancadas",
   "9db16884c1c9d324": "Voltar",
   "9e7842be401ec868": "Multijogador Cooperativo",
   "9f2ba8acaf861529": "Quer salvar sua cidade antes de sair?",
+  "9f5e0ad2d121bf3b": "Abrir GitHub",
   "9f624c646a344dd9": "Estufa botânica (2x2)",
+  "a0e0935f719a03a7": [
+    "Avaliação: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "a0ffbf0fb30b0c88": "Erro ao criar sala no banco de dados",
   "a1608c009c5abc68": [
     {
@@ -313,6 +339,7 @@
   "a7894306a08bac01": "Residencial",
   "a7cc8ff7202beca4": "Refúgio em cabana rústica",
   "a83f273f0a35b2f5": "Despesas",
+  "a8c8fb2bb501cc26": "Excluir parque",
   "a916da3428403968": "Pista de Skate",
   "a9749078f63948e2": "Nome da nova cidade...",
   "aa29c7e2f00fb24d": "Aumenta a felicidade e o valor da terra (1x1)",

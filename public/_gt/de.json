@@ -81,6 +81,7 @@
   "2052aad231d5a7a0": "Deine Stadt läuft reibungslos.",
   "20b6960f6549e2ce": "Saldo",
   "22afa76a44fbcefd": "Go-Kart-Bahn",
+  "22b6447b8bb2f39c": "Koop",
   "232eb7f71021bb7c": "Finanzmittel",
   "236b49842190cde3": "Brände bekämpfen",
   "244e7898107e1ee5": "Tag/Nacht-Modus",
@@ -92,6 +93,8 @@
       "t": "ArrowRight"
     }
   ],
+  "24f7c9f97fcf1c96": "Zurück zu IsoCity",
+  "2630e7b58f5f271b": "Fortfahren",
   "265faf7d02352750": "Dieser Raum existiert nicht oder ist möglicherweise abgelaufen.",
   "26830a19552c9fa6": "Baut gemeinsam in Echtzeit einen Freizeitpark",
   "26c08edf08a8fd43": "Stadt vergrößern (+30x30)",
@@ -170,6 +173,14 @@
   "482a95b964ba67dc": "Wanderweg-Einstieg",
   "482ea0cd55a6de89": "Gemeinschaftsgarten",
   "4862ed8532afdefe": "Erzeugt Strom (2x2)",
+  "4a3360cdcc94b452": [
+    "Gäste: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "4a55fb07d843e6b3": "Wasser-Terraforming",
   "4abc7c18f4193dec": "Gebiet für Wohnbebauung ausweisen",
   "4b2cc49f7ddb97d8": "Gespeicherte Städte",
@@ -177,6 +188,7 @@
   "4c059835fa726e47": "Kopiere deinen Spielstand, um ihn zu teilen oder zu sichern",
   "4ca435219460c2ac": "Thrill-Fahrgeschäft (2x2)",
   "4e0be86689616403": "Park erstellen",
+  "4e1f4ac5a68578c2": "Gespeicherte Parks",
   "4f39d404387890b1": "Neuen Park erstellen",
   "4f7921f3fd81b8b8": "Gebäude benötigen Strom, Wasser und Straßen, damit dort gebaut werden kann.",
   "50e2a364d74d785c": "Wöchentlicher Nettogewinn",
@@ -198,6 +210,7 @@
   "5bf5088caf591468": "Sportplatz mit Sitzplätzen",
   "5c26a3826c8eebd9": "Bevölkerung",
   "5c6aa4f2a08f5808": "Sicherheit",
+  "5cd89cfd9ef6a613": "Lädt...",
   "5d55c4129177872e": "Mit Strom",
   "5dbd90f586ba6162": "Monatliche Einnahmen",
   "5e16578196ee8412": "Arbeitsplätze",
@@ -211,6 +224,7 @@
   "62f43adf29906dd6": "Fußballplatz",
   "6366c3e6926eb31f": "Stadt erweitern",
   "644d112397a9d946": "Laden",
+  "64d749f21a435824": "Neuer Park",
   "668bac01a99df249": "Polizei",
   "67b416f395bcb015": "Baue Krankenhäuser und Schulen, um die Gesundheit und Bildung deiner Bürger zu verbessern.",
   "67f7439638ec898d": "Gemeinschaftsbauten",
@@ -244,6 +258,7 @@
   "7db45eab1e6e4c9e": "Großer Park",
   "7f248a14247b63c3": "Baue gemeinsam mit Freunden in Echtzeit eine Stadt",
   "7fb5371007f7f493": "Statistiken",
+  "8028771b447e0eec": "IsoCoaster",
   "825d7120d9e5c572": "Container",
   "830e21fdb11a5d4a": "Stellt Wasser bereit",
   "8422fd86fad87d61": "Zugang zum U-Bahn-Netz",
@@ -284,6 +299,7 @@
   "955389bd727d0995": "Fußballstadion (2x2)",
   "956afb617989348a": "Spezialgebäude",
   "961afdfa1ffd458a": "Spielstand erfolgreich geladen!",
+  "9623fe89547f52b2": "Beispiel laden",
   "973809b714422052": {
     "c": "Stadt entdeckt!",
     "i": 1,
@@ -292,13 +308,23 @@
   "97513d561bf53e55": "U-Bahn-Station",
   "97c7b3a9fd235ee5": "Bevölkerung",
   "9963ed45f2043cb8": "Gewächshausgarten",
+  "9ae9a8155bc41bd2": "Neuer Park",
   "9bd3d3242f1ed87e": "Ohne Strom",
   "9c47942e96f87eff": "Zurück zum Hauptmenü",
   "9d254026827d7830": "Sportplatz mit Tribünen",
   "9db16884c1c9d324": "Zurück",
   "9e7842be401ec868": "Koop-Mehrspieler",
   "9f2ba8acaf861529": "Möchtest du deine Stadt vor dem Beenden speichern?",
+  "9f5e0ad2d121bf3b": "GitHub öffnen",
   "9f624c646a344dd9": "Botanisches Gewächshaus (2x2)",
+  "a0e0935f719a03a7": [
+    "Bewertung: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "a0ffbf0fb30b0c88": "Raum konnte in der Datenbank nicht erstellt werden.",
   "a1608c009c5abc68": [
     {
@@ -313,6 +339,7 @@
   "a7894306a08bac01": "Wohngebiet",
   "a7cc8ff7202beca4": "Rustikales Blockhaus als Rückzugsort",
   "a83f273f0a35b2f5": "Ausgaben",
+  "a8c8fb2bb501cc26": "Park löschen",
   "a916da3428403968": "Skatepark",
   "a9749078f63948e2": "Neuer Stadtname...",
   "aa29c7e2f00fb24d": "Steigert Zufriedenheit und Bodenwert (1x1)",

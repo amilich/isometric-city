@@ -81,6 +81,7 @@
   "2052aad231d5a7a0": "La tua città funziona senza intoppi.",
   "20b6960f6549e2ce": "Bilancio netto",
   "22afa76a44fbcefd": "Pista di go-kart",
+  "22b6447b8bb2f39c": "Co-op",
   "232eb7f71021bb7c": "Fondi",
   "236b49842190cde3": "Spegni gli incendi",
   "244e7898107e1ee5": "Modalità giorno/notte",
@@ -92,6 +93,8 @@
       "t": "ArrowRight"
     }
   ],
+  "24f7c9f97fcf1c96": "Torna a IsoCity",
+  "2630e7b58f5f271b": "Continua",
   "265faf7d02352750": "Questa stanza non esiste o potrebbe essere scaduta.",
   "26830a19552c9fa6": "Costruisci un parco a tema insieme in tempo reale",
   "26c08edf08a8fd43": "Espandi città (+30x30)",
@@ -170,6 +173,14 @@
   "482a95b964ba67dc": "Inizio sentiero",
   "482ea0cd55a6de89": "Giardino comunitario",
   "4862ed8532afdefe": "Genera elettricità (2x2)",
+  "4a3360cdcc94b452": [
+    "Ospiti: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "4a55fb07d843e6b3": "Terraformazione acqua",
   "4abc7c18f4193dec": "Zona residenziale",
   "4b2cc49f7ddb97d8": "Città salvate",
@@ -177,6 +188,7 @@
   "4c059835fa726e47": "Copia lo stato della partita per condividerla o crearne un backup",
   "4ca435219460c2ac": "Attrazione adrenalinica (2x2)",
   "4e0be86689616403": "Crea parco",
+  "4e1f4ac5a68578c2": "Parchi salvati",
   "4f39d404387890b1": "Crea nuovo parco",
   "4f7921f3fd81b8b8": "Gli edifici hanno bisogno di elettricità, acqua e strade prima che possano essere costruiti.",
   "50e2a364d74d785c": "Saldo settimanale",
@@ -198,6 +210,7 @@
   "5bf5088caf591468": "Campo sportivo con tribune",
   "5c26a3826c8eebd9": "Popolazione",
   "5c6aa4f2a08f5808": "Sicurezza",
+  "5cd89cfd9ef6a613": "Caricamento...",
   "5d55c4129177872e": "Con elettricità",
   "5dbd90f586ba6162": "Entrate mensili",
   "5e16578196ee8412": "Posti di lavoro",
@@ -211,6 +224,7 @@
   "62f43adf29906dd6": "Campo da calcio",
   "6366c3e6926eb31f": "Espandi la città",
   "644d112397a9d946": "Carica",
+  "64d749f21a435824": "Nuovo parco",
   "668bac01a99df249": "Polizia",
   "67b416f395bcb015": "Costruisci ospedali e scuole per migliorare la salute e l’istruzione dei tuoi cittadini.",
   "67f7439638ec898d": "Comunità",
@@ -244,6 +258,7 @@
   "7db45eab1e6e4c9e": "Parco grande",
   "7f248a14247b63c3": "Costruisci una città insieme agli amici in tempo reale",
   "7fb5371007f7f493": "Statistiche",
+  "8028771b447e0eec": "IsoCoaster",
   "825d7120d9e5c572": "container",
   "830e21fdb11a5d4a": "Fornisce acqua",
   "8422fd86fad87d61": "Accesso alla rete metropolitana",
@@ -284,6 +299,7 @@
   "955389bd727d0995": "Stadio (2x2)",
   "956afb617989348a": "Speciali",
   "961afdfa1ffd458a": "Partita caricata correttamente!",
+  "9623fe89547f52b2": "Carica esempio",
   "973809b714422052": {
     "c": "Città scoperta!",
     "i": 1,
@@ -292,13 +308,23 @@
   "97513d561bf53e55": "Stazione della metropolitana",
   "97c7b3a9fd235ee5": "Popolazione",
   "9963ed45f2043cb8": "Giardino serra",
+  "9ae9a8155bc41bd2": "Nuovo parco",
   "9bd3d3242f1ed87e": "Senza elettricità",
   "9c47942e96f87eff": "Torna al menu principale",
   "9d254026827d7830": "Campo con tribune",
   "9db16884c1c9d324": "Indietro",
   "9e7842be401ec868": "Multigiocatore cooperativo",
   "9f2ba8acaf861529": "Vuoi salvare la città prima di uscire?",
+  "9f5e0ad2d121bf3b": "Apri GitHub",
   "9f624c646a344dd9": "Serra botanica (2x2)",
+  "a0e0935f719a03a7": [
+    "Valutazione: ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
   "a0ffbf0fb30b0c88": "Impossibile creare la stanza nel database",
   "a1608c009c5abc68": [
     {
@@ -313,6 +339,7 @@
   "a7894306a08bac01": "Residenziale",
   "a7cc8ff7202beca4": "Rifugio rustico in casetta di legno",
   "a83f273f0a35b2f5": "Spese",
+  "a8c8fb2bb501cc26": "Demolisci parco",
   "a916da3428403968": "Skatepark",
   "a9749078f63948e2": "Nuovo nome per la città...",
   "aa29c7e2f00fb24d": "Aumenta felicità e valore dei terreni (1x1)",

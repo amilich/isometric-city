@@ -30,6 +30,7 @@ pub struct Game {
     canvas: Canvas,
     sprites: SpriteManager,
     tick_count: u32,
+    pixel_ratio: f64,
     
     // Viewport state
     offset_x: f64,
@@ -48,16 +49,17 @@ pub struct Game {
 impl Game {
     /// Create a new game instance
     #[wasm_bindgen(constructor)]
-    pub fn new(canvas: HtmlCanvasElement, grid_size: usize) -> Result<Game, JsValue> {
+    pub fn new(canvas: HtmlCanvasElement, grid_size: usize, pixel_ratio: f64) -> Result<Game, JsValue> {
         // Set panic hook for better error messages
         console_error_panic_hook::set_once();
         
         let canvas_obj = Canvas::new(canvas)?;
         let state = GameState::new(grid_size);
         let sprites = SpriteManager::new();
+        let ratio = if pixel_ratio > 0.0 { pixel_ratio } else { 1.0 };
         
         // Calculate initial offset to center the grid
-        let center_x = canvas_obj.width() as f64 / 2.0;
+        let center_x = canvas_obj.width() as f64 / 2.0 / ratio;
         let center_y = 100.0; // Start near top
         
         console_log!("IsoCoaster WASM initialized with {}x{} grid", grid_size, grid_size);
@@ -67,6 +69,7 @@ impl Game {
             canvas: canvas_obj,
             sprites,
             tick_count: 0,
+            pixel_ratio: ratio,
             offset_x: center_x,
             offset_y: center_y,
             zoom: 1.0,
@@ -128,7 +131,7 @@ impl Game {
         
         // Apply zoom and offset transformations
         self.canvas.save();
-        self.canvas.scale(self.zoom, self.zoom)?;
+        self.canvas.scale(self.zoom * self.pixel_ratio, self.zoom * self.pixel_ratio)?;
         
         // Render terrain (grass, water, paths)
         render::terrain::render_terrain(
@@ -346,8 +349,12 @@ impl Game {
     }
     
     /// Resize canvas
-    pub fn resize(&mut self, width: u32, height: u32) {
-        self.canvas.resize(width, height);
+    pub fn resize(&mut self, width: u32, height: u32, pixel_ratio: f64) {
+        let ratio = if pixel_ratio > 0.0 { pixel_ratio } else { 1.0 };
+        let scaled_width = ((width as f64) * ratio).round() as u32;
+        let scaled_height = ((height as f64) * ratio).round() as u32;
+        self.pixel_ratio = ratio;
+        self.canvas.resize(scaled_width, scaled_height);
     }
 }
 

@@ -149,11 +149,16 @@ export default function CoasterWasmPage() {
         }
         
         // Set canvas size
-        canvas.width = window.innerWidth - 240; // Account for sidebar
-        canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        const width = window.innerWidth - 240;
+        const height = window.innerHeight;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
         
         // Create game instance
-        const game = new wasm.Game(canvas, 50); // 50x50 grid
+        const game = new wasm.Game(canvas, 50, dpr); // 50x50 grid
         gameRef.current = game;
         
         // Load sprite sheets
@@ -246,11 +251,14 @@ export default function CoasterWasmPage() {
     const handleResize = () => {
       const canvas = canvasRef.current;
       if (canvas && gameRef.current) {
+        const dpr = window.devicePixelRatio || 1;
         const width = window.innerWidth - 240;
         const height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-        gameRef.current.resize(width, height);
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        gameRef.current.resize(width, height, dpr);
       }
     };
 

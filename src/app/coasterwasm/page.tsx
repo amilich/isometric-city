@@ -45,8 +45,11 @@ const TOOL_CATEGORIES = [
     name: 'Furniture',
     tools: [
       { id: 'bench_wooden', name: 'Bench', icon: '🪑' },
+      { id: 'bench_metal', name: 'Metal Bench', icon: '🪑' },
       { id: 'lamp_victorian', name: 'Lamp', icon: '💡' },
+      { id: 'lamp_modern', name: 'Modern Lamp', icon: '💡' },
       { id: 'trash_can_basic', name: 'Trash Can', icon: '🗑️' },
+      { id: 'trash_can_fancy', name: 'Fancy Bin', icon: '🗑️' },
     ],
   },
   {
@@ -84,6 +87,8 @@ const TOOL_CATEGORIES = [
     tools: [
       { id: 'fountain_small_1', name: 'Small Fountain', icon: '⛲' },
       { id: 'fountain_medium_1', name: 'Medium Fountain', icon: '💧' },
+      { id: 'fountain_large_1', name: 'Large Fountain', icon: '⛲' },
+      { id: 'pond_small', name: 'Pond', icon: '🐟' },
     ],
   },
   {

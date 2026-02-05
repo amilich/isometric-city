@@ -65,6 +65,18 @@ Made with [Cursor](https://cursor.com)
 4.  **Open the game:**
     Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
+### WebAssembly Edition (IsoCoaster)
+
+The WebAssembly version of IsoCoaster runs at `/coasterwasm` and uses Rust + `wasm-pack` under the hood. The dev server and build automatically compile the WASM module via `npm run wasm:build`.
+
+1. **Start the dev server:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Open the WASM game:**
+   Visit [http://localhost:3000/coasterwasm](http://localhost:3000/coasterwasm) in your browser.
+
 ## Contributing
 
 Contributions are welcome! Whether it's reporting a bug, proposing a new feature, or submitting a pull request, your input is valued.

@@ -237,15 +237,18 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
       }
     }
     
-    // Apply lake tiles to grid
+    // Apply lake tiles to grid and calculate center in one pass
+    let sumX = 0;
+    let sumY = 0;
     for (const tile of lakeTiles) {
       grid[tile.y][tile.x].building = createBuilding('water');
       grid[tile.y][tile.x].landValue = 60; // Water increases nearby land value
+      sumX += tile.x;
+      sumY += tile.y;
     }
     
-    // Calculate center for labeling
-    const avgX = lakeTiles.reduce((sum, t) => sum + t.x, 0) / lakeTiles.length;
-    const avgY = lakeTiles.reduce((sum, t) => sum + t.y, 0) / lakeTiles.length;
+    const avgX = sumX / lakeTiles.length;
+    const avgY = sumY / lakeTiles.length;
     
     // Assign a random name to this lake
     let lakeName = generateWaterName('lake');

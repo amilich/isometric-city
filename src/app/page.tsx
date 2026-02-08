@@ -11,6 +11,7 @@ import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/re
 import { SavedCityMeta, GameState } from '@/types/game';
 import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { T } from 'gt-next';
 import { Users, X } from 'lucide-react';
 import { useGT } from 'gt-next/client';
 

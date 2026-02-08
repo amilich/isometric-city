@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { T } from 'gt-next';
+import { T, useGT } from 'gt-next';
 
 // Language configuration with display names
 const LANGUAGES = [
@@ -77,8 +77,8 @@ interface LanguageSelectorProps {
   useDrawer?: boolean;
 }
 
-export function LanguageSelector({ 
-  iconOnly = false, 
+export function LanguageSelector({
+  iconOnly = false,
   className = '',
   variant = 'ghost',
   iconSize = 16,
@@ -86,6 +86,7 @@ export function LanguageSelector({
 }: LanguageSelectorProps) {
   const locale = useLocale();
   const setLocale = useSetLocale();
+  const gt = useGT();
   const [isOpen, setIsOpen] = useState(false);
   
   const currentLanguage = LANGUAGES.find(l => l.code === locale) || LANGUAGES[0];
@@ -102,7 +103,7 @@ export function LanguageSelector({
         <button
           onClick={() => setIsOpen(true)}
           className={`h-6 w-4 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
-          title="Change Language"
+          title={gt('Change Language')}
         >
           <GlobeIcon size={iconSize} />
         </button>
@@ -153,7 +154,7 @@ export function LanguageSelector({
         {iconOnly ? (
           <button
             className={`h-6 w-6 p-0 m-0 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ${className}`}
-            title="Change Language"
+            title={gt('Change Language')}
           >
             <GlobeIcon size={iconSize} />
           </button>

@@ -81,6 +81,7 @@
   "2052aad231d5a7a0": "Tu ciudad funciona sin problemas.",
   "20b6960f6549e2ce": "Saldo neto",
   "22afa76a44fbcefd": "Pista de karts",
+  "22b6447b8bb2f39c": "Cooperativo",
   "232eb7f71021bb7c": "Fondos",
   "236b49842190cde3": "Combatir incendios",
   "244e7898107e1ee5": "Modo día/noche",
@@ -101,6 +102,7 @@
   "2c1c93a646bbea6e": "Idioma",
   "2cfd6433e4b2a26a": "Habilitar incendios y desastres aleatorios",
   "2e46736f6530763d": "Parque pequeño",
+  "2e7649d8d92a1c6e": "Borrar ciudad",
   "2ee85b5d8a92b88c": "Unirse a ciudad",
   "311b940a57c89ab6": "Unir parque",
   "311dc7890d2b1d67": {
@@ -118,6 +120,7 @@
   "37974ce5901faca4": "Recinto de espectáculos al aire libre (2x2)",
   "38f4bf88be0f7fb8": "Puerta del Parque",
   "39582dc021bd9785": "Ingresos",
+  "39889a36667620a2": "Seleccionar idioma",
   "39ecf0d809cf7519": "Herramientas para desarrolladores",
   "3a6eca7252adb9a5": "{toolName} - área de {width} x {height}",
   "3c4c4d97d5e66b21": "Salud",
@@ -187,6 +190,7 @@
   "5346848488eb3e6d": "Parque infantil grande",
   "5584c3a28c29fea7": "Paquete de sprites",
   "55b6968db17e61eb": "Tu ciudad se guardó antes de mostrar una ciudad compartida.",
+  "56caaccde6d15589": "Hecho con Cursor",
   "56e589e66d790077": "Eliminar edificios y zonas",
   "570f15ad126ec582": "{toolName} en ({x}, {y})",
   "5710fcf3d552b2e4": "Estación de bomberos",
@@ -198,6 +202,7 @@
   "5bf5088caf591468": "Campo deportivo con gradas",
   "5c26a3826c8eebd9": "Población",
   "5c6aa4f2a08f5808": "Seguridad",
+  "5cd89cfd9ef6a613": "Cargando...",
   "5d55c4129177872e": "Con energía",
   "5dbd90f586ba6162": "Ingresos mensuales",
   "5e16578196ee8412": "Empleos",
@@ -240,6 +245,7 @@
   "786f78fa84e8f121": "Parque con estanque pintoresco",
   "7a2dd3bc72dfe4a0": "Campo de fútbol americano",
   "7ab9534f0cd01856": "Minimapa",
+  "7ac4455553fe632a": "Continuar",
   "7af04611900a2ec1": "materiales a granel",
   "7db45eab1e6e4c9e": "Parque grande",
   "7f248a14247b63c3": "Construye una ciudad junto a tus amigos en tiempo real",
@@ -254,6 +260,7 @@
   "878c45a35ddde226": "Importar partida",
   "87d0409e4047fbca": "Estado de la partida no válido. Por favor, compruébalo e inténtalo de nuevo.",
   "884832efb61160d4": "Convertir tierra en agua",
+  "88da711fb08edc45": "Ciudades guardadas",
   "89c6ae6c99a26fef": "Cargar estado de ejemplo",
   "8a2629c99203fd4e": "Asesores",
   "8a3ebfe5eefa1f3a": "Servicios",
@@ -284,6 +291,7 @@
   "955389bd727d0995": "Estadio de fútbol (2x2)",
   "956afb617989348a": "Especiales",
   "961afdfa1ffd458a": "¡Partida cargada correctamente!",
+  "9623fe89547f52b2": "Cargar ejemplo",
   "973809b714422052": {
     "c": "¡Ciudad descubierta!",
     "i": 1,
@@ -298,6 +306,7 @@
   "9db16884c1c9d324": "Atrás",
   "9e7842be401ec868": "Multijugador cooperativo",
   "9f2ba8acaf861529": "¿Quieres guardar tu ciudad antes de salir?",
+  "9f5e0ad2d121bf3b": "Abrir GitHub",
   "9f624c646a344dd9": "Invernadero botánico (2x2)",
   "a0ffbf0fb30b0c88": "No se pudo crear la sala en la base de datos",
   "a1608c009c5abc68": [
@@ -316,6 +325,18 @@
   "a916da3428403968": "Parque de patinaje",
   "a9749078f63948e2": "Nombre de la nueva ciudad...",
   "aa29c7e2f00fb24d": "Aumenta la felicidad y el valor del suelo (1x1)",
+  "aa817e06ba83a0ec": {
+    "c": [
+      "Pob: ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "abaacba7b0f79fe8": "Reiniciar",
   "abd01d16a9c20c45": "¡No hay problemas urgentes que reportar!",
   "ac59cfc290b0aaf7": "Cargar estado de la partida",
@@ -358,8 +379,10 @@
   "bec33fd7ba69166e": "Mi parque cooperativo",
   "bf03c9d6ae13442a": "No se puede reducir más la ciudad: se alcanzó el tamaño mínimo.",
   "c1118dc21f1a3a70": "Campo de fútbol",
+  "c34e8e2decd4cb7d": "Cambiar idioma",
   "c374929bd865ac52": "Refugio natural (2x2)",
   "c49fb569cf0344a1": "Conecta tu ciudad",
+  "c4b2f6543e9a13ff": "Nueva partida",
   "c56f5cbb6dbe8edb": "Casa cabaña",
   "c6fa2905d56a750c": "Guardado",
   "c73a2100c4004277": [

@@ -81,6 +81,7 @@
   "2052aad231d5a7a0": "Deine Stadt läuft reibungslos.",
   "20b6960f6549e2ce": "Saldo",
   "22afa76a44fbcefd": "Go-Kart-Bahn",
+  "22b6447b8bb2f39c": "Koop",
   "232eb7f71021bb7c": "Finanzmittel",
   "236b49842190cde3": "Brände bekämpfen",
   "244e7898107e1ee5": "Tag/Nacht-Modus",
@@ -101,6 +102,7 @@
   "2c1c93a646bbea6e": "Sprache",
   "2cfd6433e4b2a26a": "Zufällige Brände und Katastrophen einschalten",
   "2e46736f6530763d": "Kleiner Park",
+  "2e7649d8d92a1c6e": "Stadt löschen",
   "2ee85b5d8a92b88c": "Stadt beitreten",
   "311b940a57c89ab6": "Park verbinden",
   "311dc7890d2b1d67": {
@@ -118,6 +120,7 @@
   "37974ce5901faca4": "Freilichtbühne (2x2)",
   "38f4bf88be0f7fb8": "Parktor",
   "39582dc021bd9785": "Einnahmen",
+  "39889a36667620a2": "Sprache auswählen",
   "39ecf0d809cf7519": "Entwicklertools",
   "3a6eca7252adb9a5": "{toolName} - Bereich {width}x{height}",
   "3c4c4d97d5e66b21": "Gesundheit",
@@ -187,6 +190,7 @@
   "5346848488eb3e6d": "Großer Spielplatz",
   "5584c3a28c29fea7": "Sprite-Set",
   "55b6968db17e61eb": "Deine Stadt wurde gespeichert, bevor du dir eine geteilte Stadt angesehen hast.",
+  "56caaccde6d15589": "Erstellt mit Cursor",
   "56e589e66d790077": "Gebäude und Zonen entfernen",
   "570f15ad126ec582": "{toolName} bei ({x}, {y})",
   "5710fcf3d552b2e4": "Feuerwache",
@@ -198,6 +202,7 @@
   "5bf5088caf591468": "Sportplatz mit Sitzplätzen",
   "5c26a3826c8eebd9": "Bevölkerung",
   "5c6aa4f2a08f5808": "Sicherheit",
+  "5cd89cfd9ef6a613": "Lädt...",
   "5d55c4129177872e": "Mit Strom",
   "5dbd90f586ba6162": "Monatliche Einnahmen",
   "5e16578196ee8412": "Arbeitsplätze",
@@ -240,6 +245,7 @@
   "786f78fa84e8f121": "Park mit idyllischem Teich",
   "7a2dd3bc72dfe4a0": "Footballfeld",
   "7ab9534f0cd01856": "Minikarte",
+  "7ac4455553fe632a": "Fortfahren",
   "7af04611900a2ec1": "Schüttgut",
   "7db45eab1e6e4c9e": "Großer Park",
   "7f248a14247b63c3": "Baue gemeinsam mit Freunden in Echtzeit eine Stadt",
@@ -254,6 +260,7 @@
   "878c45a35ddde226": "Spielstand importieren",
   "87d0409e4047fbca": "Ungültiger Spielstand. Bitte überprüfe den Spielstand und versuche es erneut.",
   "884832efb61160d4": "Land in Wasser umwandeln",
+  "88da711fb08edc45": "Gespeicherte Städte",
   "89c6ae6c99a26fef": "Beispielzustand laden",
   "8a2629c99203fd4e": "Berater",
   "8a3ebfe5eefa1f3a": "Stadtdienste",
@@ -284,6 +291,7 @@
   "955389bd727d0995": "Fußballstadion (2x2)",
   "956afb617989348a": "Spezialgebäude",
   "961afdfa1ffd458a": "Spielstand erfolgreich geladen!",
+  "9623fe89547f52b2": "Beispiel laden",
   "973809b714422052": {
     "c": "Stadt entdeckt!",
     "i": 1,
@@ -298,6 +306,7 @@
   "9db16884c1c9d324": "Zurück",
   "9e7842be401ec868": "Koop-Mehrspieler",
   "9f2ba8acaf861529": "Möchtest du deine Stadt vor dem Beenden speichern?",
+  "9f5e0ad2d121bf3b": "GitHub öffnen",
   "9f624c646a344dd9": "Botanisches Gewächshaus (2x2)",
   "a0ffbf0fb30b0c88": "Raum konnte in der Datenbank nicht erstellt werden.",
   "a1608c009c5abc68": [
@@ -316,6 +325,18 @@
   "a916da3428403968": "Skatepark",
   "a9749078f63948e2": "Neuer Stadtname...",
   "aa29c7e2f00fb24d": "Steigert Zufriedenheit und Bodenwert (1x1)",
+  "aa817e06ba83a0ec": {
+    "c": [
+      "Bev: ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "abaacba7b0f79fe8": "Zurücksetzen",
   "abd01d16a9c20c45": "Keine dringenden Probleme.",
   "ac59cfc290b0aaf7": "Spielstand laden",
@@ -358,8 +379,10 @@
   "bec33fd7ba69166e": "Mein Koop-Park",
   "bf03c9d6ae13442a": "Die Stadt kann nicht weiter verkleinert werden – Mindestgröße erreicht.",
   "c1118dc21f1a3a70": "Fußballplatz",
+  "c34e8e2decd4cb7d": "Sprache wechseln",
   "c374929bd865ac52": "Naturnahes Berghütten-Refugium (2x2)",
   "c49fb569cf0344a1": "Verbinde deine Stadt",
+  "c4b2f6543e9a13ff": "Neues Spiel",
   "c56f5cbb6dbe8edb": "Blockhaus",
   "c6fa2905d56a750c": "Gespeichert",
   "c73a2100c4004277": [

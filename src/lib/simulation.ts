@@ -1985,8 +1985,10 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   
   for (const row of grid) {
     for (const tile of row) {
-      // Only count zoned buildings (not grass)
-      if (tile.zone !== 'none' && tile.building.type !== 'grass') {
+      // Only count actual zoned buildings (exclude terrain, infrastructure, and placeholders)
+      const btype = tile.building.type;
+      if (tile.zone !== 'none' && btype !== 'grass' && btype !== 'water' &&
+          btype !== 'road' && btype !== 'bridge' && btype !== 'empty') {
         if (!tile.building.powered) unpoweredBuildings++;
         if (!tile.building.watered) unwateredBuildings++;
       }

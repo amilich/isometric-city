@@ -528,6 +528,12 @@ export default function HomePage() {
             <div className="flex items-start justify-between w-full">
               <div className="flex flex-col">
                 <a
+                  href="/td"
+                  className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                >
+                  Tower Defense
+                </a>
+                <a
                   href="https://cursor.com"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -634,6 +640,12 @@ export default function HomePage() {
               </Button>
               <div className="flex items-start justify-between w-64">
                 <div className="flex flex-col">
+                  <a
+                    href="/td"
+                    className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                  >
+                    Tower Defense
+                  </a>
                   <a
                     href="https://cursor.com"
                     target="_blank"

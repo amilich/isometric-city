@@ -11,6 +11,7 @@ import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/re
 import { SavedCityMeta, GameState } from '@/types/game';
 import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { T } from 'gt-next';
 import { Users, X } from 'lucide-react';
 
 const STORAGE_KEY = 'isocity-game-state';
@@ -445,7 +446,7 @@ export default function HomePage() {
   if (isChecking) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-white/60">Loading...</div>
+        <div className="text-white/60"><T>Loading...</T></div>
       </main>
     );
   }
@@ -491,18 +492,18 @@ export default function HomePage() {
               onClick={() => setShowGame(true)}
               className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
-              {hasSaved ? 'Continue' : 'New Game'}
+              {hasSaved ? <T>Continue</T> : <T>New Game</T>}
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={() => setShowCoopModal(true)}
               variant="outline"
               className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
             >
-              Co-op
+              <T>Co-op</T>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={async () => {
                 // Clear any room code from URL to prevent multiplayer conflicts
                 if (window.location.search.includes('room=')) {
@@ -522,7 +523,7 @@ export default function HomePage() {
               variant="outline"
               className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
             >
-              Load Example
+              <T>Load Example</T>
             </Button>
             <div className="flex items-start justify-between w-full">
               <div className="flex flex-col">
@@ -532,7 +533,7 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                 >
-                  Made with Cursor
+                  <T>Made with Cursor</T>
                 </a>
                 <a
                   href="https://github.com/amilich/isometric-city"
@@ -540,7 +541,7 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                 >
-                  Open GitHub
+                  <T>Open GitHub</T>
                 </a>
               </div>
               <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
@@ -551,7 +552,7 @@ export default function HomePage() {
           {savedCities.length > 0 && (
             <div className="w-full max-w-xs mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col">
               <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 flex-shrink-0">
-                Saved Cities
+                <T>Saved Cities</T>
               </h2>
               <div 
                 className="flex flex-col gap-2 flex-1 overflow-y-auto overscroll-y-contain"
@@ -600,16 +601,16 @@ export default function HomePage() {
                 onClick={() => setShowGame(true)}
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
               >
-                {hasSaved ? 'Continue' : 'New Game'}
+                {hasSaved ? <T>Continue</T> : <T>New Game</T>}
               </Button>
-              <Button 
+              <Button
                 onClick={() => setShowCoopModal(true)}
                 variant="outline"
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
               >
-                Co-op
+                <T>Co-op</T>
               </Button>
-              <Button 
+              <Button
                 onClick={async () => {
                   // Clear any room code from URL to prevent multiplayer conflicts
                   if (window.location.search.includes('room=')) {
@@ -629,7 +630,7 @@ export default function HomePage() {
                 variant="outline"
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
               >
-                Load Example
+                <T>Load Example</T>
               </Button>
               <div className="flex items-start justify-between w-64">
                 <div className="flex flex-col">
@@ -639,7 +640,7 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                   >
-                    Made with Cursor
+                    <T>Made with Cursor</T>
                   </a>
                   <a
                     href="https://github.com/amilich/isometric-city"
@@ -647,7 +648,7 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                   >
-                    Open GitHub
+                    <T>Open GitHub</T>
                   </a>
                 </div>
                 <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
@@ -658,7 +659,7 @@ export default function HomePage() {
             {savedCities.length > 0 && (
               <div className="w-64">
                 <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                  Saved Cities
+                  <T>Saved Cities</T>
                 </h2>
                 <div 
                   className="flex flex-col gap-2 max-h-64 overflow-y-auto overscroll-y-contain"

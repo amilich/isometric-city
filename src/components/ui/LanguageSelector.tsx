@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { T } from 'gt-next';
 
 // Language configuration with display names
 const LANGUAGES = [
@@ -121,7 +122,7 @@ export function LanguageSelector({
               </div>
               <div className="p-4 pt-2">
                 <div className="text-sm font-medium text-foreground mb-3">
-                  Select Language
+                  <T>Select Language</T>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {LANGUAGES.map((language) => (

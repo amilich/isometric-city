@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useGame } from '@/context/GameContext';
-import { Tool } from '@/types/game';
+import { Tool, TOOL_INFO } from '@/types/game';
 import { useMobile } from '@/hooks/useMobile';
 import { MobileToolbar } from '@/components/mobile/MobileToolbar';
 import { MobileTopBar } from '@/components/mobile/MobileTopBar';
@@ -38,6 +38,15 @@ import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg('containers'), msg('bulk materials'), msg('oil')];
+
+// Map shortcut key -> tool (from TOOL_INFO)
+const KEY_TO_TOOL: Record<string, Tool> = (() => {
+  const map: Record<string, Tool> = {};
+  for (const [tool, info] of Object.entries(TOOL_INFO)) {
+    if (info.shortcut) map[info.shortcut] = tool as Tool;
+  }
+  return map;
+})();
 
 export default function Game({ onExit }: { onExit?: () => void }) {
   const gt = useGT();
@@ -171,14 +180,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         } else if (state.selectedTool !== 'select') {
           setTool('select');
         }
-      } else if (e.key === 'b' || e.key === 'B') {
-        e.preventDefault();
-        setTool('bulldoze');
       } else if (e.key === 'p' || e.key === 'P') {
         e.preventDefault();
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)
         // If running, pause (speed 0)
         setSpeed(state.speed === 0 ? 1 : 0);
+      } else if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+        const tool = KEY_TO_TOOL[key];
+        if (tool) {
+          e.preventDefault();
+          setTool(tool);
+        }
       }
     };
     
@@ -216,8 +229,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         clearTriggeredCheat();
         break;
     }
-  }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
-  
+  }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat, gt]);
+
   // Track barge deliveries to show occasional notifications
   const bargeDeliveryCountRef = useRef(0);
   

@@ -17,6 +17,7 @@
 
 # misc
 .DS_Store
+.cursor/nal-trace/
 *.pem
 
 # debug

@@ -24,6 +24,7 @@ const LANGUAGES = [
   { code: 'pt-BR', name: 'Português' },
   { code: 'it', name: 'Italiano' },
   { code: 'tr', name: 'Türkçe' },
+  { code: 'ru', name: 'Русский' },
 ] as const;
 
 // Globe icon for language button

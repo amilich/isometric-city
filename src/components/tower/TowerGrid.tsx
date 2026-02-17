@@ -5,6 +5,8 @@ import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tile, type Tool } from '@/games/tower/types';
 import { clamp, lerp } from '@/games/tower/lib/math';
 import { getSpriteInfo, getSpriteRect, TOWER_SPRITE_PACK } from '@/games/tower/lib/towerRenderConfig';
+import { TOWER_TOOL_TO_TYPE } from '@/games/tower/types';
+import { getTowerStats } from '@/games/tower/types/towers';
 
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.6;
@@ -298,6 +300,28 @@ export function TowerGrid({
         drawDiamond(ctx, screenX, screenY, fill, stroke, 1);
 
       }
+    }
+
+    // Tower range preview (under towers)
+    if (hovered && selectedTool.startsWith('tower_')) {
+      const towerType = TOWER_TOOL_TO_TYPE[selectedTool as Exclude<Tool, 'select' | 'bulldoze'>];
+      const range = getTowerStats(towerType, 1).range;
+      const r = Math.ceil(range);
+      const rangeSq = range * range;
+
+      ctx.globalAlpha = 0.08;
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          const d2 = dx * dx + dy * dy;
+          if (d2 > rangeSq) continue;
+          const tx = hovered.x + dx;
+          const ty = hovered.y + dy;
+          if (tx < 0 || ty < 0 || tx >= gridSize || ty >= gridSize) continue;
+          const { screenX, screenY } = gridToScreen(tx, ty);
+          drawDiamond(ctx, screenX, screenY, '#60a5fa');
+        }
+      }
+      ctx.globalAlpha = 1;
     }
 
     const towersSheet = spriteSheets.get('towers') ?? null;

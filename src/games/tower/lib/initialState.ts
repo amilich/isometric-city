@@ -16,14 +16,15 @@ function carvePonds(grid: Tile[][], gridSize: number, seed: number) {
   const rand = mulberry32(seed);
   const pondCount = 2 + Math.floor(rand() * 2); // 2-3 ponds
   const midY = Math.floor(gridSize / 2);
+  const protectedBandHalfHeight = 4; // keep water away from the main path area
 
   for (let i = 0; i < pondCount; i++) {
     const radius = 3 + Math.floor(rand() * 3); // 3-5
     const cx = Math.floor(rand() * (gridSize - radius * 2)) + radius;
     let cy = Math.floor(rand() * (gridSize - radius * 2)) + radius;
 
-    // Keep ponds away from the path row so we don't block the main lane.
-    if (Math.abs(cy - midY) <= radius + 1) {
+    // Keep ponds away from the path area so we don't block the main lane or nearby build spaces.
+    if (Math.abs(cy - midY) <= radius + protectedBandHalfHeight) {
       cy = cy < midY ? Math.max(radius, midY - radius - 3) : Math.min(gridSize - radius - 1, midY + radius + 3);
     }
 

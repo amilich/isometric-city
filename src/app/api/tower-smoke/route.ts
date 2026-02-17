@@ -26,7 +26,7 @@ export function GET() {
   state.grid = state.grid.map((row) => row.slice());
   for (const p of placements) {
     const tile = state.grid[p.y]?.[p.x];
-    if (!tile || tile.kind !== 'empty') continue;
+    if (!tile || tile.kind !== 'empty' || tile.terrain !== 'grass') continue;
     state.grid[p.y] = state.grid[p.y]!.slice();
     state.grid[p.y]![p.x] = {
       ...tile,

@@ -4,7 +4,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import TowerGame from '@/components/tower/Game';
 import { TowerProvider } from '@/context/TowerContext';
-import { deleteTowerStateFromStorage, readSavedRunsIndex, removeSavedRunMeta, TOWER_AUTOSAVE_KEY, TOWER_SAVED_RUN_PREFIX, writeSavedRunsIndex } from '@/games/tower/saveUtils';
+import {
+  deleteTowerStateFromStorage,
+  loadTowerStateFromStorage,
+  readSavedRunsIndex,
+  removeSavedRunMeta,
+  TOWER_AUTOSAVE_KEY,
+  TOWER_SAVED_RUN_PREFIX,
+  writeSavedRunsIndex,
+} from '@/games/tower/saveUtils';
 import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { createTowerExampleState } from '@/games/tower/lib/exampleState';
 
@@ -188,9 +196,14 @@ export default function TowerPage() {
 
   const deleteRun = (id: string) => {
     deleteTowerStateFromStorage(`${TOWER_SAVED_RUN_PREFIX}${id}`);
+    const autosave = loadTowerStateFromStorage(TOWER_AUTOSAVE_KEY);
+    if (autosave?.id === id) {
+      deleteTowerStateFromStorage(TOWER_AUTOSAVE_KEY);
+    }
     const updated = removeSavedRunMeta(id, savedRuns);
     writeSavedRunsIndex(updated);
     setSavedRuns(updated);
+    setHasSaved(hasAutosave());
   };
 
   if (isChecking) {

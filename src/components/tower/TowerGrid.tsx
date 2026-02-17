@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { T, Branch, useMessages } from 'gt-next';
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tile, type Tool } from '@/games/tower/types';
 import { clamp, lerp } from '@/games/tower/lib/math';
@@ -218,6 +219,7 @@ export function TowerGrid({
 }) {
   const { state, placeAtTile } = useTower();
   const { grid, gridSize, selectedTool, money, settings } = state;
+  const m = useMessages();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -663,7 +665,7 @@ export function TowerGrid({
           </div>
           {selectedTool !== 'select' && (
             <div className="opacity-80">
-              {TOOL_INFO[selectedTool].name}
+              {m(TOOL_INFO[selectedTool].name)}
               {TOOL_INFO[selectedTool].cost > 0 ? ` — $${TOOL_INFO[selectedTool].cost}` : ''}
             </div>
           )}
@@ -671,9 +673,15 @@ export function TowerGrid({
       )}
 
       {/* Small hint for controls */}
-      <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] text-white/40 bg-black/30 border border-white/10 px-2 py-1 rounded">
-        {isMobile ? 'Drag to pan • Pinch to zoom' : 'Shift+Drag to pan • Scroll to zoom'}
-      </div>
+      <T>
+        <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] text-white/40 bg-black/30 border border-white/10 px-2 py-1 rounded">
+          <Branch
+            branch={isMobile.toString()}
+            true={<>Drag to pan • Pinch to zoom</>}
+            false={<>Shift+Drag to pan • Scroll to zoom</>}
+          />
+        </div>
+      </T>
     </div>
   );
 }

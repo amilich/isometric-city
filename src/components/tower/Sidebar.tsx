@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { T, useGT, useMessages } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTower } from '@/context/TowerContext';
@@ -22,6 +23,8 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
   onSelectTool: (tool: Tool) => void;
   forceOpenUpward?: boolean;
 }) {
+  const m = useMessages();
+  const gt = useGT();
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, buttonHeight: 0, openUpward: false });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -154,9 +157,9 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                   className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 ${
                     isSelected ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted/60'
                   }`}
-                  title={`${info.description}${info.cost > 0 ? ` — $${info.cost}` : ''}`}
+                  title={info.cost > 0 ? gt('{description} — ${cost}', { description: m(info.description), cost: info.cost }) : m(info.description)}
                 >
-                  <span className="flex-1 text-left truncate">{info.name}</span>
+                  <span className="flex-1 text-left truncate">{m(info.name)}</span>
                   {info.cost > 0 && <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>${info.cost}</span>}
                 </Button>
               );
@@ -171,6 +174,8 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
 export function Sidebar({ onExit }: { onExit?: () => void }) {
   const { state, setTool, setActivePanel } = useTower();
   const { selectedTool, money, activePanel } = state;
+  const m = useMessages();
+  const gt = useGT();
 
   const directTools = useMemo(() => ['select', 'bulldoze'] as Tool[], []);
   const towerTools = useMemo(
@@ -182,13 +187,13 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
     <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-screen fixed left-0 top-0 z-40">
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
-          <span className="text-sidebar-foreground font-bold tracking-tight">ISOTOWER</span>
+          <T><span className="text-sidebar-foreground font-bold tracking-tight">ISOTOWER</span></T>
           {onExit && (
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={onExit}
-              title="Exit to Menu"
+              title={gt('Exit to Menu')}
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
               <LogOut className="w-4 h-4" />
@@ -198,7 +203,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
       </div>
 
       <ScrollArea className="flex-1 py-2">
-        <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Tools</div>
+        <T><div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Tools</div></T>
         <div className="px-2 flex flex-col gap-0.5">
           {directTools.map((tool) => {
             const info = TOOL_INFO[tool];
@@ -211,19 +216,19 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
                 className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm ${
                   isSelected ? 'bg-primary text-primary-foreground' : ''
                 }`}
-                title={info.description}
+                title={m(info.description)}
               >
-                <span className="flex-1 text-left truncate">{info.name}</span>
+                <span className="flex-1 text-left truncate">{m(info.name)}</span>
               </Button>
             );
           })}
         </div>
 
         <div className="mx-4 my-2 h-px bg-sidebar-border/50" />
-        <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Towers</div>
+        <T><div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Towers</div></T>
 
         <div className="px-2 flex flex-col gap-0.5">
-          <HoverSubmenu label="Build Towers" tools={towerTools} selectedTool={selectedTool} money={money} onSelectTool={setTool} />
+          <HoverSubmenu label={gt('Build Towers')} tools={towerTools} selectedTool={selectedTool} money={money} onSelectTool={setTool} />
         </div>
       </ScrollArea>
 
@@ -234,7 +239,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
             variant={activePanel === 'stats' ? 'default' : 'ghost'}
             size="icon-sm"
             className="w-full"
-            title="Stats"
+            title={gt('Stats')}
           >
             <BarChart3 className="w-4 h-4" />
           </Button>
@@ -243,7 +248,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
             variant={activePanel === 'settings' ? 'default' : 'ghost'}
             size="icon-sm"
             className="w-full"
-            title="Settings"
+            title={gt('Settings')}
           >
             <Settings className="w-4 h-4" />
           </Button>

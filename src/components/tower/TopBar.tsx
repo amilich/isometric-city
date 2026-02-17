@@ -28,16 +28,24 @@ export function TopBar() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Money</span>
-          <span className="font-mono text-amber-400">${money.toLocaleString()}</span>
+          <span data-testid="tower-money" className="font-mono text-amber-400">
+            ${money.toLocaleString()}
+          </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Lives</span>
-          <span className={`font-mono ${lives > 0 ? 'text-green-400' : 'text-red-400'}`}>{lives}</span>
+          <span data-testid="tower-lives" className={`font-mono ${lives > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {lives}
+          </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Wave</span>
-          <span className="font-mono text-white/90">{stats.wave}</span>
-          <span className="text-xs text-muted-foreground">({waveLabel})</span>
+          <span data-testid="tower-wave" className="font-mono text-white/90">
+            {stats.wave}
+          </span>
+          <span data-testid="tower-wave-label" className="text-xs text-muted-foreground">
+            ({waveLabel})
+          </span>
         </div>
       </div>
 
@@ -49,6 +57,7 @@ export function TopBar() {
           disabled={waveState === 'in_progress' || waveState === 'spawning' || waveState === 'game_over'}
           className="gap-2"
           title="Start the next wave"
+          data-testid="tower-start-wave"
         >
           <Waves className="w-4 h-4" />
           <span className="hidden sm:inline">Start Wave</span>

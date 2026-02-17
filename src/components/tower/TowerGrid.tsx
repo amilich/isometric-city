@@ -569,6 +569,7 @@ export function TowerGrid({
     >
       <canvas
         ref={canvasRef}
+        data-testid="tower-canvas"
         className="absolute inset-0"
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}

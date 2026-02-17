@@ -6,6 +6,7 @@
  * - The architecture mirrors the modular IsoCoaster layout.
  */
 
+import { msg } from 'gt-next';
 import type { EnemyType } from './enemies';
 import type { TowerTargetingMode, TowerType } from './towers';
 
@@ -33,14 +34,14 @@ export type ToolInfo = {
 };
 
 export const TOOL_INFO: Record<Tool, ToolInfo> = {
-  select: { name: 'Select', cost: 0, description: 'Select and inspect tiles', category: 'tools' },
-  bulldoze: { name: 'Sell', cost: 0, description: 'Sell a placed tower for a refund', category: 'tools' },
-  tower_cannon: { name: 'Cannon Tower', cost: 100, description: 'Balanced damage and range', category: 'towers' },
-  tower_archer: { name: 'Archer Tower', cost: 75, description: 'Fast attacks, lower damage', category: 'towers' },
-  tower_tesla: { name: 'Tesla Tower', cost: 160, description: 'Arc damage with small splash', category: 'towers' },
-  tower_ice: { name: 'Ice Tower', cost: 140, description: 'Applies a slowing debuff', category: 'towers' },
-  tower_mortar: { name: 'Mortar Tower', cost: 220, description: 'Slow, powerful splash damage', category: 'towers' },
-  tower_sniper: { name: 'Sniper Tower', cost: 260, description: 'Long range, high damage, slow fire rate', category: 'towers' },
+  select: { name: msg('Select'), cost: 0, description: msg('Select and inspect tiles'), category: 'tools' },
+  bulldoze: { name: msg('Sell'), cost: 0, description: msg('Sell a placed tower for a refund'), category: 'tools' },
+  tower_cannon: { name: msg('Cannon Tower'), cost: 100, description: msg('Balanced damage and range'), category: 'towers' },
+  tower_archer: { name: msg('Archer Tower'), cost: 75, description: msg('Fast attacks, lower damage'), category: 'towers' },
+  tower_tesla: { name: msg('Tesla Tower'), cost: 160, description: msg('Arc damage with small splash'), category: 'towers' },
+  tower_ice: { name: msg('Ice Tower'), cost: 140, description: msg('Applies a slowing debuff'), category: 'towers' },
+  tower_mortar: { name: msg('Mortar Tower'), cost: 220, description: msg('Slow, powerful splash damage'), category: 'towers' },
+  tower_sniper: { name: msg('Sniper Tower'), cost: 260, description: msg('Long range, high damage, slow fire rate'), category: 'towers' },
 };
 
 export const TOWER_TOOL_TO_TYPE: Record<Exclude<Tool, 'select' | 'bulldoze'>, TowerType> = {

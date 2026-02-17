@@ -9,6 +9,7 @@ import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tile, type Tool } from '@/games/tower/types';
 import { TOWER_DEFINITIONS, clampTowerLevel, getTowerStats } from '@/games/tower/types/towers';
 import { X, ArrowUp, DollarSign } from 'lucide-react';
+import { T, useGT } from 'gt-next';
 
 export function TileInfoPanel({
   tile,
@@ -20,6 +21,7 @@ export function TileInfoPanel({
   isMobile?: boolean;
 }) {
   const { state, upgradeTower, sellTower } = useTower();
+  const gt = useGT();
 
   const towerInfo = useMemo(() => {
     if (!tile.tower) return null;
@@ -43,7 +45,7 @@ export function TileInfoPanel({
     >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-sans">
-          Tile ({tile.x}, {tile.y})
+          {gt('Tile ({x}, {y})', { x: tile.x, y: tile.y })}
         </CardTitle>
         <Button variant="ghost" size="icon-sm" onClick={onClose}>
           <X className="w-4 h-4" />
@@ -51,11 +53,11 @@ export function TileInfoPanel({
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Terrain</span>
+          <T><span className="text-muted-foreground">Terrain</span></T>
           <span className="capitalize">{tile.terrain}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Tile</span>
+          <T><span className="text-muted-foreground">Tile</span></T>
           <Badge variant="secondary" className="capitalize">
             {tile.kind}
           </Badge>
@@ -66,30 +68,30 @@ export function TileInfoPanel({
         {tile.tower ? (
           <>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Tower</span>
+              <T><span className="text-muted-foreground">Tower</span></T>
               <span className="capitalize">{tile.tower.type}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Level</span>
+              <T><span className="text-muted-foreground">Level</span></T>
               <span className="font-mono">{tile.tower.level}/3</span>
             </div>
             {towerInfo && (
               <>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dmg</span>
+                    <T><span className="text-muted-foreground">Dmg</span></T>
                     <span className="font-mono">{towerInfo.stats.damage}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Range</span>
+                    <T><span className="text-muted-foreground">Range</span></T>
                     <span className="font-mono">{towerInfo.stats.range.toFixed(1)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">CD</span>
+                    <T><span className="text-muted-foreground">CD</span></T>
                     <span className="font-mono">{towerInfo.stats.fireCooldownTicks}t</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Refund</span>
+                    <T><span className="text-muted-foreground">Refund</span></T>
                     <span className="font-mono text-amber-300">${towerInfo.refund}</span>
                   </div>
                 </div>
@@ -100,27 +102,27 @@ export function TileInfoPanel({
                     disabled={!towerInfo.canUpgrade || tile.tower.level >= 3}
                     className="flex-1 gap-2"
                     size="sm"
-                    title={towerInfo.canUpgrade ? `Upgrade for $${towerInfo.upgradeCost}` : 'Not enough money'}
+                    title={towerInfo.canUpgrade ? gt('Upgrade for ${cost}', { cost: towerInfo.upgradeCost }) : gt('Not enough money')}
                   >
                     <ArrowUp className="w-4 h-4" />
-                    Upgrade
+                    <T>Upgrade</T>
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => sellTower(tile.x, tile.y)}
                     className="gap-2"
                     size="sm"
-                    title={`Sell for $${towerInfo.refund}`}
+                    title={gt('Sell for ${refund}', { refund: towerInfo.refund })}
                   >
                     <DollarSign className="w-4 h-4" />
-                    Sell
+                    <T>Sell</T>
                   </Button>
                 </div>
               </>
             )}
           </>
         ) : (
-          <div className="text-xs text-muted-foreground">No tower on this tile.</div>
+          <T><div className="text-xs text-muted-foreground">No tower on this tile.</div></T>
         )}
       </CardContent>
     </Card>

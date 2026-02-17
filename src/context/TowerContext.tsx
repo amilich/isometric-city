@@ -3,7 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState, Tool, Tile } from '@/games/tower/types';
 import { TOOL_INFO, TOWER_TOOL_TO_TYPE } from '@/games/tower/types';
-import { TOWER_DEFINITIONS } from '@/games/tower/types/towers';
+import { TOWER_DEFINITIONS, type TowerTargetingMode } from '@/games/tower/types/towers';
 import { isBuildableTileKind } from '@/games/tower/lib/pathing';
 import { uuid } from '@/games/tower/lib/math';
 import { simulateTowerTick, startWaveState } from '@/games/tower/lib/simulateTick';
@@ -44,6 +44,7 @@ type TowerContextValue = {
   placeAtTile: (x: number, y: number) => void;
   sellTower: (x: number, y: number) => boolean;
   upgradeTower: (x: number, y: number) => boolean;
+  setTowerTargeting: (x: number, y: number, targeting: TowerTargetingMode) => boolean;
   startWave: () => void;
 };
 
@@ -349,6 +350,36 @@ export function TowerProvider({
     return true;
   }, []);
 
+  const setTowerTargeting = useCallback((x: number, y: number, targeting: TowerTargetingMode): boolean => {
+    const current = latestStateRef.current.grid[y]?.[x];
+    if (!current?.tower) return false;
+    if (current.tower.targeting === targeting) return true;
+
+    setState((prev) => {
+      const tile = prev.grid[y]?.[x];
+      if (!tile?.tower) return prev;
+      if (tile.tower.targeting === targeting) return prev;
+
+      const nextGrid = prev.grid.map((row) =>
+        row.map((t) =>
+          t.x === x && t.y === y
+            ? {
+                ...t,
+                tower: {
+                  ...t.tower!,
+                  targeting,
+                },
+              }
+            : t
+        )
+      );
+
+      return { ...prev, grid: nextGrid };
+    });
+
+    return true;
+  }, []);
+
   const startWave = useCallback(() => {
     setState((prev) => startWaveState(prev));
   }, []);
@@ -376,6 +407,7 @@ export function TowerProvider({
       placeAtTile,
       sellTower,
       upgradeTower,
+      setTowerTargeting,
       startWave,
     };
   }, [
@@ -395,6 +427,7 @@ export function TowerProvider({
     placeAtTile,
     sellTower,
     upgradeTower,
+    setTowerTargeting,
     startWave,
   ]);
 

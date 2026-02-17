@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tile, type Tool } from '@/games/tower/types';
-import { TOWER_DEFINITIONS, clampTowerLevel, getTowerStats } from '@/games/tower/types/towers';
+import { TOWER_DEFINITIONS, clampTowerLevel, getTowerStats, type TowerTargetingMode } from '@/games/tower/types/towers';
 import { X, ArrowUp, DollarSign } from 'lucide-react';
 
 export function TileInfoPanel({
@@ -19,7 +19,7 @@ export function TileInfoPanel({
   onClose: () => void;
   isMobile?: boolean;
 }) {
-  const { state, upgradeTower, sellTower } = useTower();
+  const { state, upgradeTower, sellTower, setTowerTargeting } = useTower();
 
   const towerInfo = useMemo(() => {
     if (!tile.tower) return null;
@@ -91,6 +91,26 @@ export function TileInfoPanel({
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Refund</span>
                     <span className="font-mono text-amber-300">${towerInfo.refund}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <span className="text-muted-foreground">Targeting</span>
+                  <div className="flex gap-1">
+                    {(['first', 'closest'] as TowerTargetingMode[]).map((mode) => {
+                      const isSelected = tile.tower?.targeting === mode;
+                      return (
+                        <Button
+                          key={mode}
+                          size="sm"
+                          variant={isSelected ? 'default' : 'outline'}
+                          className="h-7 px-2 text-[11px]"
+                          onClick={() => setTowerTargeting(tile.x, tile.y, mode)}
+                        >
+                          {mode === 'first' ? 'First' : 'Closest'}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
 

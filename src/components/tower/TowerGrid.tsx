@@ -7,6 +7,7 @@ import { clamp, lerp } from '@/games/tower/lib/math';
 import { getSpriteInfo, getSpriteRect, TOWER_SPRITE_PACK } from '@/games/tower/lib/towerRenderConfig';
 import { TOWER_TOOL_TO_TYPE } from '@/games/tower/types';
 import { getTowerStats } from '@/games/tower/types/towers';
+import { T, Var, useGT, useMessages } from 'gt-next';
 
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.6;
@@ -218,6 +219,8 @@ export function TowerGrid({
 }) {
   const { state, placeAtTile } = useTower();
   const { grid, gridSize, selectedTool, money, settings } = state;
+  const m = useMessages();
+  const gt = useGT();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -657,22 +660,27 @@ export function TowerGrid({
       {/* Hover info */}
       {hovered && (
         <div className="pointer-events-none absolute top-3 left-3 text-[10px] text-white/70 bg-black/40 border border-white/10 px-2 py-1 rounded">
-          <div className="font-mono">
-            ({hovered.x}, {hovered.y})
-          </div>
+          <T>
+            <div className="font-mono">
+              (<Var>{hovered.x}</Var>, <Var>{hovered.y}</Var>)
+            </div>
+          </T>
           {selectedTool !== 'select' && (
             <div className="opacity-80">
-              {TOOL_INFO[selectedTool].name}
-              {TOOL_INFO[selectedTool].cost > 0 ? ` — $${TOOL_INFO[selectedTool].cost}` : ''}
+              {TOOL_INFO[selectedTool].cost > 0
+                ? gt('{name} — ${cost}', { name: m(TOOL_INFO[selectedTool].name), cost: TOOL_INFO[selectedTool].cost })
+                : m(TOOL_INFO[selectedTool].name)}
             </div>
           )}
         </div>
       )}
 
       {/* Small hint for controls */}
-      <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] text-white/40 bg-black/30 border border-white/10 px-2 py-1 rounded">
-        {isMobile ? 'Drag to pan • Pinch to zoom' : 'Shift+Drag to pan • Scroll to zoom'}
-      </div>
+      <T>
+        <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] text-white/40 bg-black/30 border border-white/10 px-2 py-1 rounded">
+          <Var>{isMobile ? gt('Drag to pan • Pinch to zoom') : gt('Shift+Drag to pan • Scroll to zoom')}</Var>
+        </div>
+      </T>
     </div>
   );
 }

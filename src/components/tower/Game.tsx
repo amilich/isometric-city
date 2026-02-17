@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { T, Var } from 'gt-next';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { useMobile } from '@/hooks/useMobile';
@@ -53,7 +54,7 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
   if (!isStateReady) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950">
-        <div className="text-white/60">Loading run...</div>
+        <T><div className="text-white/60">Loading run...</div></T>
       </div>
     );
   }
@@ -76,10 +77,12 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
             {isGameOver && (
               <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                 <div className="w-[92%] max-w-sm rounded-lg border border-white/10 bg-slate-950/80 p-4 text-white shadow-xl">
-                  <div className="text-lg font-semibold">Game Over</div>
-                  <div className="mt-1 text-sm text-white/70">
-                    You held until wave {state.stats.wave}. Kills: {state.stats.kills}. Leaks: {state.stats.leaks}.
-                  </div>
+                  <T><div className="text-lg font-semibold">Game Over</div></T>
+                  <T>
+                    <div className="mt-1 text-sm text-white/70">
+                      You held until wave <Var>{state.stats.wave}</Var>. Kills: <Var>{state.stats.kills}</Var>. Leaks: <Var>{state.stats.leaks}</Var>.
+                    </div>
+                  </T>
                   <div className="mt-4 flex gap-2">
                     <Button
                       className="flex-1"
@@ -89,11 +92,11 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
                         newGame();
                       }}
                     >
-                      New Run
+                      <T>New Run</T>
                     </Button>
                     {onExit && (
                       <Button className="flex-1" variant="secondary" onClick={onExit}>
-                        Exit
+                        <T>Exit</T>
                       </Button>
                     )}
                   </div>
@@ -138,10 +141,12 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
             {isGameOver && (
               <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm">
                 <div className="w-[460px] max-w-[92%] rounded-lg border border-white/10 bg-slate-950/80 p-5 text-white shadow-2xl">
-                  <div className="text-xl font-semibold">Game Over</div>
-                  <div className="mt-1 text-sm text-white/70">
-                    You held until wave {state.stats.wave}. Kills: {state.stats.kills}. Leaks: {state.stats.leaks}.
-                  </div>
+                  <T><div className="text-xl font-semibold">Game Over</div></T>
+                  <T>
+                    <div className="mt-1 text-sm text-white/70">
+                      You held until wave <Var>{state.stats.wave}</Var>. Kills: <Var>{state.stats.kills}</Var>. Leaks: <Var>{state.stats.leaks}</Var>.
+                    </div>
+                  </T>
                   <div className="mt-4 flex gap-2">
                     <Button
                       className="flex-1"
@@ -151,11 +156,11 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
                         newGame();
                       }}
                     >
-                      New Run
+                      <T>New Run</T>
                     </Button>
                     {onExit && (
                       <Button className="flex-1" variant="secondary" onClick={onExit}>
-                        Exit
+                        <T>Exit</T>
                       </Button>
                     )}
                   </div>

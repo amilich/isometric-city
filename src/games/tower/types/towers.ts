@@ -2,6 +2,8 @@
  * IsoTower Defense - Tower definitions
  */
 
+import { msg } from 'gt-next';
+
 export type TowerType = 'cannon' | 'archer' | 'tesla' | 'ice' | 'mortar' | 'sniper';
 
 export type TowerTargetingMode = 'first' | 'closest';
@@ -28,8 +30,8 @@ export type TowerDefinition = {
 export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
   cannon: {
     type: 'cannon',
-    name: 'Cannon Tower',
-    description: 'Balanced damage and range.',
+    name: msg('Cannon Tower'),
+    description: msg('Balanced damage and range.'),
     baseCost: 100,
     sellRefundRatio: 0.7,
     defaultTargeting: 'first',
@@ -41,8 +43,8 @@ export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
   },
   archer: {
     type: 'archer',
-    name: 'Archer Tower',
-    description: 'Fast attacks, lower damage.',
+    name: msg('Archer Tower'),
+    description: msg('Fast attacks, lower damage.'),
     baseCost: 75,
     sellRefundRatio: 0.7,
     defaultTargeting: 'closest',
@@ -54,8 +56,8 @@ export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
   },
   tesla: {
     type: 'tesla',
-    name: 'Tesla Tower',
-    description: 'Arc damage with small splash.',
+    name: msg('Tesla Tower'),
+    description: msg('Arc damage with small splash.'),
     baseCost: 160,
     sellRefundRatio: 0.7,
     defaultTargeting: 'closest',
@@ -67,8 +69,8 @@ export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
   },
   ice: {
     type: 'ice',
-    name: 'Ice Tower',
-    description: 'Applies a slowing debuff.',
+    name: msg('Ice Tower'),
+    description: msg('Applies a slowing debuff.'),
     baseCost: 140,
     sellRefundRatio: 0.7,
     defaultTargeting: 'first',
@@ -80,8 +82,8 @@ export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
   },
   mortar: {
     type: 'mortar',
-    name: 'Mortar Tower',
-    description: 'Slow, powerful splash damage.',
+    name: msg('Mortar Tower'),
+    description: msg('Slow, powerful splash damage.'),
     baseCost: 220,
     sellRefundRatio: 0.7,
     defaultTargeting: 'first',
@@ -93,8 +95,8 @@ export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
   },
   sniper: {
     type: 'sniper',
-    name: 'Sniper Tower',
-    description: 'Long range, high damage, slow fire rate.',
+    name: msg('Sniper Tower'),
+    description: msg('Long range, high damage, slow fire rate.'),
     baseCost: 260,
     sellRefundRatio: 0.7,
     defaultTargeting: 'first',

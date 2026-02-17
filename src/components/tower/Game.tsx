@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { useMobile } from '@/hooks/useMobile';
 import { useTower } from '@/context/TowerContext';
 import { Sidebar } from './Sidebar';
@@ -26,7 +27,7 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
 
   // Keyboard shortcuts: escape to deselect, p to pause
-  const { setSpeed, setTool } = useTower();
+  const { setSpeed, setTool, newGame } = useTower();
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -46,6 +47,8 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setSpeed, setTool, state.speed]);
+
+  const isGameOver = state.waveState === 'game_over' || state.lives <= 0;
 
   if (!isStateReady) {
     return (
@@ -70,6 +73,33 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
               navigationTarget={navigationTarget}
               onNavigationComplete={() => setNavigationTarget(null)}
             />
+            {isGameOver && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="w-[92%] max-w-sm rounded-lg border border-white/10 bg-slate-950/80 p-4 text-white shadow-xl">
+                  <div className="text-lg font-semibold">Game Over</div>
+                  <div className="mt-1 text-sm text-white/70">
+                    You held until wave {state.stats.wave}. Kills: {state.stats.kills}. Leaks: {state.stats.leaks}.
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedTile(null);
+                        setTool('select');
+                        newGame();
+                      }}
+                    >
+                      New Run
+                    </Button>
+                    {onExit && (
+                      <Button className="flex-1" variant="secondary" onClick={onExit}>
+                        Exit
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {selectedTile && state.selectedTool === 'select' && (
               <TileInfoPanel
                 tile={state.grid[selectedTile.y]![selectedTile.x]!}
@@ -105,6 +135,33 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
               viewport={viewport}
               onNavigate={(x, y) => setNavigationTarget({ x, y })}
             />
+            {isGameOver && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm">
+                <div className="w-[460px] max-w-[92%] rounded-lg border border-white/10 bg-slate-950/80 p-5 text-white shadow-2xl">
+                  <div className="text-xl font-semibold">Game Over</div>
+                  <div className="mt-1 text-sm text-white/70">
+                    You held until wave {state.stats.wave}. Kills: {state.stats.kills}. Leaks: {state.stats.leaks}.
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedTile(null);
+                        setTool('select');
+                        newGame();
+                      }}
+                    >
+                      New Run
+                    </Button>
+                    {onExit && (
+                      <Button className="flex-1" variant="secondary" onClick={onExit}>
+                        Exit
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {selectedTile && state.selectedTool === 'select' && (
               <TileInfoPanel tile={state.grid[selectedTile.y]![selectedTile.x]!} onClose={() => setSelectedTile(null)} />
             )}

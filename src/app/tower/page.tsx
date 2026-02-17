@@ -9,11 +9,11 @@ import {
   loadTowerStateFromStorage,
   readSavedRunsIndex,
   removeSavedRunMeta,
+  saveTowerStateToStorage,
   TOWER_AUTOSAVE_KEY,
   TOWER_SAVED_RUN_PREFIX,
   writeSavedRunsIndex,
 } from '@/games/tower/saveUtils';
-import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { createTowerExampleState } from '@/games/tower/lib/exampleState';
 
 // Background color to filter from sprite sheets (red)
@@ -50,15 +50,8 @@ function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {
 function hasAutosave(): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    const saved = localStorage.getItem(TOWER_AUTOSAVE_KEY);
-    if (!saved) return false;
-    let jsonString = decompressFromUTF16(saved);
-    if (!jsonString || !jsonString.startsWith('{')) {
-      if (saved.startsWith('{')) jsonString = saved;
-      else return false;
-    }
-    const parsed = JSON.parse(jsonString);
-    return Boolean(parsed?.grid && parsed?.gridSize);
+    const loaded = loadTowerStateFromStorage(TOWER_AUTOSAVE_KEY);
+    return Boolean(loaded?.grid && loaded?.gridSize);
   } catch {
     return false;
   }
@@ -262,7 +255,7 @@ export default function TowerPage() {
               onClick={() => {
                 try {
                   const example = createTowerExampleState();
-                  localStorage.setItem(TOWER_AUTOSAVE_KEY, compressToUTF16(JSON.stringify(example)));
+                  saveTowerStateToStorage(TOWER_AUTOSAVE_KEY, example);
                   setStartFresh(false);
                   setLoadRunId(null);
                   setShowGame(true);

@@ -150,11 +150,15 @@ export function TowerGrid({
   selectedTile,
   setSelectedTile,
   onViewportChange,
+  navigationTarget,
+  onNavigationComplete,
   isMobile = false,
 }: {
   selectedTile: { x: number; y: number } | null;
   setSelectedTile: (tile: { x: number; y: number } | null) => void;
   onViewportChange?: (viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } }) => void;
+  navigationTarget?: { x: number; y: number } | null;
+  onNavigationComplete?: () => void;
   isMobile?: boolean;
 }) {
   const { state, placeAtTile } = useTower();
@@ -205,6 +209,19 @@ export function TowerGrid({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Navigate to a tile (minimap click)
+  useEffect(() => {
+    if (!navigationTarget) return;
+    const { screenX, screenY } = gridToScreen(navigationTarget.x, navigationTarget.y);
+    const targetCenterX = (screenX + TILE_WIDTH / 2) * zoom;
+    const targetCenterY = (screenY + TILE_HEIGHT / 2) * zoom;
+    setOffset({
+      x: canvasSize.width / 2 - targetCenterX,
+      y: canvasSize.height / 2 - targetCenterY,
+    });
+    onNavigationComplete?.();
+  }, [navigationTarget, canvasSize.width, canvasSize.height, zoom, onNavigationComplete]);
 
   useEffect(() => {
     onViewportChange?.({ offset, zoom, canvasSize });

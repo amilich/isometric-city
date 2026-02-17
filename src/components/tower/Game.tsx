@@ -61,7 +61,14 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
         <div className="w-full h-full overflow-hidden bg-background flex flex-col">
           <TopBar />
           <div className="flex-1 relative overflow-hidden">
-            <TowerGrid selectedTile={selectedTile} setSelectedTile={setSelectedTile} isMobile={true} onViewportChange={setViewport} />
+            <TowerGrid
+              selectedTile={selectedTile}
+              setSelectedTile={setSelectedTile}
+              isMobile={true}
+              onViewportChange={setViewport}
+              navigationTarget={navigationTarget}
+              onNavigationComplete={() => setNavigationTarget(null)}
+            />
             {selectedTile && state.selectedTool === 'select' && (
               <TileInfoPanel tile={state.grid[selectedTile.y]![selectedTile.x]!} onClose={() => setSelectedTile(null)} />
             )}
@@ -81,17 +88,17 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
         <div className="flex-1 flex flex-col ml-56">
           <TopBar />
           <div className="flex-1 relative overflow-visible">
-            <TowerGrid selectedTile={selectedTile} setSelectedTile={setSelectedTile} onViewportChange={setViewport} />
+            <TowerGrid
+              selectedTile={selectedTile}
+              setSelectedTile={setSelectedTile}
+              onViewportChange={setViewport}
+              navigationTarget={navigationTarget}
+              onNavigationComplete={() => setNavigationTarget(null)}
+            />
             <MiniMap
               viewport={viewport}
               onNavigate={(x, y) => setNavigationTarget({ x, y })}
             />
-            {/* Navigation target currently unused by TowerGrid (future enhancement) */}
-            {navigationTarget && (
-              <div className="hidden" aria-hidden="true">
-                {navigationTarget.x},{navigationTarget.y}
-              </div>
-            )}
             {selectedTile && state.selectedTool === 'select' && (
               <TileInfoPanel tile={state.grid[selectedTile.y]![selectedTile.x]!} onClose={() => setSelectedTile(null)} />
             )}

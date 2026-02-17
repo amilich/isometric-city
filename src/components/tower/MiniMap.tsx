@@ -3,6 +3,16 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useTower } from '@/context/TowerContext';
 
+const TILE_WIDTH = 64;
+const HEIGHT_RATIO = 0.6;
+const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
+
+function screenToGridFloat(screenX: number, screenY: number): { gridX: number; gridY: number } {
+  const gridX = (screenX / (TILE_WIDTH / 2) + screenY / (TILE_HEIGHT / 2)) / 2;
+  const gridY = (screenY / (TILE_HEIGHT / 2) - screenX / (TILE_WIDTH / 2)) / 2;
+  return { gridX, gridY };
+}
+
 export function MiniMap({
   viewport,
   onNavigate,
@@ -48,10 +58,33 @@ export function MiniMap({
 
     // Viewport rectangle (approx)
     if (viewport) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      const { offset, zoom, canvasSize } = viewport;
+
+      // Convert the four canvas corners into grid coordinates (approx bounds)
+      const corners = [
+        { sx: 0, sy: 0 },
+        { sx: canvasSize.width, sy: 0 },
+        { sx: 0, sy: canvasSize.height },
+        { sx: canvasSize.width, sy: canvasSize.height },
+      ].map(({ sx, sy }) => {
+        const worldX = (sx - offset.x) / zoom;
+        const worldY = (sy - offset.y) / zoom;
+        return screenToGridFloat(worldX, worldY);
+      });
+
+      const minX = Math.max(0, Math.min(...corners.map((c) => c.gridX)));
+      const maxX = Math.min(gridSize, Math.max(...corners.map((c) => c.gridX)));
+      const minY = Math.max(0, Math.min(...corners.map((c) => c.gridY)));
+      const maxY = Math.min(gridSize, Math.max(...corners.map((c) => c.gridY)));
+
+      const rx = padding + minX * tileSize;
+      const ry = padding + minY * tileSize;
+      const rw = Math.max(1, (maxX - minX) * tileSize);
+      const rh = Math.max(1, (maxY - minY) * tileSize);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.65)';
       ctx.lineWidth = 1;
-      // We can’t exactly map isometric viewport without more math; for MVP, just show an indicator box.
-      ctx.strokeRect(padding, padding, gridSize * tileSize, gridSize * tileSize);
+      ctx.strokeRect(rx, ry, rw, rh);
     }
   }, [grid, gridSize, tileSize, viewport]);
 

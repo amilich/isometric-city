@@ -122,10 +122,30 @@ export function TowerProvider({
 
     const id = window.setInterval(() => {
       persist(latestStateRef.current);
-    }, 1500);
+    }, 5000);
 
     return () => window.clearInterval(id);
   }, [isStateReady, persist]);
+
+  // Also flush immediately at wave boundaries / end states so "Continue" is reliable.
+  const lastWaveStateRef = useRef<GameState['waveState']>('idle');
+  const lastWaveNumberRef = useRef<number>(0);
+  useEffect(() => {
+    if (!isStateReady) return;
+    if (typeof window === 'undefined') return;
+
+    const prevWaveState = lastWaveStateRef.current;
+    const prevWaveNumber = lastWaveNumberRef.current;
+    lastWaveStateRef.current = state.waveState;
+    lastWaveNumberRef.current = state.stats.wave;
+
+    const stateChanged = prevWaveState !== state.waveState || prevWaveNumber !== state.stats.wave;
+    if (!stateChanged) return;
+
+    if (state.waveState === 'complete' || state.waveState === 'victory' || state.waveState === 'game_over') {
+      persistToStorage(latestStateRef.current);
+    }
+  }, [isStateReady, persistToStorage, state.stats.wave, state.waveState]);
 
   // Tick loop
   useEffect(() => {

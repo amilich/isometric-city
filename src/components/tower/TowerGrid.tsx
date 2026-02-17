@@ -312,7 +312,7 @@ export function TowerGrid({
         const spriteName = `tower_${tile.tower.type}`;
         const drew =
           towersSheet &&
-          drawSprite(ctx, towersSheet, towersSheet.width, towersSheet.height, spriteName, screenX, screenY, 2);
+          drawSprite(ctx, towersSheet, towersSheet.width, towersSheet.height, spriteName, screenX, screenY);
         if (!drew) drawTowerPlaceholder(ctx, screenX, screenY, tile.tower.type);
       }
     }

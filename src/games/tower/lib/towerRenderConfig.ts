@@ -42,12 +42,13 @@ export const TOWER_SPRITE_SHEET: SpriteSheetConfig = {
   cols: 5,
   rows: 6,
   sprites: [
-    { name: 'tower_cannon', row: 0, col: 0, offsetY: -18, scale: 0.9 },
-    { name: 'tower_archer', row: 1, col: 0, offsetY: -18, scale: 0.9 },
-    { name: 'tower_tesla', row: 2, col: 0, offsetY: -18, scale: 0.9 },
-    { name: 'tower_ice', row: 3, col: 0, offsetY: -18, scale: 0.9 },
-    { name: 'tower_mortar', row: 4, col: 0, offsetY: -18, scale: 0.9 },
-    { name: 'tower_sniper', row: 5, col: 0, offsetY: -22, scale: 0.92 },
+    // Use column 2 (SE-facing) as the default render for the fixed isometric camera.
+    { name: 'tower_cannon', row: 0, col: 2, offsetY: -18, scale: 0.9 },
+    { name: 'tower_archer', row: 1, col: 2, offsetY: -18, scale: 0.9 },
+    { name: 'tower_tesla', row: 2, col: 2, offsetY: -18, scale: 0.9 },
+    { name: 'tower_ice', row: 3, col: 2, offsetY: -18, scale: 0.9 },
+    { name: 'tower_mortar', row: 4, col: 2, offsetY: -18, scale: 0.9 },
+    { name: 'tower_sniper', row: 5, col: 2, offsetY: -22, scale: 0.92 },
   ],
 };
 

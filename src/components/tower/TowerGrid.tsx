@@ -4,12 +4,41 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tile, type Tool } from '@/games/tower/types';
 import { clamp, lerp } from '@/games/tower/lib/math';
+import { getSpriteInfo, getSpriteRect, TOWER_SPRITE_PACK } from '@/games/tower/lib/towerRenderConfig';
 
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.6;
 const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
 const ZOOM_MIN = 0.3;
 const ZOOM_MAX = 2.5;
+
+// Sprite sheets use a red background to be filtered to transparent.
+const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
+const COLOR_THRESHOLD = 155;
+
+function filterBackgroundColor(img: HTMLImageElement): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  ctx.drawImage(img, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const distance = Math.sqrt((r - BACKGROUND_COLOR.r) ** 2 + (g - BACKGROUND_COLOR.g) ** 2 + (b - BACKGROUND_COLOR.b) ** 2);
+    if (distance <= COLOR_THRESHOLD) data[i + 3] = 0;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
 
 function gridToScreen(gridX: number, gridY: number): { screenX: number; screenY: number } {
   const screenX = (gridX - gridY) * (TILE_WIDTH / 2);
@@ -65,6 +94,49 @@ function drawTowerPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: numbe
   ctx.strokeRect(centerX - 4, centerY - 8, 8, 16);
 }
 
+function movementToSpriteCol(dx: number, dy: number) {
+  // Columns: 0=NW, 1=NE, 2=SE, 3=SW, 4=special
+  if (dx > 0 && dy === 0) return 2; // +x (down-right) reads as SE-ish
+  if (dx === 0 && dy > 0) return 3; // +y (down-left) reads as SW-ish
+  if (dx < 0 && dy === 0) return 0;
+  if (dx === 0 && dy < 0) return 1;
+  return 2;
+}
+
+function drawSprite(
+  ctx: CanvasRenderingContext2D,
+  sheetCanvas: HTMLCanvasElement,
+  sheetWidth: number,
+  sheetHeight: number,
+  spriteName: string,
+  screenX: number,
+  screenY: number,
+  overrideCol?: number
+) {
+  const info = getSpriteInfo(spriteName);
+  if (!info) return false;
+  if (info.sheet.id !== 'towers' && info.sheet.id !== 'enemies') return false;
+
+  const col = overrideCol ?? info.sprite.col;
+  const rect = getSpriteRect(info.sheet, { row: info.sprite.row, col }, sheetWidth, sheetHeight);
+
+  const scale = info.sprite.scale ?? 1;
+  const offsetX = info.sprite.offsetX ?? 0;
+  const offsetY = info.sprite.offsetY ?? 0;
+
+  // Fit sprite relative to tile width (sprites are large cells; we downscale heavily).
+  const baseWidth = TILE_WIDTH * (info.sheet.id === 'towers' ? 1.25 : 1.05);
+  const aspect = rect.sh / rect.sw;
+  const dw = baseWidth * scale;
+  const dh = dw * aspect;
+
+  const dx = screenX + (TILE_WIDTH - dw) / 2 + offsetX;
+  const dy = screenY + TILE_HEIGHT - dh + offsetY;
+
+  ctx.drawImage(sheetCanvas, rect.sx, rect.sy, rect.sw, rect.sh, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
+  return true;
+}
+
 function canPlaceOnTile(tile: Tile, tool: Tool, money: number) {
   if (tool === 'select' || tool === 'bulldoze') return false;
   if (money < TOOL_INFO[tool].cost) return false;
@@ -96,6 +168,31 @@ export function TowerGrid({
   const [hovered, setHovered] = useState<{ x: number; y: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
+  const [spriteSheets, setSpriteSheets] = useState<Map<string, HTMLCanvasElement>>(new Map());
+
+  // Load tower/enemy sprite sheets in parallel
+  useEffect(() => {
+    const load = async () => {
+      const results = await Promise.all(
+        TOWER_SPRITE_PACK.sheets.map(
+          (sheet) =>
+            new Promise<{ id: string; canvas: HTMLCanvasElement } | null>((resolve) => {
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => resolve({ id: sheet.id, canvas: filterBackgroundColor(img) });
+              img.onerror = () => resolve(null);
+              img.src = sheet.src;
+            })
+        )
+      );
+      const map = new Map<string, HTMLCanvasElement>();
+      for (const r of results) {
+        if (r) map.set(r.id, r.canvas);
+      }
+      setSpriteSheets(map);
+    };
+    load();
+  }, []);
 
   // Resize observer
   useEffect(() => {
@@ -171,13 +268,20 @@ export function TowerGrid({
       }
     }
 
+    const towersSheet = spriteSheets.get('towers') ?? null;
+    const enemiesSheet = spriteSheets.get('enemies') ?? null;
+
     // Towers (above tiles)
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
         const tile = grid[y]![x]!;
         if (!tile.tower) continue;
         const { screenX, screenY } = gridToScreen(x, y);
-        drawTowerPlaceholder(ctx, screenX, screenY, tile.tower.type);
+        const spriteName = `tower_${tile.tower.type}`;
+        const drew =
+          towersSheet &&
+          drawSprite(ctx, towersSheet, towersSheet.width, towersSheet.height, spriteName, screenX, screenY, 2);
+        if (!drew) drawTowerPlaceholder(ctx, screenX, screenY, tile.tower.type);
       }
     }
 
@@ -188,18 +292,32 @@ export function TowerGrid({
       const ex = lerp(from.x + 0.5, to.x + 0.5, enemy.progress);
       const ey = lerp(from.y + 0.5, to.y + 0.5, enemy.progress);
       const { screenX, screenY } = gridToScreen(ex, ey);
-      const cx = screenX + TILE_WIDTH / 2;
-      const cy = screenY + TILE_HEIGHT / 2 - 16;
-      ctx.fillStyle = enemy.isFlying ? '#a855f7' : '#f97316';
-      ctx.beginPath();
-      ctx.arc(cx, cy, enemy.type === 'boss' ? 9 : 6, 0, Math.PI * 2);
-      ctx.fill();
+      const dx = (to.x - from.x) | 0;
+      const dy = (to.y - from.y) | 0;
+      const col = movementToSpriteCol(dx, dy);
+      const spriteName = `enemy_${enemy.type}`;
+
+      const drew =
+        enemiesSheet &&
+        drawSprite(ctx, enemiesSheet, enemiesSheet.width, enemiesSheet.height, spriteName, screenX, screenY, col);
+
+      if (!drew) {
+        const cx = screenX + TILE_WIDTH / 2;
+        const cy = screenY + TILE_HEIGHT / 2 - 16;
+        ctx.fillStyle = enemy.isFlying ? '#a855f7' : '#f97316';
+        ctx.beginPath();
+        ctx.arc(cx, cy, enemy.type === 'boss' ? 9 : 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       // HP bar
       const hpRatio = Math.max(0, Math.min(1, enemy.hp / enemy.maxHp));
+      const hx = screenX + TILE_WIDTH / 2;
+      const hy = screenY + TILE_HEIGHT / 2 - 18;
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      ctx.fillRect(cx - 10, cy - 14, 20, 3);
+      ctx.fillRect(hx - 10, hy - 14, 20, 3);
       ctx.fillStyle = hpRatio > 0.5 ? '#22c55e' : hpRatio > 0.2 ? '#f59e0b' : '#ef4444';
-      ctx.fillRect(cx - 10, cy - 14, 20 * hpRatio, 3);
+      ctx.fillRect(hx - 10, hy - 14, 20 * hpRatio, 3);
     }
 
     // Projectiles
@@ -239,7 +357,7 @@ export function TowerGrid({
     }
 
     ctx.restore();
-  }, [canvasSize, offset.x, offset.y, zoom, grid, gridSize, hovered, selectedTile, selectedTool, money, settings.showGrid, state.enemies, state.projectiles, state.path, state.base]);
+  }, [canvasSize, offset.x, offset.y, zoom, grid, gridSize, hovered, selectedTile, selectedTool, money, settings.showGrid, state.enemies, state.projectiles, state.path, state.base, spriteSheets]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {

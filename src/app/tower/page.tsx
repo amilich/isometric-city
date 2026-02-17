@@ -72,11 +72,11 @@ function SpriteGallery({ count = 15, cols = 3, cellSize = 96 }: { count?: number
   useEffect(() => {
     const img = new Image();
     img.onload = () => setSheet(filterBackgroundColor(img));
-    img.src = '/assets/sprites_red_water_new.webp';
+    img.src = '/assets/tower/towers.webp';
   }, []);
 
   const picks = useMemo(() => {
-    // IsoCity default sheet is 5 cols x 6 rows
+    // Tower sheet uses 5 cols x 6 rows
     const cols = 5;
     const rows = 6;
     const cells: { row: number; col: number }[] = [];

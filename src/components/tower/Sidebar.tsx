@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tool } from '@/games/tower/types';
 import { Settings, BarChart3, LogOut } from 'lucide-react';
+import { T, useGT } from 'gt-next';
 
 const HoverSubmenu = React.memo(function HoverSubmenu({
   label,
@@ -171,6 +172,7 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
 export function Sidebar({ onExit }: { onExit?: () => void }) {
   const { state, setTool, setActivePanel } = useTower();
   const { selectedTool, money, activePanel } = state;
+  const gt = useGT();
 
   const directTools = useMemo(() => ['select', 'bulldoze'] as Tool[], []);
   const towerTools = useMemo(
@@ -188,7 +190,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
               variant="ghost"
               size="icon-sm"
               onClick={onExit}
-              title="Exit to Menu"
+              title={gt('Exit to Menu')}
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
               <LogOut className="w-4 h-4" />
@@ -198,7 +200,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
       </div>
 
       <ScrollArea className="flex-1 py-2">
-        <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Tools</div>
+        <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase"><T>Tools</T></div>
         <div className="px-2 flex flex-col gap-0.5">
           {directTools.map((tool) => {
             const info = TOOL_INFO[tool];
@@ -220,10 +222,10 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
         </div>
 
         <div className="mx-4 my-2 h-px bg-sidebar-border/50" />
-        <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Towers</div>
+        <div className="px-4 py-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase"><T>Towers</T></div>
 
         <div className="px-2 flex flex-col gap-0.5">
-          <HoverSubmenu label="Build Towers" tools={towerTools} selectedTool={selectedTool} money={money} onSelectTool={setTool} />
+          <HoverSubmenu label={gt('Build Towers')} tools={towerTools} selectedTool={selectedTool} money={money} onSelectTool={setTool} />
         </div>
       </ScrollArea>
 
@@ -234,7 +236,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
             variant={activePanel === 'stats' ? 'default' : 'ghost'}
             size="icon-sm"
             className="w-full"
-            title="Stats"
+            title={gt('Stats')}
           >
             <BarChart3 className="w-4 h-4" />
           </Button>
@@ -243,7 +245,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
             variant={activePanel === 'settings' ? 'default' : 'ghost'}
             size="icon-sm"
             className="w-full"
-            title="Settings"
+            title={gt('Settings')}
           >
             <Settings className="w-4 h-4" />
           </Button>

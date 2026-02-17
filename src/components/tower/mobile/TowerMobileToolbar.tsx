@@ -6,19 +6,22 @@ import { Card } from '@/components/ui/card';
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tool } from '@/games/tower/types';
 import { Settings, BarChart3 } from 'lucide-react';
+import { useGT, useMessages } from 'gt-next';
 
 function ToolPill({ tool }: { tool: Tool }) {
   const { state, setTool } = useTower();
+  const gt = useGT();
+  const m = useMessages();
   const selected = state.selectedTool === tool;
   const info = TOOL_INFO[tool];
   const disabled = info.cost > 0 && state.money < info.cost;
 
   const short = useMemo(() => {
-    if (tool === 'select') return 'Sel';
-    if (tool === 'bulldoze') return 'Sell';
-    if (tool.startsWith('tower_')) return info.name.replace(' Tower', '').slice(0, 6);
-    return info.name.slice(0, 6);
-  }, [tool, info.name]);
+    if (tool === 'select') return gt('Sel', { $context: 'Abbreviated form of Select tool' });
+    if (tool === 'bulldoze') return gt('Sell', { $context: 'Abbreviated form of Sell/Bulldoze tool' });
+    if (tool.startsWith('tower_')) return m(info.name).replace(' Tower', '').slice(0, 6);
+    return m(info.name).slice(0, 6);
+  }, [tool, info.name, gt, m]);
 
   return (
     <Button
@@ -26,7 +29,7 @@ function ToolPill({ tool }: { tool: Tool }) {
       disabled={disabled}
       variant={selected ? 'default' : 'ghost'}
       className={`h-10 px-3 rounded-md whitespace-nowrap ${selected ? '' : 'bg-white/5 hover:bg-white/10'}`}
-      title={info.description + (info.cost > 0 ? ` ($${info.cost})` : '')}
+      title={m(info.description) + (info.cost > 0 ? ` ($${info.cost})` : '')}
     >
       <span className="text-xs font-medium">{short}</span>
     </Button>
@@ -35,6 +38,7 @@ function ToolPill({ tool }: { tool: Tool }) {
 
 export function TowerMobileToolbar() {
   const { state, setActivePanel } = useTower();
+  const gt = useGT();
 
   const tools = useMemo(
     () => ['select', 'bulldoze', 'tower_cannon', 'tower_archer', 'tower_tesla', 'tower_ice', 'tower_mortar', 'tower_sniper'] as Tool[],
@@ -66,7 +70,7 @@ export function TowerMobileToolbar() {
               size="icon"
               className="h-10 w-10"
               onClick={() => setActivePanel(state.activePanel === 'stats' ? 'none' : 'stats')}
-              title="Stats"
+              title={gt('Stats')}
             >
               <BarChart3 className="w-4 h-4" />
             </Button>
@@ -75,7 +79,7 @@ export function TowerMobileToolbar() {
               size="icon"
               className="h-10 w-10"
               onClick={() => setActivePanel(state.activePanel === 'settings' ? 'none' : 'settings')}
-              title="Settings"
+              title={gt('Settings')}
             >
               <Settings className="w-4 h-4" />
             </Button>

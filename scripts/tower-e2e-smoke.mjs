@@ -152,8 +152,8 @@ async function main() {
   await page.goto(`${BASE_URL}/tower`, { waitUntil: 'networkidle2' });
   await waitForButtonText(page, 'Continue');
   await snap('10-tower-landing-before-delete');
-  await page.waitForSelector('button[title="Remove from list"]');
-  await page.click('button[title="Remove from list"]');
+  await page.waitForSelector('button[aria-label="Delete run"], button[title="Delete run"]');
+  await page.click('button[aria-label="Delete run"], button[title="Delete run"]');
   await page.waitForFunction(() => {
     const btns = Array.from(document.querySelectorAll('button'));
     const primary = btns.find((b) => (b.textContent ?? '').trim() === 'Continue' || (b.textContent ?? '').trim() === 'New Run');

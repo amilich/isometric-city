@@ -1,39 +1,129 @@
 {
   "0012d10a61d77a76": "Steigert die Nachfrage nach Gewerbe- und Wohngebieten (3x3)",
   "002dbb4296181a19": "Fracht geliefert",
+  "0038c1446c05d86c": "Beenden",
+  "007281f9370c41e8": "Ausgewogen bei Reichweite und Schaden.",
   "0099a8e0d6903046": "Umwelt",
   "00ad8aeed0a6c461": "Abbrechen",
   "010d027a9055baf1": "Kleines Bürogebäude",
   "012b78191d3eef87": "Achterbahn",
-  "01ed738a35998bee": "Speichern & Beenden",
+  "01ed738a35998bee": "Speichern & beenden",
   "0246f296a9647801": "Werkzeuge",
   "026adc03115f2abb": "Öl",
-  "036be42493f75286": " - Ziehen, um Gebiet zuzuweisen",
+  "02d9cb4c013c3a95": "Tötungen",
+  "036be42493f75286": " - Ziehen, um ein Gebiet zu markieren",
   "03e108901c6d428d": "Personen- und Güterbahnhof",
   "044a1cd2d11b505f": "Co-op-Stadt beitreten",
-  "06cb84462c974933": "Goldesel!",
-  "06cf637219c05461": "Campinggelände im Freien",
-  "07440458a59d2f55": "Bist du sicher? Dadurch wird dein gesamter Fortschritt zurückgesetzt.",
+  "048384e132ef0713": "Ausgewogen bei Schaden und Reichweite",
+  "051a35d701bcb41d": "Kachel",
+  "06cb84462c974933": "Goldgrube!",
+  "06cf637219c05461": "Campingbereich im Freien",
+  "07440458a59d2f55": "Bist du sicher? Dadurch wird dein gesamter Spielfortschritt zurückgesetzt.",
+  "076fd8a8be867c04": "IsoCoaster spielen",
   "077acf288fdc5ceb": {
     "c": "Vielleicht später",
     "i": 1,
     "t": "Button"
   },
+  "07a54f7a5302d2ff": {
+    "c": [
+      {
+        "c": "Welle",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_value_4",
+          "v": "v"
+        },
+        "i": 3,
+        "t": "span"
+      },
+      {
+        "c": [
+          "(",
+          {
+            "i": 6,
+            "k": "_gt_value_6",
+            "v": "v"
+          },
+          ")"
+        ],
+        "i": 5,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "08210160a221f6b0": "IsoTower spielen",
   "083a18f928c6f1d0": "Entzonen",
+  "09211ec5391ee8d5": "Info",
   "0a75e464d833bca8": "Einstellungen",
   "0ad556bd75d20fa9": "Automatisches Speichern",
   "0b14267b74622302": "Stadtverwaltung",
+  "0b7f36a93ca42662": {
+    "c": "Gespeicherte Parks",
+    "i": 1,
+    "t": "h2"
+  },
   "0ba4f8589e36ca76": "Bildung",
   "0c26fce8dc4990eb": "Wasser",
   "0c8b71eedbf075f5": "Leeres Grundstück",
-  "0cb408081b45c212": "Overlays einblenden",
+  "0cb408081b45c212": "Overlays anzeigen",
   "0cc2c983267b6a33": "Ufergebiete",
-  "0df552c71ceffdea": "Basketballplatz im Freien",
+  "0d7560a2d44f2942": "Bogenschützenturm",
+  "0d80bd4c0e78ada9": {
+    "c": "Welle starten",
+    "i": 1,
+    "t": "span"
+  },
+  "0d8497253c8ab4f4": {
+    "c": [
+      "W",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
+  "0dd6e7c001560d5d": "Verdient",
+  "0df552c71ceffdea": "Basketballplätze im Freien",
+  "0e92652e5e934a77": "Kanonenturm",
+  "0ea87ec6d9adbb56": {
+    "c": [
+      {
+        "c": "Leben",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": {
+          "i": 4,
+          "k": "_gt_value_4",
+          "v": "v"
+        },
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
+  "0ece91edff2fdef0": "Rückerstattung",
   "11e592ce36623118": "Rathaus",
   "13b2402c6c023ebc": "Zur Startseite",
-  "13fcc02124829d6c": "Raum konnte nicht erstellt werden",
+  "13fcc02124829d6c": "Spielraum konnte nicht erstellt werden",
   "146b7a76457cbdc5": "Co-op-Stadt erstellen",
+  "147c010d1341bd29": "Sieg",
   "153aa8e9d1ddfa9d": "Co-op-Park beitreten",
+  "159f55cb84b497cc": "Große Reichweite, hoher Schaden, langsame Feuerrate.",
+  "163e1454717aa033": "Flieger",
   "1681a6233ff22e03": [
     "Raumcode: ",
     {
@@ -73,18 +163,26 @@
     "i": 1,
     "t": "div"
   },
-  "1a15d36ef2a49924": "Konnte Park nicht beitreten",
+  "1a15d36ef2a49924": "Park konnte nicht verbunden werden",
   "1b1481a79d72b160": "Fracht",
   "1d322b583a4b0247": "Steigert die Gewerbenachfrage (3x3)",
-  "1e5fcd19bdbca49e": "Wanderweg-Einstieg (3x3)",
+  "1dbe27ded19326de": "Gegner haben mehr LP",
+  "1e5fcd19bdbca49e": "Eingang zum Wanderweg (3x3)",
+  "1e922afe82253119": "Kachelumrisse zur einfacheren Platzierung anzeigen",
+  "1f203a521cbd23df": "Blitzschaden mit kleinem Wirkungsradius",
   "1f30c00e03eeca50": "Straße",
   "2052aad231d5a7a0": "Deine Stadt läuft reibungslos.",
-  "20b6960f6549e2ce": "Saldo",
+  "20b6960f6549e2ce": "Netto",
+  "2139f3a924c1e3f9": {
+    "c": "Lädt...",
+    "i": 1,
+    "t": "div"
+  },
   "22afa76a44fbcefd": "Go-Kart-Bahn",
   "22b6447b8bb2f39c": "Koop",
-  "232eb7f71021bb7c": "Finanzmittel",
+  "232eb7f71021bb7c": "Finanzen",
   "236b49842190cde3": "Brände bekämpfen",
-  "244e7898107e1ee5": "Tag/Nacht-Modus",
+  "244e7898107e1ee5": "Tag-/Nachtmodus",
   "2455ea3bff6fcd33": "Sicherheit erhöhen",
   "2458e22ee476fd63": [
     "Weiter",
@@ -93,16 +191,27 @@
       "t": "ArrowRight"
     }
   ],
+  "2538c2d97c9b5e23": "Läuft",
+  "2630e7b58f5f271b": "Weiter",
   "265faf7d02352750": "Dieser Raum existiert nicht oder ist möglicherweise abgelaufen.",
   "26830a19552c9fa6": "Baut gemeinsam in Echtzeit einen Freizeitpark",
   "26c08edf08a8fd43": "Stadt vergrößern (+30x30)",
   "277949eda13391e5": "Gewerbegebiet",
   "27b33d5e7ca06b25": "Stadion",
   "2a39b732be4c5afe": "Freizeiteinrichtung",
+  "2b0dc1ed4baba37c": {
+    "c": "Türme",
+    "i": 1,
+    "t": "div"
+  },
   "2c1c93a646bbea6e": "Sprache",
-  "2cfd6433e4b2a26a": "Zufällige Brände und Katastrophen einschalten",
+  "2ca561694eb0463f": "Pause",
+  "2cfd6433e4b2a26a": "Zufällige Brände und Katastrophen aktivieren",
   "2e46736f6530763d": "Kleiner Park",
+  "2e59cbcabb4fb530": "Name des Durchlaufs",
+  "2e7649d8d92a1c6e": "Stadt löschen",
   "2ee85b5d8a92b88c": "Stadt beitreten",
+  "304891a0d65fc61d": "Verkaufen für ${refund}",
   "311b940a57c89ab6": "Park verbinden",
   "311dc7890d2b1d67": {
     "c": "Warte auf Spielstatus",
@@ -110,29 +219,45 @@
     "t": "p"
   },
   "315f62fadaa37351": "Gesundheit verbessern (2x2)",
+  "3251b1a087c5e62a": "Pfeilschaden mit kleinem Flächenschaden.",
   "32957fce34b7e56b": "Land-Terraforming",
   "32db31f0dc62bec8": "Verbinde...",
   "33421e8d33bce805": "Einladungscode",
+  "3344fe2eecea88e8": "Gelände",
+  "33585c2cc56f7006": "Mein Verteidigungsdurchgang...",
+  "34ca55cf42f2e533": "Eisturm",
   "361b52252c485db1": "Grundbildung (2x2)",
-  "36999eca1aa6a62d": "Fenster",
+  "3659bb9fdf672c1b": "Neuer Durchlauf",
+  "36999eca1aa6a62d": "Panels",
   "3713fd8f06b7bdbd": "Abriss",
   "37974ce5901faca4": "Freilichtbühne (2x2)",
   "38f4bf88be0f7fb8": "Parktor",
-  "39582dc021bd9785": "Einnahmen",
+  "39582dc021bd9785": "Einkommen",
   "39889a36667620a2": "Sprache auswählen",
   "39ecf0d809cf7519": "Entwicklertools",
-  "3a6eca7252adb9a5": "{toolName} - Bereich {width}x{height}",
+  "3a6eba02ecf5bba2": {
+    "c": "Zurück zu IsoCity",
+    "i": 1,
+    "t": "a"
+  },
+  "3a6eca7252adb9a5": "{toolName} – Bereich {width}x{height}",
+  "3befbe3dae383b10": "Aufwerten",
   "3c4c4d97d5e66b21": "Gesundheit",
-  "3ce15d2f4c961d10": "Noch nicht genug Daten vorhanden. Spiele weiter, um historische Trends zu sehen.",
-  "3d7ab4b2285527d1": "Deine Staatskasse ist gerade deutlich schwerer geworden. Du hast 1.000.000 $ erhalten!",
-  "3e3047cbe8ba9923": "Entfernt 15 Felder von jedem Rand. Gebäude am Rand werden gelöscht.",
+  "3ce15d2f4c961d10": "Noch nicht genug Daten. Spiele weiter, um historische Trends zu sehen.",
+  "3d7ab4b2285527d1": "Deine Stadtkasse ist gerade deutlich schwerer geworden. Du hast 1.000.000 $ erhalten!",
+  "3e0c6827e9f83a2e": "Status laden",
+  "3e3047cbe8ba9923": "Entfernt von jeder Seite 15 Kacheln. Gebäude am Rand werden dabei gelöscht.",
   "3ec5d33df4d2ded1": "Richte deinen Koop-Park ein",
+  "3f191e401565f3c7": "ISOTOWER — Tower Defense",
   "3fed752c6b827eb4": "Skatepark",
   "40bad8960b093d63": "Basierend auf Zufriedenheit, Gesundheit, Bildung, Sicherheit und Umwelt",
+  "41cac52683b24940": "Welle",
   "421db366df78606f": "Weiterspielen",
   "423be6bbfb254615": "Bäume pflanzen, um die Umwelt zu verbessern",
-  "42f8808e6f183aa2": "Beitritt zum Raum ist fehlgeschlagen",
-  "43852fb2c437417a": "{toolName} muss am Wasser platziert werden",
+  "42f8808e6f183aa2": "Beitritt zum Raum nicht möglich",
+  "431d562ad625d42d": "Mörserturm",
+  "43852fb2c437417a": "{toolName} muss direkt am Wasser platziert werden",
+  "43e07a57f060214f": "Exportiertes JSON hier einfügen...",
   "43f8d980f9a0671a": "Unterirdischer Verkehr",
   "441e4c507e4ad288": "Kleines Büro",
   "4552acda39be69ce": "Gebietsausweisung entfernen",
@@ -168,7 +293,7 @@
     "i": 1,
     "t": "p"
   },
-  "46bcf1a804883ab0": "Gemeinschaftliche Gartenfläche",
+  "46bcf1a804883ab0": "Gemeinschaftsgarten",
   "482a95b964ba67dc": "Wanderweg-Einstieg",
   "482ea0cd55a6de89": "Gemeinschaftsgarten",
   "4862ed8532afdefe": "Erzeugt Strom (2x2)",
@@ -176,110 +301,199 @@
   "4abc7c18f4193dec": "Gebiet für Wohnbebauung ausweisen",
   "4b2cc49f7ddb97d8": "Gespeicherte Städte",
   "4b6098b15618c700": "U-Bahn",
-  "4c059835fa726e47": "Kopiere deinen Spielstand, um ihn zu teilen oder zu sichern",
+  "4c059835fa726e47": "Kopiere deinen Spielstand, um ihn zu teilen oder zu sichern.",
+  "4c5582d2f7f820bf": "Laufzeit-Statistiken",
   "4ca435219460c2ac": "Thrill-Fahrgeschäft (2x2)",
   "4e0be86689616403": "Park erstellen",
   "4f39d404387890b1": "Neuen Park erstellen",
   "4f7921f3fd81b8b8": "Gebäude benötigen Strom, Wasser und Straßen, damit dort gebaut werden kann.",
+  "50737275c9416a82": "Lauf speichern",
   "50e2a364d74d785c": "Wöchentlicher Nettogewinn",
   "5151b5e97cd737af": "Gemeindezentrum",
   "51ba70d622cd0090": "Amphitheater",
   "5307628f223147b6": "Lokales Gemeindezentrum",
+  "530edd006394e980": {
+    "c": "Spiel vorbei",
+    "i": 1,
+    "t": "div"
+  },
+  "533da872911625b3": "Verkaufen",
   "5346721dd34606cc": "Kraftwerk",
   "5346848488eb3e6d": "Großer Spielplatz",
-  "5584c3a28c29fea7": "Sprite-Set",
+  "536fa3ca6eb2c9cb": "Stufe",
+  "5584c3a28c29fea7": "Sprite-Paket",
   "55b6968db17e61eb": "Deine Stadt wurde gespeichert, bevor du dir eine geteilte Stadt angesehen hast.",
   "56caaccde6d15589": "Erstellt mit Cursor",
   "56e589e66d790077": "Gebäude und Zonen entfernen",
   "570f15ad126ec582": "{toolName} bei ({x}, {y})",
   "5710fcf3d552b2e4": "Feuerwache",
   "573173896178c5b2": "Vergnügungspark",
+  "574a05bacaa5c2ae": "Sieg",
   "57a3b5a61e0ff28c": "Teile den Einladungscode mit Freunden",
-  "5842190480e1e770": "Mit Wasser",
-  "58b631994c014e93": "Willkommen! Beginne damit, Bereiche als Wohngebiet, Gewerbegebiet und Industriegebiet auszuweisen. Baue dann Straßen, Stromversorgung und Wasser, um deine Stadt aufzubauen.",
+  "57eaecfef2210f4d": {
+    "c": "Lade Durchlauf...",
+    "i": 1,
+    "t": "div"
+  },
+  "5842190480e1e770": "Wasser vorhanden",
+  "58b076d0d94b13f7": "Schnelle Angriffe, geringer Schaden",
+  "58b631994c014e93": "Willkommen! Weise zuerst Zonen als Wohn-, Gewerbe- und Industriegebiet aus. Baue dann Straßen, Stromversorgung und Wasserleitungen, um deine Stadt aufzubauen.",
   "5a08b8941a037d58": "Lokaler Baseballplatz (2x2)",
-  "5bf5088caf591468": "Sportplatz mit Sitzplätzen",
+  "5bf5088caf591468": "Sportplatz mit Tribüne",
   "5c26a3826c8eebd9": "Bevölkerung",
   "5c6aa4f2a08f5808": "Sicherheit",
   "5cd89cfd9ef6a613": "Lädt...",
-  "5d55c4129177872e": "Mit Strom",
+  "5d55c4129177872e": "Strom vorhanden",
   "5dbd90f586ba6162": "Monatliche Einnahmen",
   "5e16578196ee8412": "Arbeitsplätze",
   "5e2236ccf9b5ffba": "Tag",
+  "5e2d7b9b0c5708ad": "Geld",
   "5e9e025cf3ae6fc7": "Großer Park (3x3)",
+  "5edf5dbc6661ebc9": "Schd",
+  "5ee289a5814cef11": "Spiel vorbei",
+  "5f8fceb9f2f723d4": {
+    "c": [
+      "Du hast bis Welle ",
+      {
+        "i": 2,
+        "k": "_gt_n_2",
+        "v": "n"
+      },
+      " durchgehalten. Kills: ",
+      {
+        "i": 3,
+        "k": "_gt_n_3",
+        "v": "n"
+      },
+      ". Durchbrüche: ",
+      {
+        "i": 4,
+        "k": "_gt_n_4",
+        "v": "n"
+      },
+      "."
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "5ffa6e6366e41c69": "Rennattraktion (2x2)",
   "6027a72931335033": "Gebiet für Fabriken ausweisen",
   "6034e26d8964b615": "Versorgung",
   "60eb6be4ae31cecb": "Großer Spielplatz mit mehr Spielgeräten (2x2)",
-  "6136434088767e39": "Wähle deine bevorzugte Sprache",
+  "6136434088767e39": "Bevorzugte Sprache wählen",
+  "625b811d2fc13abb": "Platzierten Turm verkaufen und Geld zurückbekommen",
   "62f43adf29906dd6": "Fußballplatz",
   "6366c3e6926eb31f": "Stadt erweitern",
   "644d112397a9d946": "Laden",
+  "64badbd9179adbc3": {
+    "c": "Zurück zu IsoCoaster",
+    "i": 1,
+    "t": "a"
+  },
+  "64d749f21a435824": "Neuer Park",
   "668bac01a99df249": "Polizei",
   "67b416f395bcb015": "Baue Krankenhäuser und Schulen, um die Gesundheit und Bildung deiner Bürger zu verbessern.",
-  "67f7439638ec898d": "Gemeinschaftsbauten",
+  "67f7439638ec898d": "Gemeinschaft",
   "68c8018cb5797990": "Spielstand hier einfügen...",
   "693839da902125cb": "Pier",
   "69ba5155e6e2ef95": "Umbenennen",
-  "6b2711965c0aecca": "Sportanlagen",
+  "69d9b0f0deb86fae": "Ein isometrisches Tower-Defense-Spiel auf Basis der IsoCity/IsoCoaster-Engine. Baue Türme, verteidige deine Basis und halte immer stärkeren Wellen stand.",
+  "6b2711965c0aecca": "Sport",
   "6bbf388c7005fa30": "Universität",
   "6c45a87bca570dfb": "Umwelt",
-  "6d966a4f4fb838a2": "Raum wurde nicht gefunden.",
+  "6d08a461e5566762": "Kacheln auswählen und untersuchen",
+  "6d49999f19231b80": "Zurücksetzen",
+  "6d966a4f4fb838a2": "Raum nicht gefunden",
+  "6dd770bf2ed5affe": "Startet",
+  "6e2e1ed12486369e": "Nicht genug Geld",
+  "6e5f5676eefc45b4": "Boss",
   "6e706fe5f4dead95": "Gebiet für Läden und Büros ausweisen",
-  "6ef03a3ce71f2e80": "Stadtfinanzen",
+  "6ef03a3ce71f2e80": "Stadtkasse",
+  "6f2233d9b322003b": {
+    "c": [
+      "Bev.: ",
+      {
+        "i": 2,
+        "k": "_gt_n_2",
+        "v": "n"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "6f799a1e48046e50": "Zonen",
   "7098a61cad8c8e17": "Richte deine Koop-Stadt ein",
   "71ba7468560d8d94": "Kleiner Spielplatz",
-  "71c6a9765d5e2456": "Füge Parks und Bäume hinzu, um die Umwelt in deiner Stadt zu verbessern und die Bewohner zufriedener zu machen.",
+  "71c6a9765d5e2456": "Füge Parks und Bäume hinzu, um die Umwelt deiner Stadt zu verbessern und deine Bewohner glücklicher zu machen.",
   "72bef77d7b502f8f": "Steuern",
-  "7423144f1896834e": "Koop-Stadt",
+  "7423144f1896834e": "Co-op City",
   "745eee8680d46de2": "Schwimmbad",
   "750760318912cde3": "(aktuell)",
+  "758407e397d58a42": "Gepanzert",
   "7599ffe8c31a20dc": "Tennisplatz",
+  "75bb1afcf98e4d4f": "Verlangsamt Gegner.",
   "7626b00fded50abc": "Baum",
   "762fcce45b65eea9": "Speichern",
   "764fb358fb772d35": "Steuersatz",
   "7699c52140c9d9d1": "Parks",
   "7742d857935b5fce": "Stadt erstellen",
-  "786f78fa84e8f121": "Park mit idyllischem Teich",
+  "786f78fa84e8f121": "Park mit malerischem Teich",
   "7a2dd3bc72dfe4a0": "Footballfeld",
+  "7a53bd0fce34b432": "{speed}x Tempo",
+  "7a6c7a1a28e4d9d7": "Türme bauen",
   "7ab9534f0cd01856": "Minikarte",
   "7ac4455553fe632a": "Fortfahren",
   "7af04611900a2ec1": "Schüttgut",
+  "7b8ffef1262b0ee1": "Tank",
   "7db45eab1e6e4c9e": "Großer Park",
   "7f248a14247b63c3": "Baue gemeinsam mit Freunden in Echtzeit eine Stadt",
   "7fb5371007f7f493": "Statistiken",
+  "804abc45d95a857d": "Verkaufen",
+  "8090ea0dda86abf5": "Kopiert!",
   "825d7120d9e5c572": "Container",
   "830e21fdb11a5d4a": "Stellt Wasser bereit",
   "8422fd86fad87d61": "Zugang zum U-Bahn-Netz",
-  "845da39023dc8d69": "Hinweis schließen",
+  "845da39023dc8d69": "Tipp schließen",
   "84b3fc230d753c82": "Bahnhof",
   "84bfc3db1e596cce": "Teichpark",
   "85c943b4a30a4c69": "Zufriedenheit",
+  "8713b6561db348fa": "AZ",
   "878c45a35ddde226": "Spielstand importieren",
-  "87d0409e4047fbca": "Ungültiger Spielstand. Bitte überprüfe den Spielstand und versuche es erneut.",
+  "87d0409e4047fbca": "Ungültiger Spielstand. Bitte überprüfen und erneut versuchen.",
   "884832efb61160d4": "Land in Wasser umwandeln",
   "88da711fb08edc45": "Gespeicherte Städte",
-  "89c6ae6c99a26fef": "Beispielzustand laden",
+  "89c6ae6c99a26fef": "Beispielspielstand laden",
+  "89f223c2224b3e86": "Autospeicherung",
+  "8a135e63b19b5636": "Einstellungen",
   "8a2629c99203fd4e": "Berater",
-  "8a3ebfe5eefa1f3a": "Stadtdienste",
+  "8a3ebfe5eefa1f3a": "Dienstleistungen",
   "8b5e8de8f4c85850": "Höhere Bildung (3x3)",
   "8b9192b9f5e25ab9": "Gebäudestil auswählen",
-  "8cfe5cbc808ec9b6": "Behalte die Zonennachfrage im Auge. Eine negative Nachfrage kann dazu führen, dass Gebäude aufgegeben werden.",
+  "8cf8b2e7760808b5": {
+    "c": "GitHub öffnen",
+    "i": 1,
+    "t": "a"
+  },
+  "8cfe5cbc808ec9b6": "Achte auf die Zonennachfrage. Negative Nachfrage kann dazu führen, dass Gebäude aufgegeben werden.",
   "8de7ba6ed1fcb79c": "Dieser Park-Raum existiert nicht oder ist möglicherweise abgelaufen.",
   "8e1b26faa1066903": [
     {
       "i": 1,
       "t": "Loader2"
     },
-    "Verbinde..."
+    "Trete bei..."
   ],
   "8e51a2f65e212afd": "Wasser in Land umwandeln",
-  "900353afc0ae0c5f": "Es wurden noch keine Städte gespeichert.",
+  "900353afc0ae0c5f": "Keine Städte gespeichert.",
   "907abc04009841aa": "Minigolfplatz (2x2)",
   "90e19ab2fba5da15": "Wiederherstellen",
+  "910bd771a9b6f22f": {
+    "c": "Neues Spiel",
+    "i": 1,
+    "t": "Button"
+  },
   "915ed53f3aec731b": "Spielstand kopieren",
-  "931f3cdc1db7ade0": "Streichelzoo / Nutztiere",
+  "931f3cdc1db7ade0": "Streichelzoo (Nutztiere)",
   "933fa7740fe8c681": {
     "i": 1,
     "k": "_gt_value_1",
@@ -287,9 +501,14 @@
   },
   "942af069571719cf": "Monatliche Ausgaben",
   "947b31327f9622d3": "Neues Spiel starten",
-  "955389bd727d0995": "Fußballstadion (2x2)",
+  "955389bd727d0995": "Footballstadion (2x2)",
   "956afb617989348a": "Spezialgebäude",
-  "961afdfa1ffd458a": "Spielstand erfolgreich geladen!",
+  "95dca9f654b18bcf": {
+    "c": "IsoTower spielen",
+    "i": 1,
+    "t": "a"
+  },
+  "961afdfa1ffd458a": "Spiel erfolgreich geladen!",
   "9623fe89547f52b2": "Beispiel laden",
   "973809b714422052": {
     "c": "Stadt entdeckt!",
@@ -297,17 +516,22 @@
     "t": "DialogTitle"
   },
   "97513d561bf53e55": "U-Bahn-Station",
-  "97c7b3a9fd235ee5": "Bevölkerung",
+  "97c7b3a9fd235ee5": "Einw.",
   "9963ed45f2043cb8": "Gewächshausgarten",
-  "9bd3d3242f1ed87e": "Ohne Strom",
-  "9c47942e96f87eff": "Zurück zum Hauptmenü",
+  "9ae9a8155bc41bd2": "Neuer Park",
+  "9afbdace220cd98c": "Turm",
+  "9bc5d8d434132392": "Ausführungseinstellungen",
+  "9bd3d3242f1ed87e": "Kein Strom",
+  "9c47942e96f87eff": "Zum Hauptmenü",
   "9d254026827d7830": "Sportplatz mit Tribünen",
   "9db16884c1c9d324": "Zurück",
   "9e7842be401ec868": "Koop-Mehrspieler",
+  "9eb2dbf6073def42": "Speichern",
   "9f2ba8acaf861529": "Möchtest du deine Stadt vor dem Beenden speichern?",
   "9f5e0ad2d121bf3b": "GitHub öffnen",
   "9f624c646a344dd9": "Botanisches Gewächshaus (2x2)",
-  "a0ffbf0fb30b0c88": "Raum konnte in der Datenbank nicht erstellt werden.",
+  "a0bd905d0d88a3de": "Leben",
+  "a0ffbf0fb30b0c88": "Fehler beim Erstellen des Raums in der Datenbank",
   "a1608c009c5abc68": [
     {
       "i": 1,
@@ -317,24 +541,58 @@
   ],
   "a1fe3b85fd8e6410": "Stadt verkleinern (-30x30)",
   "a251f31bd82b46e3": "Stadtname",
-  "a757c44bab1bfc4d": "Eine Ladung {cargoName} ist im Yachthafen eingetroffen. +{cargoValue} $ Handelserlös.",
+  "a2f7bf56e3e40e82": "Aufrüsten für ${cost}",
+  "a553be36e93303cd": "Bereit",
+  "a64cd4ce499fb678": "Aktiviert",
+  "a757c44bab1bfc4d": "Eine {cargoName}-Lieferung ist im Yachthafen eingetroffen. Handelserlös: +${cargoValue}.",
   "a7894306a08bac01": "Wohngebiet",
-  "a7cc8ff7202beca4": "Rustikales Blockhaus als Rückzugsort",
+  "a7cc8ff7202beca4": "Rustikale Ferienhütte",
+  "a80f491fef755bf6": "Raster anzeigen",
   "a83f273f0a35b2f5": "Ausgaben",
+  "a8c8fb2bb501cc26": "Park löschen",
   "a916da3428403968": "Skatepark",
-  "a9749078f63948e2": "Neuer Stadtname...",
+  "a9749078f63948e2": "Neuer Stadtname ...",
   "aa29c7e2f00fb24d": "Steigert Zufriedenheit und Bodenwert (1x1)",
+  "aa58c8b8ea1738c2": "Nächste Welle starten",
   "abaacba7b0f79fe8": "Zurücksetzen",
-  "abd01d16a9c20c45": "Keine dringenden Probleme.",
+  "abd01d16a9c20c45": "Derzeit keine dringenden Probleme.",
   "ac59cfc290b0aaf7": "Spielstand laden",
   "adb5a90c2189aa55": "Steigert die Nachfrage nach Gewerbe- und Industriegebieten (4x4)",
   "add48b8a4d3992b8": "Stadtstatistik",
   "ae0bc049bb523734": "Diese Stadt löschen?",
-  "af9c6e5183374398": "Je Rand 15 Felder entfernen",
+  "af9c6e5183374398": "Von jeder Kante 15 Felder entfernen",
+  "b0dca1a5fea93c17": {
+    "c": "ISOTOWER",
+    "i": 1,
+    "t": "span"
+  },
   "b3b7a1d6663ccd5f": "Krankenhaus",
-  "b43d25aa91aa1edd": "Tageszeitansicht überschreiben, ohne den Zeitverlauf zu beeinflussen",
+  "b43d25aa91aa1edd": "Tageszeitdarstellung überschreiben, ohne den Zeitverlauf zu ändern",
   "b453abc6c0aa9847": "Baseballfeld",
   "b4619e9087ef77c7": "Raumfahrtprogramm",
+  "b6769bd75e6dbcd7": {
+    "c": [
+      {
+        "c": "Geld",
+        "i": 2,
+        "t": "span"
+      },
+      {
+        "c": [
+          "$",
+          {
+            "i": 4,
+            "k": "_gt_value_4",
+            "v": "v"
+          }
+        ],
+        "i": 3,
+        "t": "span"
+      }
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "b7383a44b9c31f2e": [
     {
       "i": 1,
@@ -360,13 +618,75 @@
   "b9b4a7ace7016881": "Co-op-Park beitreten",
   "bad59346a21883a3": "Flughafen",
   "bc1312ca9875c6db": "Anderem Raum beitreten",
-  "bc57a3573b2d731a": "Stadtberater",
+  "bc57a3573b2d731a": "Stadtrat",
+  "bc9193a8c21dfe25": {
+    "c": {
+      "d": {
+        "b": {
+          "false": {
+            "c": "Umschalt+Ziehen zum Verschieben • Scrollen zum Zoomen • Klicken zum Platzieren",
+            "i": 3,
+            "t": "C3"
+          },
+          "true": {
+            "c": "Ziehen zum Verschieben • Zusammenziehen zum Zoomen • Tippen zum Platzieren",
+            "i": 3,
+            "t": "C3"
+          }
+        },
+        "t": "b"
+      },
+      "i": 2,
+      "t": "Branch"
+    },
+    "i": 1,
+    "t": "div"
+  },
   "bcfcdb828fb6febe": "Industriegebiet",
+  "bd141687b7cffc88": {
+    "c": {
+      "d": {
+        "b": {
+          "false": {
+            "c": "Neues Spiel",
+            "i": 3,
+            "t": "C3"
+          },
+          "true": {
+            "c": "Fortfahren",
+            "i": 3,
+            "t": "C3"
+          }
+        },
+        "t": "b"
+      },
+      "i": 2,
+      "t": "Branch"
+    },
+    "i": 1,
+    "t": "Button"
+  },
+  "bd5038c82742124f": "Tesla-Turm",
   "bd81be63d5902150": "Co-op-Stadt beitreten",
+  "be2d5cc2fc4d26de": "Statistiken",
   "bec33fd7ba69166e": "Mein Koop-Park",
-  "bf03c9d6ae13442a": "Die Stadt kann nicht weiter verkleinert werden – Mindestgröße erreicht.",
+  "bf03c9d6ae13442a": "Stadt kann nicht weiter verkleinert werden – Mindestgröße erreicht.",
+  "c095440241b0d1f7": "Reichweite",
+  "c0cb7886437af50d": "Kein Turm auf diesem Feld.",
   "c1118dc21f1a3a70": "Fußballplatz",
-  "c374929bd865ac52": "Naturnahes Berghütten-Refugium (2x2)",
+  "c374929bd865ac52": "Naturnahe Berghütte (2x2)",
+  "c430f0ba61df8ff1": {
+    "c": [
+      "♥ ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "c49fb569cf0344a1": "Verbinde deine Stadt",
   "c4b2f6543e9a13ff": "Neues Spiel",
   "c56f5cbb6dbe8edb": "Blockhaus",
@@ -378,26 +698,86 @@
     },
     "Einladungslink kopieren"
   ],
+  "c7463d4dfe0ac086": {
+    "c": "Gespeicherte Durchläufe",
+    "i": 1,
+    "t": "h2"
+  },
   "c7d1e9c9bd97d52d": "Monatlich",
+  "c7ecdca82d366a99": {
+    "c": "Werkzeuge",
+    "i": 1,
+    "t": "div"
+  },
   "c94455ba1a9942b7": "Stadt verkleinern",
   "c96a3fd1bbe8f38a": "Steigert die Nachfrage nach Industrie- und Wohngebieten (3x3)",
   "caf697c48a419488": "Neue Stadt erstellen",
   "cb91c05c442d6da0": "Anleger am Wasser (muss an Wasser platziert werden)",
   "cba582095df8e4d9": "Minigolf",
+  "cd443395b7fcff74": {
+    "c": [
+      "Gäste: ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
   "cd69d8784e9ce625": "Katastrophen",
+  "ce0d8a739d5652e2": "Langsam, aber mit starkem Flächenschaden.",
   "ce17b8c1c26494e0": "Campingplatz",
+  "ce483e43ab8492e6": {
+    "c": [
+      "Du hast Welle ",
+      {
+        "i": 2,
+        "k": "_gt_n_2",
+        "v": "n"
+      },
+      " geschafft. Kills: ",
+      {
+        "i": 3,
+        "k": "_gt_n_3",
+        "v": "n"
+      },
+      ". Durchbrüche: ",
+      {
+        "i": 4,
+        "k": "_gt_n_4",
+        "v": "n"
+      },
+      "."
+    ],
+    "i": 1,
+    "t": "div"
+  },
   "cf5babe756808083": "Yachthafen",
+  "cfbeea6dca7b2c16": "Minikarte (zum Navigieren klicken)",
+  "d0565105cd957631": "Verlangsamt getroffene Gegner",
   "d062c71072c029de": "Retro-Cheat aktiviert!",
   "d08f67cf675a3159": "Professionelles Baseballstadion (3x3)",
+  "d15d4ce9981708e9": "Abbrechen",
+  "d17e430e65f5265e": {
+    "c": "Beispiel laden",
+    "i": 1,
+    "t": "Button"
+  },
   "d1acbf32e4fd9c19": "Vorfall",
   "d26290781c575c73": "Museum",
   "d28b856e9e8b8a3d": "Geld",
-  "d5120487d8637bd5": "Dekorativer Parkeingang",
+  "d4f9aa33760ec386": "Ungültiger Spielzustand.",
+  "d5120487d8637bd5": "Dekoratives Parktor",
+  "d53720edca4bc8c8": "Schnelle Angriffe, geringer Schaden.",
   "d563172b11e46265": " - Ziehen, um zu platzieren",
   "d5bb9c7d05c9221d": "Spielstand exportieren",
   "d5cfefaf7011c288": "Erneut versuchen",
+  "d674e9f0d492fe76": "Schwerer Modus",
   "d76336950671d1e2": "Bootsanleger (2x2, muss an Wasser platziert werden)",
-  "d7804cf2c098d4c3": "Überlagerung einblenden",
+  "d7804cf2c098d4c3": "Overlay einblenden",
+  "d7b87ce04f32c286": "Große Reichweite, hoher Schaden, langsame Feuerrate",
   "d84684d9e8bbd3d5": {
     "c": "Trete Stadt bei...",
     "i": 1,
@@ -408,10 +788,22 @@
   "d8f8e96fe087aec3": "Baseballstadion",
   "d960080f10b5a21e": "Steigert alle Nachfragearten (2x2)",
   "da49b8271b9dffa0": "Löschen",
+  "daacef6f9e171d04": "Läufer",
+  "db5e7f6f87de9f4c": [
+    "Lecks ",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    }
+  ],
+  "dc080949ec0cc8b4": "Grunzer",
   "dd0edb8f248b398e": "Zum Parkmenü",
-  "dd6807c3c88471d5": "Fügt an jeder Seite 15 Felder hinzu. Landgrenzen werden zu Land, Wassergrenzen zu Wasser erweitert.",
+  "dd6807c3c88471d5": "Fügt auf jeder Seite 15 Kacheln hinzu. Land am Rand bleibt Land, Wasser bleibt Wasser.",
+  "dd94a9820c0fb062": "Scharfschützenturm",
   "de19414adf212a36": "ABCDE",
-  "ded883367c8ddcb0": "Sprite-Testansicht öffnen",
+  "de541272e03a33ab": "Zurück zum Menü",
+  "ded883367c8ddcb0": "Sprite-Testfenster öffnen",
   "e0a1cc92bd08aa24": "Strom",
   "e0fa959d80ac0d81": "Auswählen",
   "e1e699a197e3581d": {
@@ -441,20 +833,65 @@
     "Alle Tipps überspringen"
   ],
   "e23439349cbca510": "Klicken, um Platteninfos anzuzeigen",
+  "e282fda02315e348": "Export kopieren",
+  "e30b840393c5dc4c": "Importieren",
   "e41b7f26a2f7453b": "Raum konnte nicht beigetreten werden",
   "e4ca1c349676657c": "Nacht",
   "e4f07cb539c8b592": "Meine Koop-Stadt",
+  "e55e037e87785a94": {
+    "c": [
+      "Bewertung: ",
+      {
+        "i": 2,
+        "k": "_gt_value_2",
+        "v": "v"
+      }
+    ],
+    "i": 1,
+    "t": "span"
+  },
+  "e738463d1d4b5d49": "Geladen!",
   "e78b04c25599cd81": {
     "c": "Einladungscode",
     "i": 1,
     "t": "p"
   },
-  "e79d3dd997b03f78": "Ohne Wasser",
+  "e79d3dd997b03f78": "Kein Wasser",
+  "e92af68cff5e38fa": [
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    },
+    " $ ausgegeben"
+  ],
   "e94b8809e7637224": "Spieleinstellungen",
-  "e9574dcabfdab036": "Beenden ohne zu speichern",
+  "e94cc4caa4963305": "Tick",
+  "e9574dcabfdab036": "Ohne Speichern beenden",
+  "e9d8546d0af9e5d0": "Rastergröße",
   "e9f3a9337aab62c6": "Wöchentlich",
   "eaa9e68396589c20": "Gleise bauen",
   "eb953578bc301d65": "Parkname",
+  "ebc5824e4c0639bc": [
+    "Kachel (",
+    {
+      "i": 1,
+      "k": "_gt_value_1",
+      "v": "v"
+    },
+    ", ",
+    {
+      "i": 2,
+      "k": "_gt_value_2",
+      "v": "v"
+    },
+    ")"
+  ],
+  "ec66594d81a1b3ff": {
+    "c": "IsoTower Defense",
+    "i": 1,
+    "t": "h1"
+  },
   "ec8a07c2ad1276af": {
     "c": "Verbinde...",
     "i": 1,
@@ -465,28 +902,37 @@
   "eeca902329b200e6": "Berghütte",
   "efd9775f35548e44": "Kopiert!",
   "f037be5184516560": "Kinderspielplatz",
-  "f06fd72176b8179e": "Zonierung",
+  "f0390a827424f510": "Neuen Durchlauf starten",
+  "f06fd72176b8179e": "Zonen",
   "f0cfc502ed112098": "Zone",
+  "f18c4f75dc641b81": "Langsam, verursacht aber starken Flächenschaden",
+  "f1c5feb9a84d6839": {
+    "c": "Sieg",
+    "i": 1,
+    "t": "div"
+  },
   "f2faf4aaea86ae97": "Basketballplätze",
-  "f313b32c80899b3a": "Baue Feuerwachen und Polizei, um deine Stadt vor Verbrechen und Bränden zu schützen.",
-  "f34a6940381f60d6": "Vorfall wurde gemeldet.",
-  "f3e6f71a8bc19b40": "Füge einen Spielstand ein, um ihn zu laden",
+  "f313b32c80899b3a": "Baue Feuerwachen und Polizeistationen, um deine Stadt vor Bränden und Verbrechen zu schützen.",
+  "f34a6940381f60d6": "Vorfall gemeldet.",
+  "f3e6f71a8bc19b40": "Füge hier einen Spielstand ein, um ihn zu laden",
+  "f43211959325e616": "Aus Liste entfernen",
   "f62db7ca5ce71d28": "Aktiviert",
   "f69724f1685d216d": "Tiergehege",
   "f6bd806cafa9556d": "Gib den 5-stelligen Einladungscode ein, um beizutreten",
   "f704e9e58929074b": "Stadtinformationen",
+  "f7efd6a6bc0b7a0c": "Bist du sicher? Dadurch wird dein aktueller Durchlauf zurückgesetzt.",
   "f8107da5171f54fc": "Feuer",
   "f86d1b3defd75cea": "Keine",
   "f92a9c50b06c1e0a": {
-    "c": "Park wird verbunden...",
+    "c": "Verbinde Park...",
     "i": 1,
     "t": "p"
   },
-  "fa51c4a3c559da90": "Je Rand 15 Felder hinzufügen",
+  "fa51c4a3c559da90": "An jeder Kante 15 Felder hinzufügen",
   "fb373c7e167e81f2": "Gesamtbewertung der Stadt",
   "fb6c8a01b4a60b2b": "Stadt gespeichert!",
   "fbed860a569bfb30": "Starker Schub für die Nachfrage nach Gewerbegebieten (4x4)",
   "fd064d8807f0aaa2": "Auto",
-  "fd9ddc523610dd77": "Deine Buchhalter sind verwirrt, aber sie beschweren sich nicht. Du hast 50.000 $ erhalten!",
-  "fe8a0b7a0c5d9c6f": "Budget"
+  "fd9ddc523610dd77": "Deine Buchhalter sind zwar verwirrt, beschweren sich aber nicht. Du hast 50.000 $ erhalten!",
+  "fe8a0b7a0c5d9c6f": "Haushalte"
 }

@@ -124,7 +124,8 @@ export interface CanvasIsometricGridProps {
 }
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
-export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
+// PERF: Memoized to skip re-renders when parent re-renders with same props (e.g. state sync without prop changes)
+export const CanvasIsometricGrid = React.memo(function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
   const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   
@@ -469,42 +470,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   } = useEffectsSystems(effectsSystemRefs, effectsSystemState);
   
   // PERF: Sync worldStateRef from latestStateRef (real-time) instead of React state (throttled)
-  // This runs on every animation frame via the render loop, not on React state changes
   useEffect(() => {
-    // Initial sync from React state
     worldStateRef.current.grid = grid;
     worldStateRef.current.gridSize = gridSize;
     gridVersionRef.current++;
     crossingPositionsRef.current = findRailroadCrossings(grid, gridSize);
   }, [grid, gridSize]);
-  
-  // PERF: Continuously sync from latestStateRef for real-time grid updates
-  // This allows canvas to see simulation changes before React state syncs
-  useEffect(() => {
-    let animFrameId: number;
-    let lastGridVersion = 0;
-    
-    const syncFromRef = () => {
-      animFrameId = requestAnimationFrame(syncFromRef);
-      
-      // Only update if latestStateRef has newer data
-      const latest = latestStateRef.current;
-      if (latest && latest.grid !== worldStateRef.current.grid) {
-        worldStateRef.current.grid = latest.grid;
-        worldStateRef.current.gridSize = latest.gridSize;
-        // Only recalculate crossings if grid actually changed
-        const newVersion = gridVersionRef.current + 1;
-        if (newVersion !== lastGridVersion) {
-          lastGridVersion = newVersion;
-          gridVersionRef.current = newVersion;
-          crossingPositionsRef.current = findRailroadCrossings(latest.grid, latest.gridSize);
-        }
-      }
-    };
-    
-    animFrameId = requestAnimationFrame(syncFromRef);
-    return () => cancelAnimationFrame(animFrameId);
-  }, [latestStateRef]);
+
+  // PERF: Rate-limit findRailroadCrossings - rail structure only changes on place/bulldoze, not every sim tick
+  const lastCrossingRecalcRef = useRef(0);
+  const CROSSING_RECALC_INTERVAL_MS = 250;
 
   useEffect(() => {
     worldStateRef.current.offset = offset;
@@ -2404,6 +2379,19 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const render = (time: number) => {
       animationFrameId = requestAnimationFrame(render);
       
+      // PERF: Sync worldStateRef from latestStateRef (merged from separate rAF loop - one less loop)
+      const latest = latestStateRef.current;
+      if (latest && latest.grid !== worldStateRef.current.grid) {
+        worldStateRef.current.grid = latest.grid;
+        worldStateRef.current.gridSize = latest.gridSize;
+        // Rate-limit findRailroadCrossings - rail structure unchanged during sim ticks, only on place/bulldoze
+        if (time - lastCrossingRecalcRef.current > CROSSING_RECALC_INTERVAL_MS) {
+          lastCrossingRecalcRef.current = time;
+          gridVersionRef.current++;
+          crossingPositionsRef.current = findRailroadCrossings(latest.grid, latest.gridSize);
+        }
+      }
+      
       // Frame rate limiting for mobile - skip frames to maintain target FPS
       const timeSinceLastRender = time - lastRenderTime;
       if (isMobile && timeSinceLastRender < targetFrameTime) {
@@ -3272,4 +3260,4 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       })()}
     </div>
   );
-}
+});

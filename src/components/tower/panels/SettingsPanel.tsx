@@ -8,10 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { T, Var, useGT } from 'gt-next';
 
 export function SettingsPanel() {
   const { state, setActivePanel, setSettings, exportState, loadState, newGame, saveRun } = useTower();
   const { settings, gridSize } = state;
+  const gt = useGT();
 
   const [importValue, setImportValue] = useState('');
   const [exportCopied, setExportCopied] = useState(false);
@@ -44,36 +46,38 @@ export function SettingsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[420px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle><T>Settings</T></DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Run Settings</div>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Run Settings</div>
+            </T>
 
             <div className="space-y-3">
               <div>
-                <Label>Run Name</Label>
+                <Label><T>Run Name</T></Label>
                 <Input
                   value={settings.name}
                   onChange={(e) => setSettings({ name: e.target.value })}
-                  placeholder="My defense run..."
+                  placeholder={gt('My defense run...')}
                   className="mt-1"
                 />
               </div>
 
               <div className="flex items-center justify-between py-2 gap-4">
                 <div className="flex-1 min-w-0">
-                  <Label>Show Grid</Label>
-                  <p className="text-muted-foreground text-xs">Draw tile outlines for easier placement</p>
+                  <Label><T>Show Grid</T></Label>
+                  <T><p className="text-muted-foreground text-xs">Draw tile outlines for easier placement</p></T>
                 </div>
                 <Switch checked={settings.showGrid} onCheckedChange={(checked) => setSettings({ showGrid: checked })} />
               </div>
 
               <div className="flex items-center justify-between py-2 gap-4">
                 <div className="flex-1 min-w-0">
-                  <Label>Hard Mode</Label>
-                  <p className="text-muted-foreground text-xs">Enemies have more HP</p>
+                  <Label><T>Hard Mode</T></Label>
+                  <T><p className="text-muted-foreground text-xs">Enemies have more HP</p></T>
                 </div>
                 <Switch
                   checked={settings.difficulty === 'hard'}
@@ -86,47 +90,55 @@ export function SettingsPanel() {
           <Separator />
 
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Save</div>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Save</div>
+            </T>
             <div className="flex gap-2">
               <Button onClick={saveRun} className="flex-1">
-                Save Run
+                <T>Save Run</T>
               </Button>
               <Button variant="outline" onClick={handleCopyExport} className="flex-1">
-                {exportCopied ? 'Copied!' : 'Copy Export'}
+                {exportCopied ? <T>Copied!</T> : <T>Copy Export</T>}
               </Button>
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import</div>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import</div>
+            </T>
             <div className="space-y-2">
               <Input
                 value={importValue}
                 onChange={(e) => setImportValue(e.target.value)}
-                placeholder="Paste exported JSON here..."
+                placeholder={gt('Paste exported JSON here...')}
               />
               <Button onClick={handleImport} variant="outline" className="w-full">
-                Load State
+                <T>Load State</T>
               </Button>
-              {importError && <div className="text-xs text-red-400 text-center">Invalid game state.</div>}
-              {importSuccess && <div className="text-xs text-green-400 text-center">Loaded!</div>}
+              {importError && <T><div className="text-xs text-red-400 text-center">Invalid game state.</div></T>}
+              {importSuccess && <T><div className="text-xs text-green-400 text-center">Loaded!</div></T>}
             </div>
           </div>
 
           <Separator />
 
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Info</div>
+            <T>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Info</div>
+            </T>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>Grid Size</span>
-                <span className="text-foreground">
-                  {gridSize} × {gridSize}
-                </span>
+                <T><span>Grid Size</span></T>
+                <T>
+                  <span className="text-foreground">
+                    <Var>{gridSize}</Var> × <Var>{gridSize}</Var>
+                  </span>
+                </T>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Autosave</span>
-                <span className="text-green-400">Enabled</span>
+                <T><span>Autosave</span></T>
+                <T><span className="text-green-400">Enabled</span></T>
               </div>
             </div>
           </div>
@@ -135,14 +147,14 @@ export function SettingsPanel() {
 
           {!showNewGameConfirm ? (
             <Button variant="destructive" className="w-full" onClick={() => setShowNewGameConfirm(true)}>
-              Start New Run
+              <T>Start New Run</T>
             </Button>
           ) : (
             <div className="space-y-2">
-              <p className="text-muted-foreground text-sm text-center">Are you sure? This will reset your current run.</p>
+              <T><p className="text-muted-foreground text-sm text-center">Are you sure? This will reset your current run.</p></T>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setShowNewGameConfirm(false)}>
-                  Cancel
+                  <T>Cancel</T>
                 </Button>
                 <Button
                   variant="destructive"
@@ -153,7 +165,7 @@ export function SettingsPanel() {
                     setActivePanel('none');
                   }}
                 >
-                  Reset
+                  <T>Reset</T>
                 </Button>
               </div>
             </div>

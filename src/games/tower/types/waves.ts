@@ -31,3 +31,5 @@ export const WAVES: WaveDefinition[] = [
   { waveNumber: 10, spawns: [{ type: 'boss', count: 1, intervalTicks: 1 }, { type: 'tank', count: 10, intervalTicks: 18 }], endDelayTicks: 180 },
 ];
 
+export const FINAL_WAVE_NUMBER = WAVES[WAVES.length - 1]?.waveNumber ?? 10;
+

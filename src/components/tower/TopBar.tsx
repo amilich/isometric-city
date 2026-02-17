@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTower } from '@/context/TowerContext';
+import { FINAL_WAVE_NUMBER } from '@/games/tower/types/waves';
 import { Pause, Play, FastForward, Gauge, Waves, LogOut } from 'lucide-react';
 
 function SpeedIcon({ speed }: { speed: 0 | 1 | 2 | 3 }) {
@@ -42,7 +43,7 @@ export function TopBar({ onExit }: { onExit?: () => void }) {
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Wave</span>
           <span data-testid="tower-wave" className="font-mono text-white/90">
-            {stats.wave}
+            {stats.wave}/{FINAL_WAVE_NUMBER}
           </span>
           <span data-testid="tower-wave-label" className="text-xs text-muted-foreground">
             ({waveLabel})

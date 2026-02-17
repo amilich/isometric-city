@@ -16,8 +16,14 @@ function parseMoney(text) {
 }
 
 function parseIntSafe(text) {
-  const digits = String(text ?? '').replace(/[^0-9-]/g, '');
-  return digits ? Number(digits) : 0;
+  const match = String(text ?? '').match(/-?\d+/);
+  return match ? Number(match[0]) : 0;
+}
+
+function parseWave(text) {
+  // TopBar renders "N/FINAL", so take the first number.
+  const first = String(text ?? '').split('/')[0] ?? '';
+  return parseIntSafe(first);
 }
 
 async function waitForButtonText(page, text, timeoutMs = 30_000) {
@@ -95,7 +101,7 @@ async function main() {
   await page.waitForSelector('button[title="3x Speed"]');
   await page.click('button[title="3x Speed"]');
 
-  const wave0 = parseIntSafe(await getText(page, '[data-testid="tower-wave"]'));
+  const wave0 = parseWave(await getText(page, '[data-testid="tower-wave"]'));
   const money0 = parseMoney(await getText(page, '[data-testid="tower-money"]'));
   console.log(`Tower initial wave=${wave0} money=${money0}`);
 
@@ -123,7 +129,7 @@ async function main() {
     { timeout: 90_000 }
   );
 
-  const wave1 = parseIntSafe(await getText(page, '[data-testid="tower-wave"]'));
+  const wave1 = parseWave(await getText(page, '[data-testid="tower-wave"]'));
   const money1 = parseMoney(await getText(page, '[data-testid="tower-money"]'));
   console.log(`Tower after wave wave=${wave1} money=${money1}`);
   await snap('06-tower-wave-complete');
@@ -142,7 +148,7 @@ async function main() {
   await clickButtonText(page, 'Continue');
 
   await page.waitForSelector('[data-testid="tower-wave"]');
-  const waveAfterContinue = parseIntSafe(await getText(page, '[data-testid="tower-wave"]'));
+  const waveAfterContinue = parseWave(await getText(page, '[data-testid="tower-wave"]'));
   console.log(`Tower continue wave=${waveAfterContinue}`);
   await snap('08-tower-continue-restored');
   if (waveAfterContinue !== wave1) {

@@ -2,10 +2,9 @@ import type { GameState, EnemyInstance, ProjectileInstance, Tile, TowerInstance 
 import { ENEMY_DEFINITIONS } from '@/games/tower/types/enemies';
 import { getTowerStats, TOWER_DEFINITIONS } from '@/games/tower/types/towers';
 import { distSq, lerp, uuid } from '@/games/tower/lib/math';
-import { WAVES } from '@/games/tower/types/waves';
+import { FINAL_WAVE_NUMBER, WAVES } from '@/games/tower/types/waves';
 
 const BASE_DT_SECONDS = 0.05; // 50ms "game time" per tick (speed increases by running more ticks)
-const FINAL_AUTHORED_WAVE = WAVES[WAVES.length - 1]?.waveNumber ?? 10;
 
 function getWaveDefinition(waveNumber: number) {
   const def = WAVES.find((w) => w.waveNumber === waveNumber);
@@ -363,7 +362,7 @@ export function simulateTowerTick(prev: GameState): GameState {
   // Wave completion / game over
   // ---------------------------------------------------------------------------
   if ((next.waveState === 'spawning' || next.waveState === 'in_progress') && next.waveSpawnQueue.length === 0 && next.enemies.length === 0) {
-    next.waveState = next.stats.wave >= FINAL_AUTHORED_WAVE ? 'victory' : 'complete';
+    next.waveState = next.stats.wave >= FINAL_WAVE_NUMBER ? 'victory' : 'complete';
     if (next.waveState === 'victory') next.speed = 0;
   }
 

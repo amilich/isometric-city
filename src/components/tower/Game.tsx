@@ -64,7 +64,7 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
     return (
       <TooltipProvider>
         <div className="w-full h-full overflow-hidden bg-background flex flex-col">
-          <TopBar />
+          <TopBar onExit={onExit} />
           <div className="flex-1 relative overflow-hidden">
             <TowerGrid
               selectedTile={selectedTile}
@@ -150,7 +150,7 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
         <Sidebar onExit={onExit} />
 
         <div className="flex-1 flex flex-col ml-56">
-          <TopBar />
+          <TopBar onExit={undefined} />
           <div className="flex-1 relative overflow-visible">
             <TowerGrid
               selectedTile={selectedTile}

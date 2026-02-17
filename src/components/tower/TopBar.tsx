@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTower } from '@/context/TowerContext';
-import { Pause, Play, FastForward, Gauge, Waves } from 'lucide-react';
+import { Pause, Play, FastForward, Gauge, Waves, LogOut } from 'lucide-react';
 
 function SpeedIcon({ speed }: { speed: 0 | 1 | 2 | 3 }) {
   if (speed === 0) return <Pause className="w-4 h-4" />;
@@ -11,7 +11,7 @@ function SpeedIcon({ speed }: { speed: 0 | 1 | 2 | 3 }) {
   return <FastForward className={`w-4 h-4 ${speed === 3 ? 'opacity-100' : 'opacity-80'}`} />;
 }
 
-export function TopBar() {
+export function TopBar({ onExit }: { onExit?: () => void }) {
   const { state, setSpeed, startWave, setActivePanel } = useTower();
   const { money, lives, stats, waveState, speed } = state;
 
@@ -88,6 +88,18 @@ export function TopBar() {
         >
           <Gauge className="w-4 h-4" />
         </Button>
+
+        {onExit && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onExit}
+            title="Exit to Menu"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

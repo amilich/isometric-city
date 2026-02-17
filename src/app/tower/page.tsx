@@ -66,27 +66,48 @@ function shuffleArray<T>(arr: T[]) {
 
 function SpriteGallery({ count = 15, cols = 3, cellSize = 96 }: { count?: number; cols?: number; cellSize?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [sheet, setSheet] = useState<HTMLCanvasElement | null>(null);
+  const [sheets, setSheets] = useState<Map<string, HTMLCanvasElement>>(new Map());
 
-  // We reuse the existing IsoCity sheet as a placeholder until tower assets are generated.
+  // Load tower + enemy sheets for the gallery.
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => setSheet(filterBackgroundColor(img));
-    img.src = '/assets/tower/towers.webp';
+    const load = async () => {
+      const results = await Promise.all(
+        [
+          { id: 'towers', src: '/assets/tower/towers.webp' },
+          { id: 'enemies', src: '/assets/tower/enemies.webp' },
+        ].map(
+          (sheet) =>
+            new Promise<{ id: string; canvas: HTMLCanvasElement } | null>((resolve) => {
+              const img = new Image();
+              img.onload = () => resolve({ id: sheet.id, canvas: filterBackgroundColor(img) });
+              img.onerror = () => resolve(null);
+              img.src = sheet.src;
+            })
+        )
+      );
+      const map = new Map<string, HTMLCanvasElement>();
+      for (const r of results) {
+        if (r) map.set(r.id, r.canvas);
+      }
+      setSheets(map);
+    };
+    load();
   }, []);
 
   const picks = useMemo(() => {
-    // Tower sheet uses 5 cols x 6 rows
     const cols = 5;
     const rows = 6;
-    const cells: { row: number; col: number }[] = [];
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ row: r, col: c });
+    const cells: { sheetId: 'towers' | 'enemies'; row: number; col: number }[] = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ sheetId: 'towers', row: r, col: c });
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ sheetId: 'enemies', row: r, col: c });
     return shuffleArray(cells).slice(0, count);
   }, [count]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !sheet) return;
+    const towers = sheets.get('towers');
+    const enemies = sheets.get('enemies');
+    if (!canvas || !towers || !enemies) return;
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
@@ -105,9 +126,6 @@ function SpriteGallery({ count = 15, cols = 3, cellSize = 96 }: { count?: number
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, w, h);
 
-    const cellW = sheet.width / 5;
-    const cellH = sheet.height / 6;
-
     picks.forEach((p, i) => {
       const cx = (i % cols) * cellSize;
       const cy = Math.floor(i / cols) * cellSize;
@@ -118,6 +136,9 @@ function SpriteGallery({ count = 15, cols = 3, cellSize = 96 }: { count?: number
       ctx.fillRect(cx + 2, cy + 2, cellSize - 4, cellSize - 4);
       ctx.strokeRect(cx + 2, cy + 2, cellSize - 4, cellSize - 4);
 
+      const srcCanvas = p.sheetId === 'towers' ? towers : enemies;
+      const cellW = srcCanvas.width / 5;
+      const cellH = srcCanvas.height / 6;
       const sx = p.col * cellW;
       const sy = p.row * cellH;
       const maxSize = cellSize - pad * 2;
@@ -131,9 +152,9 @@ function SpriteGallery({ count = 15, cols = 3, cellSize = 96 }: { count?: number
 
       const dx = cx + (cellSize - dw) / 2;
       const dy = cy + (cellSize - dh) / 2 + dh * 0.1;
-      ctx.drawImage(sheet, sx, sy, cellW, cellH, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
+      ctx.drawImage(srcCanvas, sx, sy, cellW, cellH, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
     });
-  }, [sheet, picks, cols, cellSize]);
+  }, [sheets, picks, cols, cellSize]);
 
   return <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} className="opacity-80 hover:opacity-100 transition-opacity" />;
 }

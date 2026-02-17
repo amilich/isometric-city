@@ -49,6 +49,15 @@ async function main() {
   const outDir =
     process.env.E2E_SCREENSHOT_DIR ?? path.join(os.tmpdir(), `isotower-e2e-${new Date().toISOString().replace(/[:.]/g, '-')}`);
   await fs.mkdir(outDir, { recursive: true });
+  console.log(`Screenshots: ${outDir}`);
+
+  try {
+    await fs.access(CHROME_PATH);
+  } catch {
+    throw new Error(
+      `Chrome/Chromium not found at "${CHROME_PATH}". Set CHROME_PATH to your browser executable path (e.g. /usr/bin/google-chrome).`
+    );
+  }
 
   const browser = await puppeteer.launch({
     executablePath: CHROME_PATH,

@@ -1,3 +1,4 @@
+import { msg } from 'gt-next';
 import type { GameState, Tile } from '@/games/tower/types';
 import { createEmptyTile } from '@/games/tower/types';
 import { applyPathToGrid, generateDefaultPath } from '@/games/tower/lib/pathing';
@@ -111,7 +112,7 @@ export function createInitialTowerGameState(name?: string, gridSize: number = 60
     waveSpawnQueue: [],
 
     settings: {
-      name: name ?? 'IsoTower Run',
+      name: name ?? msg('IsoTower Run'),
       difficulty: 'normal',
       showGrid: true,
     },

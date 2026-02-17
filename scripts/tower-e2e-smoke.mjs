@@ -148,12 +148,32 @@ async function main() {
   await page.keyboard.press('Escape');
   console.log('OK settings dialog');
 
+  // Save hygiene: deleting the run should also clear autosave (so Continue disappears).
+  await page.goto(`${BASE_URL}/tower`, { waitUntil: 'networkidle2' });
+  await waitForButtonText(page, 'Continue');
+  await snap('10-tower-landing-before-delete');
+  await page.waitForSelector('button[title="Remove from list"]');
+  await page.click('button[title="Remove from list"]');
+  await page.waitForFunction(() => {
+    const btns = Array.from(document.querySelectorAll('button'));
+    const primary = btns.find((b) => (b.textContent ?? '').trim() === 'Continue' || (b.textContent ?? '').trim() === 'New Run');
+    return (primary?.textContent ?? '').trim() === 'New Run';
+  });
+  await snap('11-tower-landing-after-delete');
+  console.log('OK delete clears continue');
+
   // Simulation regression check: final wave should reach victory.
   const smoke = await fetch(`${BASE_URL}/api/tower-smoke?waves=20`).then((r) => r.json());
   if (smoke?.waveState !== 'victory') {
     throw new Error(`Expected victory from /api/tower-smoke?waves=20, got ${String(smoke?.waveState)}`);
   }
   console.log('OK victory smoke');
+
+  const gameOverSmoke = await fetch(`${BASE_URL}/api/tower-smoke?waves=20&noTowers=1&maxTicks=4000`).then((r) => r.json());
+  if (gameOverSmoke?.waveState !== 'game_over') {
+    throw new Error(`Expected game_over from /api/tower-smoke?noTowers=1, got ${String(gameOverSmoke?.waveState)}`);
+  }
+  console.log('OK game over smoke');
 
   await browser.close();
   console.log('PASS tower-e2e-smoke');

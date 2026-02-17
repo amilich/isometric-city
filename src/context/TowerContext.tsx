@@ -63,10 +63,8 @@ export function TowerProvider({
   const [isStateReady, setIsStateReady] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
 
-  // Keep latest state ref synced
-  useEffect(() => {
-    latestStateRef.current = state;
-  }, [state]);
+  // Keep latest state ref synced synchronously (important for unmount flush).
+  latestStateRef.current = state;
 
   // Initial load (autosave or explicit run)
   useEffect(() => {
@@ -95,29 +93,39 @@ export function TowerProvider({
     setIsStateReady(true);
   }, [startFresh, loadRunId]);
 
-  const persist = useCallback((next: GameState) => {
+  const persistToStorage = useCallback((next: GameState) => {
     saveTowerStateToStorage(TOWER_AUTOSAVE_KEY, next);
     // Also store by id so the run list can load it.
     saveTowerStateToStorage(`${TOWER_SAVED_RUN_PREFIX}${next.id}`, next);
     saveRunToIndex(next);
-    setHasSavedGame(true);
   }, []);
 
-  // Autosave (debounced)
-  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const persist = useCallback((next: GameState) => {
+    persistToStorage(next);
+    setHasSavedGame(true);
+  }, [persistToStorage]);
+
+  // Flush a final autosave on unmount so "Continue" reflects the latest state,
+  // even if navigation happens before the debounce timer fires.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    return () => {
+      if (!isStateReady) return;
+      persistToStorage(latestStateRef.current);
+    };
+  }, [isStateReady, persistToStorage]);
+
+  // Autosave: periodic flush (debounce doesn't work with a continuously-ticking sim loop).
   useEffect(() => {
     if (!isStateReady) return;
     if (typeof window === 'undefined') return;
 
-    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
-    saveDebounceRef.current = setTimeout(() => {
+    const id = window.setInterval(() => {
       persist(latestStateRef.current);
-    }, 400);
+    }, 1500);
 
-    return () => {
-      if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
-    };
-  }, [state, isStateReady, persist]);
+    return () => window.clearInterval(id);
+  }, [isStateReady, persist]);
 
   // Tick loop
   useEffect(() => {

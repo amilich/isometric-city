@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tool } from '@/games/tower/types';
 import { Settings, BarChart3 } from 'lucide-react';
@@ -53,13 +52,13 @@ export function TowerMobileToolbar() {
     >
       <Card className="bg-slate-950/90 border-slate-700 shadow-xl">
         <div className="flex items-center gap-2 px-2 py-2">
-          <ScrollArea className="flex-1">
-            <div className="flex items-center gap-2 pr-2">
+          <div className="flex-1 overflow-x-auto overscroll-x-contain">
+            <div className="flex items-center gap-2 pr-2 w-max">
               {tools.map((t) => (
                 <ToolPill key={t} tool={t} />
               ))}
             </div>
-          </ScrollArea>
+          </div>
 
           <div className="flex items-center gap-1 pl-1">
             <Button

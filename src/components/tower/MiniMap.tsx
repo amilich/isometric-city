@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useTower } from '@/context/TowerContext';
+import { useGT } from 'gt-next';
 
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.6;
@@ -20,6 +21,7 @@ export function MiniMap({
   viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } } | null;
   onNavigate: (x: number, y: number) => void;
 }) {
+  const gt = useGT();
   const { state } = useTower();
   const { grid, gridSize } = state;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -102,7 +104,7 @@ export function MiniMap({
             onNavigate(gridX, gridY);
           }
         }}
-        title="Minimap (click to navigate)"
+        title={gt('Minimap (click to navigate)')}
       >
         <canvas ref={canvasRef} width={sizePx} height={sizePx} />
       </button>

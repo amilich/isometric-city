@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tool } from '@/games/tower/types';
 import { Settings, BarChart3 } from 'lucide-react';
+import { useGT } from 'gt-next';
 
 function ToolPill({ tool }: { tool: Tool }) {
   const { state, setTool } = useTower();
@@ -35,6 +36,7 @@ function ToolPill({ tool }: { tool: Tool }) {
 
 export function TowerMobileToolbar() {
   const { state, setActivePanel } = useTower();
+  const gt = useGT();
 
   const tools = useMemo(
     () => ['select', 'bulldoze', 'tower_cannon', 'tower_archer', 'tower_tesla', 'tower_ice', 'tower_mortar', 'tower_sniper'] as Tool[],
@@ -66,7 +68,7 @@ export function TowerMobileToolbar() {
               size="icon"
               className="h-10 w-10"
               onClick={() => setActivePanel(state.activePanel === 'stats' ? 'none' : 'stats')}
-              title="Stats"
+              title={gt('Stats')}
             >
               <BarChart3 className="w-4 h-4" />
             </Button>
@@ -75,7 +77,7 @@ export function TowerMobileToolbar() {
               size="icon"
               className="h-10 w-10"
               onClick={() => setActivePanel(state.activePanel === 'settings' ? 'none' : 'settings')}
-              title="Settings"
+              title={gt('Settings')}
             >
               <Settings className="w-4 h-4" />
             </Button>

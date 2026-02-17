@@ -174,7 +174,7 @@ export function Sidebar({ onExit }: { onExit?: () => void }) {
 
   const directTools = useMemo(() => ['select', 'bulldoze'] as Tool[], []);
   const towerTools = useMemo(
-    () => ['tower_cannon', 'tower_archer', 'tower_tesla', 'tower_ice', 'tower_mortar'] as Tool[],
+    () => ['tower_cannon', 'tower_archer', 'tower_tesla', 'tower_ice', 'tower_mortar', 'tower_sniper'] as Tool[],
     []
   );
 

@@ -20,7 +20,8 @@ export type Tool =
   | 'tower_archer'
   | 'tower_tesla'
   | 'tower_ice'
-  | 'tower_mortar';
+  | 'tower_mortar'
+  | 'tower_sniper';
 
 export type ToolCategory = 'tools' | 'towers';
 
@@ -39,6 +40,7 @@ export const TOOL_INFO: Record<Tool, ToolInfo> = {
   tower_tesla: { name: 'Tesla Tower', cost: 160, description: 'Arc damage with small splash', category: 'towers' },
   tower_ice: { name: 'Ice Tower', cost: 140, description: 'Applies a slowing debuff', category: 'towers' },
   tower_mortar: { name: 'Mortar Tower', cost: 220, description: 'Slow, powerful splash damage', category: 'towers' },
+  tower_sniper: { name: 'Sniper Tower', cost: 260, description: 'Long range, high damage, slow fire rate', category: 'towers' },
 };
 
 export const TOWER_TOOL_TO_TYPE: Record<Exclude<Tool, 'select' | 'bulldoze'>, TowerType> = {
@@ -47,6 +49,7 @@ export const TOWER_TOOL_TO_TYPE: Record<Exclude<Tool, 'select' | 'bulldoze'>, To
   tower_tesla: 'tesla',
   tower_ice: 'ice',
   tower_mortar: 'mortar',
+  tower_sniper: 'sniper',
 };
 
 // =============================================================================

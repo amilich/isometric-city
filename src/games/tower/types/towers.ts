@@ -2,7 +2,7 @@
  * IsoTower Defense - Tower definitions
  */
 
-export type TowerType = 'cannon' | 'archer' | 'tesla' | 'ice' | 'mortar';
+export type TowerType = 'cannon' | 'archer' | 'tesla' | 'ice' | 'mortar' | 'sniper';
 
 export type TowerTargetingMode = 'first' | 'closest';
 
@@ -89,6 +89,19 @@ export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
       { damage: 40, range: 4.5, fireCooldownTicks: 28, projectileSpeed: 6, splashRadius: 1.1 },
       { damage: 60, range: 5.0, fireCooldownTicks: 26, projectileSpeed: 6.5, splashRadius: 1.3 },
       { damage: 90, range: 5.5, fireCooldownTicks: 24, projectileSpeed: 7, splashRadius: 1.5 },
+    ],
+  },
+  sniper: {
+    type: 'sniper',
+    name: 'Sniper Tower',
+    description: 'Long range, high damage, slow fire rate.',
+    baseCost: 260,
+    sellRefundRatio: 0.7,
+    defaultTargeting: 'first',
+    levels: [
+      { damage: 65, range: 6.5, fireCooldownTicks: 34, projectileSpeed: 16 },
+      { damage: 95, range: 7.2, fireCooldownTicks: 32, projectileSpeed: 17 },
+      { damage: 140, range: 8.0, fireCooldownTicks: 30, projectileSpeed: 18 },
     ],
   },
 };

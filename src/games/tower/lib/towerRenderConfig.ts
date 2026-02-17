@@ -16,7 +16,8 @@ export type TowerSpriteName =
   | 'tower_archer'
   | 'tower_tesla'
   | 'tower_ice'
-  | 'tower_mortar';
+  | 'tower_mortar'
+  | 'tower_sniper';
 
 export type EnemySpriteName =
   | 'enemy_runner'
@@ -46,6 +47,7 @@ export const TOWER_SPRITE_SHEET: SpriteSheetConfig = {
     { name: 'tower_tesla', row: 2, col: 0, offsetY: -18, scale: 0.9 },
     { name: 'tower_ice', row: 3, col: 0, offsetY: -18, scale: 0.9 },
     { name: 'tower_mortar', row: 4, col: 0, offsetY: -18, scale: 0.9 },
+    { name: 'tower_sniper', row: 5, col: 0, offsetY: -22, scale: 0.92 },
   ],
 };
 

@@ -100,12 +100,17 @@ export function SettingsPanel() {
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Import</div>
             <div className="space-y-2">
-              <Input
-                value={importValue}
-                onChange={(e) => setImportValue(e.target.value)}
+              <textarea
+                className="w-full h-24 bg-background border border-border rounded-md p-2 text-xs font-mono resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                 placeholder="Paste exported JSON here..."
+                value={importValue}
+                onChange={(e) => {
+                  setImportValue(e.target.value);
+                  setImportError(false);
+                  setImportSuccess(false);
+                }}
               />
-              <Button onClick={handleImport} variant="outline" className="w-full">
+              <Button onClick={handleImport} variant="outline" className="w-full" disabled={!importValue.trim()}>
                 Load State
               </Button>
               {importError && <div className="text-xs text-red-400 text-center">Invalid game state.</div>}

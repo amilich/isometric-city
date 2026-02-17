@@ -672,7 +672,7 @@ export function TowerGrid({
 
       {/* Small hint for controls */}
       <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] text-white/40 bg-black/30 border border-white/10 px-2 py-1 rounded">
-        {isMobile ? 'Drag to pan • Pinch to zoom' : 'Shift+Drag to pan • Scroll to zoom'}
+        {isMobile ? 'Drag to pan • Pinch to zoom • Tap to place' : 'Shift+Drag to pan • Scroll to zoom • Click to place'}
       </div>
     </div>
   );

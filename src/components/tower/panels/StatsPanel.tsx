@@ -4,6 +4,7 @@ import React from 'react';
 import { useTower } from '@/context/TowerContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
+import { T, Var, Currency, Num } from 'gt-next';
 
 export function StatsPanel() {
   const { state, setActivePanel } = useTower();
@@ -13,36 +14,36 @@ export function StatsPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent className="max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Run Stats</DialogTitle>
+          <DialogTitle><T>Run Stats</T></DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs">Wave</div>
-            <div className="font-mono text-lg">{stats.wave}</div>
+            <div className="text-muted-foreground text-xs"><T>Wave</T></div>
+            <div className="font-mono text-lg"><Num>{stats.wave}</Num></div>
             <div className="text-xs text-muted-foreground">{waveState.replace(/_/g, ' ')}</div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs">Money</div>
-            <div className="font-mono text-lg text-amber-400">${money.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Spent ${stats.moneySpent.toLocaleString()}</div>
+            <div className="text-muted-foreground text-xs"><T>Money</T></div>
+            <div className="font-mono text-lg text-amber-400"><Currency currency="USD">{money}</Currency></div>
+            <div className="text-xs text-muted-foreground"><T>Spent <Currency currency="USD">{stats.moneySpent}</Currency></T></div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs">Lives</div>
-            <div className={`font-mono text-lg ${lives > 0 ? 'text-green-400' : 'text-red-400'}`}>{lives}</div>
-            <div className="text-xs text-muted-foreground">Leaks {stats.leaks}</div>
+            <div className="text-muted-foreground text-xs"><T>Lives</T></div>
+            <div className={`font-mono text-lg ${lives > 0 ? 'text-green-400' : 'text-red-400'}`}><Num>{lives}</Num></div>
+            <div className="text-xs text-muted-foreground"><T>Leaks <Num>{stats.leaks}</Num></T></div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs">Kills</div>
-            <div className="font-mono text-lg">{stats.kills}</div>
+            <div className="text-muted-foreground text-xs"><T>Kills</T></div>
+            <div className="font-mono text-lg"><Num>{stats.kills}</Num></div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs">Tick</div>
-            <div className="font-mono text-lg">{tick}</div>
+            <div className="text-muted-foreground text-xs"><T>Tick</T></div>
+            <div className="font-mono text-lg"><Num>{tick}</Num></div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs">Earned</div>
-            <div className="font-mono text-lg text-emerald-400">${stats.moneyEarned.toLocaleString()}</div>
+            <div className="text-muted-foreground text-xs"><T>Earned</T></div>
+            <div className="font-mono text-lg text-emerald-400"><Currency currency="USD">{stats.moneyEarned}</Currency></div>
           </Card>
         </div>
       </DialogContent>

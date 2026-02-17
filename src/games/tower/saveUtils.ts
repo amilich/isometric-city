@@ -1,4 +1,5 @@
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import { msg } from 'gt-next';
 import type { GameState } from '@/games/tower/types';
 
 export const TOWER_AUTOSAVE_KEY = 'isotower-autosave';
@@ -18,7 +19,7 @@ export type SavedRunMeta = {
 export function buildSavedRunMeta(state: GameState, savedAt: number = Date.now()): SavedRunMeta {
   return {
     id: state.id,
-    name: state.settings.name || 'Unnamed Run',
+    name: state.settings.name || msg('Unnamed Run'),
     wave: state.stats.wave,
     money: state.money,
     lives: state.lives,

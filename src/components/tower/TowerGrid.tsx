@@ -7,6 +7,10 @@ import { clamp, lerp } from '@/games/tower/lib/math';
 import { getSpriteInfo, getSpriteRect, TOWER_SPRITE_PACK } from '@/games/tower/lib/towerRenderConfig';
 import { TOWER_TOOL_TO_TYPE } from '@/games/tower/types';
 import { getTowerStats } from '@/games/tower/types/towers';
+import { useMessages, msg } from 'gt-next';
+
+const CONTROL_HINT_MOBILE = msg('Drag to pan • Pinch to zoom');
+const CONTROL_HINT_DESKTOP = msg('Shift+Drag to pan • Scroll to zoom');
 
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.6;
@@ -218,6 +222,7 @@ export function TowerGrid({
 }) {
   const { state, placeAtTile } = useTower();
   const { grid, gridSize, selectedTool, money, settings } = state;
+  const m = useMessages();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -662,7 +667,7 @@ export function TowerGrid({
           </div>
           {selectedTool !== 'select' && (
             <div className="opacity-80">
-              {TOOL_INFO[selectedTool].name}
+              {m(TOOL_INFO[selectedTool].name)}
               {TOOL_INFO[selectedTool].cost > 0 ? ` — $${TOOL_INFO[selectedTool].cost}` : ''}
             </div>
           )}
@@ -671,7 +676,7 @@ export function TowerGrid({
 
       {/* Small hint for controls */}
       <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] text-white/40 bg-black/30 border border-white/10 px-2 py-1 rounded">
-        {isMobile ? 'Drag to pan • Pinch to zoom' : 'Shift+Drag to pan • Scroll to zoom'}
+        {isMobile ? m(CONTROL_HINT_MOBILE) : m(CONTROL_HINT_DESKTOP)}
       </div>
     </div>
   );

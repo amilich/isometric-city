@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import TowerGame from '@/components/tower/Game';
 import { TowerProvider } from '@/context/TowerContext';
 import { deleteTowerStateFromStorage, readSavedRunsIndex, removeSavedRunMeta, TOWER_AUTOSAVE_KEY, TOWER_SAVED_RUN_PREFIX, writeSavedRunsIndex } from '@/games/tower/saveUtils';
-import { decompressFromUTF16 } from 'lz-string';
+import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
+import { createTowerExampleState } from '@/games/tower/lib/exampleState';
 
 // Background color to filter from sprite sheets (red)
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -243,6 +244,24 @@ export default function TowerPage() {
                 New Run
               </Button>
             )}
+
+            <Button
+              onClick={() => {
+                try {
+                  const example = createTowerExampleState();
+                  localStorage.setItem(TOWER_AUTOSAVE_KEY, compressToUTF16(JSON.stringify(example)));
+                  setStartFresh(false);
+                  setLoadRunId(null);
+                  setShowGame(true);
+                } catch (e) {
+                  console.error('Failed to load example state:', e);
+                }
+              }}
+              variant="outline"
+              className="w-full py-7 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+            >
+              Load Example
+            </Button>
 
             <a href="/" className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200">
               Back to IsoCity

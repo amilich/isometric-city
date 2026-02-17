@@ -2,10 +2,12 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState, Tool, Tile } from '@/games/tower/types';
-import { TOOL_INFO, TOWER_TOOL_TO_TYPE, createEmptyTile } from '@/games/tower/types';
+import { TOOL_INFO, TOWER_TOOL_TO_TYPE } from '@/games/tower/types';
 import { TOWER_DEFINITIONS } from '@/games/tower/types/towers';
-import { applyPathToGrid, generateStraightMidPath, isBuildableTileKind } from '@/games/tower/lib/pathing';
+import { isBuildableTileKind } from '@/games/tower/lib/pathing';
 import { uuid } from '@/games/tower/lib/math';
+import { simulateTowerTick, startWaveState } from '@/games/tower/lib/simulateTick';
+import { createInitialTowerGameState } from '@/games/tower/lib/initialState';
 import {
   deleteTowerStateFromStorage,
   loadTowerStateFromStorage,
@@ -46,60 +48,6 @@ type TowerContextValue = {
 };
 
 const TowerContext = createContext<TowerContextValue | null>(null);
-
-function createInitialTowerGameState(name?: string, gridSize: number = 60, seed?: number): GameState {
-  const actualSeed = seed ?? Math.floor(Math.random() * 1_000_000_000);
-  const id = uuid('tower-run');
-
-  const grid: Tile[][] = [];
-  for (let y = 0; y < gridSize; y++) {
-    const row: Tile[] = [];
-    for (let x = 0; x < gridSize; x++) {
-      row.push(createEmptyTile(x, y));
-    }
-    grid.push(row);
-  }
-
-  const { path, spawn, base } = generateStraightMidPath(gridSize);
-  applyPathToGrid(grid, path, spawn, base);
-
-  return {
-    id,
-    seed: actualSeed,
-    gridSize,
-    grid,
-    tick: 0,
-    speed: 1,
-    selectedTool: 'select',
-    activePanel: 'none',
-
-    money: 300,
-    lives: 20,
-
-    path,
-    spawn,
-    base,
-
-    enemies: [],
-    projectiles: [],
-
-    waveState: 'idle',
-    waveSpawnQueue: [],
-
-    settings: {
-      name: name ?? 'IsoTower Run',
-      difficulty: 'normal',
-      showGrid: true,
-    },
-    stats: {
-      wave: 0,
-      kills: 0,
-      leaks: 0,
-      moneyEarned: 0,
-      moneySpent: 0,
-    },
-  };
-}
 
 export function TowerProvider({
   children,
@@ -178,11 +126,7 @@ export function TowerProvider({
     if (!interval) return;
 
     const id = window.setInterval(() => {
-      setState((prev) => {
-        // Minimal tick: no combat yet (Phase 4)
-        if (prev.waveState === 'game_over') return prev;
-        return { ...prev, tick: prev.tick + 1 };
-      });
+      setState((prev) => simulateTowerTick(prev));
     }, interval);
 
     return () => window.clearInterval(id);
@@ -378,15 +322,7 @@ export function TowerProvider({
   }, []);
 
   const startWave = useCallback(() => {
-    setState((prev) => {
-      if (prev.waveState === 'game_over') return prev;
-      if (prev.waveState !== 'idle' && prev.waveState !== 'complete') return prev;
-      return {
-        ...prev,
-        waveState: 'in_progress',
-        stats: { ...prev.stats, wave: prev.stats.wave + 1 },
-      };
-    });
+    setState((prev) => startWaveState(prev));
   }, []);
 
   const value: TowerContextValue = useMemo(() => {

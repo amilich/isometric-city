@@ -103,6 +103,7 @@ export type ProjectileInstance = {
   id: ProjectileId;
   from: { x: number; y: number };
   toEnemyId: EnemyId;
+  isInstant: boolean;
   x: number;
   y: number;
   vx: number;

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTower } from '@/context/TowerContext';
 import { TOOL_INFO, type Tile, type Tool } from '@/games/tower/types';
-import { clamp } from '@/games/tower/lib/math';
+import { clamp, lerp } from '@/games/tower/lib/math';
 
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.6;
@@ -168,10 +168,50 @@ export function TowerGrid({
         const stroke = settings.showGrid ? 'rgba(0,0,0,0.25)' : undefined;
         drawDiamond(ctx, screenX, screenY, fill, stroke, 1);
 
-        if (tile.tower) {
-          drawTowerPlaceholder(ctx, screenX, screenY, tile.tower.type);
-        }
       }
+    }
+
+    // Towers (above tiles)
+    for (let y = 0; y < gridSize; y++) {
+      for (let x = 0; x < gridSize; x++) {
+        const tile = grid[y]![x]!;
+        if (!tile.tower) continue;
+        const { screenX, screenY } = gridToScreen(x, y);
+        drawTowerPlaceholder(ctx, screenX, screenY, tile.tower.type);
+      }
+    }
+
+    // Enemies (above towers)
+    for (const enemy of state.enemies) {
+      const from = state.path[Math.min(enemy.pathIndex, state.path.length - 1)] ?? state.base;
+      const to = state.path[Math.min(enemy.pathIndex + 1, state.path.length - 1)] ?? state.base;
+      const ex = lerp(from.x + 0.5, to.x + 0.5, enemy.progress);
+      const ey = lerp(from.y + 0.5, to.y + 0.5, enemy.progress);
+      const { screenX, screenY } = gridToScreen(ex, ey);
+      const cx = screenX + TILE_WIDTH / 2;
+      const cy = screenY + TILE_HEIGHT / 2 - 16;
+      ctx.fillStyle = enemy.isFlying ? '#a855f7' : '#f97316';
+      ctx.beginPath();
+      ctx.arc(cx, cy, enemy.type === 'boss' ? 9 : 6, 0, Math.PI * 2);
+      ctx.fill();
+      // HP bar
+      const hpRatio = Math.max(0, Math.min(1, enemy.hp / enemy.maxHp));
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(cx - 10, cy - 14, 20, 3);
+      ctx.fillStyle = hpRatio > 0.5 ? '#22c55e' : hpRatio > 0.2 ? '#f59e0b' : '#ef4444';
+      ctx.fillRect(cx - 10, cy - 14, 20 * hpRatio, 3);
+    }
+
+    // Projectiles
+    for (const proj of state.projectiles) {
+      if (proj.isInstant) continue;
+      const { screenX, screenY } = gridToScreen(proj.x, proj.y);
+      const cx = screenX + TILE_WIDTH / 2;
+      const cy = screenY + TILE_HEIGHT / 2 - 22;
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     // Placement preview
@@ -199,7 +239,7 @@ export function TowerGrid({
     }
 
     ctx.restore();
-  }, [canvasSize, offset.x, offset.y, zoom, grid, gridSize, hovered, selectedTile, selectedTool, money, settings.showGrid]);
+  }, [canvasSize, offset.x, offset.y, zoom, grid, gridSize, hovered, selectedTile, selectedTool, money, settings.showGrid, state.enemies, state.projectiles, state.path, state.base]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {

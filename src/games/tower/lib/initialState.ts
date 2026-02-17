@@ -1,7 +1,10 @@
+import { msg } from 'gt-next';
 import type { GameState, Tile } from '@/games/tower/types';
 import { createEmptyTile } from '@/games/tower/types';
 import { applyPathToGrid, generateDefaultPath } from '@/games/tower/lib/pathing';
 import { uuid } from '@/games/tower/lib/math';
+
+const DEFAULT_RUN_NAME = msg('IsoTower Run');
 
 function mulberry32(seed: number) {
   return function () {
@@ -111,7 +114,7 @@ export function createInitialTowerGameState(name?: string, gridSize: number = 60
     waveSpawnQueue: [],
 
     settings: {
-      name: name ?? 'IsoTower Run',
+      name: name ?? DEFAULT_RUN_NAME,
       difficulty: 'normal',
       showGrid: true,
     },

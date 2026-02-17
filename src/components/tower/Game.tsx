@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { T } from 'gt-next';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useMobile } from '@/hooks/useMobile';
 import { useTower } from '@/context/TowerContext';
@@ -50,7 +51,7 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
   if (!isStateReady) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950">
-        <div className="text-white/60">Loading run...</div>
+        <T><div className="text-white/60">Loading run...</div></T>
       </div>
     );
   }

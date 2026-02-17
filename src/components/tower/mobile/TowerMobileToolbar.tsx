@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useGT, useMessages } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useTower } from '@/context/TowerContext';
@@ -9,16 +10,28 @@ import { Settings, BarChart3 } from 'lucide-react';
 
 function ToolPill({ tool }: { tool: Tool }) {
   const { state, setTool } = useTower();
+  const m = useMessages();
+  const gt = useGT();
   const selected = state.selectedTool === tool;
   const info = TOOL_INFO[tool];
   const disabled = info.cost > 0 && state.money < info.cost;
 
   const short = useMemo(() => {
-    if (tool === 'select') return 'Sel';
-    if (tool === 'bulldoze') return 'Sell';
-    if (tool.startsWith('tower_')) return info.name.replace(' Tower', '').slice(0, 6);
-    return info.name.slice(0, 6);
-  }, [tool, info.name]);
+    if (tool === 'select') return gt('Sel', { $context: 'Short for Select' });
+    if (tool === 'bulldoze') return gt('Sell', { $context: 'Short for Sell' });
+    if (tool === 'tower_cannon') return gt('Cannon', { $context: 'Short tower name' });
+    if (tool === 'tower_archer') return gt('Archer', { $context: 'Short tower name' });
+    if (tool === 'tower_tesla') return gt('Tesla', { $context: 'Short tower name' });
+    if (tool === 'tower_ice') return gt('Ice', { $context: 'Short tower name' });
+    if (tool === 'tower_mortar') return gt('Mortar', { $context: 'Short tower name' });
+    if (tool === 'tower_sniper') return gt('Sniper', { $context: 'Short tower name' });
+    return m(info.name).slice(0, 6);
+  }, [tool, info.name, m, gt]);
+
+  const title = useMemo(() => {
+    const description = m(info.description);
+    return info.cost > 0 ? gt('{description} (${cost})', { description, cost: info.cost }) : description;
+  }, [info.description, info.cost, m, gt]);
 
   return (
     <Button
@@ -26,7 +39,7 @@ function ToolPill({ tool }: { tool: Tool }) {
       disabled={disabled}
       variant={selected ? 'default' : 'ghost'}
       className={`h-10 px-3 rounded-md whitespace-nowrap ${selected ? '' : 'bg-white/5 hover:bg-white/10'}`}
-      title={info.description + (info.cost > 0 ? ` ($${info.cost})` : '')}
+      title={title}
     >
       <span className="text-xs font-medium">{short}</span>
     </Button>
@@ -35,6 +48,7 @@ function ToolPill({ tool }: { tool: Tool }) {
 
 export function TowerMobileToolbar() {
   const { state, setActivePanel } = useTower();
+  const gt = useGT();
 
   const tools = useMemo(
     () => ['select', 'bulldoze', 'tower_cannon', 'tower_archer', 'tower_tesla', 'tower_ice', 'tower_mortar', 'tower_sniper'] as Tool[],
@@ -66,7 +80,7 @@ export function TowerMobileToolbar() {
               size="icon"
               className="h-10 w-10"
               onClick={() => setActivePanel(state.activePanel === 'stats' ? 'none' : 'stats')}
-              title="Stats"
+              title={gt('Stats')}
             >
               <BarChart3 className="w-4 h-4" />
             </Button>
@@ -75,7 +89,7 @@ export function TowerMobileToolbar() {
               size="icon"
               className="h-10 w-10"
               onClick={() => setActivePanel(state.activePanel === 'settings' ? 'none' : 'settings')}
-              title="Settings"
+              title={gt('Settings')}
             >
               <Settings className="w-4 h-4" />
             </Button>

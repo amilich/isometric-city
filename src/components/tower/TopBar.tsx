@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { T, useGT } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { useTower } from '@/context/TowerContext';
 import { Pause, Play, FastForward, Gauge, Waves } from 'lucide-react';
@@ -14,28 +15,29 @@ function SpeedIcon({ speed }: { speed: 0 | 1 | 2 | 3 }) {
 export function TopBar() {
   const { state, setSpeed, startWave, setActivePanel } = useTower();
   const { money, lives, stats, waveState, speed } = state;
+  const gt = useGT();
 
   const waveLabel = useMemo(() => {
-    if (waveState === 'idle' || waveState === 'complete') return 'Ready';
-    if (waveState === 'spawning') return 'Spawning';
-    if (waveState === 'in_progress') return 'In Progress';
-    if (waveState === 'game_over') return 'Game Over';
+    if (waveState === 'idle' || waveState === 'complete') return gt('Ready');
+    if (waveState === 'spawning') return gt('Spawning');
+    if (waveState === 'in_progress') return gt('In Progress');
+    if (waveState === 'game_over') return gt('Game Over');
     return waveState;
-  }, [waveState]);
+  }, [waveState, gt]);
 
   return (
     <div className="h-12 border-b border-border bg-background/90 backdrop-blur-sm flex items-center justify-between px-3">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Money</span>
+          <T><span className="text-muted-foreground">Money</span></T>
           <span className="font-mono text-amber-400">${money.toLocaleString()}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Lives</span>
+          <T><span className="text-muted-foreground">Lives</span></T>
           <span className={`font-mono ${lives > 0 ? 'text-green-400' : 'text-red-400'}`}>{lives}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Wave</span>
+          <T><span className="text-muted-foreground">Wave</span></T>
           <span className="font-mono text-white/90">{stats.wave}</span>
           <span className="text-xs text-muted-foreground">({waveLabel})</span>
         </div>
@@ -48,10 +50,10 @@ export function TopBar() {
           onClick={() => startWave()}
           disabled={waveState === 'in_progress' || waveState === 'spawning' || waveState === 'game_over'}
           className="gap-2"
-          title="Start the next wave"
+          title={gt('Start the next wave')}
         >
           <Waves className="w-4 h-4" />
-          <span className="hidden sm:inline">Start Wave</span>
+          <T><span className="hidden sm:inline">Start Wave</span></T>
         </Button>
 
         <div className="flex items-center gap-1 border border-border rounded-md p-1">
@@ -61,7 +63,7 @@ export function TopBar() {
               variant={speed === s ? 'default' : 'ghost'}
               size="icon-sm"
               onClick={() => setSpeed(s)}
-              title={s === 0 ? 'Pause' : `${s}x Speed`}
+              title={s === 0 ? gt('Pause') : gt('{s}x Speed', { s })}
               className="h-8 w-8"
             >
               <SpeedIcon speed={s} />
@@ -73,7 +75,7 @@ export function TopBar() {
           variant="ghost"
           size="icon-sm"
           onClick={() => setActivePanel('stats')}
-          title="Stats"
+          title={gt('Stats')}
           className="h-8 w-8"
         >
           <Gauge className="w-4 h-4" />

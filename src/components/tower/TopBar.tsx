@@ -34,7 +34,7 @@ export function TopBar() {
           <span className="text-muted-foreground">Lives</span>
           <span className={`font-mono ${lives > 0 ? 'text-green-400' : 'text-red-400'}`}>{lives}</span>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Wave</span>
           <span className="font-mono text-white/90">{stats.wave}</span>
           <span className="text-xs text-muted-foreground">({waveLabel})</span>

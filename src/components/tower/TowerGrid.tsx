@@ -173,6 +173,21 @@ export function TowerGrid({
   const [isPanning, setIsPanning] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const [spriteSheets, setSpriteSheets] = useState<Map<string, HTMLCanvasElement>>(new Map());
+  const touchPanCandidateRef = useRef<{
+    startX: number;
+    startY: number;
+    offsetX: number;
+    offsetY: number;
+    isPanning: boolean;
+  } | null>(null);
+  const pinchRef = useRef<{
+    startDistance: number;
+    startZoom: number;
+    centerX: number;
+    centerY: number;
+    worldCenterX: number;
+    worldCenterY: number;
+  } | null>(null);
 
   // Load tower/enemy sprite sheets in parallel
   useEffect(() => {
@@ -454,7 +469,12 @@ export function TowerGrid({
   }, [isPanning, selectedTool]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0" style={{ cursor }} onContextMenu={(e) => e.preventDefault()}>
+    <div
+      ref={containerRef}
+      className="absolute inset-0"
+      style={{ cursor, touchAction: 'none' }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <canvas
         ref={canvasRef}
         className="absolute inset-0"
@@ -463,11 +483,88 @@ export function TowerGrid({
         onMouseUp={handleMouseUp}
         onMouseLeave={() => setHovered(null)}
         onWheel={handleWheel}
+        onTouchStart={(e) => {
+          if (!containerRef.current) return;
+          if (e.touches.length === 2) {
+            const t0 = e.touches[0]!;
+            const t1 = e.touches[1]!;
+            const dx = t1.clientX - t0.clientX;
+            const dy = t1.clientY - t0.clientY;
+            const dist = Math.hypot(dx, dy) || 1;
+            const centerX = (t0.clientX + t1.clientX) / 2;
+            const centerY = (t0.clientY + t1.clientY) / 2;
+            const rect = containerRef.current.getBoundingClientRect();
+            const localCenterX = centerX - rect.left;
+            const localCenterY = centerY - rect.top;
+            const worldCenterX = (localCenterX - offset.x) / zoom;
+            const worldCenterY = (localCenterY - offset.y) / zoom;
+            pinchRef.current = { startDistance: dist, startZoom: zoom, centerX: localCenterX, centerY: localCenterY, worldCenterX, worldCenterY };
+            touchPanCandidateRef.current = null;
+            return;
+          }
+
+          if (e.touches.length === 1) {
+            const t = e.touches[0]!;
+            touchPanCandidateRef.current = { startX: t.clientX, startY: t.clientY, offsetX: offset.x, offsetY: offset.y, isPanning: false };
+          }
+        }}
+        onTouchMove={(e) => {
+          e.preventDefault();
+          if (e.touches.length === 2 && pinchRef.current && containerRef.current) {
+            const t0 = e.touches[0]!;
+            const t1 = e.touches[1]!;
+            const dx = t1.clientX - t0.clientX;
+            const dy = t1.clientY - t0.clientY;
+            const dist = Math.hypot(dx, dy) || 1;
+            const ratio = dist / pinchRef.current.startDistance;
+            const nextZoom = clamp(pinchRef.current.startZoom * ratio, ZOOM_MIN, ZOOM_MAX);
+            setZoom(nextZoom);
+            setOffset({
+              x: pinchRef.current.centerX - pinchRef.current.worldCenterX * nextZoom,
+              y: pinchRef.current.centerY - pinchRef.current.worldCenterY * nextZoom,
+            });
+            return;
+          }
+
+          if (e.touches.length === 1 && touchPanCandidateRef.current) {
+            const t = e.touches[0]!;
+            const dx = t.clientX - touchPanCandidateRef.current.startX;
+            const dy = t.clientY - touchPanCandidateRef.current.startY;
+            const threshold = 6;
+            if (!touchPanCandidateRef.current.isPanning && Math.hypot(dx, dy) > threshold) {
+              touchPanCandidateRef.current.isPanning = true;
+              setIsPanning(true);
+            }
+            if (touchPanCandidateRef.current.isPanning) {
+              setOffset({ x: touchPanCandidateRef.current.offsetX + dx, y: touchPanCandidateRef.current.offsetY + dy });
+            }
+          }
+        }}
+        onTouchEnd={(e) => {
+          pinchRef.current = null;
+          if (!touchPanCandidateRef.current) return;
+          const wasPanning = touchPanCandidateRef.current.isPanning;
+          setIsPanning(false);
+          const last = touchPanCandidateRef.current;
+          touchPanCandidateRef.current = null;
+
+          if (wasPanning) return;
+
+          // Treat as tap
+          const hit = mapTileAtClientPoint(last.startX, last.startY);
+          if (!hit) return;
+          if (selectedTool === 'select') {
+            setSelectedTile(hit);
+          } else {
+            placeAtTile(hit.x, hit.y);
+            setSelectedTile(hit);
+          }
+        }}
       />
 
-      {/* Small hint for panning */}
+      {/* Small hint for controls */}
       <div className="pointer-events-none absolute bottom-3 left-3 text-[10px] text-white/40 bg-black/30 border border-white/10 px-2 py-1 rounded">
-        Shift+Drag to pan • Scroll to zoom
+        {isMobile ? 'Drag to pan • Pinch to zoom' : 'Shift+Drag to pan • Scroll to zoom'}
       </div>
     </div>
   );

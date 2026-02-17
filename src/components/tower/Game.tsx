@@ -10,6 +10,7 @@ import { TowerGrid } from './TowerGrid';
 import { MiniMap } from './MiniMap';
 import { Panels } from './panels/Panels';
 import { TileInfoPanel } from './TileInfoPanel';
+import { TowerMobileToolbar } from './mobile/TowerMobileToolbar';
 
 export default function TowerGame({ onExit }: { onExit?: () => void }) {
   const { state, isStateReady } = useTower();
@@ -73,6 +74,7 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
               <TileInfoPanel tile={state.grid[selectedTile.y]![selectedTile.x]!} onClose={() => setSelectedTile(null)} />
             )}
             <Panels />
+            <TowerMobileToolbar />
           </div>
         </div>
       </TooltipProvider>

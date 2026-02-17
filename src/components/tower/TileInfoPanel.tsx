@@ -13,9 +13,11 @@ import { X, ArrowUp, DollarSign } from 'lucide-react';
 export function TileInfoPanel({
   tile,
   onClose,
+  isMobile = false,
 }: {
   tile: Tile;
   onClose: () => void;
+  isMobile?: boolean;
 }) {
   const { state, upgradeTower, sellTower } = useTower();
 
@@ -32,7 +34,13 @@ export function TileInfoPanel({
   }, [tile.tower, state.money]);
 
   return (
-    <Card className="absolute top-4 right-4 w-80 z-50 bg-slate-950/90 border-slate-700 shadow-xl">
+    <Card
+      className={
+        isMobile
+          ? 'absolute top-2 left-2 right-2 z-50 bg-slate-950/90 border-slate-700 shadow-xl'
+          : 'absolute top-4 right-4 w-80 z-50 bg-slate-950/90 border-slate-700 shadow-xl'
+      }
+    >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-sans">
           Tile ({tile.x}, {tile.y})

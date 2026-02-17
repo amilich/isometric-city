@@ -71,7 +71,11 @@ export default function TowerGame({ onExit }: { onExit?: () => void }) {
               onNavigationComplete={() => setNavigationTarget(null)}
             />
             {selectedTile && state.selectedTool === 'select' && (
-              <TileInfoPanel tile={state.grid[selectedTile.y]![selectedTile.x]!} onClose={() => setSelectedTile(null)} />
+              <TileInfoPanel
+                tile={state.grid[selectedTile.y]![selectedTile.x]!}
+                onClose={() => setSelectedTile(null)}
+                isMobile={true}
+              />
             )}
             <Panels />
             <TowerMobileToolbar />

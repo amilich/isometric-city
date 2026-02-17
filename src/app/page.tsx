@@ -543,6 +543,18 @@ export default function HomePage() {
                 >
                   <T>Open GitHub</T>
                 </a>
+                <a
+                  href="/coaster"
+                  className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                >
+                  <T>Play IsoCoaster</T>
+                </a>
+                <a
+                  href="/tower"
+                  className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                >
+                  <T>Play IsoTower</T>
+                </a>
               </div>
               <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
             </div>
@@ -649,6 +661,18 @@ export default function HomePage() {
                     className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                   >
                     <T>Open GitHub</T>
+                  </a>
+                  <a
+                    href="/coaster"
+                    className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                  >
+                    <T>Play IsoCoaster</T>
+                  </a>
+                  <a
+                    href="/tower"
+                    className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                  >
+                    <T>Play IsoTower</T>
                   </a>
                 </div>
                 <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />

@@ -137,7 +137,7 @@ export type TowerStats = {
   moneySpent: number;
 };
 
-export type WaveState = 'idle' | 'spawning' | 'in_progress' | 'complete' | 'game_over';
+export type WaveState = 'idle' | 'spawning' | 'in_progress' | 'complete' | 'victory' | 'game_over';
 
 export type GameState = {
   id: string;

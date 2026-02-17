@@ -5,6 +5,7 @@ import { distSq, lerp, uuid } from '@/games/tower/lib/math';
 import { WAVES } from '@/games/tower/types/waves';
 
 const BASE_DT_SECONDS = 0.05; // 50ms "game time" per tick (speed increases by running more ticks)
+const FINAL_AUTHORED_WAVE = WAVES[WAVES.length - 1]?.waveNumber ?? 10;
 
 function getWaveDefinition(waveNumber: number) {
   const def = WAVES.find((w) => w.waveNumber === waveNumber);
@@ -362,7 +363,8 @@ export function simulateTowerTick(prev: GameState): GameState {
   // Wave completion / game over
   // ---------------------------------------------------------------------------
   if ((next.waveState === 'spawning' || next.waveState === 'in_progress') && next.waveSpawnQueue.length === 0 && next.enemies.length === 0) {
-    next.waveState = 'complete';
+    next.waveState = next.stats.wave >= FINAL_AUTHORED_WAVE ? 'victory' : 'complete';
+    if (next.waveState === 'victory') next.speed = 0;
   }
 
   if (next.lives <= 0 && next.waveState !== 'game_over') {
@@ -375,6 +377,7 @@ export function simulateTowerTick(prev: GameState): GameState {
 
 export function startWaveState(prev: GameState): GameState {
   if (prev.waveState === 'game_over') return prev;
+  if (prev.waveState === 'victory') return prev;
   if (prev.waveState !== 'idle' && prev.waveState !== 'complete') return prev;
   const nextWave = prev.stats.wave + 1;
   const queue = buildSpawnQueue(prev, nextWave);

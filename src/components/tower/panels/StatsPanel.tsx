@@ -20,7 +20,7 @@ export function StatsPanel() {
           <Card className="p-3">
             <div className="text-muted-foreground text-xs">Wave</div>
             <div className="font-mono text-lg">{stats.wave}</div>
-            <div className="text-xs text-muted-foreground">{waveState.replace(/_/g, ' ')}</div>
+            <div className="text-xs text-muted-foreground">{waveState === 'victory' ? 'victory' : waveState.replace(/_/g, ' ')}</div>
           </Card>
           <Card className="p-3">
             <div className="text-muted-foreground text-xs">Money</div>

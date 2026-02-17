@@ -19,6 +19,7 @@ export function TopBar() {
     if (waveState === 'idle' || waveState === 'complete') return 'Ready';
     if (waveState === 'spawning') return 'Spawning';
     if (waveState === 'in_progress') return 'In Progress';
+    if (waveState === 'victory') return 'Victory';
     if (waveState === 'game_over') return 'Game Over';
     return waveState;
   }, [waveState]);
@@ -54,7 +55,7 @@ export function TopBar() {
           variant="outline"
           size="sm"
           onClick={() => startWave()}
-          disabled={waveState === 'in_progress' || waveState === 'spawning' || waveState === 'game_over'}
+          disabled={waveState === 'in_progress' || waveState === 'spawning' || waveState === 'victory' || waveState === 'game_over'}
           className="gap-2"
           title="Start the next wave"
           data-testid="tower-start-wave"

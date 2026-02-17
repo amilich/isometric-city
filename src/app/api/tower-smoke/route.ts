@@ -100,10 +100,10 @@ export function GET(req: Request) {
 
     for (let i = 0; i < maxTicks; i++) {
       state = simulateTowerTick(state);
-      if (state.waveState === 'complete' || state.waveState === 'game_over') break;
+      if (state.waveState === 'complete' || state.waveState === 'victory' || state.waveState === 'game_over') break;
     }
 
-    if (state.waveState === 'game_over') break;
+    if (state.waveState === 'victory' || state.waveState === 'game_over') break;
   }
 
   return NextResponse.json({

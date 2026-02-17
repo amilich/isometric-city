@@ -84,6 +84,13 @@ npm run lint
 npm run e2e:tower
 ```
 
+### Tower Defense headless simulation
+
+IsoTower Defense also includes a lightweight headless simulation endpoint you can hit while developing:
+
+- `GET /api/tower-smoke` — runs a short simulation and returns JSON stats
+- Supports query params like `wave=6` (flyers), `waves=20` (simulate until victory), `noTowers=1` (force leaks/game over)
+
 ## Contributing
 
 Contributions are welcome! Whether it's reporting a bug, proposing a new feature, or submitting a pull request, your input is valued.

@@ -216,7 +216,7 @@ export default function TowerPage() {
       <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         <div className="flex flex-col items-center lg:items-start justify-center space-y-8 lg:space-y-12">
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-wider text-white/90">
-            IsoTower
+            IsoTower Defense
           </h1>
 
           <div className="flex flex-col gap-3 w-full max-w-72">

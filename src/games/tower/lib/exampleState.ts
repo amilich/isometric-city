@@ -2,6 +2,7 @@ import type { GameState, Tile } from '@/games/tower/types';
 import { createInitialTowerGameState } from '@/games/tower/lib/initialState';
 import { TOWER_DEFINITIONS } from '@/games/tower/types/towers';
 import { uuid } from '@/games/tower/lib/math';
+import { msg } from 'gt-next';
 
 function placeTower(
   state: GameState,
@@ -32,7 +33,7 @@ function placeTower(
 
 export function createTowerExampleState(): GameState {
   const gridSize = 55;
-  let state = createInitialTowerGameState('Example Run', gridSize, 424242);
+  let state = createInitialTowerGameState(msg('Example Run'), gridSize, 424242);
   state = { ...state, money: 2500, lives: 20 };
 
   const anchor = state.path[Math.min(14, state.path.length - 1)] ?? state.spawn;

@@ -11,7 +11,7 @@ import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/re
 import { SavedCityMeta, GameState } from '@/types/game';
 import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
-import { T } from 'gt-next';
+import { T, useGT } from 'gt-next';
 import { Users, X } from 'lucide-react';
 
 const STORAGE_KEY = 'isocity-game-state';
@@ -276,6 +276,7 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
 
 // Saved City Card Component
 function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad: () => void; onDelete?: () => void }) {
+  const gt = useGT();
   return (
     <div className="relative group">
       <button
@@ -288,12 +289,12 @@ function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad
           </h3>
           {city.roomCode && (
             <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded shrink-0">
-              Co-op
+              <T>Co-op</T>
             </span>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-          <span>Pop: {city.population.toLocaleString()}</span>
+          <span><T>Pop:</T> {city.population.toLocaleString()}</span>
           <span>${city.money.toLocaleString()}</span>
           {city.roomCode && <span className="text-blue-400/60">{city.roomCode}</span>}
         </div>
@@ -305,7 +306,7 @@ function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad
             onDelete();
           }}
           className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
-          title="Delete city"
+          title={gt('Delete city')}
         >
           <X className="w-3.5 h-3.5" />
         </button>

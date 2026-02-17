@@ -1,4 +1,7 @@
 import puppeteer from 'puppeteer-core';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const CHROME_PATH =
@@ -43,6 +46,10 @@ async function getText(page, selector) {
 }
 
 async function main() {
+  const outDir =
+    process.env.E2E_SCREENSHOT_DIR ?? path.join(os.tmpdir(), `isotower-e2e-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+  await fs.mkdir(outDir, { recursive: true });
+
   const browser = await puppeteer.launch({
     executablePath: CHROME_PATH,
     headless: true,
@@ -53,19 +60,27 @@ async function main() {
   const page = await browser.newPage();
   page.setDefaultTimeout(45_000);
 
+  async function snap(name) {
+    await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage: true });
+  }
+
   // Basic route smoke checks (ensures we didn't break other games).
   await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle2' });
   console.log('OK /');
+  await snap('01-home');
   await page.goto(`${BASE_URL}/coaster`, { waitUntil: 'networkidle2' });
   console.log('OK /coaster');
+  await snap('02-coaster');
 
   // Tower smoke: load example run, play 1 wave, verify money increases, verify persistence via Continue.
   await page.goto(`${BASE_URL}/tower`, { waitUntil: 'networkidle2' });
   await waitForButtonText(page, 'Load Example');
+  await snap('03-tower-landing');
   await clickButtonText(page, 'Load Example');
 
   await page.waitForSelector('[data-testid="tower-start-wave"]');
   await page.waitForSelector('[data-testid="tower-canvas"]');
+  await snap('04-tower-in-game');
 
   // Speed up the simulation to reduce flakiness/time.
   await page.waitForSelector('button[title="3x Speed"]');
@@ -76,6 +91,7 @@ async function main() {
   console.log(`Tower initial wave=${wave0} money=${money0}`);
 
   await page.click('[data-testid="tower-start-wave"]');
+  await snap('05-tower-wave-started');
 
   // Wait until the wave number increments, then until the wave returns to Ready.
   await page.waitForFunction(
@@ -101,6 +117,7 @@ async function main() {
   const wave1 = parseIntSafe(await getText(page, '[data-testid="tower-wave"]'));
   const money1 = parseMoney(await getText(page, '[data-testid="tower-money"]'));
   console.log(`Tower after wave wave=${wave1} money=${money1}`);
+  await snap('06-tower-wave-complete');
 
   if (wave1 < wave0 + 1) {
     throw new Error(`Wave did not increment (expected >= ${wave0 + 1}, got ${wave1})`);
@@ -112,11 +129,13 @@ async function main() {
   // Persistence: go back to landing and use Continue.
   await page.goto(`${BASE_URL}/tower`, { waitUntil: 'networkidle2' });
   await waitForButtonText(page, 'Continue');
+  await snap('07-tower-landing-continue');
   await clickButtonText(page, 'Continue');
 
   await page.waitForSelector('[data-testid="tower-wave"]');
   const waveAfterContinue = parseIntSafe(await getText(page, '[data-testid="tower-wave"]'));
   console.log(`Tower continue wave=${waveAfterContinue}`);
+  await snap('08-tower-continue-restored');
   if (waveAfterContinue !== wave1) {
     throw new Error(`Continue did not restore wave (expected ${wave1}, got ${waveAfterContinue})`);
   }
@@ -125,8 +144,16 @@ async function main() {
   await page.waitForSelector('button[title="Settings"]');
   await page.click('button[title="Settings"]');
   await page.waitForFunction(() => (document.body.textContent ?? '').includes('Run Settings'), { timeout: 15_000 });
+  await snap('09-tower-settings-open');
   await page.keyboard.press('Escape');
   console.log('OK settings dialog');
+
+  // Simulation regression check: final wave should reach victory.
+  const smoke = await fetch(`${BASE_URL}/api/tower-smoke?waves=20`).then((r) => r.json());
+  if (smoke?.waveState !== 'victory') {
+    throw new Error(`Expected victory from /api/tower-smoke?waves=20, got ${String(smoke?.waveState)}`);
+  }
+  console.log('OK victory smoke');
 
   await browser.close();
   console.log('PASS tower-e2e-smoke');

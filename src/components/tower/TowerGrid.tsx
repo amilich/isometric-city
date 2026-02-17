@@ -13,6 +13,7 @@ const HEIGHT_RATIO = 0.6;
 const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
 const ZOOM_MIN = 0.3;
 const ZOOM_MAX = 2.5;
+const WATER_ASSET_PATH = '/assets/water.webp';
 
 // Sprite sheets use a red background to be filtered to transparent.
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -68,6 +69,58 @@ function drawDiamond(ctx: CanvasRenderingContext2D, x: number, y: number, fill: 
     ctx.lineWidth = lineWidth;
     ctx.stroke();
   }
+}
+
+function drawWaterDiamond(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  tileX: number,
+  tileY: number,
+  img: HTMLImageElement | null,
+  showGrid: boolean
+) {
+  if (!img || !img.complete || (img.naturalWidth || 0) === 0) {
+    drawDiamond(ctx, x, y, '#0284c7', showGrid ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.18)', 1);
+    return;
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + TILE_WIDTH / 2, y);
+  ctx.lineTo(x + TILE_WIDTH, y + TILE_HEIGHT / 2);
+  ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT);
+  ctx.lineTo(x, y + TILE_HEIGHT / 2);
+  ctx.closePath();
+  ctx.clip();
+
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+
+  // deterministic offsets per tile
+  const seedX = ((tileX * 7919 + tileY * 6271) % 1000) / 1000;
+  const seedY = ((tileX * 4177 + tileY * 9311) % 1000) / 1000;
+  const cropW = Math.floor(iw * 0.35);
+  const cropH = Math.floor(ih * 0.35);
+  const sx = Math.floor(seedX * (iw - cropW));
+  const sy = Math.floor(seedY * (ih - cropH));
+
+  ctx.globalAlpha = 0.95;
+  ctx.drawImage(img, sx, sy, cropW, cropH, x, y, TILE_WIDTH, TILE_HEIGHT);
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+
+  // outline
+  ctx.strokeStyle = showGrid ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + TILE_WIDTH / 2, y);
+  ctx.lineTo(x + TILE_WIDTH, y + TILE_HEIGHT / 2);
+  ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT);
+  ctx.lineTo(x, y + TILE_HEIGHT / 2);
+  ctx.closePath();
+  ctx.stroke();
 }
 
 function drawTowerPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: number, towerType: string) {
@@ -175,6 +228,7 @@ export function TowerGrid({
   const [isPanning, setIsPanning] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const [spriteSheets, setSpriteSheets] = useState<Map<string, HTMLCanvasElement>>(new Map());
+  const [waterImage, setWaterImage] = useState<HTMLImageElement | null>(null);
   const touchPanCandidateRef = useRef<{
     startX: number;
     startY: number;
@@ -213,6 +267,15 @@ export function TowerGrid({
       setSpriteSheets(map);
     };
     load();
+  }, []);
+
+  // Load water texture
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => setWaterImage(img);
+    img.onerror = () => setWaterImage(null);
+    img.src = WATER_ASSET_PATH;
   }, []);
 
   // Resize observer
@@ -291,7 +354,12 @@ export function TowerGrid({
         const tile = grid[y]![x]!;
         const { screenX, screenY } = gridToScreen(x, y);
 
-        let fill = tile.terrain === 'water' ? '#0284c7' : '#4a7c3f';
+        if (tile.terrain === 'water') {
+          drawWaterDiamond(ctx, screenX, screenY, x, y, waterImage, settings.showGrid);
+          continue;
+        }
+
+        let fill = '#4a7c3f';
         if (tile.kind === 'path') fill = '#475569';
         if (tile.kind === 'spawn') fill = '#16a34a';
         if (tile.kind === 'base') fill = '#dc2626';
@@ -413,7 +481,7 @@ export function TowerGrid({
     }
 
     ctx.restore();
-  }, [canvasSize, offset.x, offset.y, zoom, grid, gridSize, hovered, selectedTile, selectedTool, money, settings.showGrid, state.enemies, state.projectiles, state.path, state.base, spriteSheets]);
+  }, [canvasSize, offset.x, offset.y, zoom, grid, gridSize, hovered, selectedTile, selectedTool, money, settings.showGrid, state.enemies, state.projectiles, state.path, state.base, spriteSheets, waterImage]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {

@@ -15,20 +15,41 @@ export function GET() {
   // Give plenty of money for the test.
   state = { ...state, money: 99999 };
 
-  // Place a tesla tower near the middle of the path so it can get kills.
-  const midY = Math.floor(gridSize / 2);
-  const placements: Array<{ x: number; y: number; type: 'tesla' | 'cannon' | 'mortar'; level: 1 | 2 | 3 }> = [
-    { x: 8, y: midY - 2, type: 'tesla', level: 3 },
-    { x: 8, y: midY + 2, type: 'cannon', level: 3 },
-    { x: 13, y: midY - 2, type: 'mortar', level: 3 },
+  // Place towers near the early path so it can get kills.
+  const anchor = state.path[Math.min(10, state.path.length - 1)] ?? state.spawn;
+
+  function findEmptyNear(targetX: number, targetY: number): { x: number; y: number } | null {
+    for (let r = 0; r <= 6; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          const x = targetX + dx;
+          const y = targetY + dy;
+          if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) continue;
+          const tile = state.grid[y]?.[x];
+          if (!tile) continue;
+          if (tile.kind !== 'empty') continue;
+          if (tile.terrain !== 'grass') continue;
+          return { x, y };
+        }
+      }
+    }
+    return null;
+  }
+
+  const placements: Array<{ dx: number; dy: number; type: 'tesla' | 'cannon' | 'mortar'; level: 1 | 2 | 3 }> = [
+    { dx: 2, dy: -3, type: 'tesla', level: 3 },
+    { dx: 2, dy: 3, type: 'cannon', level: 3 },
+    { dx: 6, dy: -3, type: 'mortar', level: 3 },
   ];
 
   state.grid = state.grid.map((row) => row.slice());
   for (const p of placements) {
-    const tile = state.grid[p.y]?.[p.x];
+    const pos = findEmptyNear(anchor.x + p.dx, anchor.y + p.dy);
+    if (!pos) continue;
+    const tile = state.grid[pos.y]?.[pos.x];
     if (!tile || tile.kind !== 'empty' || tile.terrain !== 'grass') continue;
-    state.grid[p.y] = state.grid[p.y]!.slice();
-    state.grid[p.y]![p.x] = {
+    state.grid[pos.y] = state.grid[pos.y]!.slice();
+    state.grid[pos.y]![pos.x] = {
       ...tile,
       tower: {
         id: uuid(`tower-${p.type}`),

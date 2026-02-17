@@ -35,14 +35,16 @@ export function createTowerExampleState(): GameState {
   let state = createInitialTowerGameState('Example Run', gridSize, 424242);
   state = { ...state, money: 2500, lives: 20 };
 
-  const midY = Math.floor(gridSize / 2);
+  const anchor = state.path[Math.min(14, state.path.length - 1)] ?? state.spawn;
+  const ax = anchor.x;
+  const ay = anchor.y;
   // Place a mixed defense line on both sides of the path
-  state = placeTower(state, 10, midY - 3, 'cannon', 2);
-  state = placeTower(state, 10, midY + 3, 'ice', 2);
-  state = placeTower(state, 14, midY - 3, 'tesla', 2);
-  state = placeTower(state, 14, midY + 3, 'archer', 2);
-  state = placeTower(state, 18, midY - 3, 'mortar', 2);
-  state = placeTower(state, 22, midY + 3, 'sniper', 2);
+  state = placeTower(state, ax + 2, ay - 3, 'cannon', 2);
+  state = placeTower(state, ax + 2, ay + 3, 'ice', 2);
+  state = placeTower(state, ax + 6, ay - 3, 'tesla', 2);
+  state = placeTower(state, ax + 6, ay + 3, 'archer', 2);
+  state = placeTower(state, ax + 10, ay - 3, 'mortar', 2);
+  state = placeTower(state, ax + 14, ay + 3, 'sniper', 2);
 
   state = {
     ...state,

@@ -1,6 +1,6 @@
 import type { GameState, Tile } from '@/games/tower/types';
 import { createEmptyTile } from '@/games/tower/types';
-import { applyPathToGrid, generateStraightMidPath } from '@/games/tower/lib/pathing';
+import { applyPathToGrid, generateDefaultPath } from '@/games/tower/lib/pathing';
 import { uuid } from '@/games/tower/lib/math';
 
 function mulberry32(seed: number) {
@@ -12,25 +12,27 @@ function mulberry32(seed: number) {
   };
 }
 
-function carvePonds(grid: Tile[][], gridSize: number, seed: number) {
+function carvePonds(grid: Tile[][], gridSize: number, seed: number, forbidden: Set<number>) {
   const rand = mulberry32(seed);
   const pondCount = 2 + Math.floor(rand() * 2); // 2-3 ponds
-  const midY = Math.floor(gridSize / 2);
-  const protectedBandHalfHeight = 4; // keep water away from the main path area
 
   for (let i = 0; i < pondCount; i++) {
     const radius = 3 + Math.floor(rand() * 3); // 3-5
-    const cx = Math.floor(rand() * (gridSize - radius * 2)) + radius;
+    let cx = Math.floor(rand() * (gridSize - radius * 2)) + radius;
     let cy = Math.floor(rand() * (gridSize - radius * 2)) + radius;
 
-    // Keep ponds away from the path area so we don't block the main lane or nearby build spaces.
-    if (Math.abs(cy - midY) <= radius + protectedBandHalfHeight) {
-      cy = cy < midY ? Math.max(radius, midY - radius - 3) : Math.min(gridSize - radius - 1, midY + radius + 3);
+    // Nudge centers away from forbidden zones (path & nearby build area)
+    let attempts = 0;
+    while (attempts < 20 && forbidden.has(cy * gridSize + cx)) {
+      cx = Math.floor(rand() * (gridSize - radius * 2)) + radius;
+      cy = Math.floor(rand() * (gridSize - radius * 2)) + radius;
+      attempts++;
     }
 
     for (let y = cy - radius; y <= cy + radius; y++) {
       for (let x = cx - radius; x <= cx + radius; x++) {
         if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) continue;
+        if (forbidden.has(y * gridSize + x)) continue;
         const dx = x - cx;
         const dy = y - cy;
         const d2 = dx * dx + dy * dy;
@@ -57,10 +59,24 @@ export function createInitialTowerGameState(name?: string, gridSize: number = 60
     grid.push(row);
   }
 
-  // Add some water features for visual interest / placement constraints.
-  carvePonds(grid, gridSize, actualSeed);
+  const { path, spawn, base } = generateDefaultPath(gridSize, actualSeed);
 
-  const { path, spawn, base } = generateStraightMidPath(gridSize);
+  // For visual interest, add some water ponds while keeping the path + near-path build area clear.
+  const forbidden = new Set<number>();
+  const protectRadius = 3; // tiles manhattan-distance from path
+  for (const p of path) {
+    for (let dy = -protectRadius; dy <= protectRadius; dy++) {
+      for (let dx = -protectRadius; dx <= protectRadius; dx++) {
+        if (Math.abs(dx) + Math.abs(dy) > protectRadius) continue;
+        const x = p.x + dx;
+        const y = p.y + dy;
+        if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) continue;
+        forbidden.add(y * gridSize + x);
+      }
+    }
+  }
+  carvePonds(grid, gridSize, actualSeed, forbidden);
+
   applyPathToGrid(grid, path, spawn, base);
 
   // Ensure path tiles are always grass (walkable).

@@ -26,7 +26,9 @@ export type BuildingType =
   | 'mini_golf_course' | 'bleachers_field' | 'go_kart_track' | 'amphitheater'
   | 'greenhouse_garden' | 'animal_pens_farm' | 'cabin_house' | 'campground'
   | 'marina_docks_small' | 'pier_large' | 'roller_coaster_small'
-  | 'community_garden' | 'pond_park' | 'park_gate' | 'mountain_lodge' | 'mountain_trailhead';
+  | 'community_garden' | 'pond_park' | 'park_gate' | 'mountain_lodge' | 'mountain_trailhead'
+  // AI-generated custom buildings
+  | 'custom';
 
 export type BridgeType = 'small' | 'medium' | 'large' | 'suspension';
 export type BridgeOrientation = 'ns' | 'ew';
@@ -53,6 +55,10 @@ export interface Building {
   bridgeIndex?: number;
   bridgeSpan?: number;
   bridgeTrackType?: BridgeTrackType;
+  // Custom AI-generated building properties
+  customSpriteUrl?: string;
+  customBuildingId?: string;
+  customSize?: number;
 }
 
 export const RESIDENTIAL_BUILDINGS: BuildingType[] = ['house_small', 'house_medium', 'mansion', 'apartment_low', 'apartment_high'];
@@ -126,4 +132,6 @@ export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: num
   park_gate: { maxPop: 0, maxJobs: 1, pollution: -2, landValue: 8 },
   mountain_lodge: { maxPop: 0, maxJobs: 15, pollution: -5, landValue: 35 },
   mountain_trailhead: { maxPop: 0, maxJobs: 2, pollution: -10, landValue: 15 },
+  // Custom buildings use dynamic stats from AI analysis
+  custom: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
 };

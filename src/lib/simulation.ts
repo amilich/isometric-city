@@ -2849,6 +2849,37 @@ function findBuildingOrigin(
   const tile = grid[y]?.[x];
   if (!tile) return null;
   
+  // Special handling for custom buildings - they use a different system
+  // All tiles in a custom building have type='custom', but only the origin has customSpriteUrl
+  if (tile.building.type === 'custom') {
+    // If this tile has the sprite URL, it's the origin
+    if (tile.building.customSpriteUrl && tile.building.customSize) {
+      return { originX: x, originY: y, buildingType: 'custom' };
+    }
+    
+    // Otherwise, search for the origin tile with the sprite URL
+    if (tile.building.customSize && tile.building.customBuildingId) {
+      const maxSize = tile.building.customSize;
+      // Search in a square around the clicked tile
+      for (let dy = -maxSize + 1; dy < maxSize; dy++) {
+        for (let dx = -maxSize + 1; dx < maxSize; dx++) {
+          const checkX = x + dx;
+          const checkY = y + dy;
+          if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
+            const checkTile = grid[checkY][checkX];
+            // Found the origin - it has the sprite URL and matches our building ID
+            if (checkTile.building.type === 'custom' &&
+                checkTile.building.customSpriteUrl &&
+                checkTile.building.customBuildingId === tile.building.customBuildingId) {
+              return { originX: checkX, originY: checkY, buildingType: 'custom' };
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+  
   // If this tile has an actual building (not empty), check if it's multi-tile
   if (tile.building.type !== 'empty' && tile.building.type !== 'grass' && 
       tile.building.type !== 'water' && tile.building.type !== 'road' && 
@@ -2877,7 +2908,8 @@ function findBuildingOrigin(
               checkTile.building.type !== 'road' &&
               checkTile.building.type !== 'bridge' &&
               checkTile.building.type !== 'rail' &&
-              checkTile.building.type !== 'tree') {
+              checkTile.building.type !== 'tree' &&
+              checkTile.building.type !== 'custom') { // Skip custom buildings - handled above
             const size = getBuildingSize(checkTile.building.type);
             // Check if this building's footprint includes our original tile
             if (x >= checkX && x < checkX + size.width &&
@@ -3023,7 +3055,11 @@ export function bulldozeTile(state: GameState, x: number, y: number): GameState 
   
   if (origin) {
     // Bulldoze the entire multi-tile building
-    const size = getBuildingSize(origin.buildingType);
+    // For custom buildings, get size from the origin tile's customSize property
+    const originTile = newGrid[origin.originY][origin.originX];
+    const size = origin.buildingType === 'custom' && originTile.building.customSize
+      ? { width: originTile.building.customSize, height: originTile.building.customSize }
+      : getBuildingSize(origin.buildingType);
     for (let dy = 0; dy < size.height; dy++) {
       for (let dx = 0; dx < size.width; dx++) {
         const clearX = origin.originX + dx;

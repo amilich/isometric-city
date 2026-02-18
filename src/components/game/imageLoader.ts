@@ -12,6 +12,27 @@ const COLOR_THRESHOLD = 155; // Adjust this value to be more/less aggressive
 // Image cache for building sprites
 const imageCache = new Map<string, HTMLImageElement>();
 
+// Cache for content bounds analysis (for custom buildings)
+export interface ContentBounds {
+  // Bounding box of non-transparent content (in pixels)
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  // Content dimensions
+  contentWidth: number;
+  contentHeight: number;
+  // Center of content relative to image center (as ratio of image size)
+  // Positive = content is shifted right/down from center
+  centerOffsetX: number; // -0.5 to 0.5
+  centerOffsetY: number; // -0.5 to 0.5
+  // How much of the image is actually content (0 to 1)
+  contentRatioX: number;
+  contentRatioY: number;
+}
+
+const contentBoundsCache = new Map<string, ContentBounds>();
+
 // Track WebP support (detected once on first use)
 let webpSupported: boolean | null = null;
 
@@ -77,12 +98,21 @@ function notifyImageLoaded() {
 function loadImageDirect(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    
+    // Set crossOrigin for external URLs (like fal.ai CDN) to enable CORS
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      img.crossOrigin = 'anonymous';
+    }
+    
     img.onload = () => {
       imageCache.set(src, img);
       notifyImageLoaded();
       resolve(img);
     };
-    img.onerror = reject;
+    img.onerror = (err) => {
+      console.warn(`Failed to load image: ${src}`, err);
+      reject(err);
+    };
     img.src = src;
   });
 }
@@ -250,4 +280,145 @@ export function getCachedImage(src: string, filtered: boolean = false): HTMLImag
  */
 export function clearImageCache(): void {
   imageCache.clear();
+  contentBoundsCache.clear();
+}
+
+/**
+ * Analyze an image to find the bounding box of non-transparent content.
+ * This is used to properly center AI-generated sprites that may not be
+ * perfectly centered in their image frame.
+ * @param img The image to analyze
+ * @returns ContentBounds with positioning information
+ */
+export function analyzeContentBounds(img: HTMLImageElement): ContentBounds {
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+  
+  // Create a temporary canvas to read pixel data
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    // Fallback: assume content fills entire image
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: width,
+      maxY: height,
+      contentWidth: width,
+      contentHeight: height,
+      centerOffsetX: 0,
+      centerOffsetY: 0,
+      contentRatioX: 1,
+      contentRatioY: 1,
+    };
+  }
+  
+  ctx.drawImage(img, 0, 0);
+  
+  // getImageData can throw SecurityError on CORS-tainted canvases
+  let imageData;
+  try {
+    imageData = ctx.getImageData(0, 0, width, height);
+  } catch {
+    // Fallback: assume content fills entire image
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: width,
+      maxY: height,
+      contentWidth: width,
+      contentHeight: height,
+      centerOffsetX: 0,
+      centerOffsetY: 0,
+      contentRatioX: 1,
+      contentRatioY: 1,
+    };
+  }
+  const data = imageData.data;
+  
+  // Find bounds of non-transparent pixels
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+  
+  // Alpha threshold - consider pixels with alpha > this as "content"
+  const alphaThreshold = 10;
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const alpha = data[idx + 3];
+      
+      if (alpha > alphaThreshold) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  
+  // Handle edge case: no content found
+  if (minX > maxX || minY > maxY) {
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: width,
+      maxY: height,
+      contentWidth: width,
+      contentHeight: height,
+      centerOffsetX: 0,
+      centerOffsetY: 0,
+      contentRatioX: 1,
+      contentRatioY: 1,
+    };
+  }
+  
+  const contentWidth = maxX - minX + 1;
+  const contentHeight = maxY - minY + 1;
+  
+  // Calculate center of content
+  const contentCenterX = minX + contentWidth / 2;
+  const contentCenterY = minY + contentHeight / 2;
+  
+  // Calculate offset from image center (as ratio of image size)
+  // Positive means content is shifted right/down from where it should be
+  const imageCenterX = width / 2;
+  const imageCenterY = height / 2;
+  
+  const centerOffsetX = (contentCenterX - imageCenterX) / width;
+  const centerOffsetY = (contentCenterY - imageCenterY) / height;
+  
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    contentWidth,
+    contentHeight,
+    centerOffsetX,
+    centerOffsetY,
+    contentRatioX: contentWidth / width,
+    contentRatioY: contentHeight / height,
+  };
+}
+
+/**
+ * Get cached content bounds for an image, or analyze if not cached
+ * @param src Image source URL
+ * @param img The loaded image element
+ * @returns ContentBounds for the image
+ */
+export function getContentBounds(src: string, img: HTMLImageElement): ContentBounds {
+  if (contentBoundsCache.has(src)) {
+    return contentBoundsCache.get(src)!;
+  }
+  
+  const bounds = analyzeContentBounds(img);
+  contentBoundsCache.set(src, bounds);
+  return bounds;
 }

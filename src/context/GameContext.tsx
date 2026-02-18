@@ -54,6 +54,21 @@ export type SavedCityInfo = {
   savedAt: number;
 } | null;
 
+// Custom building data for placement
+export interface CustomBuildingData {
+  id: string;
+  name: string;
+  spriteUrl: string;
+  size: 1 | 2 | 3 | 4;
+  cost: number;
+  stats: {
+    maxPop: number;
+    maxJobs: number;
+    pollution: number;
+    landValue: number;
+  };
+}
+
 type GameContextValue = {
   state: GameState;
   // PERF: Ref to latest state for real-time access without React re-renders
@@ -66,6 +81,7 @@ type GameContextValue = {
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
   upgradeServiceBuilding: (x: number, y: number) => boolean; // Returns true if upgrade succeeded
   placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
+  placeCustomBuilding: (x: number, y: number, customBuilding: CustomBuildingData) => boolean; // Returns true if placed
   setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => void;
   finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void; // Create bridges after road/rail drag
   setBridgeCallback: (callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => void;
@@ -974,6 +990,71 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }
   }, []);
 
+  // Place a custom AI-generated building
+  const placeCustomBuilding = useCallback((x: number, y: number, customBuilding: CustomBuildingData): boolean => {
+    let placed = false;
+    
+    setState((prev) => {
+      const { size, cost, spriteUrl, id } = customBuilding;
+      
+      // Check if we can afford it
+      if (prev.stats.money < cost) return prev;
+      
+      // Check if all tiles in the footprint are valid (grass or tree only)
+      // NOTE: 'empty' tiles are placeholders for existing multi-tile buildings, not truly empty
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) {
+          const tile = prev.grid[y + dy]?.[x + dx];
+          if (!tile) return prev; // Out of bounds
+          // Only allow placement on grass or tree - matches regular multi-tile building behavior
+          const type = tile.building.type;
+          if (type !== 'grass' && type !== 'tree') return prev;
+        }
+      }
+      
+      // Create new grid with the custom building
+      // Only the origin tile (x, y) gets the sprite URL - other tiles just mark as custom
+      const newGrid = prev.grid.map((row, rowY) => 
+        row.map((tile, colX) => {
+          // Check if this tile is within the building's footprint
+          if (colX >= x && colX < x + size && rowY >= y && rowY < y + size) {
+            const isOrigin = colX === x && rowY === y;
+            return {
+              ...tile,
+              zone: 'none' as const,
+              // Apply AI-analyzed environmental stats only to origin tile (matches regular building behavior)
+              pollution: isOrigin ? (customBuilding.stats.pollution ?? 0) : 0,
+              landValue: isOrigin ? (customBuilding.stats.landValue ?? 0) : 0,
+              building: {
+                ...tile.building,
+                type: 'custom' as BuildingType,
+                customBuildingId: id,
+                // Only set sprite URL on origin tile - prevents duplicate rendering
+                customSpriteUrl: isOrigin ? spriteUrl : undefined,
+                customSize: size,
+                level: 1,
+                population: isOrigin ? (customBuilding.stats.maxPop ?? 0) : 0,
+                jobs: isOrigin ? (customBuilding.stats.maxJobs ?? 0) : 0,
+                constructionProgress: 100,
+                abandoned: false,
+              },
+            };
+          }
+          return tile;
+        })
+      );
+      
+      placed = true;
+      return {
+        ...prev,
+        grid: newGrid,
+        stats: { ...prev.stats, money: prev.stats.money - cost },
+      };
+    });
+    
+    return placed;
+  }, []);
+
   const upgradeServiceBuildingHandler = useCallback((x: number, y: number) => {
     let upgradeSucceeded = false;
     setState((prev) => {
@@ -1637,6 +1718,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     setActivePanel,
     setBudgetFunding,
     placeAtTile,
+    placeCustomBuilding,
     upgradeServiceBuilding: upgradeServiceBuildingHandler,
     setPlaceCallback,
     finishTrackDrag,

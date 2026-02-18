@@ -3,6 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useMessages, T, Var, useGT } from 'gt-next';
 import { useGame } from '@/context/GameContext';
+import { useCustomBuildingsOptional } from '@/context/CustomBuildingsContext';
 import { TOOL_INFO, Tile, Building, BuildingType, AdjacentCity, Tool } from '@/types/game';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
@@ -61,7 +62,7 @@ import {
 } from '@/components/game/overlays';
 import { SERVICE_CONFIG, SERVICE_RANGE_INCREASE_PER_LEVEL } from '@/lib/simulation';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
-import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
+import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage, getContentBounds } from '@/components/game/imageLoader';
 import { TileInfoPanel } from '@/components/game/panels';
 import {
   findMarinasAndPiers,
@@ -125,8 +126,16 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { state, latestStateRef, placeAtTile, placeCustomBuilding, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
+  
+  // Custom buildings context for AI-generated building placement
+  const customBuildingsCtx = useCustomBuildingsOptional();
+  const selectedCustomBuildingId = customBuildingsCtx?.selectedCustomBuildingId ?? null;
+  const selectedCustomBuilding = selectedCustomBuildingId 
+    ? customBuildingsCtx?.getCustomBuilding(selectedCustomBuildingId) 
+    : null;
+  const clearCustomSelection = customBuildingsCtx?.clearSelection;
   
   // PERF: Use latestStateRef for real-time grid access in animation loops
   // This avoids waiting for React state sync which is throttled for performance
@@ -1323,6 +1332,101 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
       
+      // Handle custom AI-generated buildings
+      // Note: Background is already removed by fal.ai server-side
+      if (buildingType === 'custom' && tile.building.customSpriteUrl) {
+        const spriteUrl = tile.building.customSpriteUrl;
+        let customImg = getCachedImage(spriteUrl);
+        
+        // If not cached, start loading it
+        if (!customImg) {
+          loadImage(spriteUrl).catch((err) => {
+            console.warn('Failed to load custom building sprite:', err);
+          });
+          // Draw placeholder while loading
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.5)'; // Semi-transparent purple
+          ctx.beginPath();
+          ctx.moveTo(x + w / 2, y);
+          ctx.lineTo(x + w, y + h / 2);
+          ctx.lineTo(x + w / 2, y + h);
+          ctx.lineTo(x, y + h / 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#8B5CF6';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          return;
+        }
+        
+        if (customImg.complete && customImg.naturalWidth > 0) {
+          const customSize = tile.building.customSize || 1;
+          
+          // Calculate sprite dimensions based on building size
+          const scaleMultiplier = customSize;
+          const baseWidth = w * 1.2 * scaleMultiplier;
+          const aspectRatio = customImg.naturalHeight / customImg.naturalWidth;
+          const spriteHeight = baseWidth * aspectRatio;
+          
+          // Get content bounds to properly center the sprite
+          // This handles AI-generated images that aren't perfectly centered
+          const bounds = getContentBounds(spriteUrl, customImg);
+          
+          // x, y is the screen position of the origin tile (top-left in grid)
+          // For an NxN isometric footprint, we need to:
+          // 1. Find the screen center of the footprint (offset from origin)
+          // 2. Center the sprite horizontally there
+          // 3. Position vertically so bottom aligns with front edge
+          
+          // For square NxN footprint, center offset from origin:
+          // - X offset: 0 (symmetric diamond)
+          // - Y offset: (N-1) * (h/2) to reach the center row
+          const centerYOffset = (customSize - 1) * (h / 2);
+          
+          // Front edge Y offset (where bottom of sprite should align)
+          // Front corner is at grid (origin.x + N-1, origin.y + N-1)
+          // Screen Y offset = (N-1 + N-1) * (h/2) = (N-1) * h
+          const frontYOffset = (customSize - 1) * h;
+          
+          // Content-aware centering correction:
+          // bounds.centerOffsetX tells us how far the content is shifted from image center
+          // If content is shifted right (positive offset), we need to shift the sprite LEFT
+          // to compensate, so we subtract the offset
+          const contentCorrectionX = -bounds.centerOffsetX * baseWidth;
+          
+          // For vertical: if content is shifted down in the image, we need to shift sprite UP
+          // But we also want the BOTTOM of the content to align with the tile, not the image bottom
+          // Calculate where the content bottom is relative to image bottom
+          const imgHeight = customImg.naturalHeight;
+          const contentBottomFromImgBottom = imgHeight - bounds.maxY;
+          const contentBottomRatio = contentBottomFromImgBottom / imgHeight;
+          const contentCorrectionY = contentBottomRatio * spriteHeight;
+          
+          // Center sprite horizontally over the footprint, with content correction
+          // The footprint center is at x + w/2 (since X doesn't shift for square)
+          const spriteX = x + (w / 2) - (baseWidth / 2) + contentCorrectionX;
+          
+          // Position sprite bottom at the front edge of footprint
+          // Front edge screen Y = y + frontYOffset + h (bottom of front tile)
+          // Sprite bottom should be there, so spriteY = frontEdgeY - spriteHeight
+          // Add content correction to align actual content bottom (not image bottom) with tile
+          const frontEdgeY = y + frontYOffset + h;
+          const spriteY = frontEdgeY - spriteHeight + (h * 0.15) + contentCorrectionY;
+          
+          ctx.drawImage(customImg, spriteX, spriteY, baseWidth, spriteHeight);
+        } else {
+          // Fallback: draw a placeholder diamond while loading
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.5)';
+          ctx.beginPath();
+          ctx.moveTo(x + w / 2, y);
+          ctx.lineTo(x + w, y + h / 2);
+          ctx.lineTo(x + w / 2, y + h);
+          ctx.lineTo(x, y + h / 2);
+          ctx.closePath();
+          ctx.fill();
+        }
+        return;
+      }
+      
       // Handle roads separately with adjacency
       if (buildingType === 'road') {
         drawRoad(ctx, x, y, tile.x, tile.y, zoom, roadDrawingOptions);
@@ -1740,7 +1844,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         else {
           const isBuilding = tile.building.type !== 'grass' && tile.building.type !== 'empty';
           if (isBuilding) {
-            const size = getBuildingSize(tile.building.type);
+            // Use customSize for custom buildings, otherwise use getBuildingSize
+            const size = tile.building.type === 'custom' && tile.building.customSize
+              ? { width: tile.building.customSize, height: tile.building.customSize }
+              : getBuildingSize(tile.building.type);
             const depth = x + y + size.width + size.height - 2;
             buildingQueue.push({ screenX, screenY, tile, depth });
           }
@@ -2213,30 +2320,47 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     
     // Draw hovered tile highlight (with multi-tile preview for buildings)
     if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
-      // Check if selectedTool is a building type (not a non-building tool)
-      const nonBuildingTools: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water', 'zone_land'];
-      const isBuildingTool = selectedTool && !nonBuildingTools.includes(selectedTool);
-      
-      if (isBuildingTool) {
-        // Get building size and draw preview for all tiles in footprint
-        const buildingType = selectedTool as BuildingType;
-        const buildingSize = getBuildingSize(buildingType);
-        
-        // Draw highlight for each tile in the building footprint
-        for (let dx = 0; dx < buildingSize.width; dx++) {
-          for (let dy = 0; dy < buildingSize.height; dy++) {
+      // Check if a custom building is selected for placement
+      if (selectedCustomBuilding) {
+        const customSize = selectedCustomBuilding.size;
+        // Draw highlight for each tile in the custom building footprint
+        for (let dx = 0; dx < customSize; dx++) {
+          for (let dy = 0; dy < customSize; dy++) {
             const tx = hoveredTile.x + dx;
             const ty = hoveredTile.y + dy;
             if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
               const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
-              drawHighlight(screenX, screenY);
+              // Use purple highlight for custom buildings
+              drawHighlight(screenX, screenY, 'rgba(139, 92, 246, 0.3)', '#a78bfa');
             }
           }
         }
       } else {
-        // Single tile highlight for non-building tools
-        const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
-        drawHighlight(screenX, screenY);
+        // Check if selectedTool is a building type (not a non-building tool)
+        const nonBuildingTools: Tool[] = ['select', 'bulldoze', 'road', 'rail', 'subway', 'tree', 'zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone', 'zone_water', 'zone_land'];
+        const isBuildingTool = selectedTool && !nonBuildingTools.includes(selectedTool);
+        
+        if (isBuildingTool) {
+          // Get building size and draw preview for all tiles in footprint
+          const buildingType = selectedTool as BuildingType;
+          const buildingSize = getBuildingSize(buildingType);
+          
+          // Draw highlight for each tile in the building footprint
+          for (let dx = 0; dx < buildingSize.width; dx++) {
+            for (let dy = 0; dy < buildingSize.height; dy++) {
+              const tx = hoveredTile.x + dx;
+              const ty = hoveredTile.y + dy;
+              if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+                const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+                drawHighlight(screenX, screenY);
+              }
+            }
+          }
+        } else {
+          // Single tile highlight for non-building tools
+          const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+          drawHighlight(screenX, screenY);
+        }
       }
     }
     
@@ -2244,7 +2368,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (selectedTile && selectedTile.x >= 0 && selectedTile.x < gridSize && selectedTile.y >= 0 && selectedTile.y < gridSize) {
       const selectedOrigin = grid[selectedTile.y]?.[selectedTile.x];
       if (selectedOrigin) {
-        const selectedSize = getBuildingSize(selectedOrigin.building.type);
+        // Use customSize for custom buildings, otherwise use getBuildingSize
+        const selectedSize = selectedOrigin.building.type === 'custom' && selectedOrigin.building.customSize
+          ? { width: selectedOrigin.building.customSize, height: selectedOrigin.building.customSize }
+          : getBuildingSize(selectedOrigin.building.type);
         // Draw highlight for each tile in the building footprint
         for (let dx = 0; dx < selectedSize.width; dx++) {
           for (let dy = 0; dy < selectedSize.height; dy++) {
@@ -2375,7 +2502,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile]);
+  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile, selectedCustomBuilding]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
@@ -2557,6 +2684,24 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           return;
         }
 
+        // Handle custom building placement (AI-generated buildings)
+        if (selectedCustomBuilding && selectedCustomBuildingId) {
+          panCandidateRef.current = null;
+          const placed = placeCustomBuilding(gridX, gridY, {
+            id: selectedCustomBuilding.id,
+            name: selectedCustomBuilding.name,
+            spriteUrl: selectedCustomBuilding.spriteUrl,
+            size: selectedCustomBuilding.size,
+            cost: selectedCustomBuilding.cost,
+            stats: selectedCustomBuilding.stats,
+          });
+          if (placed && clearCustomSelection) {
+            // Clear selection after successful placement
+            clearCustomSelection();
+          }
+          return;
+        }
+        
         if (selectedTool === 'select') {
           const tile = grid[gridY]?.[gridX];
           const isOpenTile = tile?.building.type === 'empty' ||
@@ -2598,7 +2743,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
+  }, [offset, gridSize, selectedTool, placeAtTile, placeCustomBuilding, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid, selectedCustomBuilding, selectedCustomBuildingId, clearCustomSelection]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CoasterProvider } from '@/context/CoasterContext';
 import { MultiplayerContextProvider, useMultiplayerOptional } from '@/context/MultiplayerContext';
@@ -269,6 +270,7 @@ function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad
 
 function CoasterPageContent() {
   const multiplayer = useMultiplayerOptional();
+  const router = useRouter();
   const [showGame, setShowGame] = useState(false);
   const [startFresh, setStartFresh] = useState(false);
   const [hasSaved, setHasSaved] = useState(false);
@@ -309,6 +311,15 @@ function CoasterPageContent() {
     refreshSavedParks();
     window.history.replaceState({}, '', '/coaster');
   };
+
+  const handleBackToIsoCity = useCallback(() => {
+    multiplayer?.leaveRoom();
+    setShowGame(false);
+    setStartFresh(false);
+    setLoadParkId(null);
+    setPendingRoomCode(null);
+    router.push('/');
+  }, [multiplayer, router, setShowGame, setStartFresh, setLoadParkId, setPendingRoomCode]);
 
   const handleDeletePark = (park: SavedParkMeta) => {
     const autosaveState = loadCoasterStateFromStorage(COASTER_AUTOSAVE_KEY);
@@ -421,12 +432,13 @@ function CoasterPageContent() {
                   Load Example
                 </Button>
 
-                <a
-                  href="/"
+                <button
+                  type="button"
+                  onClick={handleBackToIsoCity}
                   className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                 >
                   Back to IsoCity
-                </a>
+                </button>
                 <a
                   href="https://github.com/amilich/isometric-city"
                   target="_blank"

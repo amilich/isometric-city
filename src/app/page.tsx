@@ -13,6 +13,7 @@ import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { T } from 'gt-next';
 import { Users, X } from 'lucide-react';
+import { useGT } from 'gt-next/client';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITIES_INDEX_KEY = 'isocity-saved-cities-index';
@@ -276,6 +277,7 @@ function SpriteGallery({ count = 16, cols = 4, cellSize = 120 }: { count?: numbe
 
 // Saved City Card Component
 function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad: () => void; onDelete?: () => void }) {
+  const gt = useGT();
   return (
     <div className="relative group">
       <button
@@ -288,12 +290,12 @@ function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad
           </h3>
           {city.roomCode && (
             <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded shrink-0">
-              Co-op
+              {gt('Co-op')}
             </span>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-          <span>Pop: {city.population.toLocaleString()}</span>
+          <span>{gt('Pop:')} {city.population.toLocaleString()}</span>
           <span>${city.money.toLocaleString()}</span>
           {city.roomCode && <span className="text-blue-400/60">{city.roomCode}</span>}
         </div>
@@ -305,7 +307,7 @@ function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad
             onDelete();
           }}
           className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 rounded transition-all duration-200"
-          title="Delete city"
+          title={gt('Delete city')}
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -327,6 +329,7 @@ export default function HomePage() {
   const [pendingRoomCode, setPendingRoomCode] = useState<string | null>(null);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
+  const gt = useGT();
 
   // Check for saved game and room code in URL after mount
   useEffect(() => {
@@ -446,7 +449,7 @@ export default function HomePage() {
   if (isChecking) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-white/60"><T>Loading...</T></div>
+        <div className="text-white/60">{gt('Loading...')}</div>
       </main>
     );
   }
@@ -488,11 +491,11 @@ export default function HomePage() {
           
           {/* Buttons - more compact */}
           <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-xs flex-shrink-0">
-            <Button 
+            <Button
               onClick={() => setShowGame(true)}
               className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
-              {hasSaved ? <T>Continue</T> : <T>New Game</T>}
+              {hasSaved ? gt('Continue') : gt('New Game')}
             </Button>
 
             <Button
@@ -500,7 +503,7 @@ export default function HomePage() {
               variant="outline"
               className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
             >
-              <T>Co-op</T>
+              {gt('Co-op')}
             </Button>
 
             <Button
@@ -523,7 +526,7 @@ export default function HomePage() {
               variant="outline"
               className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
             >
-              <T>Load Example</T>
+              {gt('Load Example')}
             </Button>
             <div className="flex items-start justify-between w-full">
               <div className="flex flex-col">
@@ -533,7 +536,7 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                 >
-                  <T>Made with Cursor</T>
+                  {gt('Made with Cursor')}
                 </a>
                 <a
                   href="https://github.com/amilich/isometric-city"
@@ -541,18 +544,18 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                 >
-                  <T>Open GitHub</T>
+                  {gt('Open GitHub')}
                 </a>
               </div>
               <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
             </div>
           </div>
-          
+
           {/* Saved Cities - scrollable area takes remaining space */}
           {savedCities.length > 0 && (
             <div className="w-full max-w-xs mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col">
               <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 flex-shrink-0">
-                <T>Saved Cities</T>
+                {gt('Saved Cities')}
               </h2>
               <div 
                 className="flex flex-col gap-2 flex-1 overflow-y-auto overscroll-y-contain"
@@ -597,18 +600,18 @@ export default function HomePage() {
               IsoCity
             </h1>
             <div className="flex flex-col gap-3">
-              <Button 
+              <Button
                 onClick={() => setShowGame(true)}
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
               >
-                {hasSaved ? <T>Continue</T> : <T>New Game</T>}
+                {hasSaved ? gt('Continue') : gt('New Game')}
               </Button>
               <Button
                 onClick={() => setShowCoopModal(true)}
                 variant="outline"
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
               >
-                <T>Co-op</T>
+                {gt('Co-op')}
               </Button>
               <Button
                 onClick={async () => {
@@ -630,7 +633,7 @@ export default function HomePage() {
                 variant="outline"
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
               >
-                <T>Load Example</T>
+                {gt('Load Example')}
               </Button>
               <div className="flex items-start justify-between w-64">
                 <div className="flex flex-col">
@@ -640,7 +643,7 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                   >
-                    <T>Made with Cursor</T>
+                    {gt('Made with Cursor')}
                   </a>
                   <a
                     href="https://github.com/amilich/isometric-city"
@@ -648,18 +651,18 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
                   >
-                    <T>Open GitHub</T>
+                    {gt('Open GitHub')}
                   </a>
                 </div>
                 <LanguageSelector variant="ghost" className="text-white/40 hover:text-white/70 hover:bg-white/10" />
               </div>
             </div>
-            
+
             {/* Saved Cities */}
             {savedCities.length > 0 && (
               <div className="w-64">
                 <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                  <T>Saved Cities</T>
+                  {gt('Saved Cities')}
                 </h2>
                 <div 
                   className="flex flex-col gap-2 max-h-64 overflow-y-auto overscroll-y-contain"

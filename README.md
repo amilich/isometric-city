@@ -42,7 +42,7 @@ Made with [Cursor](https://cursor.com)
 ### Prerequisites
 
 -   Node.js (v18 or higher)
--   npm or yarn
+-   npm
 
 ### Installation
 

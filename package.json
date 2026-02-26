@@ -8,6 +8,7 @@
     "build": "npm run compress-images && next build",
     "start": "next start",
     "lint": "eslint .",
+    "e2e:tower": "node scripts/tower-e2e-smoke.mjs",
     "crop-screenshots": "bash scripts/crop-screenshots.sh",
     "compress-images": "node scripts/compress-images.mjs"
   },
@@ -49,6 +50,7 @@
     "eslint": "^9.39.1",
     "eslint-config-next": "^16.1.1",
     "postcss": "^8",
+    "puppeteer-core": "^24.37.3",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.14",
     "typescript": "^5"

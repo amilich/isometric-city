@@ -428,6 +428,12 @@ function CoasterPageContent() {
                   Back to IsoCity
                 </a>
                 <a
+                  href="/tower"
+                  className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                >
+                  Play IsoTower
+                </a>
+                <a
                   href="https://github.com/amilich/isometric-city"
                   target="_blank"
                   rel="noopener noreferrer"

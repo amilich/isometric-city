@@ -1,4 +1,4 @@
-# IsoCity & IsoCoaster
+# IsoCity, IsoCoaster & IsoTower Defense
 
 Open-source isometric simulation games built with **Next.js**, **TypeScript**, and **HTML5 Canvas**.
 
@@ -21,13 +21,17 @@ Made with [Cursor](https://cursor.com)
 
 ## Features
 
+-   **Three games, one codebase**:
+    -   **IsoCity** (`/`) — city builder with traffic + economy simulation
+    -   **IsoCoaster** (`/coaster`) — theme park builder with rides + guests
+    -   **IsoTower Defense** (`/tower`) — isometric tower defense with waves, towers, and local saves
 -   **Isometric Rendering Engine**: Custom-built rendering system using HTML5 Canvas (`CanvasIsometricGrid`) capable of handling complex depth sorting, layer management, and both image and drawn sprites.
 -   **Dynamic Simulation**:
     -   **Traffic System**: Autonomous vehicles including cars, trains, planes, and seaplanes.
     -   **Pedestrian System**: Pathfinding and crowd simulation for city inhabitants.
     -   **Economy & Resources**: Resource management, zoning (Residential, Commercial, Industrial), and city growth logic.
 -   **Interactive Grid**: Tile-based placement system for buildings, roads, parks, and utilities.
--   **State Management**: Save/Load functionality for multiple cities.
+-   **State Management**: Local save/load for cities, parks, and tower defense runs.
 -   **Responsive Design**: Mobile-friendly interface with specialized touch controls and toolbars.
 
 ## Tech Stack
@@ -62,8 +66,30 @@ Made with [Cursor](https://cursor.com)
     npm run dev
     ```
 
-4.  **Open the game:**
-    Visit [http://localhost:3000](http://localhost:3000) in your browser.
+4.  **Open the games:**
+    -   IsoCity: [http://localhost:3000](http://localhost:3000)
+    -   IsoCoaster: [http://localhost:3000/coaster](http://localhost:3000/coaster)
+    -   IsoTower Defense: [http://localhost:3000/tower](http://localhost:3000/tower)
+
+### Useful commands
+
+```bash
+# Type-check + production build
+npm run build
+
+# ESLint
+npm run lint
+
+# Headless smoke test (requires Chrome/Chromium installed)
+npm run e2e:tower
+```
+
+### Tower Defense headless simulation
+
+IsoTower Defense also includes a lightweight headless simulation endpoint you can hit while developing:
+
+- `GET /api/tower-smoke` — runs a short simulation and returns JSON stats
+- Supports query params like `wave=6` (flyers), `waves=20` (simulate until victory), `noTowers=1` (force leaks/game over)
 
 ## Contributing
 

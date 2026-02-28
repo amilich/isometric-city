@@ -17,7 +17,7 @@ Open-source isometric simulation games built with **Next.js**, **TypeScript**, a
 </tr>
 </table>
 
-Made with [Cursor](https://cursor.com)
+Made with [Cursor](https://cursor.com).
 
 ## Features
 

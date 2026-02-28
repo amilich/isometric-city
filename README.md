@@ -63,7 +63,7 @@ Made with [Cursor](https://cursor.com)
     ```
 
 4.  **Open the game:**
-    Visit [http://localhost:3000](http://localhost:3000) in your browser.
+    Visit [http://localhost:3000](http://localhost:3000) in your browser. Visit [http://localhost:3000/coaster](http://localhost:3000/coaster) for IsoCoaster.
 
 ## Contributing
 

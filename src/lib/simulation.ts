@@ -1209,8 +1209,29 @@ export const SERVICE_MAX_LEVEL = 5;
 export const SERVICE_RANGE_INCREASE_PER_LEVEL = 0.2; // 20% per level (Level 1: 100%, Level 5: 180%)
 export const SERVICE_UPGRADE_COST_BASE = 2; // Cost = baseCost * (2 ^ currentLevel)
 
+// PERF: Cache service coverage - only recalc when service building positions/levels change
+let serviceCoverageCache: { key: string; result: ServiceCoverage; size: number } | null = null;
+
+function getServiceBuildingCacheKey(grid: Tile[][], size: number): string {
+  const parts: string[] = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const b = grid[y][x].building;
+      if (SERVICE_BUILDING_TYPES.has(b.type) && (b.constructionProgress ?? 100) === 100 && !b.abandoned) {
+        parts.push(`${x},${y},${b.type},${b.level ?? 1}`);
+      }
+    }
+  }
+  return parts.sort().join('|');
+}
+
 // Calculate service coverage from service buildings - optimized version
 function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage {
+  const cacheKey = getServiceBuildingCacheKey(grid, size);
+  if (serviceCoverageCache && serviceCoverageCache.key === cacheKey && serviceCoverageCache.size === size) {
+    return serviceCoverageCache.result;
+  }
+
   const services = createServiceCoverage(size);
   
   // First pass: collect all service building positions (much faster than checking every tile)
@@ -1301,6 +1322,7 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
     }
   }
 
+  serviceCoverageCache = { key: cacheKey, result: services, size };
   return services;
 }
 

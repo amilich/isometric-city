@@ -1196,12 +1196,13 @@ export const SERVICE_CONFIG = {
   university: withRange(19, { type: 'education' as const }),
   power_plant: withRange(15, {}),
   water_tower: withRange(12, {}),
+  water_treatment: withRange(20, {}),
 } as const;
 
 // Building types that provide services
 export const SERVICE_BUILDING_TYPES = new Set([
   'police_station', 'fire_station', 'hospital', 'school', 'university',
-  'power_plant', 'water_tower'
+  'power_plant', 'water_tower', 'water_treatment'
 ]);
 
 // Service building upgrade constants
@@ -1269,7 +1270,7 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
           }
         }
       }
-    } else if (type === 'water_tower') {
+    } else if (type === 'water_tower' || type === 'water_treatment') {
       for (let ny = minY; ny <= maxY; ny++) {
         for (let nx = minX; nx <= maxX; nx++) {
           const dx = nx - x;

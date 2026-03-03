@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
 import { MultiplayerContextProvider } from '@/context/MultiplayerContext';
+import { CustomBuildingsProvider } from '@/context/CustomBuildingsContext';
 import Game from '@/components/Game';
 import { CoopModal } from '@/components/multiplayer/CoopModal';
 import { useMobile } from '@/hooks/useMobile';
@@ -461,9 +462,11 @@ export default function HomePage() {
     // Always wrap in MultiplayerContextProvider so players can invite others from within the game
     return (
       <MultiplayerContextProvider>
-        <GameProvider startFresh={startFreshGame}>
-          {gameContent}
-        </GameProvider>
+        <CustomBuildingsProvider>
+          <GameProvider startFresh={startFreshGame}>
+            {gameContent}
+          </GameProvider>
+        </CustomBuildingsProvider>
       </MultiplayerContextProvider>
     );
   }

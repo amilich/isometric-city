@@ -24,8 +24,11 @@ import {
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
 import { isMobile } from 'react-device-detect';
+import { GRID_EXPANSION_STEP, MIN_GRID_SIZE, MAX_GRID_SIZE } from './gameLimits';
 
-// Default grid size for new games
+export { GRID_EXPANSION_STEP, MIN_GRID_SIZE, MAX_GRID_SIZE };
+
+// Default grid size for new games.
 export const DEFAULT_GRID_SIZE = isMobile ? 50 : 70;
 
 // Check if a factory_small at this position would render as a farm
@@ -3624,7 +3627,7 @@ export function getDevelopmentBlockers(
 export function expandGrid(
   currentGrid: Tile[][],
   currentSize: number,
-  expansion: number = 15
+  expansion: number = GRID_EXPANSION_STEP
 ): { grid: Tile[][]; newSize: number } {
   const newSize = currentSize + expansion * 2;
   const grid: Tile[][] = [];
@@ -4228,12 +4231,12 @@ export function expandGrid(
 export function shrinkGrid(
   currentGrid: Tile[][],
   currentSize: number,
-  shrinkAmount: number = 15
+  shrinkAmount: number = GRID_EXPANSION_STEP
 ): { grid: Tile[][]; newSize: number } | null {
   const newSize = currentSize - shrinkAmount * 2;
   
   // Don't allow shrinking below a minimum size
-  if (newSize < 20) {
+  if (newSize < MIN_GRID_SIZE) {
     return null;
   }
   

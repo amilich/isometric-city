@@ -26,7 +26,7 @@ Made with [Cursor](https://cursor.com).
     -   **Traffic System**: Autonomous vehicles including cars, trains, planes, and seaplanes.
     -   **Pedestrian System**: Pathfinding and crowd simulation for city inhabitants.
     -   **Economy & Resources**: Resource management, zoning (Residential, Commercial, Industrial), and city growth logic.
--   **Interactive Grid**: Tile-based placement system for buildings, roads, parks, and utilities.
+-   **Interactive Grid**: Tile-based placement system for buildings, roads, rail, parks, and utilities.
 -   **State Management**: Save/Load functionality for multiple cities.
 -   **Responsive Design**: Mobile-friendly interface with specialized touch controls and toolbars.
 

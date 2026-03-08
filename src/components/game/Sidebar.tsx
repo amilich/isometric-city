@@ -4,6 +4,7 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { msg, useMessages } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
+import { GRID_EXPANSION_STEP, MAX_GRID_SIZE, MIN_GRID_SIZE } from '@/lib/gameLimits';
 
 // Translatable category labels
 const CATEGORY_LABELS: Record<string, unknown> = {
@@ -260,7 +261,7 @@ const ActionSubmenu = React.memo(function ActionSubmenu({
   actions,
 }: {
   label: unknown;
-  actions: { key: string; name: unknown; description: string; onClick: () => void }[];
+  actions: { key: string; name: unknown; description: string; onClick: () => void; disabled?: boolean }[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, buttonHeight: 0, openUpward: false });
@@ -408,8 +409,9 @@ const ActionSubmenu = React.memo(function ActionSubmenu({
                 key={action.key}
                 onClick={action.onClick}
                 variant="ghost"
-                className="w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 hover:bg-muted/60"
+                className="w-full justify-start gap-2 px-3 py-2 h-auto text-sm transition-all duration-150 hover:bg-muted/60 disabled:opacity-50 disabled:hover:bg-transparent"
                 title={action.description}
+                disabled={action.disabled}
               >
                 <span className="flex-1 text-left truncate">{m(action.name as Parameters<typeof m>[0])}</span>
               </Button>
@@ -465,7 +467,7 @@ function ExitDialog({
 // Memoized Sidebar Component
 export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => void }) {
   const { state, setTool, setActivePanel, saveCity, expandCity, shrinkCity } = useGame();
-  const { selectedTool, stats, activePanel } = state;
+  const { selectedTool, stats, activePanel, gridSize } = state;
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const multiplayer = useMultiplayerOptional();
@@ -481,6 +483,8 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     }
   }, [multiplayer?.connectionState, multiplayer?.roomCode, multiplayer?.initialState]);
   const m = useMessages();
+  const canExpandCity = gridSize + GRID_EXPANSION_STEP * 2 <= MAX_GRID_SIZE;
+  const canShrinkCity = gridSize > MIN_GRID_SIZE;
   
   const handleSaveAndExit = useCallback(() => {
     saveCity();
@@ -513,14 +517,16 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
       name: TOOL_INFO['expand_city'].name,
       description: 'Add 15 tiles to each edge of the city',
       onClick: expandCity,
+      disabled: !canExpandCity,
     },
     {
       key: 'shrink_city',
       name: TOOL_INFO['shrink_city'].name,
       description: 'Remove 15 tiles from each edge of the city',
       onClick: shrinkCity,
+      disabled: !canShrinkCity,
     },
-  ], [expandCity, shrinkCity]);
+  ], [expandCity, shrinkCity, canExpandCity, canShrinkCity]);
   
   // Submenu categories (hover to expand) - includes all new assets from main
   const submenuCategories = useMemo(() => [

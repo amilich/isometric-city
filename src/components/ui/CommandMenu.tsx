@@ -28,6 +28,7 @@ interface MenuItem {
   name: unknown; // Raw message object from msg()
   description: unknown; // Raw message object from msg()
   cost?: number;
+  shortcut?: string; // Keyboard shortcut from TOOL_INFO
   category: string;
   keywords: string[];
 }
@@ -61,6 +62,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'tools',
       keywords: [info.name.toLowerCase(), tool, 'tool', 'infrastructure'],
     });
@@ -77,6 +79,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'zones',
       keywords: [info.name.toLowerCase(), tool, 'zone'],
     });
@@ -101,6 +104,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'zoning',
       keywords,
     });
@@ -117,6 +121,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'services',
       keywords: [info.name.toLowerCase(), tool, 'service', 'building'],
     });
@@ -133,6 +138,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'parks',
       keywords: [info.name.toLowerCase(), tool, 'park', 'green', 'nature', 'recreation', 'entertainment'],
     });
@@ -149,6 +155,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'sports',
       keywords: [info.name.toLowerCase(), tool, 'sports', 'recreation', 'field'],
     });
@@ -165,6 +172,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'waterfront',
       keywords: [info.name.toLowerCase(), tool, 'water', 'waterfront', 'dock', 'pier', 'marina'],
     });
@@ -181,6 +189,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'community',
       keywords: [info.name.toLowerCase(), tool, 'community', 'building'],
     });
@@ -197,6 +206,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'utilities',
       keywords: [info.name.toLowerCase(), tool, 'utility', 'power', 'water', 'infrastructure', 'transit', 'station', 'train'],
     });
@@ -213,6 +223,7 @@ function buildMenuItems(): MenuItem[] {
       name: info.name,
       description: info.description,
       cost: info.cost,
+      shortcut: info.shortcut,
       category: 'special',
       keywords: [info.name.toLowerCase(), tool, 'special', 'landmark', 'attraction'],
     });
@@ -456,7 +467,10 @@ export function CommandMenu() {
                             )}
                           >
                             <div className="flex flex-col gap-0.5 min-w-0">
-                              <span className="font-medium truncate">{m(item.name as Parameters<typeof m>[0])}</span>
+                              <span className="font-medium truncate">
+                                {item.shortcut ? `(${item.shortcut}) ` : ''}
+                                {m(item.name as Parameters<typeof m>[0])}
+                              </span>
                               <span className={cn(
                                 'text-xs truncate',
                                 isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'

@@ -35,7 +35,7 @@ Made with [Cursor](https://cursor.com).
 
 -   **Framework**: [Next.js 16](https://nextjs.org/)
 -   **Language**: [TypeScript](https://www.typescriptlang.org/)
--   **Graphics**: HTML5 Canvas API (No external game engine libraries; pure native implementation).
+-   **Graphics**: HTML5 Canvas (No external game engine libraries; pure native implementation).
 -   **Icons**: Lucide React.
 
 ## Getting Started

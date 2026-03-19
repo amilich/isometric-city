@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
 import { LocaleSelector } from 'gt-next';
+import { GRID_EXPANSION_STEP, MAX_GRID_SIZE, MIN_GRID_SIZE } from '@/lib/gameLimits';
 
 // Translatable UI labels
 const UI_LABELS = {
@@ -31,7 +32,7 @@ const UI_LABELS = {
   autoSave: msg('Auto-Save'),
   enabled: msg('Enabled'),
   expandCity: msg('Expand City (+30x30)'),
-  expandCityDesc: msg('Add 15 tiles on each side. Land edges extend as land, water edges extend as water.'),
+  expandCityDesc: msg('Add 15 tiles on each side. Land edges extend as land, water edges extend as water. Maximum size: 250 x 250.'),
   shrinkCity: msg('Shrink City (-30x30)'),
   shrinkCityDesc: msg('Remove 15 tiles from each edge. Buildings on edges will be deleted.'),
   savedCities: msg('Saved Cities'),
@@ -71,6 +72,7 @@ const UI_LABELS = {
   auto: msg('Auto'),
   day: msg('Day'),
   night: msg('Night'),
+  cannotExpand: msg('Cannot expand city further - maximum size reached.'),
   cannotShrink: msg('Cannot shrink city further - minimum size reached.'),
 };
 
@@ -299,8 +301,12 @@ export function SettingsPanel() {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    expandCity();
+                    const success = expandCity();
+                    if (!success) {
+                      alert(String(m(UI_LABELS.cannotExpand)));
+                    }
                   }}
+                  disabled={gridSize + GRID_EXPANSION_STEP * 2 > MAX_GRID_SIZE}
                 >
                   {m(UI_LABELS.expandCity)}
                 </Button>
@@ -318,7 +324,7 @@ export function SettingsPanel() {
                       alert(String(m(UI_LABELS.cannotShrink)));
                     }
                   }}
-                  disabled={gridSize <= 50}
+                  disabled={gridSize <= MIN_GRID_SIZE}
                 >
                   {m(UI_LABELS.shrinkCity)}
                 </Button>

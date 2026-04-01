@@ -7,8 +7,9 @@ import { OPPOSITE_DIRECTION } from './constants';
 const MAX_PATH_LENGTH = 2048;
 const BFS_QUEUE_X = new Int16Array(MAX_PATH_LENGTH);
 const BFS_QUEUE_Y = new Int16Array(MAX_PATH_LENGTH);
-const BFS_PARENT_X = new Int16Array(MAX_PATH_LENGTH); // Parent index for path reconstruction
-const BFS_PARENT_Y = new Int16Array(MAX_PATH_LENGTH);
+// PERF: Store parent queue index directly instead of parent coordinates
+// This makes path reconstruction O(n) instead of O(n²) by avoiding linear search
+const BFS_PARENT_IDX = new Int32Array(MAX_PATH_LENGTH);
 const BFS_VISITED = new Uint8Array(256 * 256); // Max 256x256 grid size
 
 // Get opposite direction
@@ -268,8 +269,7 @@ export function findPathOnRoads(
   let queueTail = 1;
   BFS_QUEUE_X[0] = startRoad.x;
   BFS_QUEUE_Y[0] = startRoad.y;
-  BFS_PARENT_X[0] = -1; // -1 indicates start node
-  BFS_PARENT_Y[0] = -1;
+  BFS_PARENT_IDX[0] = -1; // -1 indicates start node
   BFS_VISITED[startRoad.y * gridSizeValue + startRoad.x] = 1;
   
   // Direction offsets
@@ -303,37 +303,20 @@ export function findPathOnRoads(
       BFS_VISITED[visitedIdx] = 1;
       BFS_QUEUE_X[queueTail] = nx;
       BFS_QUEUE_Y[queueTail] = ny;
-      BFS_PARENT_X[queueTail] = cx;
-      BFS_PARENT_Y[queueTail] = cy;
+      BFS_PARENT_IDX[queueTail] = currentIdx;
       queueTail++;
     }
   }
   
   if (foundIdx === -1) return null;
   
-  // Reconstruct path by walking back through parents
+  // PERF: O(n) path reconstruction using direct parent index lookup
   const pathReverse: { x: number; y: number }[] = [];
   let idx = foundIdx;
   
-  // Walk back through the BFS tree to reconstruct path
   while (idx >= 0) {
     pathReverse.push({ x: BFS_QUEUE_X[idx], y: BFS_QUEUE_Y[idx] });
-    
-    // Find parent index by searching queue
-    const px = BFS_PARENT_X[idx];
-    const py = BFS_PARENT_Y[idx];
-    
-    if (px === -1) break; // Reached start
-    
-    // Search backwards for parent position in queue
-    let parentIdx = -1;
-    for (let i = idx - 1; i >= 0; i--) {
-      if (BFS_QUEUE_X[i] === px && BFS_QUEUE_Y[i] === py) {
-        parentIdx = i;
-        break;
-      }
-    }
-    idx = parentIdx;
+    idx = BFS_PARENT_IDX[idx];
   }
   
   // Reverse to get path from start to target

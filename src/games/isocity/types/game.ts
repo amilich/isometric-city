@@ -30,23 +30,24 @@ export interface ToolInfo {
   cost: number;
   description: string;
   size?: number;
+  shortcut?: string;
 }
 
 export const TOOL_INFO: Record<Tool, ToolInfo> = {
-  select: { name: msg('Select'), cost: 0, description: msg('Click to view tile info') },
-  bulldoze: { name: msg('Bulldoze'), cost: 10, description: msg('Remove buildings and zones') },
-  road: { name: msg('Road'), cost: 25, description: msg('Connect your city') },
-  rail: { name: msg('Rail'), cost: 40, description: msg('Build railway tracks') },
-  subway: { name: msg('Subway'), cost: 50, description: msg('Underground transit') },
+  select: { name: msg('Select'), cost: 0, description: msg('Click to view tile info'), shortcut: 'v' },
+  bulldoze: { name: msg('Bulldoze'), cost: 10, description: msg('Remove buildings and zones'), shortcut: 'b' },
+  road: { name: msg('Road'), cost: 25, description: msg('Connect your city'), shortcut: 'r' },
+  rail: { name: msg('Rail'), cost: 40, description: msg('Build railway tracks'), shortcut: 'l' },
+  subway: { name: msg('Subway'), cost: 50, description: msg('Underground transit'), shortcut: 'u' },
   expand_city: { name: msg('Expand City'), cost: 0, description: msg('Add 15 tiles to each edge') },
   shrink_city: { name: msg('Shrink City'), cost: 0, description: msg('Remove 15 tiles from each edge') },
   tree: { name: msg('Tree'), cost: 15, description: msg('Plant trees to improve environment') },
-  zone_residential: { name: msg('Residential'), cost: 50, description: msg('Zone for housing') },
-  zone_commercial: { name: msg('Commercial'), cost: 50, description: msg('Zone for shops and offices') },
-  zone_industrial: { name: msg('Industrial'), cost: 50, description: msg('Zone for factories') },
-  zone_dezone: { name: msg('De-zone'), cost: 0, description: msg('Remove zoning') },
-  zone_water: { name: msg('Water Terraform'), cost: 50000, description: msg('Terraform land into water') },
-  zone_land: { name: msg('Land Terraform'), cost: 50000, description: msg('Terraform water into land') },
+  zone_residential: { name: msg('Residential'), cost: 50, description: msg('Zone for housing'), shortcut: '1' },
+  zone_commercial: { name: msg('Commercial'), cost: 50, description: msg('Zone for shops and offices'), shortcut: '2' },
+  zone_industrial: { name: msg('Industrial'), cost: 50, description: msg('Zone for factories'), shortcut: '3' },
+  zone_dezone: { name: msg('De-zone'), cost: 0, description: msg('Remove zoning'), shortcut: 'x' },
+  zone_water: { name: msg('Water Terraform'), cost: 50000, description: msg('Terraform land into water'), shortcut: 'o' },
+  zone_land: { name: msg('Land Terraform'), cost: 50000, description: msg('Terraform water into land'), shortcut: 'g' },
   police_station: { name: msg('Police'), cost: 500, description: msg('Increase safety'), size: 1 },
   fire_station: { name: msg('Fire Station'), cost: 500, description: msg('Fight fires'), size: 1 },
   hospital: { name: msg('Hospital'), cost: 1000, description: msg('Improve health (2x2)'), size: 2 },

@@ -69,7 +69,7 @@ Made with [Cursor](https://cursor.com).
 
 ## Contributing
 
-Contributions, bug reports, feature requests, and pull requests are welcome.
+Contributions, bug reports, and feature requests are welcome.
 
 ## License
 

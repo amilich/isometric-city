@@ -84,6 +84,12 @@ export const OVERLAY_CONFIG: Record<OverlayMode, OverlayConfig> = {
     activeColor: 'bg-yellow-500',
     hoverColor: 'hover:bg-yellow-600',
   },
+  pollution: {
+    label: 'Pollution',
+    title: 'Pollution Map',
+    activeColor: 'bg-stone-500',
+    hoverColor: 'hover:bg-stone-600',
+  },
 };
 
 /** Map of building tools to their corresponding overlay mode */
@@ -184,6 +190,12 @@ export function getOverlayFillStyle(
         ? 'rgba(245, 158, 11, 0.7)'  // Bright amber for existing subway
         : 'rgba(40, 30, 20, 0.4)';   // Dark brown tint for "underground" view
 
+    case 'pollution':
+      if (tile.pollution <= 0.1) return NO_OVERLAY;
+      // Smog opacity scales with pollution intensity (brown-grey color)
+      const alpha = Math.min(0.65, Math.max(0.15, tile.pollution / 60));
+      return `rgba(139, 115, 85, ${alpha})`;
+
     case 'none':
     default:
       return NO_OVERLAY;
@@ -200,7 +212,7 @@ export function getOverlayForTool(tool: string): OverlayMode {
 
 /** List of all overlay modes (for iteration) */
 export const OVERLAY_MODES: OverlayMode[] = [
-  'none', 'power', 'water', 'fire', 'police', 'health', 'education', 'subway'
+  'none', 'power', 'water', 'fire', 'police', 'health', 'education', 'subway', 'pollution'
 ];
 
 // ============================================================================
@@ -217,6 +229,7 @@ export const OVERLAY_TO_BUILDING_TYPES: Record<OverlayMode, string[]> = {
   health: ['hospital'],
   education: ['school', 'university'],
   subway: ['subway_station'],
+  pollution: ['power_plant', 'factory_small', 'factory_medium', 'factory_large', 'warehouse'],
 };
 
 /** Overlay circle stroke colors (light/visible colors) */
@@ -229,6 +242,7 @@ export const OVERLAY_CIRCLE_COLORS: Record<OverlayMode, string> = {
   health: 'rgba(134, 239, 172, 0.8)',  // Light green
   education: 'rgba(196, 181, 253, 0.8)', // Light purple
   subway: 'rgba(253, 224, 71, 0.8)',   // Yellow
+  pollution: 'transparent',
 };
 
 /** Building highlight glow colors */
@@ -241,6 +255,7 @@ export const OVERLAY_HIGHLIGHT_COLORS: Record<OverlayMode, string> = {
   health: 'rgba(34, 197, 94, 1)',      // Green
   education: 'rgba(168, 85, 247, 1)',  // Purple
   subway: 'rgba(234, 179, 8, 1)',      // Yellow
+  pollution: 'rgba(239, 68, 68, 0.8)',  // Red glow outlines for pollution sources
 };
 
 /** Overlay circle fill colors (subtle, for area visibility) */
@@ -253,4 +268,5 @@ export const OVERLAY_CIRCLE_FILL_COLORS: Record<OverlayMode, string> = {
   health: 'rgba(134, 239, 172, 0.12)',
   education: 'rgba(196, 181, 253, 0.12)',
   subway: 'rgba(253, 224, 71, 0.12)',
+  pollution: 'transparent',
 };

@@ -58,6 +58,7 @@ import {
   OVERLAY_CIRCLE_COLORS,
   OVERLAY_CIRCLE_FILL_COLORS,
   OVERLAY_HIGHLIGHT_COLORS,
+  getOverlayForTool,
 } from '@/components/game/overlays';
 import { SERVICE_CONFIG, SERVICE_RANGE_INCREASE_PER_LEVEL } from '@/lib/simulation';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
@@ -125,7 +126,7 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, showRangePreview } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   
   // PERF: Use latestStateRef for real-time grid access in animation loops
@@ -2222,6 +2223,41 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         const buildingType = selectedTool as BuildingType;
         const buildingSize = getBuildingSize(buildingType);
         
+        // Draw service range preview if the building has a service range
+        if (buildingType in SERVICE_CONFIG && showRangePreview) {
+          const config = SERVICE_CONFIG[buildingType as keyof typeof SERVICE_CONFIG];
+          const range = config.range;
+          
+          // Calculate center of the range circle based on the footprint anchor (top-left)
+          const { screenX: anchorScreenX, screenY: anchorScreenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+          
+          // Anchor tile center
+          const centerX = anchorScreenX + TILE_WIDTH / 2;
+          const centerY = anchorScreenY + TILE_HEIGHT / 2;
+          
+          // Isometric ellipse radii (in pixels)
+          const radiusX = range * (TILE_WIDTH / 2);
+          const radiusY = range * (TILE_HEIGHT / 2);
+          
+          // Map building type to overlay mode colors
+          const toolOverlayMode = getOverlayForTool(selectedTool);
+          const strokeColor = OVERLAY_CIRCLE_COLORS[toolOverlayMode] || 'rgba(255, 255, 255, 0.8)';
+          const fillColor = OVERLAY_CIRCLE_FILL_COLORS[toolOverlayMode] || 'rgba(255, 255, 255, 0.12)';
+          
+          // Draw isometric ellipse
+          ctx.save();
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 2 / zoom; // Keep consistent stroke width across zooms
+          ctx.setLineDash([6 / zoom, 4 / zoom]); // Dash pattern that scales with zoom
+          ctx.beginPath();
+          ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          ctx.fillStyle = fillColor;
+          ctx.fill();
+          ctx.restore();
+        }
+        
         // Draw highlight for each tile in the building footprint
         for (let dx = 0; dx < buildingSize.width; dx++) {
           for (let dy = 0; dy < buildingSize.height; dy++) {
@@ -2375,7 +2411,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile]);
+  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile, showRangePreview]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {

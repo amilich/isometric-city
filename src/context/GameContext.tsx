@@ -91,6 +91,9 @@ type GameContextValue = {
   // Day/night mode override
   dayNightMode: DayNightMode;
   setDayNightMode: (mode: DayNightMode) => void;
+  // Range preview setting
+  showRangePreview: boolean;
+  setShowRangePreview: (enabled: boolean) => void;
   visualHour: number; // The hour to use for rendering (respects day/night mode override)
   // Save/restore city for shared links
   saveCurrentCityForRestore: () => void;
@@ -669,6 +672,9 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   
+  // Range preview state
+  const [showRangePreview, setShowRangePreviewState] = useState<boolean>(true);
+  
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
     // Load sprite pack preference
@@ -680,6 +686,12 @@ export function GameProvider({ children, startFresh = false }: { children: React
     // Load day/night mode preference
     const savedDayNightMode = loadDayNightMode();
     setDayNightModeState(savedDayNightMode);
+    
+    // Load show range preview preference
+    const savedShowRange = localStorage.getItem('isocity-show-range-preview');
+    if (savedShowRange !== null) {
+      setShowRangePreviewState(savedShowRange === 'true');
+    }
     
     // Load saved cities index
     const cities = loadSavedCitiesIndex();
@@ -1115,6 +1127,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
   const setDayNightMode = useCallback((mode: DayNightMode) => {
     setDayNightModeState(mode);
     saveDayNightMode(mode);
+  }, []);
+
+  const setShowRangePreview = useCallback((enabled: boolean) => {
+    setShowRangePreviewState(enabled);
+    localStorage.setItem('isocity-show-range-preview', String(enabled));
   }, []);
 
   // Compute the visual hour based on the day/night mode override
@@ -1664,6 +1681,9 @@ export function GameProvider({ children, startFresh = false }: { children: React
     dayNightMode,
     setDayNightMode,
     visualHour,
+    // Range preview setting
+    showRangePreview,
+    setShowRangePreview,
     // Save/restore city for shared links
     saveCurrentCityForRestore,
     restoreSavedCity,

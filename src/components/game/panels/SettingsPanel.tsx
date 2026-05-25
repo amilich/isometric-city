@@ -128,7 +128,7 @@ function formatMoney(money: number): string {
 }
 
 export function SettingsPanel() {
-  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, expandCity, shrinkCity, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
+  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, expandCity, shrinkCity, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity, showRangePreview, setShowRangePreview } = useGame();
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
   const m = useMessages();
   const searchParams = useSearchParams();
@@ -230,6 +230,17 @@ export function SettingsPanel() {
               <Switch
                 checked={disastersEnabled}
                 onCheckedChange={setDisastersEnabled}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between py-2 gap-4">
+              <div className="flex-1 min-w-0">
+                <Label>{m(msg('Show Range Previews'))}</Label>
+                <p className="text-muted-foreground text-xs">{m(msg('Show building ranges when placing them'))}</p>
+              </div>
+              <Switch
+                checked={showRangePreview}
+                onCheckedChange={setShowRangePreview}
               />
             </div>
             

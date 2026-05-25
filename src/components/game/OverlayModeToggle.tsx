@@ -14,6 +14,7 @@ import {
   HealthIcon,
   EducationIcon,
   SubwayIcon,
+  EnvironmentIcon,
 } from '@/components/ui/Icons';
 import { OverlayMode } from './types';
 import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
@@ -41,6 +42,7 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   health: <HealthIcon size={14} />,
   education: <EducationIcon size={14} />,
   subway: <SubwayIcon size={14} />,
+  pollution: <EnvironmentIcon size={14} />,
 };
 
 // ============================================================================

@@ -1,6 +1,6 @@
 # IsoCity & IsoCoaster
 
-Open-source isometric simulation game built with NextJS, TypeScript, and HTML5 Canvas.
+Open-source isometric simulation game built with [Next.js](https://nextjs.org/), TypeScript, and HTML5 Canvas.
 
 <table>
 <tr>

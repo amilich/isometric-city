@@ -29,11 +29,11 @@ Made with [Cursor](https://cursor.com).
     -   **Economy & Resources**: Resource management, zoning (Residential, Commercial, Industrial), and city growth logic.
 -   **Interactive Grid**: Tile-based placement system for buildings, roads, rail, parks, utilities, and more.
 -   **State Management**: Save and load functionality for multiple cities.
--   **Responsive Design**: Mobile-friendly interface with touch friendly controls, drawers, and toolbars.
+-   **Responsive Design**: Mobile-friendly interface with touch-friendly controls, drawers, and toolbars.
 
 ## Tech Stack
 
--   **Framework**: [Next.js 16](https://nextjs.org/)
+-   **Framework**: [Next.js 16](https://nextjs.org/) with [React 19](https://react.dev/)
 -   **Language**: [TypeScript](https://www.typescriptlang.org/)
 -   **Graphics**: HTML5 Canvas (No external game engine libraries; pure native implementation).
 -   **Icons**: Lucide React.

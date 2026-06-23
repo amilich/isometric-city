@@ -5,6 +5,7 @@
 - `npm run build` - Production build (also type-checks)
 - `npm run lint` - Run ESLint
 - No test framework configured
+- Dev server: `http://localhost:3000` (IsoCity), `/coaster` for IsoCoaster
 
 ## Architecture
 Next.js 16 + React 19 isometric city-builder game with canvas rendering.

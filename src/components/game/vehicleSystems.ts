@@ -4,7 +4,7 @@ import { BUS_COLORS, BUS_MIN_POPULATION, BUS_MIN_ZOOM, BUS_SPEED_MAX, BUS_SPEED_
 import { isRoadTile, getDirectionOptions, pickNextDirection, findPathOnRoads, getDirectionToTile, gridToScreen } from './utils';
 import { findBusStops, findResidentialBuildings, findPedestrianDestinations, findStations, findFires, findRecreationAreas, findEnterableBuildings, SPORTS_TYPES, ACTIVE_RECREATION_TYPES } from './gridFinders';
 import { drawPedestrians as drawPedestriansUtil } from './drawPedestrians';
-import { BuildingType, Tile } from '@/types/game';
+import { BuildingType, GameState, Tile } from '@/types/game';
 import { getTrafficLightState, canProceedThroughIntersection, TRAFFIC_LIGHT_TIMING } from './trafficSystem';
 import { isRailroadCrossing, shouldStopAtCrossing } from './railSystem';
 import { CrimeType, getRandomCrimeType, getCrimeDuration } from './incidentData';
@@ -52,18 +52,11 @@ export interface VehicleSystemRefs {
 
 export interface VehicleSystemState {
   worldStateRef: React.MutableRefObject<WorldRenderState>;
+  latestStateRef: React.RefObject<GameState>;
   gridVersionRef: React.MutableRefObject<number>;
   cachedRoadTileCountRef: React.MutableRefObject<{ count: number; gridVersion: number }>;
   // PERF: Pre-computed intersection map to avoid repeated getDirectionOptions() calls per-car per-frame
   cachedIntersectionMapRef: React.MutableRefObject<{ map: Map<number, boolean>; gridVersion: number }>;
-  state: {
-    services: {
-      police: number[][];
-    };
-    stats: {
-      population: number;
-    };
-  };
   isMobile: boolean;
 }
 
@@ -92,7 +85,7 @@ export function useVehicleSystems(
     trainsRef,
   } = refs;
 
-  const { worldStateRef, gridVersionRef, cachedRoadTileCountRef, cachedIntersectionMapRef, state, isMobile } = systemState;
+  const { worldStateRef, latestStateRef, gridVersionRef, cachedRoadTileCountRef, cachedIntersectionMapRef, isMobile } = systemState;
 
   const spawnRandomCar = useCallback(() => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
@@ -526,7 +519,7 @@ export function useVehicleSystems(
         const hasActivity = tile.building.population > 0 || tile.building.jobs > 0;
         
         if (isBuilding && hasActivity) {
-          const policeCoverage = state.services.police[y]?.[x] || 0;
+          const policeCoverage = latestStateRef.current.services.police[y]?.[x] || 0;
           eligibleTiles.push({ x, y, policeCoverage });
         }
       }
@@ -537,7 +530,7 @@ export function useVehicleSystems(
     const avgCoverage = eligibleTiles.reduce((sum, t) => sum + t.policeCoverage, 0) / eligibleTiles.length;
     const baseChance = avgCoverage < 20 ? 0.4 : avgCoverage < 40 ? 0.25 : avgCoverage < 60 ? 0.15 : 0.08;
     
-    const population = state.stats.population;
+    const population = latestStateRef.current.stats.population;
     const maxActiveCrimes = Math.max(2, Math.floor(population / 500));
     
     if (activeCrimeIncidentsRef.current.size >= maxActiveCrimes) return;
@@ -570,7 +563,7 @@ export function useVehicleSystems(
         timeRemaining: duration,
       });
     }
-  }, [worldStateRef, crimeSpawnTimerRef, activeCrimeIncidentsRef, state.services.police, state.stats.population]);
+  }, [worldStateRef, latestStateRef, crimeSpawnTimerRef, activeCrimeIncidentsRef]);
 
   const updateCrimeIncidents = useCallback((delta: number) => {
     const { speed: currentSpeed } = worldStateRef.current;
@@ -1172,7 +1165,8 @@ export function useVehicleSystems(
       return;
     }
 
-    if (state.stats.population < BUS_MIN_POPULATION) {
+    const population = latestStateRef.current.stats.population;
+    if (population < BUS_MIN_POPULATION) {
       busesRef.current = [];
       return;
     }
@@ -1198,7 +1192,7 @@ export function useVehicleSystems(
 
     const maxBuses = isMobile ? MAX_BUSES_MOBILE : MAX_BUSES;
     const roadFactor = Math.max(1, Math.floor(roadTileCount / 120));
-    const populationFactor = Math.min(1, state.stats.population / 4000);
+    const populationFactor = Math.min(1, population / 4000);
     const targetBuses = Math.min(maxBuses, Math.max(2, Math.floor(roadFactor * (1 + populationFactor * 2))));
 
     busSpawnTimerRef.current -= delta;
@@ -1311,7 +1305,7 @@ export function useVehicleSystems(
     }
 
     busesRef.current = updatedBuses;
-  }, [worldStateRef, state.stats.population, isMobile, busesRef, busSpawnTimerRef, spawnBus, buildBusRouteFrom, trafficLightTimerRef, trainsRef, gridVersionRef, cachedRoadTileCountRef, isIntersection]);
+  }, [worldStateRef, latestStateRef, isMobile, busesRef, busSpawnTimerRef, spawnBus, buildBusRouteFrom, trafficLightTimerRef, trainsRef, gridVersionRef, cachedRoadTileCountRef, isIntersection]);
 
   const updatePedestrians = useCallback((delta: number) => {
     const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed, zoom: currentZoom } = worldStateRef.current;

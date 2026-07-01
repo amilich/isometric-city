@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { useMessages, T, Var, useGT } from 'gt-next';
-import { useGame } from '@/context/GameContext';
+import { useGameActions, useGameState } from '@/context/GameContext';
 import { TOOL_INFO, Tile, Building, BuildingType, AdjacentCity, Tool } from '@/types/game';
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
@@ -125,7 +125,8 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities } = useGameActions();
+  const { state, currentSpritePack, visualHour } = useGameState();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   
   // PERF: Use latestStateRef for real-time grid access in animation loops
@@ -258,6 +259,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
   // PERF: Cache background gradient - only recreate when canvas height changes
   const bgGradientCacheRef = useRef<{ gradient: CanvasGradient | null; height: number }>({ gradient: null, height: 0 });
+  const buildingsCanvasSizeRef = useRef({ width: 0, height: 0 });
 
   // PERF: Render queue arrays cached across frames to reduce GC pressure
   // These are cleared at the start of each render frame with .length = 0
@@ -331,13 +333,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
   const vehicleSystemState: VehicleSystemState = {
     worldStateRef,
+    latestStateRef,
     gridVersionRef,
     cachedRoadTileCountRef,
     cachedIntersectionMapRef,
-    state: {
-      services: state.services,
-      stats: state.stats,
-    },
     isMobile,
   };
 
@@ -596,9 +595,20 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     zoomRef.current = zoom;
   }, [zoom]);
 
-  // Notify parent of viewport changes for minimap
+  // Notify parent of viewport changes for minimap (throttled to reduce React re-renders during pan)
+  const viewportThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    onViewportChange?.({ offset, zoom, canvasSize });
+    if (viewportThrottleRef.current) {
+      clearTimeout(viewportThrottleRef.current);
+    }
+    viewportThrottleRef.current = setTimeout(() => {
+      onViewportChange?.({ offset, zoom, canvasSize });
+    }, 100);
+    return () => {
+      if (viewportThrottleRef.current) {
+        clearTimeout(viewportThrottleRef.current);
+      }
+    };
   }, [offset, zoom, canvasSize, onViewportChange]);
 
   // Keyboard panning (WASD / arrow keys)
@@ -1972,9 +1982,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     // Render buildings on the buildings canvas (on top of cars/trains)
     const buildingsCanvas = buildingsCanvasRef.current;
     if (buildingsCanvas) {
-      // Set canvas size in memory (scaled for DPI)
-      buildingsCanvas.width = canvasSize.width;
-      buildingsCanvas.height = canvasSize.height;
+      // PERF: Only resize canvas when dimensions change (resizing clears the GPU buffer)
+      const cachedSize = buildingsCanvasSizeRef.current;
+      if (cachedSize.width !== canvasSize.width || cachedSize.height !== canvasSize.height) {
+        buildingsCanvas.width = canvasSize.width;
+        buildingsCanvas.height = canvasSize.height;
+        buildingsCanvasSizeRef.current = { width: canvasSize.width, height: canvasSize.height };
+      }
       
       const buildingsCtx = buildingsCanvas.getContext('2d');
       if (buildingsCtx) {

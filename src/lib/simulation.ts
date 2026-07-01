@@ -1346,6 +1346,36 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
   return services;
 }
 
+// PERF: Only recalculate service coverage when service buildings change
+function hasServiceBuildingChanges(
+  state: GameState,
+  newGrid: Tile[][],
+  modifiedRows: Set<number>,
+  size: number,
+): boolean {
+  for (const y of modifiedRows) {
+    const oldRow = state.grid[y];
+    const newRow = newGrid[y];
+    for (let x = 0; x < size; x++) {
+      const oldBuilding = oldRow[x].building;
+      const newBuilding = newRow[x].building;
+      const hadService = SERVICE_BUILDING_TYPES.has(oldBuilding.type);
+      const hasService = SERVICE_BUILDING_TYPES.has(newBuilding.type);
+      if (!hadService && !hasService) continue;
+
+      if (
+        oldBuilding.type !== newBuilding.type ||
+        oldBuilding.level !== newBuilding.level ||
+        oldBuilding.constructionProgress !== newBuilding.constructionProgress ||
+        oldBuilding.abandoned !== newBuilding.abandoned
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Upgrade a service building by increasing its level (increases coverage range)
 // Returns updated state if successful, null if upgrade fails
 export function upgradeServiceBuilding(state: GameState, x: number, y: number): GameState | null {
@@ -2153,9 +2183,6 @@ export function simulateTick(state: GameState): GameState {
   // Optimized: shallow clone rows, deep clone tiles only when modified
   const size = state.gridSize;
   
-  // Pre-calculate service coverage once (read-only operation on original grid)
-  const services = calculateServiceCoverage(state.grid, size);
-  
   // Track which rows have been modified to avoid unnecessary row cloning
   const modifiedRows = new Set<number>();
   const newGrid: Tile[][] = new Array(size);
@@ -2174,6 +2201,9 @@ export function simulateTick(state: GameState): GameState {
     }
     return newGrid[y][x];
   };
+
+  // PERF: Reuse cached service coverage unless a service building changed this tick
+  let services = state.services;
 
   // Process all tiles
   for (let y = 0; y < size; y++) {
@@ -2406,6 +2436,25 @@ export function simulateTick(state: GameState): GameState {
     }
   }
 
+  // PERF: Recalculate service coverage only when service buildings changed
+  if (hasServiceBuildingChanges(state, newGrid, modifiedRows, size)) {
+    services = calculateServiceCoverage(newGrid, size);
+
+    // Sync powered/watered flags for tiles affected by the coverage change
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const tile = newGrid[y][x];
+        const newPowered = services.power[y][x];
+        const newWatered = services.water[y][x];
+        if (tile.building.powered !== newPowered || tile.building.watered !== newWatered) {
+          const modTile = getModifiableTile(x, y);
+          modTile.building.powered = newPowered;
+          modTile.building.watered = newWatered;
+        }
+      }
+    }
+  }
+
   // Update budget costs
   const newBudget = updateBudgetCosts(newGrid, state.budget);
 
@@ -2463,8 +2512,10 @@ export function simulateTick(state: GameState): GameState {
     newYear++;
   }
 
-  // Generate advisor messages
-  const advisorMessages = generateAdvisorMessages(newStats, services, newGrid);
+  // PERF: Only regenerate advisor messages once per game day
+  const advisorMessages = newDay !== state.day
+    ? generateAdvisorMessages(newStats, services, newGrid)
+    : state.advisorMessages;
 
   // Keep existing notifications
   const newNotifications = [...state.notifications];

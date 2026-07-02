@@ -36,6 +36,7 @@ import {
   setActiveSpritePack,
   SpritePack,
 } from '@/lib/renderConfig';
+import { useGT } from 'gt-next';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITY_STORAGE_KEY = 'isocity-saved-city'; // For restoring after viewing shared city
@@ -669,6 +670,8 @@ export function GameProvider({ children, startFresh = false }: { children: React
   
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+
+  const gt = useGT();
   
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
@@ -1038,8 +1041,8 @@ export function GameProvider({ children, startFresh = false }: { children: React
         notifications: [
           {
             id: `city-connect-${Date.now()}`,
-            title: 'City Connected!',
-            description: `Trade route established with ${city.name}. +$${tradeBonus} bonus and +$${tradeIncome}/month income.`,
+            title: gt('City Connected!'),
+            description: gt('Trade route established with {cityName}. +${tradeBonus} bonus and +${tradeIncome}/month income.', { cityName: city.name, tradeBonus, tradeIncome }),
             icon: 'road',
             timestamp: Date.now(),
           },
@@ -1065,8 +1068,8 @@ export function GameProvider({ children, startFresh = false }: { children: React
         notifications: [
           {
             id: `city-discover-${Date.now()}`,
-            title: 'City Discovered!',
-            description: `Your road has reached the ${city.direction} border! You can now connect to ${city.name}.`,
+            title: gt('City Discovered!'),
+            description: gt('Your road has reached the {direction} border! You can now connect to {cityName}.', { direction: city.direction, cityName: city.name }),
             icon: 'road',
             timestamp: Date.now(),
           },

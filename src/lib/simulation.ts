@@ -23,6 +23,7 @@ import {
   TOOL_INFO,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import { msg } from 'gt-next';
 import { isMobile } from 'react-device-detect';
 
 // Default grid size for new games
@@ -1090,14 +1091,14 @@ export function createBridgesOnPath(
 
 function createInitialBudget(): Budget {
   return {
-    police: { name: 'Police', funding: 100, cost: 0 },
-    fire: { name: 'Fire', funding: 100, cost: 0 },
-    health: { name: 'Health', funding: 100, cost: 0 },
-    education: { name: 'Education', funding: 100, cost: 0 },
-    transportation: { name: 'Transportation', funding: 100, cost: 0 },
-    parks: { name: 'Parks', funding: 100, cost: 0 },
-    power: { name: 'Power', funding: 100, cost: 0 },
-    water: { name: 'Water', funding: 100, cost: 0 },
+    police: { name: msg('Police'), funding: 100, cost: 0 },
+    fire: { name: msg('Fire'), funding: 100, cost: 0 },
+    health: { name: msg('Health'), funding: 100, cost: 0 },
+    education: { name: msg('Education'), funding: 100, cost: 0 },
+    transportation: { name: msg('Transportation'), funding: 100, cost: 0 },
+    parks: { name: msg('Parks'), funding: 100, cost: 0 },
+    power: { name: msg('Power'), funding: 100, cost: 0 },
+    water: { name: msg('Water'), funding: 100, cost: 0 },
   };
 }
 
@@ -2076,9 +2077,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Power advisor
   if (unpoweredBuildings > 0) {
     messages.push({
-      name: 'Power Advisor',
+      name: msg('Power Advisor'),
       icon: 'power',
-      messages: [`${unpoweredBuildings} buildings lack power. Build more power plants!`],
+      messages: [msg('{count} buildings lack power. Build more power plants!', { count: unpoweredBuildings })],
       priority: unpoweredBuildings > 10 ? 'high' : 'medium',
     });
   }
@@ -2086,9 +2087,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Water advisor
   if (unwateredBuildings > 0) {
     messages.push({
-      name: 'Water Advisor',
+      name: msg('Water Advisor'),
       icon: 'water',
-      messages: [`${unwateredBuildings} buildings lack water. Build water towers!`],
+      messages: [msg('{count} buildings lack water. Build water towers!', { count: unwateredBuildings })],
       priority: unwateredBuildings > 10 ? 'high' : 'medium',
     });
   }
@@ -2097,9 +2098,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   const netIncome = stats.income - stats.expenses;
   if (netIncome < 0) {
     messages.push({
-      name: 'Finance Advisor',
+      name: msg('Finance Advisor'),
       icon: 'cash',
-      messages: [`City is running a deficit of $${Math.abs(netIncome)}/month. Consider raising taxes or cutting services.`],
+      messages: [msg('City is running a deficit of ${amount}/month. Consider raising taxes or cutting services.', { amount: Math.abs(netIncome) })],
       priority: netIncome < -500 ? 'critical' : 'high',
     });
   }
@@ -2107,9 +2108,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Safety advisor
   if (stats.safety < 40) {
     messages.push({
-      name: 'Safety Advisor',
+      name: msg('Safety Advisor'),
       icon: 'shield',
-      messages: ['Crime is on the rise. Build more police stations to protect citizens.'],
+      messages: [msg('Crime is on the rise. Build more police stations to protect citizens.')],
       priority: stats.safety < 20 ? 'critical' : 'high',
     });
   }
@@ -2117,9 +2118,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Health advisor
   if (stats.health < 50) {
     messages.push({
-      name: 'Health Advisor',
+      name: msg('Health Advisor'),
       icon: 'hospital',
-      messages: ['Health services are lacking. Build hospitals to improve citizen health.'],
+      messages: [msg('Health services are lacking. Build hospitals to improve citizen health.')],
       priority: stats.health < 30 ? 'high' : 'medium',
     });
   }
@@ -2127,9 +2128,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Education advisor
   if (stats.education < 50) {
     messages.push({
-      name: 'Education Advisor',
+      name: msg('Education Advisor'),
       icon: 'education',
-      messages: ['Education levels are low. Build schools and universities.'],
+      messages: [msg('Education levels are low. Build schools and universities.')],
       priority: stats.education < 30 ? 'high' : 'medium',
     });
   }
@@ -2137,9 +2138,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   // Environment advisor
   if (stats.environment < 40) {
     messages.push({
-      name: 'Environment Advisor',
+      name: msg('Environment Advisor'),
       icon: 'environment',
-      messages: ['Pollution is high. Plant trees and build parks to improve air quality.'],
+      messages: [msg('Pollution is high. Plant trees and build parks to improve air quality.')],
       priority: stats.environment < 20 ? 'high' : 'medium',
     });
   }
@@ -2148,9 +2149,9 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
   const jobRatio = stats.jobs / (stats.population || 1);
   if (stats.population > 100 && jobRatio < 0.8) {
     messages.push({
-      name: 'Employment Advisor',
+      name: msg('Employment Advisor'),
       icon: 'jobs',
-      messages: [`Unemployment is high. Zone more commercial and industrial areas.`],
+      messages: [msg('Unemployment is high. Zone more commercial and industrial areas.')],
       priority: jobRatio < 0.5 ? 'high' : 'medium',
     });
   }
@@ -2163,12 +2164,12 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     if (abandonedIndustrial > 0) details.push(`${abandonedIndustrial} industrial`);
     
     messages.push({
-      name: 'Urban Planning Advisor',
+      name: msg('Urban Planning Advisor'),
       icon: 'planning',
       messages: [
-        `${abandonedBuildings} abandoned building${abandonedBuildings > 1 ? 's' : ''} in your city (${details.join(', ')}).`,
-        'Oversupply has caused buildings to become vacant.',
-        'Increase demand by growing your city or wait for natural redevelopment.'
+        msg('{count} abandoned {label} in your city ({details}).', { count: abandonedBuildings, label: abandonedBuildings > 1 ? 'buildings' : 'building', details: details.join(', ') }),
+        msg('Oversupply has caused buildings to become vacant.'),
+        msg('Increase demand by growing your city or wait for natural redevelopment.')
       ],
       priority: abandonedBuildings > 10 ? 'high' : abandonedBuildings > 5 ? 'medium' : 'low',
     });

@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "npm run compress-images && next build",
     "start": "next start",
     "lint": "eslint .",

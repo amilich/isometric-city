@@ -53,6 +53,7 @@ const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
 const ZOOM_MIN = 0.3;
 const ZOOM_MAX = 2.5;
 const HEIGHT_UNIT = 20;
+const KEY_PAN_SPEED = 520;
 
 // Water texture path (same as city game)
 const WATER_ASSET_PATH = '/assets/water.png';
@@ -2393,7 +2394,7 @@ export function CoasterGrid({
   isMobile = false,
 }: CoasterGridProps) {
   const { state, latestStateRef, placeAtTile, bulldozeTile, placeTrackLine } = useCoaster();
-  const { grid, gridSize, selectedTool, tick, coasters } = state;
+  const { grid, gridSize, selectedTool, tick, coasters, guests } = state;
   
   // Create a lookup map from coaster ID to colors and category for track rendering
   const coasterInfoMap = useMemo(() => {
@@ -2515,6 +2516,7 @@ export function CoasterGrid({
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [spriteSheets, setSpriteSheets] = useState<Map<string, HTMLCanvasElement>>(new Map());
   const [waterImage, setWaterImage] = useState<HTMLImageElement | null>(null);
+  const keysPressedRef = useRef<Set<string>>(new Set());
   
   // Track drag state (for drag-to-draw track/path)
   const [isTrackDragging, setIsTrackDragging] = useState(false);
@@ -2599,6 +2601,96 @@ export function CoasterGrid({
   useEffect(() => {
     onViewportChange?.({ offset, zoom, canvasSize });
   }, [offset, zoom, canvasSize, onViewportChange]);
+
+  const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
+    const padding = 100;
+    const mapLeft = -(gridSize - 1) * TILE_WIDTH / 2;
+    const mapRight = (gridSize - 1) * TILE_WIDTH / 2;
+    const mapTop = 0;
+    const mapBottom = (gridSize - 1) * TILE_HEIGHT;
+
+    return {
+      minOffsetX: padding - mapRight * currentZoom,
+      maxOffsetX: canvasW - padding - mapLeft * currentZoom,
+      minOffsetY: padding - mapBottom * currentZoom,
+      maxOffsetY: canvasH - padding - mapTop * currentZoom,
+    };
+  }, [gridSize]);
+
+  const clampOffset = useCallback((newOffset: { x: number; y: number }, currentZoom: number) => {
+    const bounds = getMapBounds(currentZoom, canvasSize.width, canvasSize.height);
+    return {
+      x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, newOffset.x)),
+      y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
+    };
+  }, [canvasSize.height, canvasSize.width, getMapBounds]);
+
+  // Keyboard panning (WASD / arrow keys). This listens at the game iframe window
+  // level so map movement works after the player interacts with the canvas or HUD,
+  // but it explicitly ignores chat and other text-entry controls.
+  useEffect(() => {
+    const pressed = keysPressedRef.current;
+    const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'];
+    const isTypingTarget = (target: EventTarget | null) => {
+      const el = target as HTMLElement | null;
+      return !!el?.closest('input, textarea, select, [contenteditable="true"]');
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const key = e.key.toLowerCase();
+      if (movementKeys.includes(key)) {
+        pressed.add(key);
+        e.preventDefault();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      pressed.delete(e.key.toLowerCase());
+    };
+
+    const handleBlur = () => {
+      pressed.clear();
+    };
+
+    let animationFrameId = 0;
+    let lastTime = performance.now();
+
+    const tick = (time: number) => {
+      animationFrameId = requestAnimationFrame(tick);
+      const delta = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
+      if (!pressed.size) return;
+
+      let dx = 0;
+      let dy = 0;
+      if (pressed.has('w') || pressed.has('arrowup')) dy += KEY_PAN_SPEED * delta;
+      if (pressed.has('s') || pressed.has('arrowdown')) dy -= KEY_PAN_SPEED * delta;
+      if (pressed.has('a') || pressed.has('arrowleft')) dx += KEY_PAN_SPEED * delta;
+      if (pressed.has('d') || pressed.has('arrowright')) dx -= KEY_PAN_SPEED * delta;
+
+      if (dx !== 0 || dy !== 0) {
+        setOffset((currentOffset) => clampOffset({
+          x: currentOffset.x + dx,
+          y: currentOffset.y + dy,
+        }, zoom));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    animationFrameId = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+      cancelAnimationFrame(animationFrameId);
+      pressed.clear();
+    };
+  }, [clampOffset, zoom]);
   
   // Navigate to target
   useEffect(() => {
@@ -2609,13 +2701,13 @@ export function CoasterGrid({
         0,
         0
       );
-      setOffset({
+      setOffset(clampOffset({
         x: canvasSize.width / 2 - screenX * zoom,
         y: canvasSize.height / 2 - screenY * zoom,
-      });
+      }, zoom));
       onNavigationComplete?.();
     }
-  }, [navigationTarget, canvasSize, zoom, onNavigationComplete]);
+  }, [navigationTarget, canvasSize, zoom, onNavigationComplete, clampOffset]);
   
   // Main render loop
   useEffect(() => {
@@ -2654,8 +2746,8 @@ export function CoasterGrid({
     const viewRight = canvasSize.width / zoom - offset.x / zoom + CULL_MARGIN_X;
     const viewBottom = canvasSize.height / zoom - offset.y / zoom + CULL_MARGIN_BOTTOM;
     
-    const guestsByTile = new Map<string, typeof state.guests>();
-    state.guests.forEach(guest => {
+    const guestsByTile = new Map<string, typeof guests>();
+    guests.forEach(guest => {
       // Use effective tile position for z-ordering:
       // If progress >= 0.5, guest visually appears on target tile
       const effectiveX = guest.progress >= 0.5 ? guest.targetTileX : guest.tileX;
@@ -2693,13 +2785,13 @@ export function CoasterGrid({
     }
     const stationLoadingData: StationLoadingData[] = [];
     
-    state.coasters.forEach(coaster => {
+    coasters.forEach(coaster => {
       if (coaster.track.length === 0 || coaster.trackTiles.length === 0) return;
       
       // Validate that this coaster's track still exists in the grid
       // Skip rendering if the track tiles don't match the grid state
       const hasValidTrack = coaster.trackTiles.some(tile => {
-        const gridTile = state.grid[tile.y]?.[tile.x];
+        const gridTile = grid[tile.y]?.[tile.x];
         return gridTile?.coasterTrackId === coaster.id && gridTile?.trackPiece;
       });
       if (!hasValidTrack) return;
@@ -2708,10 +2800,10 @@ export function CoasterGrid({
       
       // Check if this coaster has an adjacent queue - if not, no guests can ride
       const coasterHasQueue = hasAdjacentQueue(
-        state.grid,
+        grid,
         coaster.stationTileX,
         coaster.stationTileY,
-        state.gridSize
+        gridSize
       );
       
       coaster.trains.forEach(train => {
@@ -2755,7 +2847,7 @@ export function CoasterGrid({
           if (!trackTile) return;
           
           // Validate that the grid tile still belongs to this coaster
-          const gridTile = state.grid[trackTile.y]?.[trackTile.x];
+          const gridTile = grid[trackTile.y]?.[trackTile.x];
           if (!gridTile?.trackPiece || gridTile.coasterTrackId !== coaster.id) return;
           
           // Use the coaster's track piece (which has the corrected direction based on flow)
@@ -3057,7 +3149,7 @@ const tile = grid[y][x];
     }
     
     ctx.restore();
-  }, [grid, gridSize, offset, zoom, canvasSize, tick, selectedTile, hoveredTile, selectedTool, spriteSheets, waterImage, state.guests, state.coasters, trackDragPreviewTiles, isTrackDragging, coasterInfoMap, incompleteTrackEnds]);
+  }, [grid, gridSize, offset, zoom, canvasSize, tick, selectedTile, hoveredTile, selectedTool, spriteSheets, waterImage, guests, coasters, trackDragPreviewTiles, isTrackDragging, coasterInfoMap, incompleteTrackEnds]);
   
   // Lighting canvas sizing
   useEffect(() => {

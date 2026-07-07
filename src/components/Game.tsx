@@ -16,10 +16,12 @@ import { CommandMenu } from '@/components/ui/CommandMenu';
 import { TipToast } from '@/components/ui/TipToast';
 import { useTipSystem } from '@/hooks/useTipSystem';
 import { useMultiplayerSync } from '@/hooks/useMultiplayerSync';
-import { useCopyRoomLink } from '@/hooks/useCopyRoomLink';
 import { useMultiplayerOptional } from '@/context/MultiplayerContext';
 import { ShareModal } from '@/components/multiplayer/ShareModal';
-import { Copy, Check } from 'lucide-react';
+import { MultiplayerRoomBadge } from '@/components/multiplayer/MultiplayerRoomBadge';
+import { AudioToggleButton, MusicControls } from '@/lib/audio/AudioProvider';
+import { emitGlitchBehaviorEvent } from '@/lib/glitch/behaviorEvents';
+import { useGlitchGameServices } from '@/hooks/useGlitchGameServices';
 
 // Import game components
 import { OverlayMode } from '@/components/game/types';
@@ -39,6 +41,10 @@ import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg('containers'), msg('bulk materials'), msg('oil')];
 
+function bucketNumber(value: number, bucketSize: number): number {
+  return Math.floor(Math.max(0, value) / bucketSize) * bucketSize;
+}
+
 export default function Game({ onExit }: { onExit?: () => void }) {
   const gt = useGT();
   const m = useMessages();
@@ -52,6 +58,110 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const isMobile = isMobileDevice || isSmallScreen;
   const [showShareModal, setShowShareModal] = useState(false);
   const multiplayer = useMultiplayerOptional();
+  const gameplayStartedAtRef = useRef<number | null>(null);
+  const gameplayAnalyticsSnapshotRef = useRef({
+    gridSize: state.gridSize,
+    population: state.stats.population,
+    money: state.stats.money,
+    multiplayerConnected: multiplayer?.connectionState === 'connected',
+  });
+  const lastTrackedToolRef = useRef<string | null>(null);
+  const lastTrackedPanelRef = useRef<string | null>(null);
+  const lastPopulationMilestoneRef = useRef(0);
+  const lastMoneyMilestoneRef = useRef(0);
+  const glitchMetadata = useMemo(() => ({
+    game: 'isocity',
+    city_id: state.id,
+    city_name: state.cityName,
+    population: state.stats.population,
+    money: state.stats.money,
+    year: state.year,
+    month: state.month,
+    grid_size: state.gridSize,
+  }), [state.cityName, state.gridSize, state.id, state.month, state.stats.money, state.stats.population, state.year]);
+
+  useGlitchGameServices({
+    slotName: state.cityName || 'IsoCity Autosave',
+    state,
+    metadata: glitchMetadata,
+  });
+
+  useEffect(() => {
+    gameplayAnalyticsSnapshotRef.current = {
+      gridSize: state.gridSize,
+      population: state.stats.population,
+      money: state.stats.money,
+      multiplayerConnected: multiplayer?.connectionState === 'connected',
+    };
+  }, [multiplayer?.connectionState, state.gridSize, state.stats.money, state.stats.population]);
+
+  useEffect(() => {
+    gameplayStartedAtRef.current = Date.now();
+    const initialSnapshot = gameplayAnalyticsSnapshotRef.current;
+    emitGlitchBehaviorEvent('gameplay', 'start', {
+      game: 'isocity',
+      grid_size: initialSnapshot.gridSize,
+      multiplayer: initialSnapshot.multiplayerConnected,
+    });
+    return () => {
+      const finalSnapshot = gameplayAnalyticsSnapshotRef.current;
+      const startedAt = gameplayStartedAtRef.current ?? Date.now();
+      emitGlitchBehaviorEvent('gameplay', 'end', {
+        game: 'isocity',
+        duration_seconds: Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
+        population_bucket: bucketNumber(finalSnapshot.population, 500),
+        money_bucket: bucketNumber(finalSnapshot.money, 10000),
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (lastTrackedToolRef.current === state.selectedTool) return;
+    lastTrackedToolRef.current = state.selectedTool;
+    emitGlitchBehaviorEvent('toolbox', 'select_tool', {
+      game: 'isocity',
+      tool: state.selectedTool,
+      multiplayer: multiplayer?.connectionState === 'connected',
+    });
+  }, [multiplayer?.connectionState, state.selectedTool]);
+
+  useEffect(() => {
+    if (state.activePanel === 'none' || lastTrackedPanelRef.current === state.activePanel) return;
+    lastTrackedPanelRef.current = state.activePanel;
+    emitGlitchBehaviorEvent('panel', 'open', {
+      game: 'isocity',
+      panel: state.activePanel,
+    });
+  }, [state.activePanel]);
+
+  useEffect(() => {
+    emitGlitchBehaviorEvent('simulation', state.speed === 0 ? 'pause' : 'set_speed', {
+      game: 'isocity',
+      speed: state.speed,
+    });
+  }, [state.speed]);
+
+  useEffect(() => {
+    const populationMilestone = bucketNumber(state.stats.population, 1000);
+    if (populationMilestone > lastPopulationMilestoneRef.current) {
+      lastPopulationMilestoneRef.current = populationMilestone;
+      emitGlitchBehaviorEvent('progression', 'population_milestone', {
+        game: 'isocity',
+        population_bucket: populationMilestone,
+      });
+    }
+  }, [state.stats.population]);
+
+  useEffect(() => {
+    const moneyMilestone = bucketNumber(state.stats.money, 50000);
+    if (moneyMilestone > lastMoneyMilestoneRef.current) {
+      lastMoneyMilestoneRef.current = moneyMilestone;
+      emitGlitchBehaviorEvent('economy', 'money_milestone', {
+        game: 'isocity',
+        money_bucket: moneyMilestone,
+      });
+    }
+  }, [state.stats.money]);
   
   // Cheat code system
   const {
@@ -80,7 +190,6 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     leaveRoom,
   } = useMultiplayerSync();
   
-  const { copied: copiedRoomLink, handleCopyRoomLink } = useCopyRoomLink(roomCode, 'coop');
   const initialSelectedToolRef = useRef<Tool | null>(null);
   const previousSelectedToolRef = useRef<Tool | null>(null);
   const hasCapturedInitialTool = useRef(false);
@@ -216,7 +325,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         clearTriggeredCheat();
         break;
     }
-  }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat]);
+  }, [triggeredCheat, addMoney, addNotification, clearTriggeredCheat, gt]);
   
   // Track barge deliveries to show occasional notifications
   const bargeDeliveryCountRef = useRef(0);
@@ -272,38 +381,13 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             {/* Multiplayer Players Indicator - Mobile */}
             {isMultiplayer && (
               <div className="absolute top-2 right-2 z-20">
-                <div className="bg-slate-900/90 border border-slate-700 rounded-lg px-2 py-1.5 shadow-lg">
-                  <div className="flex items-center gap-1.5 text-xs text-white">
-                    {roomCode && (
-                      <>
-                        <span className="font-mono tracking-wider">{roomCode}</span>
-                        <button
-                          onClick={handleCopyRoomLink}
-                          className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                          title="Copy invite link"
-                        >
-                          {copiedRoomLink ? (
-                            <Check className="w-3 h-3 text-green-400" />
-                          ) : (
-                            <Copy className="w-3 h-3 text-slate-400" />
-                          )}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  {players.length > 0 && (
-                    <div className="mt-1 space-y-0.5">
-                      {players.map((player) => (
-                        <div key={player.id} className="flex items-center gap-1 text-[10px] text-slate-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          {player.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <MultiplayerRoomBadge roomCode={roomCode} players={players} copyPath="coop" statusColorClassName="bg-green-500" compact />
               </div>
             )}
+            <div className="absolute bottom-2 left-2 z-20 flex items-center gap-2">
+              <MusicControls className="relative" />
+              <AudioToggleButton className="h-9 w-9 inline-flex items-center justify-center rounded bg-slate-900/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors" />
+            </div>
           </div>
           
           {/* Mobile Bottom Toolbar */}
@@ -358,38 +442,13 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             {/* Multiplayer Players Indicator */}
             {isMultiplayer && (
               <div className="absolute top-4 right-4 z-20">
-                <div className="bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-2 shadow-lg min-w-[120px]">
-                  <div className="flex items-center gap-2 text-sm text-white">
-                    {roomCode && (
-                      <>
-                        <span className="font-mono font-medium tracking-wider">{roomCode}</span>
-                        <button
-                          onClick={handleCopyRoomLink}
-                          className="p-1 hover:bg-white/10 rounded transition-colors"
-                          title="Copy invite link"
-                        >
-                          {copiedRoomLink ? (
-                            <Check className="w-3.5 h-3.5 text-green-400" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5 text-slate-400 hover:text-white" />
-                          )}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  {players.length > 0 && (
-                    <div className="mt-1.5 space-y-0.5">
-                      {players.map((player) => (
-                        <div key={player.id} className="flex items-center gap-1.5 text-xs text-slate-400">
-                          <span className="w-2 h-2 rounded-full bg-green-500" />
-                          {player.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <MultiplayerRoomBadge roomCode={roomCode} players={players} copyPath="coop" statusColorClassName="bg-green-500" />
               </div>
             )}
+            <div className="absolute bottom-24 left-4 z-20 flex items-center gap-2">
+              <MusicControls className="relative" />
+              <AudioToggleButton className="h-10 w-10 inline-flex items-center justify-center rounded bg-slate-900/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors" />
+            </div>
           </div>
         </div>
         

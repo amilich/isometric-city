@@ -11,6 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useMultiplayer } from '@/context/MultiplayerContext';
 import { useCoaster } from '@/context/CoasterContext';
+import { emitGlitchBehaviorEvent } from '@/lib/glitch/behaviorEvents';
+import { buildInviteUrl } from '@/lib/glitch/publicUrl';
 import { useCopyRoomLink } from '@/hooks/useCopyRoomLink';
 import { Copy, Check, Loader2, AlertCircle } from 'lucide-react';
 
@@ -35,6 +37,9 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
     createRoom(state.settings.name, state)
       .then((code) => {
         window.history.replaceState({}, '', `/coaster/coop/${code}`);
+        emitGlitchBehaviorEvent('multiplayer_invite', 'room_created_from_share', {
+          game: 'coaster',
+        });
       })
       .catch((err) => {
         console.error('[CoasterShareModal] Failed to create room:', err);
@@ -49,18 +54,23 @@ export function CoasterShareModal({ open, onOpenChange }: ShareModalProps) {
   useEffect(() => {
     if (!open) {
       resetCopied();
-      setCreateError(null);
       hasAttemptedCreateRef.current = false;
-      return;
+      const frame = requestAnimationFrame(() => {
+        setCreateError(null);
+      });
+      return () => cancelAnimationFrame(frame);
     }
 
     if (!roomCode && !isCreating && isStateReady && !createError && !hasAttemptedCreateRef.current) {
       hasAttemptedCreateRef.current = true;
-      attemptCreateRoom();
+      const frame = requestAnimationFrame(() => {
+        attemptCreateRoom();
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [open, roomCode, isCreating, isStateReady, createError, attemptCreateRoom, resetCopied]);
 
-  const inviteUrl = roomCode ? `${window.location.origin}/coaster/coop/${roomCode}` : '';
+  const inviteUrl = roomCode ? buildInviteUrl(roomCode, 'coaster/coop') : '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

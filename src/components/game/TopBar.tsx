@@ -88,9 +88,9 @@ export function StatBadge({ value, label, variant = 'default' }: StatBadgeProps)
                      variant === 'destructive' ? 'text-red-500' : 'text-foreground';
   
   return (
-    <div className="flex flex-col items-start min-w-[70px]">
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">{label}</div>
-      <div className={`text-sm font-mono tabular-nums font-semibold ${colorClass}`}>{value}</div>
+    <div className="min-w-[82px] rounded-md border border-white/10 bg-slate-950/35 px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <div className="text-[9px] text-muted-foreground uppercase tracking-[0.14em] font-semibold leading-none mb-1.5">{label}</div>
+      <div className={`text-sm font-mono tabular-nums font-semibold leading-none ${colorClass}`}>{value}</div>
     </div>
   );
 }
@@ -110,9 +110,9 @@ export function DemandIndicator({ label, demand, color }: DemandIndicatorProps) 
   const isPositive = demand >= 0;
   
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className={`text-[10px] font-bold ${color}`}>{label}</span>
-      <div className="w-3 h-8 bg-secondary relative rounded-sm overflow-hidden">
+    <div className="flex flex-col items-center gap-1 rounded-md border border-white/10 bg-slate-950/30 px-1.5 py-1">
+      <span className={`text-[10px] font-bold leading-none ${color}`}>{label}</span>
+      <div className="w-2.5 h-7 bg-secondary relative rounded-sm overflow-hidden">
         <div className="absolute left-0 right-0 top-1/2 h-px bg-border" />
         <div
           className={`absolute left-0 right-0 ${color.replace('text-', 'bg-')}`}
@@ -139,10 +139,10 @@ interface MiniStatProps {
 export function MiniStat({ icon, label, value }: MiniStatProps) {
   const color = value >= 70 ? 'text-green-500' : value >= 40 ? 'text-amber-500' : 'text-red-500';
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 rounded-md border border-white/10 bg-slate-950/25 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <span className="text-muted-foreground">{icon}</span>
       <span className="text-muted-foreground">{label}</span>
-      <span className={`font-mono ${color}`}>{Math.round(value)}%</span>
+      <span className={`font-mono tabular-nums font-semibold ${color}`}>{Math.round(value)}%</span>
     </div>
   );
 }
@@ -157,7 +157,7 @@ export const StatsPanel = React.memo(function StatsPanel() {
   const m = useMessages();
   
   return (
-    <div className="h-8 bg-secondary/50 border-b border-border flex items-center justify-center gap-8 text-xs">
+    <div className="h-9 bg-slate-950/70 border-b border-white/10 flex items-center justify-center gap-2 text-xs backdrop-blur-md">
       <MiniStat icon={<HappyIcon size={12} />} label={String(m(UI_LABELS.happiness))} value={stats.happiness} />
       <MiniStat icon={<HealthIcon size={12} />} label={String(m(UI_LABELS.health))} value={stats.health} />
       <MiniStat icon={<EducationIcon size={12} />} label={String(m(UI_LABELS.education))} value={stats.education} />
@@ -180,11 +180,11 @@ export const TopBar = React.memo(function TopBar() {
   const formattedDate = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}-${year}`;
   
   return (
-    <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
+    <div className="h-16 bg-slate-950/90 border-b border-white/10 flex items-center justify-between px-4 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-md">
       <div className="flex items-center gap-6">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-foreground font-semibold text-sm">{cityName}</h1>
+            <h1 className="text-foreground font-semibold text-sm tracking-wide">{cityName}</h1>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-xs font-mono tabular-nums">
             <Tooltip>
@@ -199,14 +199,14 @@ export const TopBar = React.memo(function TopBar() {
           </div>
         </div>
         
-        <div className="flex items-center gap-0 bg-secondary rounded-md p-0">
+        <div className="flex items-center gap-0.5 bg-slate-900/80 border border-white/10 rounded-md p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
           {[0, 1, 2, 3].map(s => (
             <Button
               key={s}
               onClick={() => setSpeed(s as 0 | 1 | 2 | 3)}
               variant={speed === s ? 'default' : 'ghost'}
               size="icon-sm"
-              className="h-7 w-7 p-0 m-0"
+              className="h-7 w-7 p-0 m-0 rounded-sm"
               title={s === 0 ? 'Pause' : s === 1 ? 'Normal' : s === 2 ? 'Fast' : 'Very Fast'}
             >
               {s === 0 ? <PauseIcon size={12} /> : 
@@ -227,7 +227,7 @@ export const TopBar = React.memo(function TopBar() {
         </div>
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <StatBadge value={stats.population.toLocaleString()} label={String(m(UI_LABELS.population))} />
         <StatBadge value={stats.jobs.toLocaleString()} label={String(m(UI_LABELS.jobs))} />
         <StatBadge 
@@ -254,7 +254,7 @@ export const TopBar = React.memo(function TopBar() {
         
         <Separator orientation="vertical" className="h-8" />
         
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-slate-950/35 px-2 py-1.5">
           <span className="text-muted-foreground text-xs">{m(UI_LABELS.tax)}</span>
           <Slider
             value={[taxRate]}

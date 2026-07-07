@@ -65,8 +65,8 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
   const m = useMessages();
   
   return (
-    <Card className="fixed bottom-4 left-[240px] p-2 shadow-lg bg-card/90 border-border/70 z-50">
-      <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
+    <Card className="fixed bottom-4 left-[240px] p-2.5 shadow-[0_18px_45px_rgba(0,0,0,0.3)] bg-slate-950/88 border-white/10 z-50 rounded-md backdrop-blur-md">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold mb-2">
         {m(VIEW_OVERLAY_LABEL)}
       </div>
       <div className="flex gap-1">
@@ -80,7 +80,7 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
               variant={isActive ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setOverlayMode(mode)}
-              className={`h-8 px-3 ${getOverlayButtonClass(mode, isActive)}`}
+              className={`h-8 px-3 rounded-sm border ${isActive ? 'border-white/20 shadow-[0_0_18px_rgba(125,211,252,0.12)]' : 'border-transparent'} ${getOverlayButtonClass(mode, isActive)}`}
               title={config.title}
             >
               {OVERLAY_ICONS[mode]}

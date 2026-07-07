@@ -12,8 +12,11 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { JoinableRoomsList } from '@/components/multiplayer/JoinableRoomsList';
 import { useMultiplayer } from '@/context/MultiplayerContext';
 import { GameState } from '@/types/game';
+import { emitGlitchBehaviorEvent } from '@/lib/glitch/behaviorEvents';
+import { buildInviteUrl } from '@/lib/glitch/publicUrl';
 import { createInitialGameState, DEFAULT_GRID_SIZE } from '@/lib/simulation';
 import { Copy, Check, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { T, useGT, Plural, Var } from 'gt-next';
@@ -38,6 +41,7 @@ export function CoopModal({
   const gt = useGT();
   const [mode, setMode] = useState<Mode>('select');
   const [cityName, setCityName] = useState(gt('My Co-op City'));
+  const [maxBuilders, setMaxBuilders] = useState(8);
   const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +81,7 @@ export function CoopModal({
           setAutoJoinError(errorMessage);
         });
     }
-  }, [open, pendingRoomCode, autoJoinAttempted, joinRoom]);
+  }, [open, pendingRoomCode, autoJoinAttempted, joinRoom, gt]);
 
   // Reset state when modal closes - cleanup any pending connection
   useEffect(() => {
@@ -99,44 +103,82 @@ export function CoopModal({
     if (!cityName.trim()) return;
     
     setIsLoading(true);
+    emitGlitchBehaviorEvent('multiplayer_setup', 'create_start', {
+      game: 'isocity',
+      max_players: maxBuilders,
+    });
     try {
       // Use the current game state if provided, otherwise create a fresh city
       const stateToShare = currentGameState 
         ? { ...currentGameState, cityName } 
         : createInitialGameState(DEFAULT_GRID_SIZE, cityName);
       
-      const code = await createRoom(cityName, stateToShare);
+      const code = await createRoom(cityName, stateToShare, {
+        cityType: 'multiplayer',
+        isPublic: true,
+        maxPlayers: maxBuilders,
+      });
       // Update URL to show room code
       window.history.replaceState({}, '', `/coop/${code}`);
       
       // Start the game immediately with the state and close the modal
       onStartGame(true, stateToShare, code);
       onOpenChange(false);
+      emitGlitchBehaviorEvent('multiplayer_setup', 'create_success', {
+        game: 'isocity',
+        max_players: maxBuilders,
+      });
     } catch (err) {
       console.error('Failed to create room:', err);
+      emitGlitchBehaviorEvent('multiplayer_setup', 'create_error', {
+        game: 'isocity',
+        error_type: err instanceof Error ? err.name : 'unknown',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleJoinRoom = async () => {
-    if (!joinCode.trim()) return;
-    if (joinCode.length !== 5) return;
+  const handleJoinRoom = async (codeOverride?: string) => {
+    const codeToJoin = (codeOverride || joinCode).trim().toUpperCase();
+    if (!codeToJoin) return;
+    if (codeToJoin.length !== 5) return;
     
     setIsLoading(true);
+    emitGlitchBehaviorEvent('multiplayer_setup', 'join_start', {
+      game: 'isocity',
+      entered_code_length: codeToJoin.length,
+    });
     try {
       // State will be loaded from Supabase database
-      await joinRoom(joinCode);
+      await joinRoom(codeToJoin);
       // Update URL to show room code
-      window.history.replaceState({}, '', `/coop/${joinCode.toUpperCase()}`);
+      window.history.replaceState({}, '', `/coop/${codeToJoin}`);
       // Now wait for state to be received from provider
       setIsLoading(false);
       setWaitingForState(true);
+      emitGlitchBehaviorEvent('multiplayer_setup', 'join_connected', {
+        game: 'isocity',
+      });
     } catch (err) {
       console.error('Failed to join room:', err);
       setIsLoading(false);
+      emitGlitchBehaviorEvent('multiplayer_setup', 'join_error', {
+        game: 'isocity',
+        error_type: err instanceof Error ? err.name : 'unknown',
+      });
       // Error is already set by the context
     }
+  };
+
+  const handleStartSinglePlayer = () => {
+    const stateToPlay = createInitialGameState(DEFAULT_GRID_SIZE, cityName || gt('My City'));
+    emitGlitchBehaviorEvent('game_start', 'single_player_selected', {
+      game: 'isocity',
+      grid_size: DEFAULT_GRID_SIZE,
+    });
+    onStartGame(false, stateToPlay);
+    onOpenChange(false);
   };
   
   // When we receive the initial state, start the game
@@ -168,8 +210,12 @@ export function CoopModal({
   const handleCopyLink = () => {
     if (!roomCode) return;
     
-    const url = `${window.location.origin}/coop/${roomCode}`;
+    const url = buildInviteUrl(roomCode, 'coop');
     navigator.clipboard.writeText(url);
+    emitGlitchBehaviorEvent('multiplayer_invite', 'copy_link', {
+      game: 'isocity',
+      room_code_length: roomCode.length,
+    });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -197,7 +243,7 @@ export function CoopModal({
   if (autoJoinError) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="sm:max-w-md bg-slate-950/95 border-white/10 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md rounded-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-light text-white flex items-center gap-2">
               <AlertCircle className="w-6 h-6 text-red-400" />
@@ -231,7 +277,7 @@ export function CoopModal({
                       setAutoJoinError(errorMessage);
                     });
                 }}
-                className="w-full py-4 text-base font-light bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
+                className="w-full py-4 text-base font-light bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md"
               >
                 <T>Try Again</T>
               </Button>
@@ -242,7 +288,7 @@ export function CoopModal({
                 setMode('create');
               }}
               variant="outline"
-              className="w-full py-4 text-base font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-none"
+              className="w-full py-4 text-base font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-md"
             >
               <T>Create New City</T>
             </Button>
@@ -252,7 +298,7 @@ export function CoopModal({
                 setMode('join');
               }}
               variant="outline"
-              className="w-full py-4 text-base font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-none"
+              className="w-full py-4 text-base font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-md"
             >
               <T>Join Different Room</T>
             </Button>
@@ -279,7 +325,7 @@ export function CoopModal({
   if (autoJoinAttempted && (isLoading || waitingForState)) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white" aria-describedby={undefined}>
+        <DialogContent className="sm:max-w-md bg-slate-950/95 border-white/10 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md rounded-md" aria-describedby={undefined}>
           <VisuallyHidden.Root>
             <DialogTitle><T>Joining Co-op City</T></DialogTitle>
           </VisuallyHidden.Root>
@@ -312,7 +358,7 @@ export function CoopModal({
   if (mode === 'select') {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="sm:max-w-md bg-slate-950/95 border-white/10 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md rounded-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-light text-white">
               <T>Co-op Multiplayer</T>
@@ -324,15 +370,22 @@ export function CoopModal({
 
           <div className="flex flex-col gap-3 mt-4">
             <Button
+              onClick={handleStartSinglePlayer}
+              variant="outline"
+              className="w-full py-6 text-lg font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-md"
+            >
+              <T>Single Player City</T>
+            </Button>
+            <Button
               onClick={() => setMode('create')}
-              className="w-full py-6 text-lg font-light bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
+              className="w-full py-6 text-lg font-light bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md"
             >
               <T>Create City</T>
             </Button>
             <Button
               onClick={() => setMode('join')}
               variant="outline"
-              className="w-full py-6 text-lg font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-none"
+              className="w-full py-6 text-lg font-light bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-white/15 rounded-md"
             >
               <T>Join City</T>
             </Button>
@@ -346,7 +399,7 @@ export function CoopModal({
   if (mode === 'create') {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="sm:max-w-md bg-slate-950/95 border-white/10 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md rounded-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-light text-white">
               <T>Create Co-op City</T>
@@ -371,7 +424,21 @@ export function CoopModal({
                   value={cityName}
                   onChange={(e) => setCityName(e.target.value)}
                   placeholder={gt('My Co-op City')}
-                  className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+                  className="bg-slate-900/80 border-white/10 text-white placeholder:text-slate-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxBuilders" className="text-slate-300">
+                  <T>Number Of Players That Can Join</T>
+                </Label>
+                <Input
+                  id="maxBuilders"
+                  type="number"
+                  min={1}
+                  max={64}
+                  value={maxBuilders}
+                  onChange={(e) => setMaxBuilders(Math.min(64, Math.max(1, Number(e.target.value) || 1)))}
+                  className="bg-slate-900/80 border-white/10 text-white"
                 />
               </div>
 
@@ -386,14 +453,14 @@ export function CoopModal({
                 <Button
                   onClick={handleBack}
                   variant="outline"
-                  className="flex-1 bg-transparent hover:bg-white/10 text-white/70 border-white/20 rounded-none"
+                  className="flex-1 bg-transparent hover:bg-white/10 text-white/70 border-white/20 rounded-md"
                 >
                   <T>Back</T>
                 </Button>
                 <Button
                   onClick={handleCreateRoom}
                   disabled={isLoading || !cityName.trim()}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md"
                 >
                   {isLoading ? (
                     <T>
@@ -420,7 +487,7 @@ export function CoopModal({
               <Button
                 onClick={handleCopyLink}
                 variant="outline"
-                className="w-full bg-transparent hover:bg-white/10 text-white border-white/20 rounded-none"
+                className="w-full bg-transparent hover:bg-white/10 text-white border-white/20 rounded-md"
               >
                 {copied ? (
                   <T>
@@ -474,7 +541,7 @@ export function CoopModal({
   // Join room screen
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-slate-900 border-slate-700 text-white">
+      <DialogContent className="sm:max-w-md bg-slate-950/95 border-white/10 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md rounded-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-light text-white">
             <T>Join Co-op City</T>
@@ -485,6 +552,14 @@ export function CoopModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-4 mt-4">
+          <JoinableRoomsList
+            noun="city"
+            onJoin={(code) => {
+              setJoinCode(code);
+              void handleJoinRoom(code);
+            }}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="joinCode" className="text-slate-300">
               <T>Invite Code</T>
@@ -495,7 +570,7 @@ export function CoopModal({
               onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 5))}
               placeholder={gt('ABCDE')}
               maxLength={5}
-              className="bg-slate-800 border-slate-600 text-white text-center text-2xl font-mono tracking-widest placeholder:text-slate-500"
+              className="bg-slate-900/80 border-white/10 text-white text-center text-2xl font-mono tracking-widest placeholder:text-slate-500"
             />
           </div>
 
@@ -527,14 +602,14 @@ export function CoopModal({
             <Button
               onClick={handleBack}
               variant="outline"
-              className="flex-1 bg-transparent hover:bg-white/10 text-white/70 border-white/20 rounded-none"
+              className="flex-1 bg-transparent hover:bg-white/10 text-white/70 border-white/20 rounded-md"
             >
               <T>Back</T>
             </Button>
             <Button
-              onClick={handleJoinRoom}
+              onClick={() => handleJoinRoom()}
               disabled={isLoading || joinCode.length !== 5}
-              className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none"
+              className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md"
             >
               {isLoading ? (
                 <T>

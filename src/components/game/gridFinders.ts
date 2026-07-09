@@ -39,32 +39,38 @@ const PARK_TYPES = new Set<BuildingType>([
   'community_garden', 'pond_park', 'park_gate', 'mountain_lodge', 'mountain_trailhead'
 ]);
 
+// PERF: Use Sets for O(1) lookup instead of O(n) array.includes()
 // Sports facilities where pedestrians play sports
-export const SPORTS_TYPES: BuildingType[] = [
+export const SPORTS_TYPES_SET = new Set<BuildingType>([
   'basketball_courts', 'tennis', 'soccer_field_small', 'baseball_field_small',
   'football_field', 'baseball_stadium', 'stadium', 'swimming_pool', 'skate_park'
-];
+]);
+// Keep array export for backward compatibility where iteration is needed
+export const SPORTS_TYPES: BuildingType[] = [...SPORTS_TYPES_SET];
 
 // Recreation areas where pedestrians relax
-export const RELAXATION_TYPES: BuildingType[] = [
+export const RELAXATION_TYPES_SET = new Set<BuildingType>([
   'park', 'park_large', 'community_garden', 'pond_park', 'greenhouse_garden',
   'amphitheater', 'campground', 'marina_docks_small', 'pier_large'
-];
+]);
+export const RELAXATION_TYPES: BuildingType[] = [...RELAXATION_TYPES_SET];
 
 // Active recreation (not sitting)
-export const ACTIVE_RECREATION_TYPES: BuildingType[] = [
+export const ACTIVE_RECREATION_TYPES_SET = new Set<BuildingType>([
   'playground_small', 'playground_large', 'mini_golf_course', 'go_kart_track',
   'roller_coaster_small', 'amusement_park', 'mountain_trailhead'
-];
+]);
+export const ACTIVE_RECREATION_TYPES: BuildingType[] = [...ACTIVE_RECREATION_TYPES_SET];
 
 // Enterable buildings (pedestrians go inside)
-const ENTERABLE_BUILDING_TYPES: BuildingType[] = [
+// PERF: Use Set for O(1) lookup instead of O(n) array.includes()
+const ENTERABLE_BUILDING_TYPES_SET = new Set<BuildingType>([
   'shop_small', 'shop_medium', 'office_low', 'office_high', 'mall',
   'school', 'university', 'hospital', 'museum', 'community_center',
   'factory_small', 'factory_medium', 'factory_large', 'warehouse',
   'police_station', 'fire_station', 'city_hall', 'rail_station',
   'subway_station', 'mountain_lodge'
-];
+]);
 
 // Recreation area types for more specific destination finding
 export type RecreationType = 'sports' | 'relaxation' | 'active' | 'general';
@@ -156,11 +162,11 @@ export function findRecreationAreas(
     for (let x = 0; x < gridSize; x++) {
       const buildingType = grid[y][x].building.type;
       
-      if (SPORTS_TYPES.includes(buildingType)) {
+      if (SPORTS_TYPES_SET.has(buildingType)) {
         destinations.push({ x, y, type: 'sports', buildingType });
-      } else if (RELAXATION_TYPES.includes(buildingType)) {
+      } else if (RELAXATION_TYPES_SET.has(buildingType)) {
         destinations.push({ x, y, type: 'relaxation', buildingType });
-      } else if (ACTIVE_RECREATION_TYPES.includes(buildingType)) {
+      } else if (ACTIVE_RECREATION_TYPES_SET.has(buildingType)) {
         destinations.push({ x, y, type: 'active', buildingType });
       } else if (PARK_TYPES.has(buildingType)) {
         destinations.push({ x, y, type: 'general', buildingType });
@@ -187,7 +193,7 @@ export function findEnterableBuildings(
       
       // Only include active buildings (powered, not abandoned, construction complete)
       if (
-        ENTERABLE_BUILDING_TYPES.includes(buildingType) &&
+        ENTERABLE_BUILDING_TYPES_SET.has(buildingType) &&
         tile.building.constructionProgress >= 100 &&
         !tile.building.abandoned
       ) {
@@ -202,21 +208,21 @@ export function findEnterableBuildings(
  * Check if a building type is a sports facility
  */
 export function isSportsFacility(buildingType: BuildingType): boolean {
-  return SPORTS_TYPES.includes(buildingType);
+  return SPORTS_TYPES_SET.has(buildingType);
 }
 
 /**
  * Check if a building type is a relaxation area
  */
 export function isRelaxationArea(buildingType: BuildingType): boolean {
-  return RELAXATION_TYPES.includes(buildingType);
+  return RELAXATION_TYPES_SET.has(buildingType);
 }
 
 /**
  * Check if a building type is enterable
  */
 export function isEnterableBuilding(buildingType: BuildingType): boolean {
-  return ENTERABLE_BUILDING_TYPES.includes(buildingType);
+  return ENTERABLE_BUILDING_TYPES_SET.has(buildingType);
 }
 
 /**

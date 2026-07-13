@@ -623,6 +623,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       pressed.delete(key);
     };
 
+    const handleBlur = () => {
+      pressed.clear();
+    };
+
     let animationFrameId = 0;
     let lastTime = performance.now();
 
@@ -661,11 +665,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
     animationFrameId = requestAnimationFrame(tick);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
       cancelAnimationFrame(animationFrameId);
       pressed.clear();
     };

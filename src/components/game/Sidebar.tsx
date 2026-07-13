@@ -242,7 +242,7 @@ const HoverSubmenu = React.memo(function HoverSubmenu({
                   }`}
                   title={`${m(info.description)} - Cost: $${info.cost.toLocaleString()}`}
                 >
-                  <span className="flex-1 text-left truncate">{m(info.name)}</span>
+                  <span className="flex-1 text-left truncate">{info.shortcut ? `(${info.shortcut}) ` : ''}{m(info.name)}</span>
                   <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>${info.cost.toLocaleString()}</span>
                 </Button>
               );
@@ -648,7 +648,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                     }`}
                     title={`${m(info.description)}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
                   >
-                    <span className="flex-1 text-left truncate">{m(info.name)}</span>
+                    <span className="flex-1 text-left truncate">{info.shortcut ? `(${info.shortcut}) ` : ''}{m(info.name)}</span>
                     {info.cost > 0 && (
                       <span className="text-xs opacity-60">${info.cost}</span>
                     )}

@@ -1,0 +1,19 @@
+{
+  "name": "isocoaster-wasm",
+  "type": "module",
+  "collaborators": [
+    "IsoCoaster Team"
+  ],
+  "description": "WebAssembly version of IsoCoaster theme park game",
+  "version": "0.1.0",
+  "files": [
+    "isocoaster_wasm_bg.wasm",
+    "isocoaster_wasm.js",
+    "isocoaster_wasm.d.ts"
+  ],
+  "main": "isocoaster_wasm.js",
+  "types": "isocoaster_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

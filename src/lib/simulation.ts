@@ -1347,35 +1347,68 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
   return services;
 }
 
-// PERF: Only recalculate service coverage when service buildings change
-function hasServiceBuildingChanges(
-  state: GameState,
-  newGrid: Tile[][],
-  modifiedRows: Set<number>,
-  size: number,
-): boolean {
-  for (const y of modifiedRows) {
-    const oldRow = state.grid[y];
-    const newRow = newGrid[y];
-    for (let x = 0; x < size; x++) {
-      const oldBuilding = oldRow[x].building;
-      const newBuilding = newRow[x].building;
-      const hadService = SERVICE_BUILDING_TYPES.has(oldBuilding.type);
-      const hasService = SERVICE_BUILDING_TYPES.has(newBuilding.type);
-      if (!hadService && !hasService) continue;
+// PERF: Fingerprint of active service buildings. Used to skip full coverage recalculation
+// when placement/bulldoze/upgrade/construction-completion hasn't changed coverage inputs.
+// Matches calculateServiceCoverage: skips under-construction and abandoned buildings.
+const serviceCoverageFingerprintMap = new WeakMap<ServiceCoverage, number>();
 
-      if (
-        oldBuilding.type !== newBuilding.type ||
-        oldBuilding.level !== newBuilding.level ||
-        oldBuilding.constructionProgress !== newBuilding.constructionProgress ||
-        oldBuilding.abandoned !== newBuilding.abandoned
-      ) {
-        return true;
+/** Stable hash of active (complete, non-abandoned) service buildings on the grid. */
+const getServiceCoverageFingerprint = (grid: Tile[][], size: number): number => {
+  let hash = 1;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const building = grid[y][x].building;
+      if (!SERVICE_BUILDING_TYPES.has(building.type)) continue;
+      if (building.constructionProgress !== undefined && building.constructionProgress < 100) continue;
+      if (building.abandoned) continue;
+
+      // Mix position, type char codes, and level into a stable numeric fingerprint
+      hash = (hash * 31 + (y * size + x + 1)) | 0;
+      hash = (hash * 31 + building.type.length) | 0;
+      for (let i = 0; i < building.type.length; i++) {
+        hash = (hash * 31 + building.type.charCodeAt(i)) | 0;
+      }
+      hash = (hash * 31 + building.level) | 0;
+    }
+  }
+  return hash;
+};
+
+/** Return cached coverage when the active service-building fingerprint is unchanged. */
+const getOrCalculateServiceCoverage = (
+  grid: Tile[][],
+  size: number,
+  cached: ServiceCoverage,
+): ServiceCoverage => {
+  const fingerprint = getServiceCoverageFingerprint(grid, size);
+  if (serviceCoverageFingerprintMap.get(cached) === fingerprint) {
+    return cached;
+  }
+  const services = calculateServiceCoverage(grid, size);
+  serviceCoverageFingerprintMap.set(services, fingerprint);
+  return services;
+};
+
+/** Apply power/water flags from coverage onto the grid (copy-on-write). */
+const syncUtilitiesFromServices = (
+  newGrid: Tile[][],
+  size: number,
+  services: ServiceCoverage,
+  getModifiableTile: (x: number, y: number) => Tile,
+): void => {
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const tile = newGrid[y][x];
+      const newPowered = services.power[y][x];
+      const newWatered = services.water[y][x];
+      if (tile.building.powered !== newPowered || tile.building.watered !== newWatered) {
+        const modTile = getModifiableTile(x, y);
+        modTile.building.powered = newPowered;
+        modTile.building.watered = newWatered;
       }
     }
   }
-  return false;
-}
+};
 
 // Upgrade a service building by increasing its level (increases coverage range)
 // Returns updated state if successful, null if upgrade fails
@@ -2203,8 +2236,9 @@ export function simulateTick(state: GameState): GameState {
     return newGrid[y][x];
   };
 
-  // PERF: Reuse cached service coverage unless a service building changed this tick
-  let services = state.services;
+  // PERF: Reuse cached service coverage unless active service buildings changed
+  // (placement/bulldoze outside the tick, or construction completion this tick)
+  let services = getOrCalculateServiceCoverage(state.grid, size, state.services);
 
   // Process all tiles
   for (let y = 0; y < size; y++) {
@@ -2437,23 +2471,11 @@ export function simulateTick(state: GameState): GameState {
     }
   }
 
-  // PERF: Recalculate service coverage only when service buildings changed
-  if (hasServiceBuildingChanges(state, newGrid, modifiedRows, size)) {
-    services = calculateServiceCoverage(newGrid, size);
-
-    // Sync powered/watered flags for tiles affected by the coverage change
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const tile = newGrid[y][x];
-        const newPowered = services.power[y][x];
-        const newWatered = services.water[y][x];
-        if (tile.building.powered !== newPowered || tile.building.watered !== newWatered) {
-          const modTile = getModifiableTile(x, y);
-          modTile.building.powered = newPowered;
-          modTile.building.watered = newWatered;
-        }
-      }
-    }
+  // PERF: Recalculate if construction completed (or other in-tick service changes)
+  const updatedServices = getOrCalculateServiceCoverage(newGrid, size, services);
+  if (updatedServices !== services) {
+    services = updatedServices;
+    syncUtilitiesFromServices(newGrid, size, services, getModifiableTile);
   }
 
   // Update budget costs

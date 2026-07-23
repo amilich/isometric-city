@@ -720,10 +720,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
 
   // PERF: Only sync React state into the ref when it's authoritative.
   // Avoids stale React state (e.g. during isSaving re-renders) overwriting newer sim progress.
+  // Same-tick object identity changes (tax/budget/tool/placement) must still update the ref.
   useEffect(() => {
     const latest = latestStateRef.current;
     const isNewerTick = state.tick > latestStateTickRef.current;
-    const isSameTickUpdate = state.tick === latestStateTickRef.current && state.grid !== latest.grid;
+    const isSameTickUpdate = state.tick === latestStateTickRef.current && state !== latest;
     const isGameReset = state.gameVersion !== latest.gameVersion;
 
     if (isNewerTick || isSameTickUpdate || isGameReset) {
@@ -1737,24 +1738,34 @@ export function GameProvider({ children, startFresh = false }: { children: React
   );
 }
 
-export function useGameActions(): GameActionsContextValue {
+/**
+ * Stable game action callbacks. Prefer this over useGame when only mutations are needed
+ * so consumers avoid re-rendering on simulation/UI state syncs.
+ */
+export const useGameActions = (): GameActionsContextValue => { // skipcq: JS-0067
   const ctx = useContext(GameActionsContext);
   if (!ctx) {
     throw new Error('useGameActions must be used within a GameProvider');
   }
   return ctx;
-}
+};
 
-export function useGameState(): GameStateContextValue {
+/**
+ * Frequently changing game state (stats, grid, sprite pack, etc.).
+ */
+export const useGameState = (): GameStateContextValue => { // skipcq: JS-0067
   const ctx = useContext(GameStateContext);
   if (!ctx) {
     throw new Error('useGameState must be used within a GameProvider');
   }
   return ctx;
-}
+};
 
-export function useGame(): GameContextValue {
+/**
+ * Combined game actions + state hook for components that need both.
+ */
+export const useGame = (): GameContextValue => { // skipcq: JS-0067
   const actions = useGameActions();
   const gameState = useGameState();
   return { ...actions, ...gameState };
-}
+};

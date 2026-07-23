@@ -989,7 +989,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     // PERF: Defer render to next animation frame - batches multiple state updates into one render
-    renderPendingRef.current = requestAnimationFrame(() => {
+    // skipcq: JS-R1005 -- isometric map render is an intentional hot-path monolith
+    const renderMainFrame = () => {
       renderPendingRef.current = null;
       
       // PERF: Throttle main renders at 3x speed to reduce dropped frames
@@ -2172,7 +2173,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     ctx.restore();
-    }); // End requestAnimationFrame callback
+    }; // End renderMainFrame
+    renderPendingRef.current = requestAnimationFrame(renderMainFrame);
     
     // PERF: Cleanup - cancel pending render on unmount or deps change
     return () => {

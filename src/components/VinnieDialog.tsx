@@ -43,6 +43,7 @@ export const VinnieDialog = ({ open, onOpenChange }: VinnieDialogProps) => {
   };
 
   return (
+    // skipcq: JS-0415 - dialog primitive nesting is required by the design system
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-900 border-slate-700 text-slate-100">
         <DialogHeader>

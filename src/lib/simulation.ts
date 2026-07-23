@@ -1353,15 +1353,15 @@ function calculateServiceCoverage(grid: Tile[][], size: number): ServiceCoverage
 const serviceCoverageFingerprintMap = new WeakMap<ServiceCoverage, number>();
 
 /** Stable hash of active (complete, non-abandoned) service buildings on the grid. */
-const getServiceCoverageFingerprint = (grid: Tile[][], size: number): number => {
+const getServiceCoverageFingerprint = (grid: Tile[][], size: number): number => { // skipcq: JS-R1005
   let hash = 1;
   for (let y = 0; y < size; y++) {
     const row = grid[y];
     for (let x = 0; x < size; x++) {
       const building = row[x].building;
-      if (!SERVICE_BUILDING_TYPES.has(building.type)) continue;
-      if (building.abandoned) continue;
-      if ((building.constructionProgress ?? 100) < 100) continue;
+      if (!SERVICE_BUILDING_TYPES.has(building.type) || building.abandoned || (building.constructionProgress ?? 100) < 100) {
+        continue;
+      }
 
       hash = (hash * 31 + y * size + x + 1) | 0;
       hash = (hash * 31 + building.type.charCodeAt(0) * 128 + building.type.length) | 0;

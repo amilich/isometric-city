@@ -1,7 +1,7 @@
 // Consolidated GameContext for the SimCity-like game
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 import { serializeAndCompressAsync } from '@/lib/saveWorkerManager';
 import { simulateTick } from '@/lib/simulation';
@@ -36,6 +36,7 @@ import {
   setActiveSpritePack,
   SpritePack,
 } from '@/lib/renderConfig';
+import { useGT } from 'gt-next';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITY_STORAGE_KEY = 'isocity-saved-city'; // For restoring after viewing shared city
@@ -54,20 +55,18 @@ export type SavedCityInfo = {
   savedAt: number;
 } | null;
 
-type GameContextValue = {
-  state: GameState;
+type GameActionsContextValue = {
   // PERF: Ref to latest state for real-time access without React re-renders
-  // Canvas should use this instead of state.grid for smooth updates
   latestStateRef: React.RefObject<GameState>;
   setTool: (tool: Tool) => void;
   setSpeed: (speed: 0 | 1 | 2 | 3) => void;
   setTaxRate: (rate: number) => void;
   setActivePanel: (panel: GameState['activePanel']) => void;
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
-  upgradeServiceBuilding: (x: number, y: number) => boolean; // Returns true if upgrade succeeded
+  upgradeServiceBuilding: (x: number, y: number) => boolean;
   placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
   setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => void;
-  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void; // Create bridges after road/rail drag
+  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void;
   setBridgeCallback: (callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => void;
   connectToCity: (cityId: string) => void;
   discoverCity: (cityId: string) => void;
@@ -79,33 +78,36 @@ type GameContextValue = {
   generateRandomCity: () => void;
   expandCity: () => void;
   shrinkCity: () => boolean;
-  hasExistingGame: boolean;
-  isStateReady: boolean; // True when initial state loading is complete
-  isSaving: boolean;
   addMoney: (amount: number) => void;
   addNotification: (title: string, description: string, icon: string) => void;
-  // Sprite pack management
-  currentSpritePack: SpritePack;
   availableSpritePacks: SpritePack[];
   setSpritePack: (packId: string) => void;
-  // Day/night mode override
-  dayNightMode: DayNightMode;
   setDayNightMode: (mode: DayNightMode) => void;
-  visualHour: number; // The hour to use for rendering (respects day/night mode override)
-  // Save/restore city for shared links
   saveCurrentCityForRestore: () => void;
   restoreSavedCity: () => boolean;
   getSavedCityInfo: () => SavedCityInfo;
   clearSavedCity: () => void;
-  // Multi-city save system
-  savedCities: SavedCityMeta[];
   saveCity: () => void;
   loadSavedCity: (cityId: string) => boolean;
   deleteSavedCity: (cityId: string) => void;
   renameSavedCity: (cityId: string, newName: string) => void;
 };
 
-const GameContext = createContext<GameContextValue | null>(null);
+type GameStateContextValue = {
+  state: GameState;
+  hasExistingGame: boolean;
+  isStateReady: boolean;
+  isSaving: boolean;
+  currentSpritePack: SpritePack;
+  dayNightMode: DayNightMode;
+  visualHour: number;
+  savedCities: SavedCityMeta[];
+};
+
+type GameContextValue = GameActionsContextValue & GameStateContextValue;
+
+const GameActionsContext = createContext<GameActionsContextValue | null>(null);
+const GameStateContext = createContext<GameStateContextValue | null>(null);
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -645,7 +647,7 @@ function deleteCityState(cityId: string): void {
   }
 }
 
-export function GameProvider({ children, startFresh = false }: { children: React.ReactNode; startFresh?: boolean }) {
+export function GameProvider({ children, startFresh = false }: { children: React.ReactNode; startFresh?: boolean }) { // skipcq: JS-0067
   // Start with a default state, we'll load from localStorage after mount (unless startFresh is true)
   const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
   
@@ -668,6 +670,8 @@ export function GameProvider({ children, startFresh = false }: { children: React
   
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
+
+  const gt = useGT();
   
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
@@ -712,7 +716,22 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // PERF: Just mark that state has changed - defer expensive deep copy to actual save time
   const stateChangedRef = useRef(false);
   const latestStateRef = useRef(state);
-  latestStateRef.current = state;
+  const latestStateTickRef = useRef(state.tick);
+
+  // PERF: Only sync React state into the ref when it's authoritative.
+  // Avoids stale React state (e.g. during isSaving re-renders) overwriting newer sim progress.
+  // Same-tick object identity changes (tax/budget/tool/placement) must still update the ref.
+  useEffect(() => {
+    const latest = latestStateRef.current;
+    const isNewerTick = state.tick > latestStateTickRef.current;
+    const isSameTickUpdate = state.tick === latestStateTickRef.current && state !== latest;
+    const isGameReset = state.gameVersion !== latest.gameVersion;
+
+    if (isNewerTick || isSameTickUpdate || isGameReset) {
+      latestStateRef.current = state;
+      latestStateTickRef.current = state.tick;
+    }
+  }, [state]);
   
   useEffect(() => {
     if (!hasLoadedRef.current) {
@@ -818,6 +837,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
         // PERF: Run simulation and update ref immediately (for canvas)
         const newState = simulateTick(latestStateRef.current);
         latestStateRef.current = newState;
+        latestStateTickRef.current = newState.tick;
         stateChangedRef.current = true;
         
         // PERF: Only sync to React every 500ms to avoid expensive reconciliation
@@ -1022,8 +1042,12 @@ export function GameProvider({ children, startFresh = false }: { children: React
         notifications: [
           {
             id: `city-connect-${Date.now()}`,
-            title: 'City Connected!',
-            description: `Trade route established with ${city.name}. +$${tradeBonus} bonus and +$${tradeIncome}/month income.`,
+            title: gt('City Connected!'),
+            description: gt('Trade route established with {cityName}. +{tradeBonus} bonus and +{tradeIncome}/month income.', {
+              cityName: city.name,
+              tradeBonus: `$${tradeBonus}`,
+              tradeIncome: `$${tradeIncome}`,
+            }),
             icon: 'road',
             timestamp: Date.now(),
           },
@@ -1049,8 +1073,8 @@ export function GameProvider({ children, startFresh = false }: { children: React
         notifications: [
           {
             id: `city-discover-${Date.now()}`,
-            title: 'City Discovered!',
-            description: `Your road has reached the ${city.direction} border! You can now connect to ${city.name}.`,
+            title: gt('City Discovered!'),
+            description: gt('Your road has reached the {direction} border! You can now connect to {cityName}.', { direction: city.direction, cityName: city.name }),
             icon: 'road',
             timestamp: Date.now(),
           },
@@ -1628,8 +1652,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }
   }, [state.id]);
 
-  const value: GameContextValue = {
-    state,
+  const actionsValue = useMemo<GameActionsContextValue>(() => ({
     latestStateRef,
     setTool,
     setSpeed,
@@ -1651,39 +1674,102 @@ export function GameProvider({ children, startFresh = false }: { children: React
     generateRandomCity,
     expandCity,
     shrinkCity,
-    hasExistingGame,
-    isStateReady,
-    isSaving,
     addMoney,
     addNotification,
-    // Sprite pack management
-    currentSpritePack,
     availableSpritePacks: SPRITE_PACKS,
     setSpritePack,
-    // Day/night mode override
-    dayNightMode,
     setDayNightMode,
-    visualHour,
-    // Save/restore city for shared links
     saveCurrentCityForRestore,
     restoreSavedCity,
     getSavedCityInfo,
     clearSavedCity,
-    // Multi-city save system
-    savedCities,
     saveCity,
     loadSavedCity,
     deleteSavedCity,
     renameSavedCity,
-  };
+  }), [
+    setTool,
+    setSpeed,
+    setTaxRate,
+    setActivePanel,
+    setBudgetFunding,
+    placeAtTile,
+    upgradeServiceBuildingHandler,
+    setPlaceCallback,
+    finishTrackDrag,
+    setBridgeCallback,
+    connectToCity,
+    discoverCity,
+    checkAndDiscoverCities,
+    setDisastersEnabled,
+    newGame,
+    loadState,
+    exportState,
+    generateRandomCity,
+    expandCity,
+    shrinkCity,
+    addMoney,
+    addNotification,
+    setSpritePack,
+    setDayNightMode,
+    saveCurrentCityForRestore,
+    restoreSavedCity,
+    getSavedCityInfo,
+    clearSavedCity,
+    saveCity,
+    loadSavedCity,
+    deleteSavedCity,
+    renameSavedCity,
+  ]);
 
-  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+  const stateValue = useMemo<GameStateContextValue>(() => ({
+    state,
+    hasExistingGame,
+    isStateReady,
+    isSaving,
+    currentSpritePack,
+    dayNightMode,
+    visualHour,
+    savedCities,
+  }), [state, hasExistingGame, isStateReady, isSaving, currentSpritePack, dayNightMode, visualHour, savedCities]);
+
+  return (
+    <GameActionsContext.Provider value={actionsValue}>
+      <GameStateContext.Provider value={stateValue}>
+        {children}
+      </GameStateContext.Provider>
+    </GameActionsContext.Provider>
+  );
 }
 
-export function useGame() {
-  const ctx = useContext(GameContext);
+/**
+ * Stable game action callbacks. Prefer this over useGame when only mutations are needed
+ * so consumers avoid re-rendering on simulation/UI state syncs.
+ */
+export const useGameActions = (): GameActionsContextValue => { // skipcq: JS-0067
+  const ctx = useContext(GameActionsContext);
   if (!ctx) {
-    throw new Error('useGame must be used within a GameProvider');
+    throw new Error('useGameActions must be used within a GameProvider');
   }
   return ctx;
-}
+};
+
+/**
+ * Frequently changing game state (stats, grid, sprite pack, etc.).
+ */
+export const useGameState = (): GameStateContextValue => { // skipcq: JS-0067
+  const ctx = useContext(GameStateContext);
+  if (!ctx) {
+    throw new Error('useGameState must be used within a GameProvider');
+  }
+  return ctx;
+};
+
+/**
+ * Combined game actions + state hook for components that need both.
+ */
+export const useGame = (): GameContextValue => { // skipcq: JS-0067
+  const actions = useGameActions();
+  const gameState = useGameState();
+  return { ...actions, ...gameState };
+};

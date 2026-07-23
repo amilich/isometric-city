@@ -1356,18 +1356,15 @@ const serviceCoverageFingerprintMap = new WeakMap<ServiceCoverage, number>();
 const getServiceCoverageFingerprint = (grid: Tile[][], size: number): number => {
   let hash = 1;
   for (let y = 0; y < size; y++) {
+    const row = grid[y];
     for (let x = 0; x < size; x++) {
-      const building = grid[y][x].building;
+      const building = row[x].building;
       if (!SERVICE_BUILDING_TYPES.has(building.type)) continue;
-      if (building.constructionProgress !== undefined && building.constructionProgress < 100) continue;
       if (building.abandoned) continue;
+      if ((building.constructionProgress ?? 100) < 100) continue;
 
-      // Mix position, type char codes, and level into a stable numeric fingerprint
-      hash = (hash * 31 + (y * size + x + 1)) | 0;
-      hash = (hash * 31 + building.type.length) | 0;
-      for (let i = 0; i < building.type.length; i++) {
-        hash = (hash * 31 + building.type.charCodeAt(i)) | 0;
-      }
+      hash = (hash * 31 + y * size + x + 1) | 0;
+      hash = (hash * 31 + building.type.charCodeAt(0) * 128 + building.type.length) | 0;
       hash = (hash * 31 + building.level) | 0;
     }
   }
@@ -2133,7 +2130,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
     messages.push({
       name: msg('Finance Advisor'),
       icon: 'cash',
-      messages: [msg('City is running a deficit of ${amount}/month. Consider raising taxes or cutting services.', { amount: Math.abs(netIncome) })],
+      messages: [msg('City is running a deficit of {amount}/month. Consider raising taxes or cutting services.', { amount: `$${Math.abs(netIncome)}` })],
       priority: netIncome < -500 ? 'critical' : 'high',
     });
   }
@@ -2213,7 +2210,7 @@ function generateAdvisorMessages(stats: Stats, services: ServiceCoverage, grid: 
 
 
 // Main simulation tick
-export function simulateTick(state: GameState): GameState {
+export function simulateTick(state: GameState): GameState { // skipcq: JS-0067, JS-R1005
   // Optimized: shallow clone rows, deep clone tiles only when modified
   const size = state.gridSize;
   

@@ -10,23 +10,23 @@ exclude_patterns = [
 name = "javascript"
 enabled = true
 
-  [analyzers.meta]
-  plugins = ["react"]
-  environment = ["nodejs", "browser"]
-  module_system = "es-modules"
-  dialect = "typescript"
-  # Repo is a game codebase without systematic JSDoc; skip doc coverage artifacts
-  # so the DCV metric does not fail PRs against an unreachable threshold.
-  skip_doc_coverage = [
-    "function-declaration",
-    "function-expression",
-    "arrow-function-expression",
-    "class-declaration",
-    "class-expression",
-    "method-definition",
-  ]
-  # Large simulation/render functions are intentionally complex hot paths.
-  cyclomatic_complexity_threshold = "critical"
+[analyzers.meta]
+plugins = ["react"]
+environment = ["nodejs", "browser"]
+module_system = "es-modules"
+dialect = "typescript"
+# Game codebase does not use systematic JSDoc; exclude all doc-coverage artifacts
+# so DCV does not fail PRs against an unreachable ~70% threshold.
+skip_doc_coverage = [
+  "function-declaration",
+  "function-expression",
+  "arrow-function-expression",
+  "class-declaration",
+  "class-expression",
+  "method-definition",
+]
+# Large simulation/render hot paths are intentionally complex.
+cyclomatic_complexity_threshold = "critical"
 
 [[analyzers]]
 name = "secrets"

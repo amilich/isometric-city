@@ -60,7 +60,7 @@ export interface VehicleSystemState {
   isMobile: boolean;
 }
 
-export function useVehicleSystems(
+export function useVehicleSystems( // skipcq: JS-0067
   refs: VehicleSystemRefs,
   systemState: VehicleSystemState
 ) {

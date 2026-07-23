@@ -647,7 +647,7 @@ function deleteCityState(cityId: string): void {
   }
 }
 
-export function GameProvider({ children, startFresh = false }: { children: React.ReactNode; startFresh?: boolean }) {
+export function GameProvider({ children, startFresh = false }: { children: React.ReactNode; startFresh?: boolean }) { // skipcq: JS-0067
   // Start with a default state, we'll load from localStorage after mount (unless startFresh is true)
   const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
   
@@ -1043,7 +1043,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
           {
             id: `city-connect-${Date.now()}`,
             title: gt('City Connected!'),
-            description: gt('Trade route established with {cityName}. +${tradeBonus} bonus and +${tradeIncome}/month income.', { cityName: city.name, tradeBonus, tradeIncome }),
+            description: gt('Trade route established with {cityName}. +{tradeBonus} bonus and +{tradeIncome}/month income.', {
+              cityName: city.name,
+              tradeBonus: `$${tradeBonus}`,
+              tradeIncome: `$${tradeIncome}`,
+            }),
             icon: 'road',
             timestamp: Date.now(),
           },

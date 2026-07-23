@@ -124,7 +124,7 @@ export interface CanvasIsometricGridProps {
 }
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
-export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
+export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) { // skipcq: JS-0067
   const { latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities } = useGameActions();
   const { state, currentSpritePack, visualHour } = useGameState();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;

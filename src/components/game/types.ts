@@ -513,6 +513,34 @@ export type Cloud = {
   cloudType: CloudType;
 };
 
+// Rain drop for precipitation effects (spawned from cumulonimbus/stratus clouds)
+export type RainDrop = {
+  id: number;
+  // Screen position (isometric coordinates)
+  x: number;
+  y: number;
+  // Velocity (pixels per second)
+  vx: number;
+  vy: number;
+  // Length of the rain streak (visual)
+  length: number;
+  // Opacity (0-1)
+  opacity: number;
+  // Age (for fade-in/out)
+  age: number;
+  // Layer for parallax (0 = near, 1 = mid, 2 = far)
+  layer: number;
+};
+
+// Rain splash effect when drops hit ground
+export type RainSplash = {
+  x: number;
+  y: number;
+  age: number;
+  size: number;
+  opacity: number;
+};
+
 // Direction metadata - re-export from core
 export type { DirectionMeta } from '@/core/types/grid';
 

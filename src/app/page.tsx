@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import NextImage from 'next/image';
 import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
 import Game from '@/components/Game';
@@ -10,6 +11,7 @@ import { SavedCityMeta } from '@/types/game';
 
 const STORAGE_KEY = 'BNBCITY-game-state';
 const SAVED_CITIES_INDEX_KEY = 'BNBCITY-saved-cities-index';
+const SHOW_CONTRACT_ADDRESS = false;
 
 // Background color to filter from sprite sheets (red)
 const BACKGROUND_COLOR = { r: 255, g: 0, b: 0 };
@@ -328,12 +330,17 @@ export default function HomePage() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom overflow-y-auto">
         {/* Title */}
-        <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90 mb-6">
-          BNBCITY
-        </h1>
+        <div className="flex items-center gap-3 mb-6">
+          <NextImage src="/assets/binance-logo.png" alt="Binance logo" width={48} height={48} priority />
+          <h1 className="text-5xl sm:text-6xl font-light tracking-wider text-white/90">
+            BINANCECITY
+          </h1>
+        </div>
         
         {/* Contract Address */}
-        <ContractAddressDisplay address="0x3cc252684224e6084d0ff281f5670d2f482c4444" />
+        {SHOW_CONTRACT_ADDRESS && (
+          <ContractAddressDisplay address="0x3cc252684224e6084d0ff281f5670d2f482c4444" />
+        )}
         
         {/* Sprite Gallery - keep visible even when saves exist */}
         <div className="mb-6">
@@ -391,12 +398,17 @@ export default function HomePage() {
         
         {/* Left - Title and Start Button */}
         <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
-          <h1 className="text-8xl font-light tracking-wider text-white/90">
-            BNBCITY
-          </h1>
+          <div className="flex items-center gap-5">
+            <NextImage src="/assets/binance-logo.png" alt="Binance logo" width={72} height={72} priority />
+            <h1 className="text-8xl font-light tracking-wider text-white/90">
+              BINANCECITY
+            </h1>
+          </div>
           
           {/* Contract Address */}
-          <ContractAddressDisplay address="0x3cc252684224e6084d0ff281f5670d2f482c4444" />
+          {SHOW_CONTRACT_ADDRESS && (
+            <ContractAddressDisplay address="0x3cc252684224e6084d0ff281f5670d2f482c4444" />
+          )}
           
           <div className="flex flex-col gap-3">
             <Button 

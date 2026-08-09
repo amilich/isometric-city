@@ -108,6 +108,7 @@ import {
   TRAINS_PER_RAIL_TILES,
 } from '@/components/game/trainSystem';
 import { Train } from '@/components/game/types';
+import { BINANCE_LOGO_ASSET_PATH, drawBinanceDecoration, getBinanceDecorationKind } from '@/components/game/binanceDecorations';
 
 // Props interface for CanvasIsometricGrid
 export interface CanvasIsometricGridProps {
@@ -174,6 +175,58 @@ export const CanvasIsometricGrid = React.forwardRef<
   useImperativeHandle(ref, () => ({
     getPedestrians: () => pedestriansRef.current,
   }), []);
+
+  useEffect(() => {
+    const gameWindow = window as Window & {
+      render_game_to_text?: () => string;
+      advanceTime?: (ms: number) => Promise<void>;
+    };
+    const existingAdvanceTime = gameWindow.advanceTime;
+
+    gameWindow.render_game_to_text = () => {
+      const decorations = grid.flatMap(row => row.flatMap(tile => {
+        const kind = getBinanceDecorationKind(tile);
+        return kind ? [{ kind, x: tile.x, y: tile.y, building: tile.building.type }] : [];
+      }));
+
+      return JSON.stringify({
+        mode: 'city',
+        coordinateSystem: 'grid origin is the north corner; x runs southeast and y runs southwest',
+        city: state.cityName,
+        date: { year: state.year, month: state.month },
+        viewport: { offset, zoom, width: canvasRef.current?.clientWidth ?? 0, height: canvasRef.current?.clientHeight ?? 0 },
+        selectedTool,
+        selectedTile,
+        stats: {
+          population: state.stats.population,
+          jobs: state.stats.jobs,
+          money: state.stats.money,
+          happiness: state.stats.happiness,
+        },
+        binanceDecorations: {
+          visibleAtCurrentZoom: zoom >= 0.55,
+          total: decorations.length,
+          items: decorations,
+        },
+      });
+    };
+
+    if (!existingAdvanceTime) {
+      gameWindow.advanceTime = (ms: number) => new Promise(resolve => {
+        const start = performance.now();
+        const step = (now: number) => {
+          if (now - start >= ms) resolve();
+          else requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
+    }
+
+    return () => {
+      delete gameWindow.render_game_to_text;
+      if (!existingAdvanceTime) delete gameWindow.advanceTime;
+    };
+  }, [grid, offset, selectedTile, selectedTool, state.cityName, state.month, state.stats, state.year, zoom]);
   
   // Touch gesture state for mobile
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -800,6 +853,9 @@ export const CanvasIsometricGrid = React.forwardRef<
     
     // High priority - water texture
     loadImage(WATER_ASSET_PATH).catch(console.error);
+
+    // High priority - user-provided Binance logo used by city decorations
+    loadImage(BINANCE_LOGO_ASSET_PATH).catch(console.error);
     
     // Medium priority - load secondary sheets after a small delay
     // This allows the main content to render first
@@ -2570,6 +2626,8 @@ export const CanvasIsometricGrid = React.forwardRef<
           }
         }
       }
+
+      drawBinanceDecoration(ctx, x, y, tile, zoom);
       
       // Draw fire effect
       if (tile.building.onFire) {

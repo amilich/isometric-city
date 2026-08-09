@@ -34,3 +34,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Keep the user-provided Binance brand asset despite the global PNG ignore rule.
+!public/assets/binance-logo.png

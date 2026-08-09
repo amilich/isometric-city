@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 import {
@@ -340,7 +341,10 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-full relative z-40">
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
-          <span className="text-sidebar-foreground font-bold tracking-tight">BNBCITY</span>
+          <div className="flex items-center gap-2">
+            <Image src="/assets/binance-logo.png" alt="Binance logo" width={24} height={24} />
+            <span className="text-sidebar-foreground font-bold tracking-tight">BINANCECITY</span>
+          </div>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"

@@ -23,10 +23,10 @@ export const metadata: Metadata = {
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000'
   ),
-  title: 'BNBCITY — Metropolis Builder',
+  title: 'BINANCECITY — Metropolis Builder',
   description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
   openGraph: {
-    title: 'BNBCITY — Metropolis Builder',
+    title: 'BINANCECITY — Metropolis Builder',
     description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
     type: 'website',
     images: [
@@ -35,27 +35,27 @@ export const metadata: Metadata = {
         width: 1179,
         height: 1406,
         type: 'image/png',
-        alt: 'BNBCITY - Isometric city builder game screenshot',
+        alt: 'BINANCECITY - Isometric city builder game screenshot',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BNBCITY — Metropolis Builder',
+    title: 'BINANCECITY — Metropolis Builder',
     description: 'A richly detailed isometric city builder. Build your metropolis and manage resources with cars, planes, helicopters, boats, trains, citizens, and more.',
     images: [
       {
         url: '/opengraph-image',
         width: 1179,
         height: 1406,
-        alt: 'BNBCITY - Isometric city builder game screenshot',
+        alt: 'BINANCECITY - Isometric city builder game screenshot',
       },
     ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'BNBCITY',
+    title: 'BINANCECITY',
   },
   formatDetection: {
     telephone: false,

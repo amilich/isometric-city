@@ -26,7 +26,7 @@ interface City3DViewProps {
 
 type DragMode = 'none' | 'pan' | 'orbit' | 'paint';
 
-export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: City3DViewProps) {
+export const City3DView = ({ selectedTile, setSelectedTile, isMobile = false }: City3DViewProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { latestStateRef, placeAtTile, visualHour } = useGame();
@@ -315,4 +315,4 @@ export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: 
       </div>
     </div>
   );
-}
+};

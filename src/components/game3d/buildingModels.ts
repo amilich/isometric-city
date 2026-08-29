@@ -127,13 +127,13 @@ const PLAZA_TYPES: Partial<Record<BuildingType, PlazaSurface>> = {
   mountain_trailhead: { color: '#6f8f56', height: 0.02, texture: TEX.GRASS },
 };
 
-export function getBuilding3DSpec(type: BuildingType): Building3DSpec {
+export const getBuilding3DSpec = (type: BuildingType): Building3DSpec => {
   return SPECS[type] ?? DEFAULT_SPEC;
-}
+};
 
-export function getPlazaSurface(type: BuildingType): PlazaSurface | null {
+export const getPlazaSurface = (type: BuildingType): PlazaSurface | null => {
   return PLAZA_TYPES[type] ?? null;
-}
+};
 
 export interface BuildingTextures {
   /** Atlas layer used on the walls. */
@@ -175,25 +175,25 @@ const TEXTURE_OVERRIDES: Partial<Record<BuildingType, Partial<BuildingTextures>>
   pier_large: { wall: TEX.STUCCO, roof: TEX.ROOF_METAL },
 };
 
-export function getBuildingTextures(type: BuildingType): BuildingTextures {
+export const getBuildingTextures = (type: BuildingType): BuildingTextures => {
   const base = STYLE_TEXTURES[getBuilding3DSpec(type).style];
   const override = TEXTURE_OVERRIDES[type];
   return override ? { ...base, ...override } : base;
-}
+};
 
 /** Types that are terrain / infrastructure rather than a placed volume. */
 export const NON_VOLUME_TYPES = new Set<BuildingType>(['empty', 'grass', 'water', 'road', 'bridge', 'rail', 'tree']);
 
 /** Convert '#rrggbb' to linear-ish 0..1 rgb triples. */
-export function hexToRgb(hex: string): [number, number, number] {
+export const hexToRgb = (hex: string): [number, number, number] => {
   const value = hex.startsWith('#') ? hex.slice(1) : hex;
   const num = parseInt(value, 16);
   return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
-}
+};
 
 /** Deterministic hash in [0,1) so a tile always looks the same across rebuilds. */
-export function tileHash(x: number, y: number, salt = 0): number {
+export const tileHash = (x: number, y: number, salt = 0): number => {
   let h = (x * 374761393 + y * 668265263 + salt * 2246822519) | 0;
   h = (h ^ (h >>> 13)) * 1274126177;
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
+};

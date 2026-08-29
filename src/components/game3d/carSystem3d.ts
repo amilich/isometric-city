@@ -34,9 +34,9 @@ const CAR_COLORS: [number, number, number][] = [
 ];
 
 /** Grid step for each direction, in (x, y) tile units. */
-function step(direction: CarDirection): { x: number; y: number } {
+const step = (direction: CarDirection): { x: number; y: number } => {
   return DIRECTION_META[direction].step;
-}
+};
 
 export class CarSystem3D {
   cars: Car3D[] = [];

@@ -16,9 +16,9 @@ export interface Atmosphere {
 
 type RGB = [number, number, number];
 
-function mix(a: RGB, b: RGB, t: number): RGB {
+const mix = (a: RGB, b: RGB, t: number): RGB => {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-}
+};
 
 const DAY_SUN: RGB = [1.0, 0.96, 0.88];
 const GOLDEN_SUN: RGB = [1.0, 0.66, 0.36];
@@ -35,10 +35,10 @@ const NIGHT_HORIZON: RGB = [0.08, 0.1, 0.2];
  * Sun elevation over the day: below the horizon before 6am / after 8pm,
  * peaking around 1pm.
  */
-export function computeAtmosphere(hour: number): Atmosphere {
+export const computeAtmosphere = (hour: number): Atmosphere => {
   const dayProgress = (hour - 6) / 14; // 6am..8pm maps to 0..1
   const elevation = Math.sin(Math.PI * Math.min(1.4, Math.max(-0.4, dayProgress)));
-  const azimuth = Math.PI * (0.25 + dayProgress * 1.0);
+  const azimuth = Math.PI * (0.25 + dayProgress);
 
   const horizontal = Math.max(0.12, Math.cos(Math.asin(Math.max(-1, Math.min(1, elevation)))));
   const sunDir: RGB = [Math.cos(azimuth) * horizontal, Math.max(-0.2, elevation), Math.sin(azimuth) * horizontal];
@@ -70,4 +70,4 @@ export function computeAtmosphere(hour: number): Atmosphere {
     fogColor: mix(horizonColor, zenithColor, 0.25),
     night,
   };
-}
+};

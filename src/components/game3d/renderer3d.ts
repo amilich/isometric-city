@@ -40,7 +40,7 @@ const LIGHTING_UNIFORMS = [
 ];
 
 /** Unit cube centered on the origin: position + normal per vertex. */
-function unitBoxGeometry(): Float32Array {
+const unitBoxGeometry = (): Float32Array => {
   const faces: { normal: [number, number, number]; corners: [number, number, number][] }[] = [
     { normal: [0, 0, 1], corners: [[-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]] },
     { normal: [0, 0, -1], corners: [[0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5, 0.5, -0.5], [0.5, 0.5, -0.5]] },
@@ -57,7 +57,7 @@ function unitBoxGeometry(): Float32Array {
     }
   }
   return new Float32Array(data);
-}
+};
 
 export interface HighlightRect {
   x: number;

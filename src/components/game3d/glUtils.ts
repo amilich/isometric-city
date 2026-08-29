@@ -7,7 +7,7 @@ export interface ShaderProgram {
   attribs: Record<string, number>;
 }
 
-function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
+const compileShader = (gl: WebGL2RenderingContext, type: number, source: string): WebGLShader => {
   const shader = gl.createShader(type);
   if (!shader) throw new Error('Failed to create shader');
   gl.shaderSource(shader, source);
@@ -18,15 +18,15 @@ function compileShader(gl: WebGL2RenderingContext, type: number, source: string)
     throw new Error(`Shader compile failed: ${log}`);
   }
   return shader;
-}
+};
 
-export function createProgram(
+export const createProgram = (
   gl: WebGL2RenderingContext,
   vertexSource: string,
   fragmentSource: string,
   uniformNames: string[],
   attribNames: string[]
-): ShaderProgram {
+): ShaderProgram => {
   const vs = compileShader(gl, gl.VERTEX_SHADER, vertexSource);
   const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
   const program = gl.createProgram();
@@ -51,7 +51,7 @@ export function createProgram(
     attribs[name] = gl.getAttribLocation(program, name);
   }
   return { program, uniforms, attribs };
-}
+};
 
 /** Growable float array used while generating meshes. */
 export class FloatArrayBuilder {

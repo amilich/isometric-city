@@ -36,9 +36,9 @@ export const SURFACE = {
 const MATERIAL_STRIDE = 8;
 
 /** Pack a surface flag and an atlas layer (TEX.NONE for untextured) into one float. */
-export function material(flag: number, layer: number = TEX.NONE): number {
+export const material = (flag: number, layer: number = TEX.NONE): number => {
   return flag + (layer + 1) * MATERIAL_STRIDE;
-}
+};
 
 export interface CityMesh {
   /** Interleaved opaque geometry. */
@@ -233,22 +233,22 @@ class Geometry {
   }
 }
 
-function isType(grid: Tile[][], gridSize: number, x: number, y: number, type: BuildingType): boolean {
+const isType = (grid: Tile[][], gridSize: number, x: number, y: number, type: BuildingType): boolean => {
   if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
   return grid[y][x].building.type === type;
-}
+};
 
-function isRoadLike(grid: Tile[][], gridSize: number, x: number, y: number): boolean {
+const isRoadLike = (grid: Tile[][], gridSize: number, x: number, y: number): boolean => {
   if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
   const type = grid[y][x].building.type;
   return type === 'road' || type === 'bridge';
-}
+};
 
-function mixColor(color: RGB, factor: number): RGB {
+const mixColor = (color: RGB, factor: number): RGB => {
   return [color[0] * factor, color[1] * factor, color[2] * factor];
-}
+};
 
-function addTree(geo: Geometry, x: number, y: number, scale = 1): void {
+const addTree = (geo: Geometry, x: number, y: number, scale = 1): void => {
   const cx = x + 0.3 + tileHash(x, y, 3) * 0.4;
   const cz = y + 0.3 + tileHash(x, y, 4) * 0.4;
   const height = (0.55 + tileHash(x, y, 5) * 0.5) * scale;
@@ -256,9 +256,9 @@ function addTree(geo: Geometry, x: number, y: number, scale = 1): void {
   geo.box(cx, cz, 0.07 * scale, 0.07 * scale, 0, height * 0.4, TRUNK, TRUNK, SURFACE.PLAIN);
   geo.cone(cx, cz, 0.28 * scale, height * 0.3, height * 0.85, 7, leaf);
   geo.cone(cx, cz, 0.2 * scale, height * 0.62, height * 1.25, 7, mixColor(leaf, 1.12));
-}
+};
 
-function addRoadTile(geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number): void {
+const addRoadTile = (geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number): void => {
   const northSouth = isRoadLike(grid, gridSize, x, y - 1) || isRoadLike(grid, gridSize, x, y + 1);
   const eastWest = isRoadLike(grid, gridSize, x - 1, y) || isRoadLike(grid, gridSize, x + 1, y);
   const intersection = northSouth && eastWest;
@@ -282,9 +282,9 @@ function addRoadTile(geo: Geometry, grid: Tile[][], gridSize: number, x: number,
   } else {
     geo.ground(x, y, x + 1, y + 1, 0.05, ASPHALT, flag);
   }
-}
+};
 
-function addRailTile(geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number): void {
+const addRailTile = (geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number): void => {
   const northSouth = isType(grid, gridSize, x, y - 1, 'rail') || isType(grid, gridSize, x, y + 1, 'rail');
   geo.ground(x + 0.15, y + 0.15, x + 0.85, y + 0.85, 0.04, RAIL_BED, material(SURFACE.PLAIN, TEX.DIRT));
   const railOffsets = [-0.12, 0.12];
@@ -295,9 +295,9 @@ function addRailTile(geo: Geometry, grid: Tile[][], gridSize: number, x: number,
       geo.box(x + 0.5, y + 0.5 + offset, 1, 0.05, 0.04, 0.1, RAIL_METAL, RAIL_METAL, SURFACE.PLAIN);
     }
   }
-}
+};
 
-function addBridgeTile(geo: Geometry, tile: Tile, x: number, y: number): void {
+const addBridgeTile = (geo: Geometry, tile: Tile, x: number, y: number): void => {
   const deckY = 0.55;
   const isNS = tile.building.bridgeOrientation === 'ns';
   const deckColor: RGB = [0.62, 0.60, 0.57];
@@ -315,9 +315,9 @@ function addBridgeTile(geo: Geometry, tile: Tile, x: number, y: number): void {
   if (tile.building.bridgePosition !== 'middle' || (x + y) % 3 === 0) {
     geo.box(x + 0.5, y + 0.5, 0.16, 0.16, -0.6, deckY - 0.08, [0.5, 0.49, 0.47], [0.5, 0.49, 0.47], deckFlag, deckFlag);
   }
-}
+};
 
-function addBuildingVolume(geo: Geometry, tile: Tile, x: number, y: number): void {
+const addBuildingVolume = (geo: Geometry, tile: Tile, x: number, y: number): void => {
   const type = tile.building.type;
   const spec = getBuilding3DSpec(type);
   const size = getBuildingSize(type);
@@ -424,7 +424,7 @@ function addBuildingVolume(geo: Geometry, tile: Tile, x: number, y: number): voi
     // Simple flame cone so fires are visible in 3D too
     geo.cone(cx, cz, Math.min(sx, sz) * 0.35, height, height + 0.7, 6, [0.95, 0.42, 0.12]);
   }
-}
+};
 
 export interface BuildCityMeshOptions {
   grid: Tile[][];
@@ -432,7 +432,7 @@ export interface BuildCityMeshOptions {
 }
 
 /** Build the full static city mesh. Runs when the grid changes, not per frame. */
-export function buildCityMesh({ grid, gridSize }: BuildCityMeshOptions): CityMesh {
+export const buildCityMesh = ({ grid, gridSize }: BuildCityMeshOptions): CityMesh => {
   const opaque = new Geometry();
   const water = new Geometry();
 
@@ -508,4 +508,4 @@ export function buildCityMesh({ grid, gridSize }: BuildCityMeshOptions): CityMes
     opaqueVertices: opaque.vertices,
     waterVertices: water.vertices,
   };
-}
+};

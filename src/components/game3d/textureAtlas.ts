@@ -35,21 +35,21 @@ export const TEXTURE_LAYERS = 12;
 type Ctx = CanvasRenderingContext2D;
 
 /** Deterministic pseudo random so textures are identical across reloads. */
-function makeRandom(seed: number): () => number {
+const makeRandom = (seed: number): () => number => {
   let state = seed | 0 || 1;
   return () => {
     state = (state * 1664525 + 1013904223) | 0;
     return ((state >>> 8) & 0xffffff) / 0x1000000;
   };
-}
+};
 
-function fill(ctx: Ctx, gray: number): void {
+const fill = (ctx: Ctx, gray: number): void => {
   ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
   ctx.fillRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-}
+};
 
 /** Per-pixel grain. Random at pixel scale, so it tiles without visible seams. */
-function grain(ctx: Ctx, amount: number, seed: number, tint: [number, number, number] = [1, 1, 1]): void {
+const grain = (ctx: Ctx, amount: number, seed: number, tint: [number, number, number] = [1, 1, 1]): void => {
   const image = ctx.getImageData(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
   const random = makeRandom(seed);
   const data = image.data;
@@ -60,7 +60,7 @@ function grain(ctx: Ctx, amount: number, seed: number, tint: [number, number, nu
     data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + n * tint[2]));
   }
   ctx.putImageData(image, 0, 0);
-}
+};
 
 interface Rect {
   x: number;
@@ -73,7 +73,7 @@ interface Rect {
 let windowRects: Rect[] = [];
 
 /** Windows on the shared WINDOW_GRID; each pane is recorded for the alpha mask. */
-function windows(ctx: Ctx, options: { width: number; height: number; frame: number; sill: boolean }): void {
+const windows = (ctx: Ctx, options: { width: number; height: number; frame: number; sill: boolean }): void => {
   const cell = TEXTURE_SIZE / WINDOW_GRID;
   const w = cell * options.width;
   const h = cell * options.height;
@@ -100,9 +100,9 @@ function windows(ctx: Ctx, options: { width: number; height: number; frame: numb
       }
     }
   }
-}
+};
 
-function concretePanel(ctx: Ctx): void {
+const concretePanel = (ctx: Ctx): void => {
   fill(ctx, 128);
   grain(ctx, 26, 11);
   // Precast panel joints
@@ -118,9 +118,9 @@ function concretePanel(ctx: Ctx): void {
     ctx.stroke();
   }
   windows(ctx, { width: 0.52, height: 0.5, frame: 4, sill: true });
-}
+};
 
-function brick(ctx: Ctx): void {
+const brick = (ctx: Ctx): void => {
   fill(ctx, 120);
   const rows = 24;
   const rowHeight = TEXTURE_SIZE / rows;
@@ -136,9 +136,9 @@ function brick(ctx: Ctx): void {
   }
   grain(ctx, 16, 23);
   windows(ctx, { width: 0.42, height: 0.46, frame: 5, sill: true });
-}
+};
 
-function glassCurtain(ctx: Ctx): void {
+const glassCurtain = (ctx: Ctx): void => {
   fill(ctx, 118);
   const cell = TEXTURE_SIZE / WINDOW_GRID;
   // Spandrel bands between floors
@@ -152,9 +152,9 @@ function glassCurtain(ctx: Ctx): void {
   for (let i = 0; i < WINDOW_GRID * 2; i++) {
     ctx.fillRect((i * TEXTURE_SIZE) / (WINDOW_GRID * 2), 0, 2, TEXTURE_SIZE);
   }
-}
+};
 
-function stucco(ctx: Ctx): void {
+const stucco = (ctx: Ctx): void => {
   fill(ctx, 134);
   grain(ctx, 30, 51);
   // Horizontal siding lines
@@ -167,9 +167,9 @@ function stucco(ctx: Ctx): void {
     ctx.stroke();
   }
   windows(ctx, { width: 0.34, height: 0.4, frame: 6, sill: true });
-}
+};
 
-function metalPanel(ctx: Ctx): void {
+const metalPanel = (ctx: Ctx): void => {
   fill(ctx, 128);
   // Corrugated ribs
   for (let x = 0; x < TEXTURE_SIZE; x++) {
@@ -186,9 +186,9 @@ function metalPanel(ctx: Ctx): void {
     ctx.fillRect(strip.x, strip.y, strip.w, strip.h);
     windowRects.push(strip);
   }
-}
+};
 
-function roofGravel(ctx: Ctx): void {
+const roofGravel = (ctx: Ctx): void => {
   fill(ctx, 126);
   grain(ctx, 46, 131);
   // Membrane seams
@@ -200,9 +200,9 @@ function roofGravel(ctx: Ctx): void {
     ctx.lineTo(TEXTURE_SIZE, y + 1.5);
     ctx.stroke();
   }
-}
+};
 
-function roofShingle(ctx: Ctx): void {
+const roofShingle = (ctx: Ctx): void => {
   fill(ctx, 120);
   const rows = 16;
   const rowHeight = TEXTURE_SIZE / rows;
@@ -219,9 +219,9 @@ function roofShingle(ctx: Ctx): void {
     ctx.fillRect(0, row * rowHeight + rowHeight - 2, TEXTURE_SIZE, 2);
   }
   grain(ctx, 14, 233);
-}
+};
 
-function roofMetal(ctx: Ctx): void {
+const roofMetal = (ctx: Ctx): void => {
   fill(ctx, 130);
   for (let x = 0; x < TEXTURE_SIZE; x += 32) {
     ctx.fillStyle = 'rgba(160,164,168,0.9)';
@@ -230,9 +230,9 @@ function roofMetal(ctx: Ctx): void {
     ctx.fillRect(x + 4, 0, 2, TEXTURE_SIZE);
   }
   grain(ctx, 12, 307);
-}
+};
 
-function asphalt(ctx: Ctx): void {
+const asphalt = (ctx: Ctx): void => {
   fill(ctx, 122);
   grain(ctx, 40, 401);
   // Patches and cracks
@@ -247,9 +247,9 @@ function asphalt(ctx: Ctx): void {
     ctx.lineTo(x + (random() - 0.5) * 26, y + (random() - 0.5) * 26);
     ctx.stroke();
   }
-}
+};
 
-function grass(ctx: Ctx): void {
+const grass = (ctx: Ctx): void => {
   fill(ctx, 128);
   grain(ctx, 44, 503, [0.7, 1.2, 0.6]);
   const random = makeRandom(521);
@@ -265,9 +265,9 @@ function grass(ctx: Ctx): void {
     ctx.lineTo(x + (random() - 0.5) * 3, y - 2 - random() * 3);
     ctx.stroke();
   }
-}
+};
 
-function paving(ctx: Ctx): void {
+const paving = (ctx: Ctx): void => {
   fill(ctx, 132);
   grain(ctx, 20, 601);
   ctx.strokeStyle = 'rgba(92,92,90,0.55)';
@@ -281,9 +281,9 @@ function paving(ctx: Ctx): void {
     ctx.lineTo(i * step, TEXTURE_SIZE);
     ctx.stroke();
   }
-}
+};
 
-function dirt(ctx: Ctx): void {
+const dirt = (ctx: Ctx): void => {
   fill(ctx, 128);
   grain(ctx, 52, 701, [1.2, 1.0, 0.8]);
   const random = makeRandom(719);
@@ -296,7 +296,7 @@ function dirt(ctx: Ctx): void {
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
-}
+};
 
 const PAINTERS: Record<number, (ctx: Ctx) => void> = {
   [TEX.CONCRETE_PANEL]: concretePanel,
@@ -317,7 +317,7 @@ const PAINTERS: Record<number, (ctx: Ctx) => void> = {
  * Render every layer once and pack them into a single RGBA buffer laid out as
  * consecutive images, ready for texImage3D.
  */
-function renderAtlasPixels(): Uint8Array {
+const renderAtlasPixels = (): Uint8Array => {
   const canvas = document.createElement('canvas');
   canvas.width = TEXTURE_SIZE;
   canvas.height = TEXTURE_SIZE;
@@ -350,10 +350,10 @@ function renderAtlasPixels(): Uint8Array {
   }
 
   return pixels;
-}
+};
 
 /** Upload the generated layers as a mipmapped 2D texture array. */
-export function createMaterialAtlas(gl: WebGL2RenderingContext): WebGLTexture {
+export const createMaterialAtlas = (gl: WebGL2RenderingContext): WebGLTexture => {
   const texture = gl.createTexture();
   if (!texture) throw new Error('Failed to create material atlas texture');
 
@@ -377,4 +377,4 @@ export function createMaterialAtlas(gl: WebGL2RenderingContext): WebGLTexture {
 
   gl.bindTexture(gl.TEXTURE_2D_ARRAY, null);
   return texture;
-}
+};

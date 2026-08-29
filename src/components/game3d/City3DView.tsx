@@ -16,6 +16,10 @@ import { computeAtmosphere } from './atmosphere';
 import { HighlightRect, MAX_CAR_INSTANCES, Renderer3D } from './renderer3d';
 
 const MESH_REBUILD_INTERVAL_MS = 450;
+/** Effect cleanup used on early-exit paths that allocate nothing. */
+const NO_CLEANUP = () => {
+  // nothing to tear down
+};
 const INSTANCE_FLOATS = 10;
 
 interface City3DViewProps {
@@ -87,15 +91,14 @@ export const City3DView = ({ selectedTile, setSelectedTile, isMobile = false }: 
   // --- Renderer lifecycle ---------------------------------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
-    const noCleanup = () => {};
-    if (!canvas) return noCleanup;
+    if (!canvas) return NO_CLEANUP;
     let renderer: Renderer3D;
     try {
       renderer = new Renderer3D(canvas);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to initialise WebGL2';
       queueMicrotask(() => setError(message));
-      return noCleanup;
+      return NO_CLEANUP;
     }
     rendererRef.current = renderer;
 
@@ -267,7 +270,7 @@ export const City3DView = ({ selectedTile, setSelectedTile, isMobile = false }: 
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return NO_CLEANUP;
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);

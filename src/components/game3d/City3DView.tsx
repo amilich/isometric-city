@@ -114,8 +114,8 @@ export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: 
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
-        renderer.resize(width, height);
       }
+      renderer.resize(width, height);
     };
     resize();
     const observer = new ResizeObserver(resize);

@@ -4,6 +4,7 @@
 // the world and lit by an actual sun.
 
 import { BuildingType } from '@/games/isocity/types';
+import { TEX } from './textureAtlas';
 
 export type BuildingStyle =
   | 'house'   // pitched roof, small footprint
@@ -99,32 +100,85 @@ const SPECS: Partial<Record<BuildingType, Building3DSpec>> = {
   bleachers_field: { height: 0.5, variance: 0, wall: '#c9c4b8', roof: '#8d887c', style: 'plaza', windows: false, inset: 0.12 },
 };
 
+export interface PlazaSurface {
+  color: string;
+  height: number;
+  /** Atlas layer for the ground surface. */
+  texture: number;
+}
+
 /** Green, flat surfaces: rendered as ground decoration rather than a volume. */
-const PLAZA_TYPES: Partial<Record<BuildingType, { color: string; height: number }>> = {
-  park: { color: '#5f9b52', height: 0.02 },
-  park_large: { color: '#5f9b52', height: 0.02 },
-  pond_park: { color: '#4f8f66', height: 0.02 },
-  community_garden: { color: '#6ba053', height: 0.03 },
-  tennis: { color: '#3f7d5e', height: 0.02 },
-  basketball_courts: { color: '#a5714a', height: 0.02 },
-  playground_small: { color: '#b58a5c', height: 0.02 },
-  playground_large: { color: '#b58a5c', height: 0.02 },
-  soccer_field_small: { color: '#4f9450', height: 0.02 },
-  football_field: { color: '#4f9450', height: 0.02 },
-  baseball_field_small: { color: '#6a9e52', height: 0.02 },
-  skate_park: { color: '#9a9a9a', height: 0.02 },
-  swimming_pool: { color: '#3f88b8', height: 0.02 },
-  mini_golf_course: { color: '#57a05c', height: 0.02 },
-  go_kart_track: { color: '#7a7a7a', height: 0.02 },
-  mountain_trailhead: { color: '#6f8f56', height: 0.02 },
+const PLAZA_TYPES: Partial<Record<BuildingType, PlazaSurface>> = {
+  park: { color: '#5f9b52', height: 0.02, texture: TEX.GRASS },
+  park_large: { color: '#5f9b52', height: 0.02, texture: TEX.GRASS },
+  pond_park: { color: '#4f8f66', height: 0.02, texture: TEX.GRASS },
+  community_garden: { color: '#6ba053', height: 0.03, texture: TEX.GRASS },
+  tennis: { color: '#3f7d5e', height: 0.02, texture: TEX.GRASS },
+  basketball_courts: { color: '#a5714a', height: 0.02, texture: TEX.PAVING },
+  playground_small: { color: '#b58a5c', height: 0.02, texture: TEX.PAVING },
+  playground_large: { color: '#b58a5c', height: 0.02, texture: TEX.PAVING },
+  soccer_field_small: { color: '#4f9450', height: 0.02, texture: TEX.GRASS },
+  football_field: { color: '#4f9450', height: 0.02, texture: TEX.GRASS },
+  baseball_field_small: { color: '#6a9e52', height: 0.02, texture: TEX.GRASS },
+  skate_park: { color: '#9a9a9a', height: 0.02, texture: TEX.PAVING },
+  swimming_pool: { color: '#3f88b8', height: 0.02, texture: TEX.PAVING },
+  mini_golf_course: { color: '#57a05c', height: 0.02, texture: TEX.GRASS },
+  go_kart_track: { color: '#7a7a7a', height: 0.02, texture: TEX.PAVING },
+  mountain_trailhead: { color: '#6f8f56', height: 0.02, texture: TEX.GRASS },
 };
 
 export function getBuilding3DSpec(type: BuildingType): Building3DSpec {
   return SPECS[type] ?? DEFAULT_SPEC;
 }
 
-export function getPlazaSurface(type: BuildingType): { color: string; height: number } | null {
+export function getPlazaSurface(type: BuildingType): PlazaSurface | null {
   return PLAZA_TYPES[type] ?? null;
+}
+
+export interface BuildingTextures {
+  /** Atlas layer used on the walls. */
+  wall: number;
+  /** Atlas layer used on the roof. */
+  roof: number;
+}
+
+const STYLE_TEXTURES: Record<BuildingStyle, BuildingTextures> = {
+  house: { wall: TEX.STUCCO, roof: TEX.ROOF_SHINGLE },
+  block: { wall: TEX.CONCRETE_PANEL, roof: TEX.ROOF_GRAVEL },
+  tower: { wall: TEX.GLASS, roof: TEX.ROOF_GRAVEL },
+  slab: { wall: TEX.METAL_PANEL, roof: TEX.ROOF_METAL },
+  plaza: { wall: TEX.PAVING, roof: TEX.PAVING },
+  tank: { wall: TEX.METAL_PANEL, roof: TEX.ROOF_METAL },
+  dome: { wall: TEX.CONCRETE_PANEL, roof: TEX.ROOF_METAL },
+};
+
+/** Types whose material reads differently from their silhouette style. */
+const TEXTURE_OVERRIDES: Partial<Record<BuildingType, Partial<BuildingTextures>>> = {
+  apartment_low: { wall: TEX.BRICK },
+  apartment_high: { wall: TEX.CONCRETE_PANEL },
+  shop_small: { wall: TEX.BRICK },
+  shop_medium: { wall: TEX.BRICK },
+  office_low: { wall: TEX.GLASS },
+  office_building_small: { wall: TEX.GLASS },
+  mall: { wall: TEX.CONCRETE_PANEL, roof: TEX.ROOF_GRAVEL },
+  school: { wall: TEX.BRICK, roof: TEX.ROOF_SHINGLE },
+  university: { wall: TEX.BRICK, roof: TEX.ROOF_SHINGLE },
+  police_station: { wall: TEX.BRICK },
+  fire_station: { wall: TEX.BRICK },
+  hospital: { wall: TEX.CONCRETE_PANEL },
+  city_hall: { wall: TEX.CONCRETE_PANEL },
+  museum: { wall: TEX.CONCRETE_PANEL },
+  rail_station: { wall: TEX.BRICK, roof: TEX.ROOF_METAL },
+  cabin_house: { wall: TEX.STUCCO, roof: TEX.ROOF_SHINGLE },
+  mountain_lodge: { wall: TEX.STUCCO, roof: TEX.ROOF_SHINGLE },
+  marina_docks_small: { wall: TEX.STUCCO, roof: TEX.ROOF_METAL },
+  pier_large: { wall: TEX.STUCCO, roof: TEX.ROOF_METAL },
+};
+
+export function getBuildingTextures(type: BuildingType): BuildingTextures {
+  const base = STYLE_TEXTURES[getBuilding3DSpec(type).style];
+  const override = TEXTURE_OVERRIDES[type];
+  return override ? { ...base, ...override } : base;
 }
 
 /** Types that are terrain / infrastructure rather than a placed volume. */

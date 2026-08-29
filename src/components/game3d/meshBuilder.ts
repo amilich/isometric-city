@@ -1,11 +1,11 @@
 // Geometry generation: turns the tile grid into real 3D triangles.
 //
 // Vertex layout (12 floats, interleaved):
-//   position (3) | normal (3) | color (3) | uv (2) | surface flag (1)
+//   position (3) | normal (3) | color (3) | uv (2) | material (1)
 //
-// The surface flag tells the fragment shader how to texture a face
-// procedurally (windows on facades, lane markings on roads, ...), which keeps
-// the renderer texture-free while still looking like a city.
+// The material float packs two things (see `material()` below): a surface flag
+// that tells the fragment shader how to shade the face (windows on facades,
+// lane markings on roads, ...) and the atlas layer holding its texture.
 
 import { Tile } from '@/types/game';
 import { BuildingType } from '@/games/isocity/types';
@@ -13,11 +13,13 @@ import { getBuildingSize } from '@/lib/simulation';
 import { FloatArrayBuilder } from './glUtils';
 import {
   getBuilding3DSpec,
+  getBuildingTextures,
   getPlazaSurface,
   hexToRgb,
   tileHash,
   NON_VOLUME_TYPES,
 } from './buildingModels';
+import { TEX } from './textureAtlas';
 
 export const FLOATS_PER_VERTEX = 12;
 
@@ -29,6 +31,14 @@ export const SURFACE = {
   ROOF: 4,
   CONCRETE: 5,
 } as const;
+
+/** Must match MATERIAL_STRIDE in the shaders. */
+const MATERIAL_STRIDE = 8;
+
+/** Pack a surface flag and an atlas layer (TEX.NONE for untextured) into one float. */
+export function material(flag: number, layer: number = TEX.NONE): number {
+  return flag + (layer + 1) * MATERIAL_STRIDE;
+}
 
 export interface CityMesh {
   /** Interleaved opaque geometry. */
@@ -123,7 +133,18 @@ class Geometry {
   }
 
   /** Axis-aligned box; walls use wallFlag, the top face uses roof color. */
-  box(cx: number, cz: number, sx: number, sz: number, y0: number, y1: number, wall: RGB, roof: RGB, wallFlag: number): void {
+  box(
+    cx: number,
+    cz: number,
+    sx: number,
+    sz: number,
+    y0: number,
+    y1: number,
+    wall: RGB,
+    roof: RGB,
+    wallFlag: number,
+    roofFlag: number = material(SURFACE.ROOF, TEX.ROOF_GRAVEL)
+  ): void {
     const x0 = cx - sx / 2, x1 = cx + sx / 2;
     const z0 = cz - sz / 2, z1 = cz + sz / 2;
     const h = y1 - y0;
@@ -132,7 +153,7 @@ class Geometry {
     this.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], wall, wallFlag, sx, h);
     this.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], wall, wallFlag, sz, h);
     this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], wall, wallFlag, sz, h);
-    this.ground(x0, z0, x1, z1, y1, roof, SURFACE.ROOF);
+    this.ground(x0, z0, x1, z1, y1, roof, roofFlag, sx, sz);
   }
 
   /** Regular prism (cylinder approximation) with a flat cap. */
@@ -186,16 +207,25 @@ class Geometry {
   }
 
   /** Gable roof spanning sx (ridge runs along z). */
-  gableRoof(cx: number, cz: number, sx: number, sz: number, y0: number, ridgeHeight: number, color: RGB): void {
+  gableRoof(
+    cx: number,
+    cz: number,
+    sx: number,
+    sz: number,
+    y0: number,
+    ridgeHeight: number,
+    color: RGB,
+    flag: number = material(SURFACE.ROOF, TEX.ROOF_SHINGLE)
+  ): void {
     const x0 = cx - sx / 2, x1 = cx + sx / 2;
     const z0 = cz - sz / 2, z1 = cz + sz / 2;
     const yr = y0 + ridgeHeight;
     // Two sloped faces
-    this.quad([x0, y0, z1], [cx, yr, z1], [cx, yr, z0], [x0, y0, z0], color, SURFACE.PLAIN);
-    this.quad([cx, yr, z1], [x1, y0, z1], [x1, y0, z0], [cx, yr, z0], color, SURFACE.PLAIN);
+    this.quad([x0, y0, z1], [cx, yr, z1], [cx, yr, z0], [x0, y0, z0], color, flag, sx * 0.6, sz);
+    this.quad([cx, yr, z1], [x1, y0, z1], [x1, y0, z0], [cx, yr, z0], color, flag, sx * 0.6, sz);
     // Gable ends
-    this.triangle([x0, y0, z1], [x1, y0, z1], [cx, yr, z1], color, SURFACE.PLAIN);
-    this.triangle([x1, y0, z0], [x0, y0, z0], [cx, yr, z0], color, SURFACE.PLAIN);
+    this.triangle([x0, y0, z1], [x1, y0, z1], [cx, yr, z1], color, flag);
+    this.triangle([x1, y0, z0], [x0, y0, z0], [cx, yr, z0], color, flag);
   }
 
   data(): Float32Array {
@@ -234,10 +264,10 @@ function addRoadTile(geo: Geometry, grid: Tile[][], gridSize: number, x: number,
   const intersection = northSouth && eastWest;
 
   // Sidewalk pad slightly below road level so kerbs read in 3D
-  geo.ground(x, y, x + 1, y + 1, 0.035, SIDEWALK, SURFACE.CONCRETE);
+  geo.ground(x, y, x + 1, y + 1, 0.035, SIDEWALK, material(SURFACE.CONCRETE, TEX.PAVING));
 
   const inset = 0.1;
-  const flag = intersection ? SURFACE.PLAIN : SURFACE.ROAD;
+  const flag = material(intersection ? SURFACE.PLAIN : SURFACE.ROAD, TEX.ASPHALT);
   if (eastWest && !northSouth) {
     // Lanes run along x: uv.y follows the travel direction
     geo.quad(
@@ -250,13 +280,13 @@ function addRoadTile(geo: Geometry, grid: Tile[][], gridSize: number, x: number,
       ASPHALT, flag, 1, 1
     );
   } else {
-    geo.ground(x, y, x + 1, y + 1, 0.05, ASPHALT, intersection ? SURFACE.PLAIN : SURFACE.ROAD);
+    geo.ground(x, y, x + 1, y + 1, 0.05, ASPHALT, flag);
   }
 }
 
 function addRailTile(geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number): void {
   const northSouth = isType(grid, gridSize, x, y - 1, 'rail') || isType(grid, gridSize, x, y + 1, 'rail');
-  geo.ground(x + 0.15, y + 0.15, x + 0.85, y + 0.85, 0.04, RAIL_BED, SURFACE.PLAIN);
+  geo.ground(x + 0.15, y + 0.15, x + 0.85, y + 0.85, 0.04, RAIL_BED, material(SURFACE.PLAIN, TEX.DIRT));
   const railOffsets = [-0.12, 0.12];
   for (const offset of railOffsets) {
     if (northSouth) {
@@ -271,17 +301,19 @@ function addBridgeTile(geo: Geometry, tile: Tile, x: number, y: number): void {
   const deckY = 0.55;
   const isNS = tile.building.bridgeOrientation === 'ns';
   const deckColor: RGB = [0.62, 0.60, 0.57];
+  const deckFlag = material(SURFACE.PLAIN, TEX.PAVING);
+  const roadFlag = material(SURFACE.ROAD, TEX.ASPHALT);
   if (isNS) {
-    geo.box(x + 0.5, y + 0.5, 0.8, 1, deckY - 0.08, deckY, deckColor, ASPHALT, SURFACE.PLAIN);
-    geo.box(x + 0.5 - 0.42, y + 0.5, 0.06, 1, deckY, deckY + 0.14, deckColor, deckColor, SURFACE.PLAIN);
-    geo.box(x + 0.5 + 0.42, y + 0.5, 0.06, 1, deckY, deckY + 0.14, deckColor, deckColor, SURFACE.PLAIN);
+    geo.box(x + 0.5, y + 0.5, 0.8, 1, deckY - 0.08, deckY, deckColor, ASPHALT, deckFlag, roadFlag);
+    geo.box(x + 0.5 - 0.42, y + 0.5, 0.06, 1, deckY, deckY + 0.14, deckColor, deckColor, deckFlag, deckFlag);
+    geo.box(x + 0.5 + 0.42, y + 0.5, 0.06, 1, deckY, deckY + 0.14, deckColor, deckColor, deckFlag, deckFlag);
   } else {
-    geo.box(x + 0.5, y + 0.5, 1, 0.8, deckY - 0.08, deckY, deckColor, ASPHALT, SURFACE.PLAIN);
-    geo.box(x + 0.5, y + 0.5 - 0.42, 1, 0.06, deckY, deckY + 0.14, deckColor, deckColor, SURFACE.PLAIN);
-    geo.box(x + 0.5, y + 0.5 + 0.42, 1, 0.06, deckY, deckY + 0.14, deckColor, deckColor, SURFACE.PLAIN);
+    geo.box(x + 0.5, y + 0.5, 1, 0.8, deckY - 0.08, deckY, deckColor, ASPHALT, deckFlag, roadFlag);
+    geo.box(x + 0.5, y + 0.5 - 0.42, 1, 0.06, deckY, deckY + 0.14, deckColor, deckColor, deckFlag, deckFlag);
+    geo.box(x + 0.5, y + 0.5 + 0.42, 1, 0.06, deckY, deckY + 0.14, deckColor, deckColor, deckFlag, deckFlag);
   }
   if (tile.building.bridgePosition !== 'middle' || (x + y) % 3 === 0) {
-    geo.box(x + 0.5, y + 0.5, 0.16, 0.16, -0.6, deckY - 0.08, [0.5, 0.49, 0.47], [0.5, 0.49, 0.47], SURFACE.PLAIN);
+    geo.box(x + 0.5, y + 0.5, 0.16, 0.16, -0.6, deckY - 0.08, [0.5, 0.49, 0.47], [0.5, 0.49, 0.47], deckFlag, deckFlag);
   }
 }
 
@@ -301,30 +333,32 @@ function addBuildingVolume(geo: Geometry, tile: Tile, x: number, y: number): voi
   const buildFraction = underConstruction ? Math.max(0.12, progress / 100) : 1;
   let height = spec.height * (1 + jitter) * levelBoost * buildFraction;
 
+  const textures = getBuildingTextures(type);
   let wall = hexToRgb(spec.wall);
   let roof = hexToRgb(spec.roof);
-  let facadeFlag = spec.windows ? SURFACE.FACADE : SURFACE.PLAIN;
+  let wallFlag = material(spec.windows ? SURFACE.FACADE : SURFACE.PLAIN, textures.wall);
+  const roofFlag = material(SURFACE.ROOF, textures.roof);
   if (underConstruction) {
     wall = [0.72, 0.63, 0.45];
     roof = [0.58, 0.5, 0.36];
-    facadeFlag = SURFACE.PLAIN;
+    wallFlag = material(SURFACE.PLAIN, TEX.CONCRETE_PANEL);
   } else if (tile.building.abandoned) {
     wall = mixColor(wall, 0.62);
     roof = mixColor(roof, 0.6);
-    facadeFlag = SURFACE.PLAIN;
+    wallFlag = material(SURFACE.PLAIN, textures.wall);
   }
 
   const sx = Math.max(0.2, footprintW - spec.inset * 2);
   const sz = Math.max(0.2, footprintH - spec.inset * 2);
 
   // Ground pad under the building so it does not float on grass
-  geo.ground(x, y, x + footprintW, y + footprintH, 0.02, SIDEWALK, SURFACE.CONCRETE);
+  geo.ground(x, y, x + footprintW, y + footprintH, 0.02, SIDEWALK, material(SURFACE.CONCRETE, TEX.PAVING), footprintW, footprintH);
 
   switch (spec.style) {
     case 'house': {
       const wallHeight = height * 0.62;
-      geo.box(cx, cz, sx, sz, 0, wallHeight, wall, roof, facadeFlag);
-      geo.gableRoof(cx, cz, sx * 1.08, sz * 1.08, wallHeight, height - wallHeight, roof);
+      geo.box(cx, cz, sx, sz, 0, wallHeight, wall, roof, wallFlag, roofFlag);
+      geo.gableRoof(cx, cz, sx * 1.08, sz * 1.08, wallHeight, height - wallHeight, roof, roofFlag);
       break;
     }
     case 'tower': {
@@ -336,7 +370,7 @@ function addBuildingVolume(geo: Geometry, tile: Tile, x: number, y: number): voi
       let base = 0;
       for (const tier of tiers) {
         const top = base + height * tier.h;
-        geo.box(cx, cz, sx * tier.s, sz * tier.s, base, top, wall, roof, facadeFlag);
+        geo.box(cx, cz, sx * tier.s, sz * tier.s, base, top, wall, roof, wallFlag, roofFlag);
         base = top;
       }
       // Rooftop mast
@@ -344,7 +378,7 @@ function addBuildingVolume(geo: Geometry, tile: Tile, x: number, y: number): voi
       break;
     }
     case 'slab': {
-      geo.box(cx, cz, sx, sz, 0, height, wall, roof, facadeFlag);
+      geo.box(cx, cz, sx, sz, 0, height, wall, roof, wallFlag, roofFlag);
       // Rooftop HVAC blocks add silhouette detail
       const units = Math.min(4, Math.floor(footprintW * footprintH));
       for (let i = 0; i < units; i++) {
@@ -362,19 +396,22 @@ function addBuildingVolume(geo: Geometry, tile: Tile, x: number, y: number): voi
     }
     case 'dome': {
       const bodyHeight = height * 0.55;
-      geo.box(cx, cz, sx, sz, 0, bodyHeight, wall, roof, facadeFlag);
+      geo.box(cx, cz, sx, sz, 0, bodyHeight, wall, roof, wallFlag, roofFlag);
       geo.dome(cx, cz, Math.min(sx, sz) * 0.5, bodyHeight, height - bodyHeight, 4, 14, roof);
       break;
     }
     case 'plaza': {
       height = Math.min(height, 0.5);
-      geo.ground(x + 0.05, y + 0.05, x + footprintW - 0.05, y + footprintH - 0.05, 0.03, mixColor(wall, 0.9), SURFACE.PLAIN);
-      geo.box(cx, cz, sx * 0.4, sz * 0.4, 0, height, wall, roof, SURFACE.PLAIN);
+      geo.ground(
+        x + 0.05, y + 0.05, x + footprintW - 0.05, y + footprintH - 0.05, 0.03,
+        mixColor(wall, 0.9), material(SURFACE.PLAIN, TEX.PAVING), footprintW, footprintH
+      );
+      geo.box(cx, cz, sx * 0.4, sz * 0.4, 0, height, wall, roof, material(SURFACE.PLAIN, textures.wall), roofFlag);
       break;
     }
     case 'block':
     default: {
-      geo.box(cx, cz, sx, sz, 0, height, wall, roof, facadeFlag);
+      geo.box(cx, cz, sx, sz, 0, height, wall, roof, wallFlag, roofFlag);
       if (height > 1.4) {
         // Parapet ring
         geo.box(cx, cz, sx, sz, height, height + 0.08, mixColor(roof, 1.15), mixColor(roof, 1.1), SURFACE.PLAIN);
@@ -414,7 +451,7 @@ export function buildCityMesh({ grid, gridSize }: BuildCityMeshOptions): CityMes
 
       // Terrain under everything else
       const grass = GRASS_COLORS[Math.floor(tileHash(x, y, 1) * GRASS_COLORS.length)];
-      opaque.ground(x, y, x + 1, y + 1, 0, grass, SURFACE.GRASS);
+      opaque.ground(x, y, x + 1, y + 1, 0, grass, material(SURFACE.GRASS, TEX.GRASS));
 
       switch (type) {
         case 'road':
@@ -438,7 +475,10 @@ export function buildCityMesh({ grid, gridSize }: BuildCityMeshOptions): CityMes
           const plaza = getPlazaSurface(type);
           if (plaza) {
             const size = getBuildingSize(type);
-            opaque.ground(x, y, x + size.width, y + size.height, 0.02, hexToRgb(plaza.color), SURFACE.PLAIN);
+            opaque.ground(
+              x, y, x + size.width, y + size.height, 0.02,
+              hexToRgb(plaza.color), material(SURFACE.PLAIN, plaza.texture), size.width, size.height
+            );
             // Scatter a few trees / props across park footprints
             for (let py = 0; py < size.height; py++) {
               for (let px = 0; px < size.width; px++) {
@@ -456,10 +496,11 @@ export function buildCityMesh({ grid, gridSize }: BuildCityMeshOptions): CityMes
 
   // Terrain skirt so the map reads as a solid slab rather than a floating plane
   const edge = gridSize;
-  opaque.quad([0, 0, edge], [edge, 0, edge], [edge, -2, edge], [0, -2, edge], DIRT, SURFACE.PLAIN, edge, 2);
-  opaque.quad([edge, 0, 0], [0, 0, 0], [0, -2, 0], [edge, -2, 0], DIRT, SURFACE.PLAIN, edge, 2);
-  opaque.quad([edge, 0, edge], [edge, 0, 0], [edge, -2, 0], [edge, -2, edge], DIRT, SURFACE.PLAIN, edge, 2);
-  opaque.quad([0, 0, 0], [0, 0, edge], [0, -2, edge], [0, -2, 0], DIRT, SURFACE.PLAIN, edge, 2);
+  const skirt = material(SURFACE.PLAIN, TEX.DIRT);
+  opaque.quad([0, 0, edge], [edge, 0, edge], [edge, -2, edge], [0, -2, edge], DIRT, skirt, edge, 2);
+  opaque.quad([edge, 0, 0], [0, 0, 0], [0, -2, 0], [edge, -2, 0], DIRT, skirt, edge, 2);
+  opaque.quad([edge, 0, edge], [edge, 0, 0], [edge, -2, 0], [edge, -2, edge], DIRT, skirt, edge, 2);
+  opaque.quad([0, 0, 0], [0, 0, edge], [0, -2, edge], [0, -2, 0], DIRT, skirt, edge, 2);
 
   return {
     opaque: opaque.data(),

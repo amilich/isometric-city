@@ -1,8 +1,10 @@
 // GLSL (ES 3.0) sources for the 3D city renderer.
 //
-// Everything is textureless: facades, roads and grass are shaded procedurally
-// from the surface flag baked into each vertex, which keeps the renderer
-// dependency-free and lets buildings light their windows at night.
+// Surfaces are shaded from two things baked into each vertex: a surface flag
+// (road markings, facade behaviour, ...) and a material layer index into the
+// procedurally generated texture array (see textureAtlas.ts). The texture
+// supplies detail and a window mask; vertex colour still supplies the palette,
+// so one brick or glass layer serves every building tint.
 
 export const SURFACE_LIB = /* glsl */ `
 const float SURFACE_PLAIN = 0.0;
@@ -14,6 +16,15 @@ const float SURFACE_CONCRETE = 5.0;
 
 float hash21(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+// Vertex materials pack the surface flag and texture layer into one float:
+//   value = flag + (layer + 1) * MATERIAL_STRIDE
+const float MATERIAL_STRIDE = 8.0;
+
+void decodeMaterial(float material, out float flag, out float layer) {
+  layer = floor(material / MATERIAL_STRIDE) - 1.0;
+  flag = material - (layer + 1.0) * MATERIAL_STRIDE;
 }
 `;
 
@@ -29,11 +40,14 @@ in float aFlag;
 uniform mat4 uViewProj;
 uniform mat4 uLightViewProj;
 
+${SURFACE_LIB}
+
 out vec3 vWorld;
 out vec3 vNormal;
 out vec3 vColor;
 out vec2 vUv;
-out float vFlag;
+flat out float vFlag;
+flat out float vLayer;
 out vec4 vLightSpace;
 
 void main() {
@@ -41,7 +55,7 @@ void main() {
   vNormal = aNormal;
   vColor = aColor;
   vUv = aUv;
-  vFlag = aFlag;
+  decodeMaterial(aFlag, vFlag, vLayer);
   vLightSpace = uLightViewProj * vec4(aPos, 1.0);
   gl_Position = uViewProj * vec4(aPos, 1.0);
 }
@@ -93,12 +107,14 @@ vec3 applyLighting(vec3 albedo, vec3 normal, vec3 worldPos, vec4 lightSpace, flo
 
 export const MAIN_FRAG = /* glsl */ `#version 300 es
 precision highp float;
+precision highp sampler2DArray;
 
 in vec3 vWorld;
 in vec3 vNormal;
 in vec3 vColor;
 in vec2 vUv;
-in float vFlag;
+flat in float vFlag;
+flat in float vLayer;
 in vec4 vLightSpace;
 
 out vec4 fragColor;
@@ -106,31 +122,28 @@ out vec4 fragColor;
 ${SURFACE_LIB}
 ${LIGHTING_LIB}
 
-// Procedural facade: window grid with lit interiors at night.
-vec3 facade(vec3 base, vec2 uv, out float emissive) {
-  emissive = 0.0;
-  float floorHeight = 0.34;
-  float bayWidth = 0.34;
-  // Skip the ground floor band so buildings get a plinth
-  if (uv.y < 0.16) return base * 0.86;
-  vec2 cell = vec2(uv.x / bayWidth, (uv.y - 0.16) / floorHeight);
-  vec2 idx = floor(cell);
-  vec2 f = fract(cell);
-  vec2 windowSize = vec2(0.62, 0.6);
-  vec2 edge = abs(f - 0.5) * 2.0;
-  float inWindow = step(edge.x, windowSize.x) * step(edge.y, windowSize.y);
-  if (inWindow < 0.5) return base;
+uniform sampler2DArray uAtlas;
+uniform float uWindowGrid;   // window cells per world unit in the wall textures
 
-  float lit = hash21(idx + floor(vWorld.xz * 3.17));
-  vec3 glassDay = base * 0.35 + vec3(0.09, 0.12, 0.16);
+// Textured facade: the atlas supplies brick / glass / panel detail plus a
+// window mask, and windows light up individually at night.
+vec3 facade(vec3 base, vec3 detail, float windowMask, vec2 uv, out float emissive) {
+  emissive = 0.0;
+  vec3 wall = base * detail;
+  if (windowMask < 0.02) return wall;
+
+  vec2 cell = floor(uv * uWindowGrid);
+  float lit = hash21(cell + floor(vWorld.xz * 3.17));
+  vec3 glassDay = base * 0.28 + vec3(0.10, 0.13, 0.17);
   vec3 glassNight = vec3(1.0, 0.86, 0.6);
-  float litAtNight = step(0.45, lit) * uNight;
+  float litAtNight = step(0.45, lit) * uNight * windowMask;
   emissive = litAtNight;
-  return mix(glassDay, glassNight, litAtNight);
+  return mix(wall, mix(glassDay, glassNight, litAtNight), windowMask);
 }
 
 // Road surface: centre dashes plus solid edge lines.
-vec3 road(vec3 base, vec2 uv) {
+vec3 road(vec3 base, vec3 detail, vec2 uv) {
+  base *= detail;
   float centre = 1.0 - smoothstep(0.02, 0.035, abs(uv.x - 0.5));
   float dash = step(0.5, fract(uv.y * 3.0));
   float edges = 1.0 - smoothstep(0.03, 0.045, min(uv.x, 1.0 - uv.x));
@@ -140,22 +153,23 @@ vec3 road(vec3 base, vec2 uv) {
 }
 
 void main() {
+  vec4 material = vLayer >= 0.0 ? texture(uAtlas, vec3(vUv, vLayer)) : vec4(0.5, 0.5, 0.5, 0.0);
+  vec3 detail = material.rgb * 2.0;
+  float windowMask = material.a;
+
   vec3 albedo = vColor;
   float emissive = 0.0;
 
   if (vFlag == SURFACE_FACADE) {
-    albedo = facade(albedo, vUv, emissive);
+    albedo = facade(albedo, detail, windowMask, vUv, emissive);
   } else if (vFlag == SURFACE_ROAD) {
-    albedo = road(albedo, vUv);
-  } else if (vFlag == SURFACE_GRASS) {
-    float n = hash21(floor(vWorld.xz * 6.0));
-    albedo *= 0.92 + n * 0.16;
-  } else if (vFlag == SURFACE_ROOF) {
-    float n = hash21(floor(vWorld.xz * 12.0));
-    albedo *= 0.94 + n * 0.12;
-  } else if (vFlag == SURFACE_CONCRETE) {
-    float n = hash21(floor(vWorld.xz * 10.0));
-    albedo *= 0.95 + n * 0.1;
+    albedo = road(albedo, detail, vUv);
+  } else {
+    albedo *= detail;
+    if (vLayer < 0.0) {
+      // Untextured props still get a little per-tile variation
+      albedo *= 0.94 + hash21(floor(vWorld.xz * 10.0)) * 0.12;
+    }
   }
 
   vec3 lit = applyLighting(albedo, vNormal, vWorld, vLightSpace, 1.0);

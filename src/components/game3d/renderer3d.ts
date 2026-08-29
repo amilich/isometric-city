@@ -3,7 +3,7 @@
 // Passes, in order:
 //   1. shadow    - depth-only render of the city from the sun's point of view
 //   2. sky       - full-screen gradient with sun disc and stars
-//   3. opaque    - terrain, roads, buildings (procedurally textured facades)
+//   3. opaque    - terrain, roads, buildings (textured from the material atlas)
 //   4. instanced - vehicles
 //   5. water     - animated, transparent, sun glitter
 //   6. overlay   - tile hover / build footprint highlight
@@ -13,6 +13,7 @@ import { Atmosphere } from './atmosphere';
 import { CityMesh, FLOATS_PER_VERTEX } from './meshBuilder';
 import { createProgram, ShaderProgram } from './glUtils';
 import { Mat4, mat4Create, mat4LookAt, mat4Multiply, mat4Ortho } from './mat4';
+import { createMaterialAtlas, WINDOW_GRID } from './textureAtlas';
 import {
   DEPTH_FRAG,
   DEPTH_VERT,
@@ -102,6 +103,7 @@ export class Renderer3D {
 
   private readonly shadowFbo: WebGLFramebuffer;
   private readonly shadowTexture: WebGLTexture;
+  private readonly atlasTexture: WebGLTexture;
 
   private readonly lightView = mat4Create();
   private readonly lightProj = mat4Create();
@@ -123,7 +125,11 @@ export class Renderer3D {
     this.gl = gl;
 
     const mainAttribs = ['aPos', 'aNormal', 'aColor', 'aUv', 'aFlag'];
-    this.mainProgram = createProgram(gl, MAIN_VERT, MAIN_FRAG, ['uViewProj', ...LIGHTING_UNIFORMS], mainAttribs);
+    this.mainProgram = createProgram(
+      gl, MAIN_VERT, MAIN_FRAG,
+      ['uViewProj', 'uAtlas', 'uWindowGrid', ...LIGHTING_UNIFORMS],
+      mainAttribs
+    );
     this.depthProgram = createProgram(gl, DEPTH_VERT, DEPTH_FRAG, ['uLightViewProj'], ['aPos']);
     this.waterProgram = createProgram(gl, WATER_VERT, WATER_FRAG, ['uViewProj', 'uTime', ...LIGHTING_UNIFORMS], ['aPos', 'aColor']);
     this.skyProgram = createProgram(
@@ -168,6 +174,7 @@ export class Renderer3D {
     const shadow = this.createShadowTarget();
     this.shadowFbo = shadow.fbo;
     this.shadowTexture = shadow.texture;
+    this.atlasTexture = createMaterialAtlas(gl);
 
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
@@ -387,6 +394,10 @@ export class Renderer3D {
     gl.useProgram(this.mainProgram.program);
     gl.uniformMatrix4fv(this.mainProgram.uniforms.uViewProj, false, viewProj);
     this.setLightingUniforms(this.mainProgram, camera, atmosphere);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.atlasTexture);
+    gl.uniform1i(this.mainProgram.uniforms.uAtlas, 1);
+    gl.uniform1f(this.mainProgram.uniforms.uWindowGrid, WINDOW_GRID);
     gl.bindVertexArray(this.opaqueVao);
     gl.drawArrays(gl.TRIANGLES, 0, this.opaqueVertexCount);
 
@@ -457,5 +468,6 @@ export class Renderer3D {
     }
     gl.deleteFramebuffer(this.shadowFbo);
     gl.deleteTexture(this.shadowTexture);
+    gl.deleteTexture(this.atlasTexture);
   }
 }

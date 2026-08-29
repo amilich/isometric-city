@@ -193,7 +193,7 @@ export const hexToRgb = (hex: string): [number, number, number] => {
 
 /** Deterministic hash in [0,1) so a tile always looks the same across rebuilds. */
 export const tileHash = (x: number, y: number, salt = 0): number => {
-  let h = (x * 374761393 + y * 668265263 + salt * 2246822519) | 0;
-  h = (h ^ (h >>> 13)) * 1274126177;
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  let hash = (x * 374761393 + y * 668265263 + salt * 2246822519) | 0;
+  hash = (hash ^ (hash >>> 13)) * 1274126177;
+  return ((hash ^ (hash >>> 16)) >>> 0) / 4294967296;
 };

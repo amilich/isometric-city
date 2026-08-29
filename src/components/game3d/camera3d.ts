@@ -91,11 +91,11 @@ export class Camera3D {
     transformPoint(far, this.invViewProj, ndcX, ndcY, 1);
     const dirY = far[1] - near[1];
     if (Math.abs(dirY) < 1e-6) return null;
-    const t = (planeY - near[1]) / dirY;
-    if (t < 0 || t > 1) return null;
+    const travel = (planeY - near[1]) / dirY;
+    if (travel < 0 || travel > 1) return null;
     return {
-      x: near[0] + (far[0] - near[0]) * t,
-      z: near[2] + (far[2] - near[2]) * t,
+      x: near[0] + (far[0] - near[0]) * travel,
+      z: near[2] + (far[2] - near[2]) * travel,
     };
   }
 }

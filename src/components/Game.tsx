@@ -268,14 +268,14 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               <City3DView
                 selectedTile={selectedTile}
                 setSelectedTile={setSelectedTile}
-                isMobile={true}
+                isMobile
               />
             ) : (
               <CanvasIsometricGrid 
                 overlayMode={overlayMode} 
                 selectedTile={selectedTile} 
                 setSelectedTile={setSelectedTile}
-                isMobile={true}
+                isMobile
                 onBargeDelivery={handleBargeDelivery}
               />
             )}

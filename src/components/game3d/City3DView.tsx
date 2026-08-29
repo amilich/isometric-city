@@ -87,14 +87,15 @@ export const City3DView = ({ selectedTile, setSelectedTile, isMobile = false }: 
   // --- Renderer lifecycle ---------------------------------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const noCleanup = () => {};
+    if (!canvas) return noCleanup;
     let renderer: Renderer3D;
     try {
       renderer = new Renderer3D(canvas);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to initialise WebGL2';
       queueMicrotask(() => setError(message));
-      return;
+      return noCleanup;
     }
     rendererRef.current = renderer;
 

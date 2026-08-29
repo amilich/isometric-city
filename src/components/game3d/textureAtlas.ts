@@ -75,28 +75,28 @@ let windowRects: Rect[] = [];
 /** Windows on the shared WINDOW_GRID; each pane is recorded for the alpha mask. */
 const windows = (ctx: Ctx, options: { width: number; height: number; frame: number; sill: boolean }): void => {
   const cell = TEXTURE_SIZE / WINDOW_GRID;
-  const w = cell * options.width;
-  const h = cell * options.height;
+  const paneWidth = cell * options.width;
+  const paneHeight = cell * options.height;
   for (let row = 0; row < WINDOW_GRID; row++) {
     for (let col = 0; col < WINDOW_GRID; col++) {
-      const x = col * cell + (cell - w) / 2;
-      const y = row * cell + (cell - h) / 2;
+      const x = col * cell + (cell - paneWidth) / 2;
+      const y = row * cell + (cell - paneHeight) / 2;
       if (options.frame > 0) {
         ctx.fillStyle = 'rgba(210,206,198,1)';
-        ctx.fillRect(x - options.frame, y - options.frame, w + options.frame * 2, h + options.frame * 2);
+        ctx.fillRect(x - options.frame, y - options.frame, paneWidth + options.frame * 2, paneHeight + options.frame * 2);
       }
       // Glass itself: dark detail plus alpha=1 so the shader can treat it as a window
       ctx.fillStyle = 'rgba(74,84,96,1)';
-      ctx.fillRect(x, y, w, h);
-      windowRects.push({ x, y, w, h });
-      const gradient = ctx.createLinearGradient(x, y, x + w, y + h);
+      ctx.fillRect(x, y, paneWidth, paneHeight);
+      windowRects.push({ x, y, w: paneWidth, h: paneHeight });
+      const gradient = ctx.createLinearGradient(x, y, x + paneWidth, y + paneHeight);
       gradient.addColorStop(0, 'rgba(150,168,184,0.55)');
       gradient.addColorStop(1, 'rgba(40,48,58,0.35)');
       ctx.fillStyle = gradient;
-      ctx.fillRect(x, y, w, h);
+      ctx.fillRect(x, y, paneWidth, paneHeight);
       if (options.sill) {
         ctx.fillStyle = 'rgba(196,192,184,1)';
-        ctx.fillRect(x - options.frame, y + h + options.frame, w + options.frame * 2, 3);
+        ctx.fillRect(x - options.frame, y + paneHeight + options.frame, paneWidth + options.frame * 2, 3);
       }
     }
   }
@@ -290,10 +290,10 @@ const dirt = (ctx: Ctx): void => {
   for (let i = 0; i < 220; i++) {
     const x = random() * TEXTURE_SIZE;
     const y = random() * TEXTURE_SIZE;
-    const r = 1 + random() * 3;
+    const radius = 1 + random() * 3;
     ctx.fillStyle = random() > 0.5 ? 'rgba(150,140,124,0.5)' : 'rgba(90,80,68,0.5)';
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
   }
 };

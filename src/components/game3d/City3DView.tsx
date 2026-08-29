@@ -7,6 +7,7 @@
 // orbits, wheel zooms, click selects/builds.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Num, T, Var, useGT } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { TOOL_INFO } from '@/types/game';
 import { Camera3D, FIELD_OF_VIEW, MAX_DISTANCE, MAX_PITCH, MIN_DISTANCE, MIN_PITCH } from './camera3d';
@@ -30,6 +31,7 @@ export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { latestStateRef, placeAtTile, visualHour } = useGame();
+  const gt = useGT();
 
   const [error, setError] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
@@ -92,7 +94,7 @@ export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: 
     try {
       renderer = new Renderer3D(canvas);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to initialise WebGL2';
+      const message = err instanceof Error ? err.message : gt('Failed to initialise WebGL2');
       queueMicrotask(() => setError(message));
       return;
     }
@@ -187,7 +189,7 @@ export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: 
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [getCamera, isMobile, latestStateRef]);
+  }, [getCamera, gt, isMobile, latestStateRef]);
 
   // --- Pointer interaction --------------------------------------------------
   const applyTool = useCallback((clientX: number, clientY: number) => {
@@ -291,9 +293,11 @@ export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: 
 
   if (error) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-slate-900 text-slate-200 text-sm p-6 text-center">
-        3D view unavailable: {error}
-      </div>
+      <T>
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900 text-slate-200 text-sm p-6 text-center">
+          3D view unavailable: <Var>{error}</Var>
+        </div>
+      </T>
     );
   }
 
@@ -310,8 +314,16 @@ export function City3DView({ selectedTile, setSelectedTile, isMobile = false }: 
         onContextMenu={(event) => event.preventDefault()}
       />
       <div className="absolute bottom-3 left-3 rounded-md bg-slate-900/70 px-3 py-2 text-[11px] leading-4 text-slate-200 pointer-events-none">
-        <div>Drag to pan · Right-drag to orbit · Scroll to zoom</div>
-        {hoveredTile && <div className="text-slate-400">Tile {hoveredTile.x}, {hoveredTile.y}</div>}
+        <T>
+          <div>Drag to pan · Right-drag to orbit · Scroll to zoom</div>
+        </T>
+        {hoveredTile && (
+          <T>
+            <div className="text-slate-400">
+              Tile <Num>{hoveredTile.x}</Num>, <Num>{hoveredTile.y}</Num>
+            </div>
+          </T>
+        )}
       </div>
     </div>
   );

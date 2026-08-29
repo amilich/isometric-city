@@ -292,7 +292,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                         <button
                           onClick={handleCopyRoomLink}
                           className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                          title="Copy invite link"
+                          title={gt('Copy invite link')}
                         >
                           {copiedRoomLink ? (
                             <Check className="w-3 h-3 text-green-400" />
@@ -386,7 +386,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                         <button
                           onClick={handleCopyRoomLink}
                           className="p-1 hover:bg-white/10 rounded transition-colors"
-                          title="Copy invite link"
+                          title={gt('Copy invite link')}
                         >
                           {copiedRoomLink ? (
                             <Check className="w-3.5 h-3.5 text-green-400" />

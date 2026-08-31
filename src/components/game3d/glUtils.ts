@@ -73,8 +73,8 @@ export class FloatArrayBuilder {
 
   push(...values: number[]): void {
     this.ensure(values.length);
-    for (let i = 0; i < values.length; i++) {
-      this.data[this.length++] = values[i];
+    for (const value of values) {
+      this.data[this.length++] = value;
     }
   }
 

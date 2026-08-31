@@ -18,14 +18,14 @@ export const mat4Create = (): Mat4 => {
 };
 
 export const mat4Perspective = (out: Mat4, fovY: number, aspect: number, near: number, far: number): Mat4 => {
-  const f = 1 / Math.tan(fovY / 2);
-  const nf = 1 / (near - far);
+  const focal = 1 / Math.tan(fovY / 2);
+  const depthScale = 1 / (near - far);
   out.fill(0);
-  out[0] = f / aspect;
-  out[5] = f;
-  out[10] = (far + near) * nf;
+  out[0] = focal / aspect;
+  out[5] = focal;
+  out[10] = (far + near) * depthScale;
   out[11] = -1;
-  out[14] = 2 * far * near * nf;
+  out[14] = 2 * far * near * depthScale;
   return out;
 };
 

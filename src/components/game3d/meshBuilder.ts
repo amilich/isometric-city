@@ -147,12 +147,12 @@ class Geometry {
   ): void {
     const x0 = cx - sx / 2, x1 = cx + sx / 2;
     const z0 = cz - sz / 2, z1 = cz + sz / 2;
-    const h = y1 - y0;
+    const wallHeight = y1 - y0;
     // +z / -z / +x / -x walls, uv.x spans wall width so windows stay square
-    this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], wall, wallFlag, sx, h);
-    this.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], wall, wallFlag, sx, h);
-    this.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], wall, wallFlag, sz, h);
-    this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], wall, wallFlag, sz, h);
+    this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], wall, wallFlag, sx, wallHeight);
+    this.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], wall, wallFlag, sx, wallHeight);
+    this.quad([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], wall, wallFlag, sz, wallHeight);
+    this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], wall, wallFlag, sz, wallHeight);
     this.ground(x0, z0, x1, z1, y1, roof, roofFlag, sx, sz);
   }
 

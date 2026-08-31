@@ -62,6 +62,80 @@ const grain = (ctx: Ctx, amount: number, seed: number, tint: [number, number, nu
   ctx.putImageData(image, 0, 0);
 };
 
+/**
+ * Tiling value noise: a random lattice with smoothstep interpolation, wrapped so
+ * the result still tiles. Written straight into the pixel buffer because canvas
+ * gradients are dithered, which reads as salt-and-pepper once the shader doubles
+ * the detail map.
+ */
+const valueNoise = (seed: number, cells: number): (x: number, y: number) => number => {
+  const random = makeRandom(seed);
+  const lattice = new Float32Array(cells * cells);
+  for (let i = 0; i < lattice.length; i++) lattice[i] = random() * 2 - 1;
+  const at = (cx: number, cy: number): number =>
+    lattice[(((cy % cells) + cells) % cells) * cells + (((cx % cells) + cells) % cells)];
+  return (x: number, y: number): number => {
+    const gx = (x / TEXTURE_SIZE) * cells;
+    const gy = (y / TEXTURE_SIZE) * cells;
+    const x0 = Math.floor(gx);
+    const y0 = Math.floor(gy);
+    const fx = gx - x0;
+    const fy = gy - y0;
+    const sx = fx * fx * (3 - 2 * fx);
+    const sy = fy * fy * (3 - 2 * fy);
+    const top = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * sx;
+    const bottom = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * sx;
+    return top + (bottom - top) * sy;
+  };
+};
+
+/**
+ * Low-frequency blotches. Pixel grain alone disappears at distance and leaves
+ * surfaces looking uniformly flat; soft patches keep them alive at any zoom.
+ */
+const mottle = (ctx: Ctx, seed: number, strength: number): void => {
+  const coarse = valueNoise(seed, 4);
+  const fine = valueNoise(seed + 977, 11);
+  const image = ctx.getImageData(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
+  const data = image.data;
+  for (let y = 0; y < TEXTURE_SIZE; y++) {
+    for (let x = 0; x < TEXTURE_SIZE; x++) {
+      const n = (coarse(x, y) * 0.7 + fine(x, y) * 0.3) * strength * 255;
+      const i = (y * TEXTURE_SIZE + x) * 4;
+      data[i] = Math.max(0, Math.min(255, data[i] + n));
+      data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + n));
+      data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + n));
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+};
+
+/** Vertical weathering streaks, as run-off leaves down a facade. */
+const streaks = (ctx: Ctx, seed: number, count: number, strength: number): void => {
+  const random = makeRandom(seed);
+  const image = ctx.getImageData(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
+  const data = image.data;
+  for (let s = 0; s < count; s++) {
+    const centre = random() * TEXTURE_SIZE;
+    const halfWidth = 1.5 + random() * 4;
+    const top = random() * TEXTURE_SIZE * 0.5;
+    const length = TEXTURE_SIZE * (0.25 + random() * 0.6);
+    const peak = strength * (0.5 + random() * 0.5) * 255;
+    for (let y = Math.floor(top); y < Math.min(TEXTURE_SIZE, top + length); y++) {
+      const fade = 1 - (y - top) / length;
+      for (let x = Math.floor(centre - halfWidth); x <= centre + halfWidth; x++) {
+        const across = 1 - Math.abs(x - centre) / halfWidth;
+        const amount = peak * fade * across;
+        const i = ((((x % TEXTURE_SIZE) + TEXTURE_SIZE) % TEXTURE_SIZE) + y * TEXTURE_SIZE) * 4;
+        data[i] = Math.max(0, data[i] - amount);
+        data[i + 1] = Math.max(0, data[i + 1] - amount);
+        data[i + 2] = Math.max(0, data[i + 2] - amount);
+      }
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+};
+
 interface Rect {
   x: number;
   y: number;
@@ -82,7 +156,7 @@ const windows = (ctx: Ctx, options: { width: number; height: number; frame: numb
       const x = col * cell + (cell - paneWidth) / 2;
       const y = row * cell + (cell - paneHeight) / 2;
       if (options.frame > 0) {
-        ctx.fillStyle = 'rgba(210,206,198,1)';
+        ctx.fillStyle = 'rgba(152,150,146,1)';
         ctx.fillRect(x - options.frame, y - options.frame, paneWidth + options.frame * 2, paneHeight + options.frame * 2);
       }
       // Glass itself: dark detail plus alpha=1 so the shader can treat it as a window
@@ -95,7 +169,7 @@ const windows = (ctx: Ctx, options: { width: number; height: number; frame: numb
       ctx.fillStyle = gradient;
       ctx.fillRect(x, y, paneWidth, paneHeight);
       if (options.sill) {
-        ctx.fillStyle = 'rgba(196,192,184,1)';
+        ctx.fillStyle = 'rgba(142,139,134,1)';
         ctx.fillRect(x - options.frame, y + paneHeight + options.frame, paneWidth + options.frame * 2, 3);
       }
     }
@@ -104,7 +178,9 @@ const windows = (ctx: Ctx, options: { width: number; height: number; frame: numb
 
 const concretePanel = (ctx: Ctx): void => {
   fill(ctx, 128);
-  grain(ctx, 26, 11);
+  grain(ctx, 6, 11);
+  mottle(ctx, 13, 0.20);
+  streaks(ctx, 17, 14, 0.16);
   // Precast panel joints
   ctx.strokeStyle = 'rgba(90,90,92,0.55)';
   ctx.lineWidth = 2;
@@ -117,7 +193,7 @@ const concretePanel = (ctx: Ctx): void => {
     ctx.lineTo(i * cell, TEXTURE_SIZE);
     ctx.stroke();
   }
-  windows(ctx, { width: 0.52, height: 0.5, frame: 4, sill: true });
+  windows(ctx, { width: 0.52, height: 0.5, frame: 3, sill: true });
 };
 
 const brick = (ctx: Ctx): void => {
@@ -134,8 +210,10 @@ const brick = (ctx: Ctx): void => {
       ctx.fillRect(col * brickWidth + offset + 1, row * rowHeight + 1, brickWidth - 2, rowHeight - 2);
     }
   }
-  grain(ctx, 16, 23);
-  windows(ctx, { width: 0.42, height: 0.46, frame: 5, sill: true });
+  grain(ctx, 7, 23);
+  mottle(ctx, 29, 0.16);
+  streaks(ctx, 31, 10, 0.13);
+  windows(ctx, { width: 0.42, height: 0.46, frame: 3, sill: true });
 };
 
 const glassCurtain = (ctx: Ctx): void => {
@@ -152,11 +230,14 @@ const glassCurtain = (ctx: Ctx): void => {
   for (let i = 0; i < WINDOW_GRID * 2; i++) {
     ctx.fillRect((i * TEXTURE_SIZE) / (WINDOW_GRID * 2), 0, 2, TEXTURE_SIZE);
   }
+  mottle(ctx, 43, 0.08);
 };
 
 const stucco = (ctx: Ctx): void => {
   fill(ctx, 134);
-  grain(ctx, 30, 51);
+  grain(ctx, 12, 51);
+  mottle(ctx, 53, 0.18);
+  streaks(ctx, 59, 8, 0.10);
   // Horizontal siding lines
   ctx.strokeStyle = 'rgba(104,100,94,0.35)';
   ctx.lineWidth = 1;
@@ -166,7 +247,7 @@ const stucco = (ctx: Ctx): void => {
     ctx.lineTo(TEXTURE_SIZE, y + 0.5);
     ctx.stroke();
   }
-  windows(ctx, { width: 0.34, height: 0.4, frame: 6, sill: true });
+  windows(ctx, { width: 0.34, height: 0.4, frame: 4, sill: true });
 };
 
 const metalPanel = (ctx: Ctx): void => {
@@ -177,7 +258,9 @@ const metalPanel = (ctx: Ctx): void => {
     ctx.fillStyle = `rgb(${shade},${shade},${shade})`;
     ctx.fillRect(x, 0, 1, TEXTURE_SIZE);
   }
-  grain(ctx, 10, 71);
+  grain(ctx, 6, 71);
+  mottle(ctx, 73, 0.14);
+  streaks(ctx, 79, 16, 0.18);
   // Strip windows high on the wall
   ctx.fillStyle = 'rgba(78,88,98,1)';
   const cell = TEXTURE_SIZE / WINDOW_GRID;
@@ -191,6 +274,7 @@ const metalPanel = (ctx: Ctx): void => {
 const roofGravel = (ctx: Ctx): void => {
   fill(ctx, 126);
   grain(ctx, 46, 131);
+  mottle(ctx, 137, 0.18);
   // Membrane seams
   ctx.strokeStyle = 'rgba(96,96,98,0.5)';
   ctx.lineWidth = 3;
@@ -219,6 +303,7 @@ const roofShingle = (ctx: Ctx): void => {
     ctx.fillRect(0, row * rowHeight + rowHeight - 2, TEXTURE_SIZE, 2);
   }
   grain(ctx, 14, 233);
+  mottle(ctx, 239, 0.20);
 };
 
 const roofMetal = (ctx: Ctx): void => {
@@ -230,11 +315,13 @@ const roofMetal = (ctx: Ctx): void => {
     ctx.fillRect(x + 4, 0, 2, TEXTURE_SIZE);
   }
   grain(ctx, 12, 307);
+  mottle(ctx, 311, 0.14);
 };
 
 const asphalt = (ctx: Ctx): void => {
   fill(ctx, 122);
   grain(ctx, 40, 401);
+  mottle(ctx, 419, 0.22);
   // Patches and cracks
   const random = makeRandom(409);
   ctx.strokeStyle = 'rgba(96,96,98,0.6)';
@@ -252,6 +339,7 @@ const asphalt = (ctx: Ctx): void => {
 const grass = (ctx: Ctx): void => {
   fill(ctx, 128);
   grain(ctx, 44, 503, [0.7, 1.2, 0.6]);
+  mottle(ctx, 509, 0.10);
   const random = makeRandom(521);
   // Short blades give the lawn some direction
   ctx.lineWidth = 1;
@@ -270,6 +358,7 @@ const grass = (ctx: Ctx): void => {
 const paving = (ctx: Ctx): void => {
   fill(ctx, 132);
   grain(ctx, 20, 601);
+  mottle(ctx, 607, 0.18);
   ctx.strokeStyle = 'rgba(92,92,90,0.55)';
   ctx.lineWidth = 2;
   const step = TEXTURE_SIZE / 4;

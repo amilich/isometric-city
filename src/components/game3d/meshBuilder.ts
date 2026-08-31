@@ -53,23 +53,25 @@ export interface CityMesh {
 type RGB = [number, number, number];
 
 const GRASS_COLORS: RGB[] = [
-  [0.40, 0.60, 0.33],
-  [0.44, 0.63, 0.35],
-  [0.37, 0.56, 0.31],
-  [0.46, 0.65, 0.38],
+  [0.38, 0.50, 0.30],
+  [0.42, 0.54, 0.32],
+  [0.34, 0.45, 0.27],
+  [0.45, 0.55, 0.35],
+  [0.36, 0.47, 0.33],
 ];
-const DIRT: RGB = [0.45, 0.36, 0.27];
-const ASPHALT: RGB = [0.24, 0.24, 0.26];
-const SIDEWALK: RGB = [0.66, 0.65, 0.62];
+const DIRT: RGB = [0.42, 0.35, 0.28];
+const ASPHALT: RGB = [0.22, 0.22, 0.23];
+const SIDEWALK: RGB = [0.62, 0.61, 0.58];
 const RAIL_BED: RGB = [0.33, 0.29, 0.26];
 const RAIL_METAL: RGB = [0.52, 0.52, 0.55];
-const WATER: RGB = [0.09, 0.30, 0.45];
+const WATER: RGB = [0.06, 0.21, 0.32];
 const TRUNK: RGB = [0.35, 0.25, 0.17];
 const LEAF_COLORS: RGB[] = [
-  [0.18, 0.42, 0.22],
-  [0.22, 0.48, 0.25],
-  [0.26, 0.52, 0.28],
-  [0.15, 0.37, 0.20],
+  [0.19, 0.34, 0.20],
+  [0.24, 0.40, 0.23],
+  [0.28, 0.44, 0.26],
+  [0.16, 0.30, 0.18],
+  [0.31, 0.42, 0.24],
 ];
 
 class Geometry {
@@ -248,6 +250,23 @@ const mixColor = (color: RGB, factor: number): RGB => {
   return [color[0] * factor, color[1] * factor, color[2] * factor];
 };
 
+/**
+ * Per-instance colour drift: a shared palette entry becomes a slightly different
+ * shade on every plot, so a street of the same building type does not read as a
+ * row of clones.
+ */
+const weather = (color: RGB, x: number, y: number, salt: number): RGB => {
+  const brightness = 0.88 + tileHash(x, y, salt) * 0.24;
+  const warmth = (tileHash(x, y, salt + 1) - 0.5) * 0.06;
+  const desaturate = 0.12 + tileHash(x, y, salt + 2) * 0.12;
+  const luma = color[0] * 0.3 + color[1] * 0.59 + color[2] * 0.11;
+  return [
+    Math.min(1, Math.max(0, (color[0] + (luma - color[0]) * desaturate + warmth) * brightness)),
+    Math.min(1, Math.max(0, (color[1] + (luma - color[1]) * desaturate) * brightness)),
+    Math.min(1, Math.max(0, (color[2] + (luma - color[2]) * desaturate - warmth) * brightness)),
+  ];
+};
+
 const addTree = (geo: Geometry, x: number, y: number, scale = 1): void => {
   const cx = x + 0.3 + tileHash(x, y, 3) * 0.4;
   const cz = y + 0.3 + tileHash(x, y, 4) * 0.4;
@@ -334,8 +353,8 @@ const addBuildingVolume = (geo: Geometry, tile: Tile, x: number, y: number): voi
   let height = spec.height * (1 + jitter) * levelBoost * buildFraction;
 
   const textures = getBuildingTextures(type);
-  let wall = hexToRgb(spec.wall);
-  let roof = hexToRgb(spec.roof);
+  let wall = weather(hexToRgb(spec.wall), x, y, 60);
+  let roof = weather(hexToRgb(spec.roof), x, y, 70);
   let wallFlag = material(spec.windows ? SURFACE.FACADE : SURFACE.PLAIN, textures.wall);
   const roofFlag = material(SURFACE.ROOF, textures.roof);
   if (underConstruction) {

@@ -3,7 +3,7 @@
  * Handles visualization overlays for power, water, services, etc.
  */
 
-import { Tile } from '@/types/game';
+import { Tile, buildingNeedsServiceCoverage } from '@/types/game';
 import { OverlayMode } from './types';
 
 // ============================================================================
@@ -110,14 +110,9 @@ export function getOverlayButtonClass(mode: OverlayMode, isActive: boolean): str
 // Overlay Fill Style Calculation
 // ============================================================================
 
-/** Tiles that don't need service coverage (natural/infrastructure) */
-const NON_BUILDING_TYPES = new Set([
-  'empty', 'grass', 'water', 'road', 'rail', 'tree'
-]);
-
 /** Check if a tile has a building that needs service coverage */
 function tileNeedsCoverage(tile: Tile): boolean {
-  return !NON_BUILDING_TYPES.has(tile.building.type);
+  return buildingNeedsServiceCoverage(tile.building.type);
 }
 
 /** Warning color for uncovered buildings */

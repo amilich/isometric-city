@@ -59,6 +59,22 @@ export const RESIDENTIAL_BUILDINGS: BuildingType[] = ['house_small', 'house_medi
 export const COMMERCIAL_BUILDINGS: BuildingType[] = ['shop_small', 'shop_medium', 'office_low', 'office_high', 'mall'];
 export const INDUSTRIAL_BUILDINGS: BuildingType[] = ['factory_small', 'factory_medium', 'warehouse', 'factory_large', 'factory_large'];
 
+/** Terrain / infrastructure tiles that do not need (or affect) service coverage */
+export const NON_BUILDING_TYPES = new Set<BuildingType>([
+  'empty',
+  'grass',
+  'water',
+  'road',
+  'bridge',
+  'rail',
+  'tree',
+]);
+
+/** True for buildings that should be included in service coverage ratings/overlays */
+export function buildingNeedsServiceCoverage(type: BuildingType): boolean {
+  return !NON_BUILDING_TYPES.has(type);
+}
+
 export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: number; pollution: number; landValue: number }> = {
   empty: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },
   grass: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },

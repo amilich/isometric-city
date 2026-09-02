@@ -21,6 +21,7 @@ import {
   COMMERCIAL_BUILDINGS,
   INDUSTRIAL_BUILDINGS,
   TOOL_INFO,
+  buildingNeedsServiceCoverage,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
 import { isMobile } from 'react-device-detect';
@@ -1951,17 +1952,6 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   };
 }
 
-// Terrain / infrastructure tiles that should not affect service ratings
-const NON_BUILDING_TYPES = new Set<BuildingType>([
-  'grass',
-  'empty',
-  'water',
-  'road',
-  'bridge',
-  'tree',
-  'rail',
-]);
-
 /**
  * Average service coverage across developed buildings only.
  * Empty grassland and infrastructure are excluded so ratings reflect how
@@ -1979,9 +1969,9 @@ function calculateAverageCoverage(coverage: number[][], grid: Tile[][]): number 
     for (let x = 0; x < width; x++) {
       const tile = gridRow[x];
       if (!tile) continue;
-      // Only rate tiles with actual buildings that need services
+      // Only rate zoned tiles with buildings that need services
       if (tile.zone === 'none') continue;
-      if (NON_BUILDING_TYPES.has(tile.building.type)) continue;
+      if (!buildingNeedsServiceCoverage(tile.building.type)) continue;
       total += row[x];
       count++;
     }

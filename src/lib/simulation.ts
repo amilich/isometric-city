@@ -21,9 +21,9 @@ import {
   COMMERCIAL_BUILDINGS,
   INDUSTRIAL_BUILDINGS,
   TOOL_INFO,
-  buildingNeedsServiceCoverage,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import { averageServiceCoverageOnDevelopedTiles } from './serviceCoverageAverages';
 import { isMobile } from 'react-device-detect';
 
 // Default grid size for new games
@@ -1910,27 +1910,12 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   // Calculate ratings from developed buildings only (not empty map tiles).
   // Averaging over the full grid dilutes coverage on large maps — a fully
   // served small town on a 50x50 grid would report ~4% instead of ~100%.
-  let policeTotal = 0;
-  let fireTotal = 0;
-  let healthTotal = 0;
-  let educationTotal = 0;
-  let ratedTileCount = 0;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const tile = grid[y][x];
-      if (tile === undefined || tile.zone === 'none') continue;
-      if (!buildingNeedsServiceCoverage(tile.building.type)) continue;
-      policeTotal += services.police[y][x];
-      fireTotal += services.fire[y][x];
-      healthTotal += services.health[y][x];
-      educationTotal += services.education[y][x];
-      ratedTileCount += 1;
-    }
-  }
-  const avgPoliceCoverage = ratedTileCount === 0 ? 0 : policeTotal / ratedTileCount;
-  const avgFireCoverage = ratedTileCount === 0 ? 0 : fireTotal / ratedTileCount;
-  const avgHealthCoverage = ratedTileCount === 0 ? 0 : healthTotal / ratedTileCount;
-  const avgEducationCoverage = ratedTileCount === 0 ? 0 : educationTotal / ratedTileCount;
+  const {
+    police: avgPoliceCoverage,
+    fire: avgFireCoverage,
+    health: avgHealthCoverage,
+    education: avgEducationCoverage,
+  } = averageServiceCoverageOnDevelopedTiles(services, grid, size);
 
   const safety = Math.min(100, avgPoliceCoverage * 0.7 + avgFireCoverage * 0.3);
   const health = Math.min(100, avgHealthCoverage * 0.8 + (100 - totalPollution / (size * size)) * 0.2);

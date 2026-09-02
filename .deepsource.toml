@@ -25,8 +25,6 @@ skip_doc_coverage = [
   "class-expression",
   "method-definition",
 ]
-# Large simulation/render hot paths are intentionally complex.
-cyclomatic_complexity_threshold = "critical"
 
 [[analyzers]]
 name = "secrets"

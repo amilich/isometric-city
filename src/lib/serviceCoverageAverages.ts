@@ -18,6 +18,13 @@ const tileCountsTowardServiceRating = (tile: Tile | undefined): tile is Tile =>
   tile.zone !== 'none' &&
   buildingNeedsServiceCoverage(tile.building.type);
 
+const EMPTY_AVERAGES: ServiceCoverageAverages = {
+  police: 0,
+  fire: 0,
+  health: 0,
+  education: 0,
+};
+
 /**
  * Average service coverage across zoned buildings that need services.
  * Terrain and infrastructure are excluded so ratings reflect how well the
@@ -33,24 +40,28 @@ export const averageServiceCoverageOnDevelopedTiles = (
   let healthTotal = 0;
   let educationTotal = 0;
   let ratedTileCount = 0;
+  const totalCells = size * size;
 
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      if (tileCountsTowardServiceRating(grid[y][x])) {
-        policeTotal += services.police[y][x];
-        fireTotal += services.fire[y][x];
-        healthTotal += services.health[y][x];
-        educationTotal += services.education[y][x];
-        ratedTileCount += 1;
-      }
+  for (let i = 0; i < totalCells; i += 1) {
+    const y = (i / size) | 0;
+    const x = i - y * size;
+    if (tileCountsTowardServiceRating(grid[y][x])) {
+      policeTotal += services.police[y][x];
+      fireTotal += services.fire[y][x];
+      healthTotal += services.health[y][x];
+      educationTotal += services.education[y][x];
+      ratedTileCount += 1;
     }
   }
 
-  const scale = ratedTileCount > 0 ? 1 / ratedTileCount : 0;
+  if (ratedTileCount === 0) {
+    return EMPTY_AVERAGES;
+  }
+
   return {
-    police: policeTotal * scale,
-    fire: fireTotal * scale,
-    health: healthTotal * scale,
-    education: educationTotal * scale,
+    police: policeTotal / ratedTileCount,
+    fire: fireTotal / ratedTileCount,
+    health: healthTotal / ratedTileCount,
+    education: educationTotal / ratedTileCount,
   };
 };

@@ -1,0 +1,35 @@
+version = 1
+
+exclude_patterns = [
+  "public/**",
+  "scripts/**",
+  "**/*.mjs",
+]
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+[analyzers.meta]
+plugins = ["react"]
+environment = ["nodejs", "browser"]
+module_system = "es-modules"
+dialect = "typescript"
+# Game codebase does not use systematic JSDoc; exclude all doc-coverage artifacts
+# so DCV does not fail PRs against an unreachable ~70% threshold.
+skip_doc_coverage = [
+  "function-declaration",
+  "function-expression",
+  "arrow-function-expression",
+  "class-declaration",
+  "class-expression",
+  "method-definition",
+]
+
+[[analyzers]]
+name = "secrets"
+enabled = true
+
+[[analyzers]]
+name = "shell"
+enabled = true

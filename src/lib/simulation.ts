@@ -1757,7 +1757,7 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
 // effectiveTaxRate is the lagged tax rate used for demand calculations
 // DeepSource JS-0067 treats module-level function declarations as global; keep
 // declaration form for hoist/readability consistency with neighboring helpers.
-function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage): Stats { // skipcq: JS-0067
+function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage): Stats { // skipcq: JS-0067, JS-R1005
   let population = 0;
   let jobs = 0;
   let totalPollution = 0;

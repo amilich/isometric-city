@@ -1906,11 +1906,13 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   expenses += Math.floor(budget.power.cost * budget.power.funding / 100);
   expenses += Math.floor(budget.water.cost * budget.water.funding / 100);
 
-  // Calculate ratings
-  const avgPoliceCoverage = calculateAverageCoverage(services.police);
-  const avgFireCoverage = calculateAverageCoverage(services.fire);
-  const avgHealthCoverage = calculateAverageCoverage(services.health);
-  const avgEducationCoverage = calculateAverageCoverage(services.education);
+  // Calculate ratings from developed buildings only (not empty map tiles).
+  // Averaging over the full grid dilutes coverage on large maps — a fully
+  // served small town on a 50x50 grid would report ~4% instead of ~100%.
+  const avgPoliceCoverage = calculateAverageCoverage(services.police, grid);
+  const avgFireCoverage = calculateAverageCoverage(services.fire, grid);
+  const avgHealthCoverage = calculateAverageCoverage(services.health, grid);
+  const avgEducationCoverage = calculateAverageCoverage(services.education, grid);
 
   const safety = Math.min(100, avgPoliceCoverage * 0.7 + avgFireCoverage * 0.3);
   const health = Math.min(100, avgHealthCoverage * 0.8 + (100 - totalPollution / (size * size)) * 0.2);
@@ -1949,12 +1951,38 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   };
 }
 
-function calculateAverageCoverage(coverage: number[][]): number {
+// Terrain / infrastructure tiles that should not affect service ratings
+const NON_BUILDING_TYPES = new Set<BuildingType>([
+  'grass',
+  'empty',
+  'water',
+  'road',
+  'bridge',
+  'tree',
+  'rail',
+]);
+
+/**
+ * Average service coverage across developed buildings only.
+ * Empty grassland and infrastructure are excluded so ratings reflect how
+ * well the actual city is served, matching the coverage overlays.
+ */
+function calculateAverageCoverage(coverage: number[][], grid: Tile[][]): number {
   let total = 0;
   let count = 0;
-  for (const row of coverage) {
-    for (const value of row) {
-      total += value;
+  const height = coverage.length;
+  for (let y = 0; y < height; y++) {
+    const row = coverage[y];
+    const gridRow = grid[y];
+    if (!row || !gridRow) continue;
+    const width = row.length;
+    for (let x = 0; x < width; x++) {
+      const tile = gridRow[x];
+      if (!tile) continue;
+      // Only rate tiles with actual buildings that need services
+      if (tile.zone === 'none') continue;
+      if (NON_BUILDING_TYPES.has(tile.building.type)) continue;
+      total += row[x];
       count++;
     }
   }

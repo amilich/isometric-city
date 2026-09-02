@@ -981,7 +981,9 @@ export function useVehicleSystems(
     }
     
     const updatedCars: Car[] = [];
-    for (const car of carsRef.current) {
+    const cars = carsRef.current;
+    for (let i = 0; i < cars.length; i++) {
+      const car = cars[i];
       // Update car age and remove if too old
       car.age += delta * speedMultiplier;
       if (car.age > car.maxAge) {
@@ -1217,8 +1219,10 @@ export function useVehicleSystems(
     const lightState = getTrafficLightState(trafficTime);
 
     const updatedBuses: Bus[] = [];
+    const buses = busesRef.current;
 
-    for (const bus of busesRef.current) {
+    for (let i = 0; i < buses.length; i++) {
+      const bus = buses[i];
       bus.age += delta * speedMultiplier;
       if (bus.age > bus.maxAge) {
         continue;

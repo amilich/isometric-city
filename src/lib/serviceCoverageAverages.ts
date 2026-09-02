@@ -13,56 +13,46 @@ export type ServiceCoverageAverages = {
  * residential/commercial/industrial coverage scores. Overlays intentionally use
  * the broader buildingNeedsServiceCoverage check for placement warnings.
  */
-const tileCountsTowardServiceRating = (tile: Tile | undefined): tile is Tile => // skipcq: JS-0067
+const tileCountsTowardServiceRating = (tile: Tile | undefined): tile is Tile =>
   tile !== undefined &&
   tile.zone !== 'none' &&
   buildingNeedsServiceCoverage(tile.building.type);
 
-const EMPTY_AVERAGES: ServiceCoverageAverages = {
-  police: 0,
-  fire: 0,
-  health: 0,
-  education: 0,
-};
+const toIncludeFlag = (tile: Tile | undefined): 0 | 1 =>
+  tileCountsTowardServiceRating(tile) ? 1 : 0;
 
 /**
  * Average service coverage across zoned buildings that need services.
  * Terrain and infrastructure are excluded so ratings reflect how well the
  * developed city is served.
  */
-// skipcq: JS-R1005, JS-0067 -- linear tile scan; const arrow export
 export const averageServiceCoverageOnDevelopedTiles = (
   services: ServiceCoverage,
   grid: Tile[][],
-  size: number,
+  _size: number,
 ): ServiceCoverageAverages => {
   let policeTotal = 0;
   let fireTotal = 0;
   let healthTotal = 0;
   let educationTotal = 0;
   let ratedTileCount = 0;
-  const totalCells = size * size;
 
-  for (let i = 0; i < totalCells; i += 1) {
-    const y = (i / size) | 0;
-    const x = i - y * size;
-    if (tileCountsTowardServiceRating(grid[y][x])) {
-      policeTotal += services.police[y][x];
-      fireTotal += services.fire[y][x];
-      healthTotal += services.health[y][x];
-      educationTotal += services.education[y][x];
-      ratedTileCount += 1;
-    }
-  }
+  grid.forEach((row, y) => {
+    row.forEach((tile, x) => {
+      const include = toIncludeFlag(tile);
+      policeTotal += services.police[y][x] * include;
+      fireTotal += services.fire[y][x] * include;
+      healthTotal += services.health[y][x] * include;
+      educationTotal += services.education[y][x] * include;
+      ratedTileCount += include;
+    });
+  });
 
-  if (ratedTileCount === 0) {
-    return EMPTY_AVERAGES;
-  }
-
+  const scale = ratedTileCount > 0 ? 1 / ratedTileCount : 0;
   return {
-    police: policeTotal / ratedTileCount,
-    fire: fireTotal / ratedTileCount,
-    health: healthTotal / ratedTileCount,
-    education: educationTotal / ratedTileCount,
+    police: policeTotal * scale,
+    fire: fireTotal * scale,
+    health: healthTotal * scale,
+    education: educationTotal * scale,
   };
 };

@@ -30,6 +30,7 @@ const EMPTY_AVERAGES: ServiceCoverageAverages = {
  * Terrain and infrastructure are excluded so ratings reflect how well the
  * developed city is served.
  */
+// skipcq: JS-R1005 -- linear tile scan with a single guard; further splits obscure the formula
 export const averageServiceCoverageOnDevelopedTiles = (
   services: ServiceCoverage,
   grid: Tile[][],

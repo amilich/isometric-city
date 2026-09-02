@@ -1952,6 +1952,11 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   };
 }
 
+/** Zoned tiles with buildings that should count toward service ratings */
+function isRatedServiceTile(tile: Tile | undefined): tile is Tile {
+  return !!tile && tile.zone !== 'none' && buildingNeedsServiceCoverage(tile.building.type);
+}
+
 /**
  * Average service coverage across developed buildings only.
  * Empty grassland and infrastructure are excluded so ratings reflect how
@@ -1960,18 +1965,12 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
 function calculateAverageCoverage(coverage: number[][], grid: Tile[][]): number {
   let total = 0;
   let count = 0;
-  const height = coverage.length;
-  for (let y = 0; y < height; y++) {
+  for (let y = 0; y < coverage.length; y++) {
     const row = coverage[y];
     const gridRow = grid[y];
     if (!row || !gridRow) continue;
-    const width = row.length;
-    for (let x = 0; x < width; x++) {
-      const tile = gridRow[x];
-      if (!tile) continue;
-      // Only rate zoned tiles with buildings that need services
-      if (tile.zone === 'none') continue;
-      if (!buildingNeedsServiceCoverage(tile.building.type)) continue;
+    for (let x = 0; x < row.length; x++) {
+      if (!isRatedServiceTile(gridRow[x])) continue;
       total += row[x];
       count++;
     }

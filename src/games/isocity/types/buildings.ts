@@ -71,9 +71,8 @@ export const NON_BUILDING_TYPES = new Set<BuildingType>([
 ]);
 
 /** True for buildings that should be included in service coverage ratings/overlays */
-export function buildingNeedsServiceCoverage(type: BuildingType): boolean {
-  return !NON_BUILDING_TYPES.has(type);
-}
+export const buildingNeedsServiceCoverage = (type: BuildingType): boolean =>
+  !NON_BUILDING_TYPES.has(type);
 
 export const BUILDING_STATS: Record<BuildingType, { maxPop: number; maxJobs: number; pollution: number; landValue: number }> = {
   empty: { maxPop: 0, maxJobs: 0, pollution: 0, landValue: 0 },

@@ -7,9 +7,13 @@ import { OPPOSITE_DIRECTION } from './constants';
 const MAX_PATH_LENGTH = 2048;
 const BFS_QUEUE_X = new Int16Array(MAX_PATH_LENGTH);
 const BFS_QUEUE_Y = new Int16Array(MAX_PATH_LENGTH);
-const BFS_PARENT_X = new Int16Array(MAX_PATH_LENGTH); // Parent index for path reconstruction
-const BFS_PARENT_Y = new Int16Array(MAX_PATH_LENGTH);
-const BFS_VISITED = new Uint8Array(256 * 256); // Max 256x256 grid size
+// Store parent queue index (not coordinates) so path reconstruction is O(path length)
+const BFS_PARENT_IDX = new Int16Array(MAX_PATH_LENGTH);
+// Generation stamp avoids clearing the whole visited array on every pathfind
+const BFS_VISITED = new Uint32Array(256 * 256); // Max 256x256 grid size
+let bfsVisitGeneration = 1;
+const BFS_DX = [-1, 1, 0, 0];
+const BFS_DY = [0, 0, -1, 1];
 
 // Get opposite direction
 export function getOppositeDirection(direction: CarDirection): CarDirection {
@@ -250,7 +254,6 @@ export function findPathOnRoads(
     return [{ x: startRoad.x, y: startRoad.y }];
   }
   
-  // PERF: Clear visited array only for the area we need (faster than full clear)
   // Using numeric keys: index = y * gridSize + x
   const maxIdx = gridSizeValue * gridSizeValue;
   if (maxIdx > BFS_VISITED.length) {
@@ -258,23 +261,21 @@ export function findPathOnRoads(
     return findPathOnRoadsLegacy(gridData, gridSizeValue, startRoad, targetRoad);
   }
   
-  // Clear visited (only the portion we'll use)
-  for (let i = 0; i < maxIdx; i++) {
-    BFS_VISITED[i] = 0;
+  // PERF: Stamp visited cells with a generation id instead of zeroing the array
+  bfsVisitGeneration++;
+  if (bfsVisitGeneration === 0) {
+    BFS_VISITED.fill(0);
+    bfsVisitGeneration = 1;
   }
+  const visitGen = bfsVisitGeneration;
   
   // BFS using pre-allocated arrays
   let queueHead = 0;
   let queueTail = 1;
   BFS_QUEUE_X[0] = startRoad.x;
   BFS_QUEUE_Y[0] = startRoad.y;
-  BFS_PARENT_X[0] = -1; // -1 indicates start node
-  BFS_PARENT_Y[0] = -1;
-  BFS_VISITED[startRoad.y * gridSizeValue + startRoad.x] = 1;
-  
-  // Direction offsets
-  const DX = [-1, 1, 0, 0];
-  const DY = [0, 0, -1, 1];
+  BFS_PARENT_IDX[0] = -1; // -1 indicates start node
+  BFS_VISITED[startRoad.y * gridSizeValue + startRoad.x] = visitGen;
   
   let foundIdx = -1;
   
@@ -291,49 +292,32 @@ export function findPathOnRoads(
     }
     
     for (let d = 0; d < 4; d++) {
-      const nx = cx + DX[d];
-      const ny = cy + DY[d];
+      const nx = cx + BFS_DX[d];
+      const ny = cy + BFS_DY[d];
       
       if (nx < 0 || ny < 0 || nx >= gridSizeValue || ny >= gridSizeValue) continue;
       
       const visitedIdx = ny * gridSizeValue + nx;
-      if (BFS_VISITED[visitedIdx]) continue;
+      if (BFS_VISITED[visitedIdx] === visitGen) continue;
       if (!isRoadTile(gridData, gridSizeValue, nx, ny)) continue;
       
-      BFS_VISITED[visitedIdx] = 1;
+      BFS_VISITED[visitedIdx] = visitGen;
       BFS_QUEUE_X[queueTail] = nx;
       BFS_QUEUE_Y[queueTail] = ny;
-      BFS_PARENT_X[queueTail] = cx;
-      BFS_PARENT_Y[queueTail] = cy;
+      BFS_PARENT_IDX[queueTail] = currentIdx;
       queueTail++;
     }
   }
   
   if (foundIdx === -1) return null;
   
-  // Reconstruct path by walking back through parents
+  // Reconstruct path by walking back through parent indices — O(path length)
   const pathReverse: { x: number; y: number }[] = [];
   let idx = foundIdx;
   
-  // Walk back through the BFS tree to reconstruct path
   while (idx >= 0) {
     pathReverse.push({ x: BFS_QUEUE_X[idx], y: BFS_QUEUE_Y[idx] });
-    
-    // Find parent index by searching queue
-    const px = BFS_PARENT_X[idx];
-    const py = BFS_PARENT_Y[idx];
-    
-    if (px === -1) break; // Reached start
-    
-    // Search backwards for parent position in queue
-    let parentIdx = -1;
-    for (let i = idx - 1; i >= 0; i--) {
-      if (BFS_QUEUE_X[i] === px && BFS_QUEUE_Y[i] === py) {
-        parentIdx = i;
-        break;
-      }
-    }
-    idx = parentIdx;
+    idx = BFS_PARENT_IDX[idx];
   }
   
   // Reverse to get path from start to target

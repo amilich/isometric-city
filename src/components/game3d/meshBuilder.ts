@@ -235,11 +235,6 @@ class Geometry {
   }
 }
 
-const isType = (grid: Tile[][], gridSize: number, x: number, y: number, type: BuildingType): boolean => {
-  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
-  return grid[y][x].building.type === type;
-};
-
 const isRoadLike = (grid: Tile[][], gridSize: number, x: number, y: number): boolean => {
   if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
   const type = grid[y][x].building.type;
@@ -303,17 +298,29 @@ const addRoadTile = (geo: Geometry, grid: Tile[][], gridSize: number, x: number,
   }
 };
 
-const addRailTile = (geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number): void => {
-  const northSouth = isType(grid, gridSize, x, y - 1, 'rail') || isType(grid, gridSize, x, y + 1, 'rail');
-  geo.ground(x + 0.15, y + 0.15, x + 0.85, y + 0.85, 0.04, RAIL_BED, material(SURFACE.PLAIN, TEX.DIRT));
+/** Rail track runs over dedicated rail tiles and over roads carrying an overlay. */
+const isRailLike = (grid: Tile[][], gridSize: number, x: number, y: number): boolean => {
+  if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return false;
+  const tile = grid[y][x];
+  return tile.building.type === 'rail' || (tile.building.type === 'road' && tile.hasRailOverlay === true);
+};
+
+/** Two rails plus their bed; `base` lifts the track over whatever it crosses. */
+const addRails = (geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number, base: number): void => {
+  const northSouth = isRailLike(grid, gridSize, x, y - 1) || isRailLike(grid, gridSize, x, y + 1);
   const railOffsets = [-0.12, 0.12];
   for (const offset of railOffsets) {
     if (northSouth) {
-      geo.box(x + 0.5 + offset, y + 0.5, 0.05, 1, 0.04, 0.1, RAIL_METAL, RAIL_METAL, SURFACE.PLAIN);
+      geo.box(x + 0.5 + offset, y + 0.5, 0.05, 1, base, base + 0.06, RAIL_METAL, RAIL_METAL, SURFACE.PLAIN);
     } else {
-      geo.box(x + 0.5, y + 0.5 + offset, 1, 0.05, 0.04, 0.1, RAIL_METAL, RAIL_METAL, SURFACE.PLAIN);
+      geo.box(x + 0.5, y + 0.5 + offset, 1, 0.05, base, base + 0.06, RAIL_METAL, RAIL_METAL, SURFACE.PLAIN);
     }
   }
+};
+
+const addRailTile = (geo: Geometry, grid: Tile[][], gridSize: number, x: number, y: number): void => {
+  geo.ground(x + 0.15, y + 0.15, x + 0.85, y + 0.85, 0.04, RAIL_BED, material(SURFACE.PLAIN, TEX.DIRT));
+  addRails(geo, grid, gridSize, x, y, 0.04);
 };
 
 const addBridgeTile = (geo: Geometry, tile: Tile, x: number, y: number): void => {
@@ -475,6 +482,7 @@ export const buildCityMesh = ({ grid, gridSize }: BuildCityMeshOptions): CityMes
       switch (type) {
         case 'road':
           addRoadTile(opaque, grid, gridSize, x, y);
+          if (tile.hasRailOverlay) addRails(opaque, grid, gridSize, x, y, 0.06);
           break;
         case 'rail':
           addRailTile(opaque, grid, gridSize, x, y);

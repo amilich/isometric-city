@@ -152,7 +152,11 @@ vec3 shade(
   vec3 n = normalize(normal);
   vec3 view = normalize(uCameraPos - worldPos);
   float ndl = max(dot(n, uSunDir), 0.0);
-  float shadow = mix(1.0, shadowFactor(lightSpace, ndl), shadowStrength);
+  // Skipped entirely when unshadowed: callers then pass no valid light-space position.
+  float shadow = 1.0;
+  if (shadowStrength > 0.0) {
+    shadow = mix(1.0, shadowFactor(lightSpace, ndl), shadowStrength);
+  }
 
   // Hemispheric ambient: sky above, bounced ground light below
   float up = n.y * 0.5 + 0.5;
@@ -363,7 +367,7 @@ void main() {
   vec3 halfVec = normalize(viewDir + uSunDir);
   float spec = pow(max(dot(vWaveNormal, halfVec), 0.0), 220.0);
 
-  vec3 lit = shade(base, vWaveNormal, vWorld, vec4(0.0), 0.0, 1.0, 0.08, 0.02);
+  vec3 lit = shade(base, vWaveNormal, vWorld, vec4(0.0, 0.0, 0.0, 1.0), 0.0, 1.0, 0.08, 0.02);
   lit += srgbToLinear(uSunColor) * spec * 6.0 * (1.0 - uNight);
   fragColor = vec4(present(lit), 0.94);
 }

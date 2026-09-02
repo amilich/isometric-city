@@ -1953,30 +1953,28 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
 }
 
 /** Zoned tiles with buildings that should count toward service ratings */
-function isRatedServiceTile(tile: Tile | undefined): tile is Tile {
-  return !!tile && tile.zone !== 'none' && buildingNeedsServiceCoverage(tile.building.type);
-}
+const isRatedServiceTile = (tile: Tile | undefined): tile is Tile =>
+  tile !== undefined && tile.zone !== 'none' && buildingNeedsServiceCoverage(tile.building.type);
 
 /**
  * Average service coverage across developed buildings only.
  * Empty grassland and infrastructure are excluded so ratings reflect how
  * well the actual city is served, matching the coverage overlays.
  */
-function calculateAverageCoverage(coverage: number[][], grid: Tile[][]): number {
+const calculateAverageCoverage = (coverage: number[][], grid: Tile[][]): number => {
   let total = 0;
   let count = 0;
   for (let y = 0; y < coverage.length; y++) {
-    const row = coverage[y];
-    const gridRow = grid[y];
-    if (!row || !gridRow) continue;
-    for (let x = 0; x < row.length; x++) {
-      if (!isRatedServiceTile(gridRow[x])) continue;
-      total += row[x];
-      count++;
+    for (let x = 0; x < coverage[y].length; x++) {
+      if (isRatedServiceTile(grid[y][x])) {
+        total += coverage[y][x];
+        count += 1;
+      }
     }
   }
-  return count > 0 ? total / count : 0;
-}
+  if (count === 0) return 0;
+  return total / count;
+};
 
 // PERF: Update budget costs based on buildings - single pass through grid
 function updateBudgetCosts(grid: Tile[][], budget: Budget): Budget {

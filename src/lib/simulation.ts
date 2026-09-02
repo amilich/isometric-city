@@ -1907,37 +1907,30 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   expenses += Math.floor(budget.power.cost * budget.power.funding / 100);
   expenses += Math.floor(budget.water.cost * budget.water.funding / 100);
 
-  /** Zoned tiles with buildings that should count toward service ratings */
-  const isRatedServiceTile = (tile: Tile | undefined): tile is Tile =>
-    tile !== undefined && tile.zone !== 'none' && buildingNeedsServiceCoverage(tile.building.type);
-
-  /**
-   * Average service coverage across developed buildings only.
-   * Empty grassland and infrastructure are excluded so ratings reflect how
-   * well the actual city is served, matching the coverage overlays.
-   */
-  const calculateAverageCoverage = (coverage: number[][], grid: Tile[][]): number => {
-    let total = 0;
-    let count = 0;
-    for (let y = 0; y < coverage.length; y++) {
-      for (let x = 0; x < coverage[y].length; x++) {
-        if (isRatedServiceTile(grid[y][x])) {
-          total += coverage[y][x];
-          count += 1;
-        }
-      }
-    }
-    if (count === 0) return 0;
-    return total / count;
-  };
-
   // Calculate ratings from developed buildings only (not empty map tiles).
   // Averaging over the full grid dilutes coverage on large maps — a fully
   // served small town on a 50x50 grid would report ~4% instead of ~100%.
-  const avgPoliceCoverage = calculateAverageCoverage(services.police, grid);
-  const avgFireCoverage = calculateAverageCoverage(services.fire, grid);
-  const avgHealthCoverage = calculateAverageCoverage(services.health, grid);
-  const avgEducationCoverage = calculateAverageCoverage(services.education, grid);
+  let policeTotal = 0;
+  let fireTotal = 0;
+  let healthTotal = 0;
+  let educationTotal = 0;
+  let ratedTileCount = 0;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const tile = grid[y][x];
+      if (tile === undefined || tile.zone === 'none') continue;
+      if (!buildingNeedsServiceCoverage(tile.building.type)) continue;
+      policeTotal += services.police[y][x];
+      fireTotal += services.fire[y][x];
+      healthTotal += services.health[y][x];
+      educationTotal += services.education[y][x];
+      ratedTileCount += 1;
+    }
+  }
+  const avgPoliceCoverage = ratedTileCount === 0 ? 0 : policeTotal / ratedTileCount;
+  const avgFireCoverage = ratedTileCount === 0 ? 0 : fireTotal / ratedTileCount;
+  const avgHealthCoverage = ratedTileCount === 0 ? 0 : healthTotal / ratedTileCount;
+  const avgEducationCoverage = ratedTileCount === 0 ? 0 : educationTotal / ratedTileCount;
 
   const safety = Math.min(100, avgPoliceCoverage * 0.7 + avgFireCoverage * 0.3);
   const health = Math.min(100, avgHealthCoverage * 0.8 + (100 - totalPollution / (size * size)) * 0.2);

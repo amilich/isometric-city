@@ -100,11 +100,11 @@ export const TOOL_TO_OVERLAY_MAP: Record<string, OverlayMode> = {
 };
 
 /** Get the button class name for an overlay button */
-export function getOverlayButtonClass(mode: OverlayMode, isActive: boolean): string {
+export const getOverlayButtonClass = (mode: OverlayMode, isActive: boolean): string => {
   if (!isActive || mode === 'none') return '';
   const config = OVERLAY_CONFIG[mode];
   return `${config.activeColor} ${config.hoverColor}`;
-}
+};
 
 // ============================================================================
 // Overlay Fill Style Calculation
@@ -133,11 +133,11 @@ const NO_OVERLAY = 'rgba(0, 0, 0, 0)';
  * @param coverage - Service coverage values for the tile
  * @returns CSS color string for the overlay fill
  */
-export function getOverlayFillStyle(
+export const getOverlayFillStyle = (
   mode: OverlayMode,
   tile: Tile,
   coverage: ServiceCoverage
-): string {
+): string => {
   // Only show warning on tiles that have buildings needing coverage
   const needsCoverage = tileNeedsCoverage(tile);
   
@@ -182,15 +182,14 @@ export function getOverlayFillStyle(
     default:
       return NO_OVERLAY;
   }
-}
+};
 
 /**
  * Get the overlay mode that should be shown for a given tool.
  * Returns 'none' if the tool doesn't have an associated overlay.
  */
-export function getOverlayForTool(tool: string): OverlayMode {
-  return TOOL_TO_OVERLAY_MAP[tool] ?? 'none';
-}
+export const getOverlayForTool = (tool: string): OverlayMode =>
+  TOOL_TO_OVERLAY_MAP[tool] ?? 'none';
 
 /** List of all overlay modes (for iteration) */
 export const OVERLAY_MODES: OverlayMode[] = [

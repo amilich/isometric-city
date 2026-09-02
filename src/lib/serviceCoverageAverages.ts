@@ -13,7 +13,7 @@ export type ServiceCoverageAverages = {
  * residential/commercial/industrial coverage scores. Overlays intentionally use
  * the broader buildingNeedsServiceCoverage check for placement warnings.
  */
-const tileCountsTowardServiceRating = (tile: Tile | undefined): tile is Tile =>
+const tileCountsTowardServiceRating = (tile: Tile | undefined): tile is Tile => // skipcq: JS-0067
   tile !== undefined &&
   tile.zone !== 'none' &&
   buildingNeedsServiceCoverage(tile.building.type);
@@ -30,7 +30,7 @@ const EMPTY_AVERAGES: ServiceCoverageAverages = {
  * Terrain and infrastructure are excluded so ratings reflect how well the
  * developed city is served.
  */
-// skipcq: JS-R1005 -- linear tile scan with a single guard; further splits obscure the formula
+// skipcq: JS-R1005, JS-0067 -- linear tile scan; const arrow export
 export const averageServiceCoverageOnDevelopedTiles = (
   services: ServiceCoverage,
   grid: Tile[][],

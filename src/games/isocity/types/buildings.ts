@@ -71,6 +71,7 @@ export const NON_BUILDING_TYPES = new Set<BuildingType>([
 ]);
 
 /** True for buildings that should be included in service coverage ratings/overlays */
+// skipcq: JS-0067 -- module-scope const arrow; DeepSource false-positive on TS exports
 export const buildingNeedsServiceCoverage = (type: BuildingType): boolean =>
   !NON_BUILDING_TYPES.has(type);
 

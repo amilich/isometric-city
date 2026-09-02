@@ -7,13 +7,21 @@ export type ServiceCoverageAverages = {
   education: number;
 };
 
-const isCoveredServiceBuilding = (tile: Tile | undefined): tile is Tile =>
-  tile !== undefined && buildingNeedsServiceCoverage(tile.building.type);
+/**
+ * Buildings that contribute to city service *ratings*.
+ * Requires a zone so parks/landmarks/service plants don't dilute (or inflate)
+ * residential/commercial/industrial coverage scores. Overlays intentionally use
+ * the broader buildingNeedsServiceCoverage check for placement warnings.
+ */
+const tileCountsTowardServiceRating = (tile: Tile | undefined): tile is Tile =>
+  tile !== undefined &&
+  tile.zone !== 'none' &&
+  buildingNeedsServiceCoverage(tile.building.type);
 
 /**
- * Average service coverage across buildings that need services.
+ * Average service coverage across zoned buildings that need services.
  * Terrain and infrastructure are excluded so ratings reflect how well the
- * actual city is served, matching the coverage overlays.
+ * developed city is served.
  */
 export const averageServiceCoverageOnDevelopedTiles = (
   services: ServiceCoverage,
@@ -26,9 +34,9 @@ export const averageServiceCoverageOnDevelopedTiles = (
   let educationTotal = 0;
   let ratedTileCount = 0;
 
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      if (isCoveredServiceBuilding(grid[y][x])) {
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      if (tileCountsTowardServiceRating(grid[y][x])) {
         policeTotal += services.police[y][x];
         fireTotal += services.fire[y][x];
         healthTotal += services.health[y][x];
@@ -38,14 +46,11 @@ export const averageServiceCoverageOnDevelopedTiles = (
     }
   }
 
-  if (ratedTileCount === 0) {
-    return { police: 0, fire: 0, health: 0, education: 0 };
-  }
-
+  const scale = ratedTileCount > 0 ? 1 / ratedTileCount : 0;
   return {
-    police: policeTotal / ratedTileCount,
-    fire: fireTotal / ratedTileCount,
-    health: healthTotal / ratedTileCount,
-    education: educationTotal / ratedTileCount,
+    police: policeTotal * scale,
+    fire: fireTotal * scale,
+    health: healthTotal * scale,
+    education: educationTotal * scale,
   };
 };

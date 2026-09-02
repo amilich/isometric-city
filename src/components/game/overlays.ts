@@ -111,9 +111,8 @@ export function getOverlayButtonClass(mode: OverlayMode, isActive: boolean): str
 // ============================================================================
 
 /** Check if a tile has a building that needs service coverage */
-function tileNeedsCoverage(tile: Tile): boolean {
-  return buildingNeedsServiceCoverage(tile.building.type);
-}
+const tileNeedsCoverage = (tile: Tile): boolean =>
+  buildingNeedsServiceCoverage(tile.building.type);
 
 /** Warning color for uncovered buildings */
 const UNCOVERED_WARNING = 'rgba(239, 68, 68, 0.45)'; // Red tint

@@ -7,10 +7,13 @@ export type ServiceCoverageAverages = {
   education: number;
 };
 
+const isCoveredServiceBuilding = (tile: Tile | undefined): tile is Tile =>
+  tile !== undefined && buildingNeedsServiceCoverage(tile.building.type);
+
 /**
- * Average service coverage across developed buildings only.
- * Empty grassland and infrastructure are excluded so ratings reflect how
- * well the actual city is served, matching the coverage overlays.
+ * Average service coverage across buildings that need services.
+ * Terrain and infrastructure are excluded so ratings reflect how well the
+ * actual city is served, matching the coverage overlays.
  */
 export const averageServiceCoverageOnDevelopedTiles = (
   services: ServiceCoverage,
@@ -25,14 +28,13 @@ export const averageServiceCoverageOnDevelopedTiles = (
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const tile = grid[y][x];
-      if (tile === undefined || tile.zone === 'none') continue;
-      if (!buildingNeedsServiceCoverage(tile.building.type)) continue;
-      policeTotal += services.police[y][x];
-      fireTotal += services.fire[y][x];
-      healthTotal += services.health[y][x];
-      educationTotal += services.education[y][x];
-      ratedTileCount += 1;
+      if (isCoveredServiceBuilding(grid[y][x])) {
+        policeTotal += services.police[y][x];
+        fireTotal += services.fire[y][x];
+        healthTotal += services.health[y][x];
+        educationTotal += services.education[y][x];
+        ratedTileCount += 1;
+      }
     }
   }
 

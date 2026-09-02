@@ -1753,30 +1753,6 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
   return grid[y][x].building;
 }
 
-/** Zoned tiles with buildings that should count toward service ratings */
-const isRatedServiceTile = (tile: Tile | undefined): tile is Tile =>
-  tile !== undefined && tile.zone !== 'none' && buildingNeedsServiceCoverage(tile.building.type);
-
-/**
- * Average service coverage across developed buildings only.
- * Empty grassland and infrastructure are excluded so ratings reflect how
- * well the actual city is served, matching the coverage overlays.
- */
-const calculateAverageCoverage = (coverage: number[][], grid: Tile[][]): number => {
-  let total = 0;
-  let count = 0;
-  for (let y = 0; y < coverage.length; y++) {
-    for (let x = 0; x < coverage[y].length; x++) {
-      if (isRatedServiceTile(grid[y][x])) {
-        total += coverage[y][x];
-        count += 1;
-      }
-    }
-  }
-  if (count === 0) return 0;
-  return total / count;
-};
-
 // Calculate city stats
 // effectiveTaxRate is the lagged tax rate used for demand calculations
 function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage): Stats {
@@ -1930,6 +1906,30 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   expenses += Math.floor(budget.parks.cost * budget.parks.funding / 100);
   expenses += Math.floor(budget.power.cost * budget.power.funding / 100);
   expenses += Math.floor(budget.water.cost * budget.water.funding / 100);
+
+  /** Zoned tiles with buildings that should count toward service ratings */
+  const isRatedServiceTile = (tile: Tile | undefined): tile is Tile =>
+    tile !== undefined && tile.zone !== 'none' && buildingNeedsServiceCoverage(tile.building.type);
+
+  /**
+   * Average service coverage across developed buildings only.
+   * Empty grassland and infrastructure are excluded so ratings reflect how
+   * well the actual city is served, matching the coverage overlays.
+   */
+  const calculateAverageCoverage = (coverage: number[][], grid: Tile[][]): number => {
+    let total = 0;
+    let count = 0;
+    for (let y = 0; y < coverage.length; y++) {
+      for (let x = 0; x < coverage[y].length; x++) {
+        if (isRatedServiceTile(grid[y][x])) {
+          total += coverage[y][x];
+          count += 1;
+        }
+      }
+    }
+    if (count === 0) return 0;
+    return total / count;
+  };
 
   // Calculate ratings from developed buildings only (not empty map tiles).
   // Averaging over the full grid dilutes coverage on large maps — a fully

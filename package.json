@@ -8,6 +8,7 @@
     "build": "npm run compress-images && next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test-concurrency=1 --import ./tests/register.mjs --test tests/scim.test.ts",
     "crop-screenshots": "bash scripts/crop-screenshots.sh",
     "compress-images": "node scripts/compress-images.mjs"
   },

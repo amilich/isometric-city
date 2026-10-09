@@ -280,21 +280,21 @@ function SavedCityCard({ city, onLoad, onDelete }: { city: SavedCityMeta; onLoad
     <div className="relative group">
       <button
         onClick={onLoad}
-        className="w-full text-left p-3 pr-8 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200"
+        className="w-full text-left p-3 pr-8 bg-slate-950/55 hover:bg-slate-900/80 border border-white/10 hover:border-sky-300/35 rounded-md transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
       >
         <div className="flex items-center gap-2">
           <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm flex-1">
             {city.cityName}
           </h3>
           {city.roomCode && (
-            <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded shrink-0">
+            <span className="text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 bg-sky-400/15 text-sky-200 border border-sky-300/20 rounded-sm shrink-0">
               Co-op
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-          <span>Pop: {city.population.toLocaleString()}</span>
-          <span>${city.money.toLocaleString()}</span>
+        <div className="flex items-center gap-3 mt-1.5 text-[11px] text-white/55 tabular-nums">
+          <span>Pop {city.population.toLocaleString()}</span>
+          <span className="text-emerald-300/80">${city.money.toLocaleString()}</span>
           {city.roomCode && <span className="text-blue-400/60">{city.roomCode}</span>}
         </div>
       </button>
@@ -402,7 +402,7 @@ export default function HomePage() {
 
   // Handle co-op game start
   const handleCoopStart = (isHost: boolean, initialState?: GameState, roomCode?: string) => {
-    setIsMultiplayer(true);
+    setIsMultiplayer(!!roomCode);
     
     if (isHost && initialState) {
       // Host starts with the state they created - save it so GameProvider loads it
@@ -445,7 +445,7 @@ export default function HomePage() {
 
   if (isChecking) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+      <main className="min-h-screen bg-[linear-gradient(135deg,#06101d_0%,#0a1626_50%,#07111d_100%)] flex items-center justify-center">
         <div className="text-white/60"><T>Loading...</T></div>
       </main>
     );
@@ -472,17 +472,17 @@ export default function HomePage() {
   if (isMobile) {
     return (
       <MultiplayerContextProvider>
-        <main className="h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
+        <main className="h-[100dvh] max-h-[100dvh] bg-[linear-gradient(135deg,#06101d_0%,#0a1626_50%,#07111d_100%)] flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
           {/* Spacer to push content down slightly from top */}
           <div className="flex-shrink-0 h-4 sm:h-8" />
           
           {/* Title - smaller on very small screens */}
-          <h1 className="text-4xl sm:text-5xl font-light tracking-wider text-white/90 mb-4 sm:mb-6 flex-shrink-0">
+          <h1 className="text-5xl font-light tracking-[0.08em] text-white mb-4 sm:mb-6 flex-shrink-0 drop-shadow-[0_12px_28px_rgba(0,0,0,0.45)]">
             IsoCity
           </h1>
           
           {/* Sprite Gallery - smaller on mobile, contained */}
-          <div className="mb-4 sm:mb-6 flex-shrink-0">
+          <div className="mb-4 sm:mb-6 flex-shrink-0 rounded-md border border-white/10 bg-white/[0.03] p-2 shadow-2xl">
             <SpriteGallery count={9} cols={3} cellSize={56} />
           </div>
           
@@ -490,7 +490,7 @@ export default function HomePage() {
           <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-xs flex-shrink-0">
             <Button 
               onClick={() => setShowGame(true)}
-              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-medium tracking-wide bg-sky-300 text-slate-950 hover:bg-sky-200 border border-sky-100/70 rounded-md transition-all duration-200 shadow-[0_16px_40px_rgba(56,189,248,0.18)]"
             >
               {hasSaved ? <T>Continue</T> : <T>New Game</T>}
             </Button>
@@ -498,7 +498,7 @@ export default function HomePage() {
             <Button
               onClick={() => setShowCoopModal(true)}
               variant="outline"
-              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-medium tracking-wide bg-white/[0.06] hover:bg-white/[0.11] text-white/75 hover:text-white border border-white/15 rounded-md transition-all duration-200"
             >
               <T>Co-op</T>
             </Button>
@@ -521,7 +521,7 @@ export default function HomePage() {
                 setShowGame(true);
               }}
               variant="outline"
-              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+              className="w-full py-4 sm:py-6 text-lg sm:text-xl font-medium tracking-wide bg-transparent hover:bg-white/[0.08] text-white/45 hover:text-white/75 border border-white/10 rounded-md transition-all duration-200"
             >
               <T>Load Example</T>
             </Button>
@@ -588,25 +588,25 @@ export default function HomePage() {
   // Desktop landing page
   return (
     <MultiplayerContextProvider>
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
+      <main className="min-h-screen bg-[linear-gradient(135deg,#06101d_0%,#0a1626_50%,#07111d_100%)] flex items-center justify-center p-8 overflow-hidden">
         <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
           
           {/* Left - Title and Start Button */}
-          <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
-            <h1 className="text-8xl font-light tracking-wider text-white/90">
+          <div className="flex flex-col items-center lg:items-start justify-center space-y-10">
+            <h1 className="text-8xl font-light tracking-[0.08em] text-white drop-shadow-[0_18px_42px_rgba(0,0,0,0.55)]">
               IsoCity
             </h1>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-slate-950/35 p-3 shadow-2xl backdrop-blur-sm">
               <Button 
                 onClick={() => setShowGame(true)}
-                className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+                className="w-64 py-8 text-2xl font-medium tracking-wide bg-sky-300 text-slate-950 hover:bg-sky-200 border border-sky-100/70 rounded-md transition-all duration-200 shadow-[0_18px_48px_rgba(56,189,248,0.16)]"
               >
                 {hasSaved ? <T>Continue</T> : <T>New Game</T>}
               </Button>
               <Button
                 onClick={() => setShowCoopModal(true)}
                 variant="outline"
-                className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+                className="w-64 py-8 text-2xl font-medium tracking-wide bg-white/[0.06] hover:bg-white/[0.11] text-white/75 hover:text-white border border-white/15 rounded-md transition-all duration-200"
               >
                 <T>Co-op</T>
               </Button>
@@ -628,7 +628,7 @@ export default function HomePage() {
                   setShowGame(true);
                 }}
                 variant="outline"
-                className="w-64 py-8 text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+                className="w-64 py-8 text-2xl font-medium tracking-wide bg-transparent hover:bg-white/[0.08] text-white/45 hover:text-white/75 border border-white/10 rounded-md transition-all duration-200"
               >
                 <T>Load Example</T>
               </Button>
@@ -679,7 +679,7 @@ export default function HomePage() {
           </div>
 
           {/* Right - Sprite Gallery */}
-          <div className="flex justify-center lg:justify-end">
+          <div className="flex justify-center lg:justify-end rounded-md border border-white/10 bg-white/[0.025] p-3 shadow-2xl">
             <SpriteGallery count={16} />
           </div>
         </div>

@@ -7,17 +7,24 @@ export function proxy(request: NextRequest) {
   
   // Check if the request is coming from iso-coaster.com
   const isCoasterDomain = hostname.includes('iso-coaster.com');
+  const isCoasterDeployment =
+    process.env.NEXT_PUBLIC_GLITCH_GAME_KEY === 'coaster' ||
+    process.env.NEXT_PUBLIC_GLITCH_GAME_KEY === 'isocoaster' ||
+    process.env.NEXT_PUBLIC_GLITCH_GAME_KEY === 'rollercoaster';
   
-  if (isCoasterDomain) {
-    // For the root path on iso-coaster.com, rewrite to /coaster
+  if (isCoasterDomain || isCoasterDeployment) {
+    // Glitch launches the deployed container at its root URL. For the coaster
+    // title, root must render the coaster app, otherwise the IsoCity page is
+    // served inside the IsoRollerCoaster iframe.
     if (pathname === '/') {
       return NextResponse.rewrite(new URL('/coaster', request.url));
     }
-    
-    // For other paths on iso-coaster.com, you could either:
-    // 1. Rewrite to /coaster/... if you have nested routes
-    // 2. Keep them as-is for assets and API routes
-    // Currently we just let them pass through
+
+    // Shared Glitch invite links use ?room=CODE against the public play page,
+    // but legacy /coop/CODE links should still land in the coaster co-op route.
+    if (pathname.startsWith('/coop/')) {
+      return NextResponse.rewrite(new URL(`/coaster${pathname}`, request.url));
+    }
   }
   
   return NextResponse.next();

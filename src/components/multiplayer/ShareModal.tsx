@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useMultiplayer } from '@/context/MultiplayerContext';
 import { useGame } from '@/context/GameContext';
+import { emitGlitchBehaviorEvent } from '@/lib/glitch/behaviorEvents';
+import { buildInviteUrl } from '@/lib/glitch/publicUrl';
 import { Copy, Check, Loader2 } from 'lucide-react';
 
 interface ShareModalProps {
@@ -25,42 +27,61 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
   const { roomCode, createRoom } = useMultiplayer();
   const { state, isStateReady } = useGame();
 
-  // Create room when modal opens (if not already in a room)
-  // IMPORTANT: Wait for isStateReady to ensure we have the loaded state, not the default empty state
-  useEffect(() => {
-    if (open && !roomCode && !isCreating && isStateReady) {
-      setIsCreating(true);
-      createRoom(state.cityName, state)
-        .then((code) => {
-          // Update URL to show room code
-          window.history.replaceState({}, '', `/coop/${code}`);
-        })
-        .catch((err) => {
-          console.error('[ShareModal] Failed to create room:', err);
-        })
-        .finally(() => {
-          setIsCreating(false);
+  const createSharedRoom = useCallback(() => {
+    if (roomCode || isCreating || !isStateReady) return;
+
+    setIsCreating(true);
+    createRoom(state.cityName, state)
+      .then((code) => {
+        // Update URL to show room code
+        window.history.replaceState({}, '', `/coop/${code}`);
+        emitGlitchBehaviorEvent('multiplayer_invite', 'room_created_from_share', {
+          game: 'isocity',
         });
-    }
-  }, [open, roomCode, isCreating, isStateReady, createRoom, state]);
+      })
+      .catch((err) => {
+        console.error('[ShareModal] Failed to create room:', err);
+      })
+      .finally(() => {
+        setIsCreating(false);
+      });
+  }, [createRoom, isCreating, isStateReady, roomCode, state]);
+
+  // Create room when modal opens (if not already in a room).
+  // IMPORTANT: Wait for isStateReady to ensure we have the loaded state, not the default empty state.
+  useEffect(() => {
+    if (!(open && !roomCode && !isCreating && isStateReady)) return;
+
+    const frame = requestAnimationFrame(() => {
+      createSharedRoom();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [createSharedRoom, isCreating, isStateReady, open, roomCode]);
 
   // Reset copied state when modal closes
   useEffect(() => {
-    if (!open) {
+    if (open) return;
+
+    const frame = requestAnimationFrame(() => {
       setCopied(false);
-    }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   const handleCopyLink = () => {
     if (!roomCode) return;
 
-    const url = `${window.location.origin}/coop/${roomCode}`;
+    const url = buildInviteUrl(roomCode, 'coop');
     navigator.clipboard.writeText(url);
+    emitGlitchBehaviorEvent('multiplayer_invite', 'copy_link', {
+      game: 'isocity',
+      room_code_length: roomCode.length,
+    });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const inviteUrl = roomCode ? `${window.location.origin}/coop/${roomCode}` : '';
+  const inviteUrl = roomCode ? buildInviteUrl(roomCode, 'coop') : '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

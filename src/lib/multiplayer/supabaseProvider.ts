@@ -9,6 +9,9 @@ import {
   generatePlayerColor,
   generatePlayerName,
   MultiplayerGameState,
+  MultiplayerChatMessage,
+  MultiplayerCreateRoomOptions,
+  MultiplayerVoiceState,
 } from './types';
 import {
   createGameRoom,
@@ -35,10 +38,13 @@ export interface MultiplayerProviderOptions {
   cityName: string;
   playerName?: string; // Optional - auto-generated if not provided
   initialGameState?: MultiplayerGameState; // If provided, this player is creating the room
+  createOptions?: MultiplayerCreateRoomOptions;
   onConnectionChange?: (connected: boolean, peerCount: number) => void;
   onPlayersChange?: (players: Player[]) => void;
   onAction?: (action: GameAction) => void;
   onStateReceived?: (state: MultiplayerGameState) => void;
+  onChatMessage?: (message: MultiplayerChatMessage) => void;
+  onVoiceStateChange?: (state: MultiplayerVoiceState) => void;
   onError?: (error: string) => void;
 }
 
@@ -200,6 +206,11 @@ export class MultiplayerProvider {
           this.options.onAction(action);
         }
       })
+      .on('broadcast', { event: 'chat' }, ({ payload }) => {
+        const message = payload as MultiplayerChatMessage;
+        if (!message || message.playerId === this.peerId || !message.text) return;
+        this.options.onChatMessage?.(message);
+      })
       // Broadcast: state sync from existing players (for new joiners)
       .on('broadcast', { event: 'state-sync' }, ({ payload }) => {
         const { state, to, from } = payload as { state: MultiplayerGameState; to: string; from: string };
@@ -244,6 +255,70 @@ export class MultiplayerProvider {
       type: 'broadcast',
       event: 'action',
       payload: fullAction,
+    });
+  }
+
+  sendChatMessage(text: string): void {
+    const trimmed = text.trim().slice(0, 500);
+    if (!trimmed || this.destroyed) return;
+
+    const message: MultiplayerChatMessage = {
+      id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      playerId: this.peerId,
+      playerName: this.player.name,
+      text: trimmed,
+      sentAt: Date.now(),
+      isLocal: true,
+    };
+    this.options.onChatMessage?.(message);
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'chat',
+      payload: message,
+    });
+  }
+
+  startVoiceChat(): Promise<void> {
+    const state: MultiplayerVoiceState = {
+      status: 'unsupported',
+      muted: false,
+      deafened: false,
+      speaking: false,
+      error: 'Voice chat requires the Glitch voice relay.',
+    };
+    this.options.onVoiceStateChange?.(state);
+    return Promise.resolve();
+  }
+
+  stopVoiceChat(): Promise<void> {
+    this.options.onVoiceStateChange?.({
+      status: 'idle',
+      muted: false,
+      deafened: false,
+      speaking: false,
+      error: null,
+    });
+    return Promise.resolve();
+  }
+
+  setVoiceMuted(_muted: boolean): void {
+    this.options.onVoiceStateChange?.({
+      status: 'unsupported',
+      muted: false,
+      deafened: false,
+      speaking: false,
+      error: 'Voice chat requires the Glitch voice relay.',
+    });
+  }
+
+  setVoiceDeafened(_deafened: boolean): void {
+    this.options.onVoiceStateChange?.({
+      status: 'unsupported',
+      muted: false,
+      deafened: false,
+      speaking: false,
+      error: 'Voice chat requires the Glitch voice relay.',
     });
   }
 

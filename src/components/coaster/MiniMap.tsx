@@ -149,35 +149,35 @@ export function MiniMap({ onNavigate, viewport }: MiniMapProps) {
   }, []);
   
   return (
-    <Card className="fixed bottom-6 right-8 p-3 shadow-lg bg-card/90 border-border/70 z-50">
-      <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
+    <Card className="fixed bottom-6 right-8 p-3 shadow-[0_18px_45px_rgba(0,0,0,0.32)] bg-slate-950/88 border-white/10 z-50 rounded-md backdrop-blur-md">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-slate-400 font-semibold mb-2">
         Minimap
       </div>
       <canvas
         ref={canvasRef}
         width={140}
         height={140}
-        className="block rounded-md border border-border/60 cursor-pointer select-none"
+        className="block rounded-sm border border-white/15 cursor-pointer select-none shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       />
-      <div className="mt-2 grid grid-cols-4 gap-1 text-[8px]">
+      <div className="mt-2 grid grid-cols-4 gap-1.5 text-[8px]">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-gray-400 rounded-sm" />
+          <div className="w-2 h-2 bg-gray-400 rounded-[1px]" />
           <span className="text-muted-foreground">Path</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-pink-500 rounded-sm" />
+          <div className="w-2 h-2 bg-pink-500 rounded-[1px]" />
           <span className="text-muted-foreground">Ride</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-orange-500 rounded-sm" />
+          <div className="w-2 h-2 bg-orange-500 rounded-[1px]" />
           <span className="text-muted-foreground">Food</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-cyan-500 rounded-sm" />
+          <div className="w-2 h-2 bg-cyan-500 rounded-[1px]" />
           <span className="text-muted-foreground">Water</span>
         </div>
       </div>

@@ -42,6 +42,27 @@ function SuperFastIcon() {
   );
 }
 
+function StatTile({
+  label,
+  value,
+  colorClassName,
+}: {
+  label: string;
+  value: string | number;
+  colorClassName: string;
+}) {
+  return (
+    <div className="min-w-[78px] rounded-md border border-white/10 bg-emerald-950/30 px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <span className={`block text-sm font-mono tabular-nums font-semibold leading-none ${colorClassName}`}>
+        {value}
+      </span>
+      <span className="mt-1.5 block text-[9px] uppercase tracking-[0.14em] text-white/45 leading-none">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 // =============================================================================
 // TOPBAR COMPONENT
 // =============================================================================
@@ -50,36 +71,33 @@ export function TopBar() {
   const { state, setSpeed, setActivePanel, setParkSettings } = useCoaster();
   const { settings, stats, finances, year, month, day, hour, minute, speed } = state;
   
-  // Calculate demand based on ticket price
   const ticketPrice = settings.entranceFee;
-  const demandPercent = Math.max(30, Math.round(100 * Math.exp(-ticketPrice / 80)));
   
   // Format time - use Math.floor for minute since it can be fractional
   const displayMinute = Math.floor(minute);
   const timeString = `${hour.toString().padStart(2, '0')}:${displayMinute.toString().padStart(2, '0')}`;
-  const dateString = `Year ${year}, Month ${month}, Day ${day}`;
   
   // Format month name
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthName = monthNames[(month - 1) % 12];
   
   return (
-    <div className="h-14 bg-slate-900/95 border-b border-slate-700 flex items-center px-4 gap-6">
+    <div className="h-16 bg-slate-950/90 border-b border-white/10 flex items-center px-4 gap-5 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-md">
       {/* Park name and date - fixed width to prevent layout jitter */}
       <div className="flex flex-col min-w-[180px]">
-        <span className="text-white font-medium text-sm truncate">{settings.name}</span>
+        <span className="text-white font-semibold text-sm tracking-wide truncate">{settings.name}</span>
         <span className="text-white/50 text-xs tabular-nums">{monthName} {day}, Year {year} — {timeString}</span>
       </div>
       
       {/* Separator */}
-      <div className="w-px h-8 bg-slate-700" />
+      <div className="w-px h-9 bg-white/10" />
       
       {/* Speed controls */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5 rounded-md border border-white/10 bg-emerald-950/30 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
         <Button
           variant={speed === 0 ? 'default' : 'ghost'}
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-sm"
           onClick={() => setSpeed(0)}
           title="Pause"
         >
@@ -88,7 +106,7 @@ export function TopBar() {
         <Button
           variant={speed === 1 ? 'default' : 'ghost'}
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-sm"
           onClick={() => setSpeed(1)}
           title="Normal speed"
         >
@@ -97,7 +115,7 @@ export function TopBar() {
         <Button
           variant={speed === 2 ? 'default' : 'ghost'}
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-sm"
           onClick={() => setSpeed(2)}
           title="Fast"
         >
@@ -106,7 +124,7 @@ export function TopBar() {
         <Button
           variant={speed === 3 ? 'default' : 'ghost'}
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-sm"
           onClick={() => setSpeed(3)}
           title="Super fast"
         >
@@ -115,34 +133,20 @@ export function TopBar() {
       </div>
       
       {/* Separator */}
-      <div className="w-px h-8 bg-slate-700" />
+      <div className="w-px h-9 bg-white/10" />
       
       {/* Stats */}
-      <div className="flex items-center gap-6 text-sm">
-        {/* Money */}
-        <div className="flex flex-col items-center">
-          <span className="text-green-400 font-medium">${finances.cash.toLocaleString()}</span>
-          <span className="text-white/40 text-xs">Cash</span>
-        </div>
-        
-        {/* Guests */}
-        <div className="flex flex-col items-center">
-          <span className="text-blue-400 font-medium">{stats.guestsInPark}</span>
-          <span className="text-white/40 text-xs">Guests</span>
-        </div>
-        
-        {/* Park Rating */}
-        <div className="flex flex-col items-center">
-          <span className="text-yellow-400 font-medium">{stats.parkRating}</span>
-          <span className="text-white/40 text-xs">Rating</span>
-        </div>
+      <div className="flex items-center gap-2 text-sm">
+        <StatTile label="Cash" value={`$${finances.cash.toLocaleString()}`} colorClassName="text-emerald-300" />
+        <StatTile label="Guests" value={stats.guestsInPark.toLocaleString()} colorClassName="text-sky-300" />
+        <StatTile label="Rating" value={stats.parkRating} colorClassName="text-amber-200" />
       </div>
       
       {/* Separator */}
-      <div className="w-px h-8 bg-slate-700" />
+      <div className="w-px h-9 bg-white/10" />
       
       {/* Ticket Price Slider - compact */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 rounded-md border border-white/10 bg-emerald-950/30 px-3 py-1.5">
         <span className="text-white/70 text-xs">Ticket</span>
         <Slider
           value={[ticketPrice]}
@@ -152,7 +156,7 @@ export function TopBar() {
           step={5}
           className="w-16"
         />
-        <span className="text-green-400 font-medium text-xs min-w-[28px]">${ticketPrice}</span>
+        <span className="text-emerald-300 font-mono tabular-nums font-semibold text-xs min-w-[34px]">${ticketPrice}</span>
       </div>
       
       {/* Spacer */}

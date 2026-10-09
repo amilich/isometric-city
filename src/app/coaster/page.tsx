@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { CoasterProvider } from '@/context/CoasterContext';
 import { MultiplayerContextProvider, useMultiplayerOptional } from '@/context/MultiplayerContext';
@@ -232,21 +233,21 @@ function SavedParkCard({ park, onLoad, onDelete }: { park: SavedParkMeta; onLoad
     <div className="relative group">
       <button
         onClick={onLoad}
-        className="w-full text-left p-3 pr-8 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-none transition-all duration-200"
+        className="w-full text-left p-3 pr-8 bg-emerald-950/45 hover:bg-emerald-900/55 border border-white/10 hover:border-emerald-300/35 rounded-md transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
       >
         <div className="flex items-center gap-2">
           <h3 className="text-white font-medium truncate group-hover:text-white/90 text-sm flex-1">
             {park.name}
           </h3>
           {park.roomCode && (
-            <span className="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded shrink-0">
+            <span className="text-[10px] uppercase tracking-[0.12em] px-1.5 py-0.5 bg-emerald-400/15 text-emerald-200 border border-emerald-300/20 rounded-sm shrink-0">
               Co-op
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-          <span>Guests: {park.guests.toLocaleString()}</span>
-          <span>Rating: {park.rating}</span>
+        <div className="flex items-center gap-3 mt-1.5 text-[11px] text-white/55 tabular-nums">
+          <span>Guests {park.guests.toLocaleString()}</span>
+          <span className="text-amber-200/80">Rating {park.rating}</span>
           <span>{dateLabel}</span>
           {park.roomCode && <span className="text-emerald-400/60">{park.roomCode}</span>}
         </div>
@@ -292,12 +293,15 @@ function CoasterPageContent() {
   }, []);
 
   useEffect(() => {
-    refreshSavedParks();
-    const params = new URLSearchParams(window.location.search);
-    const roomCode = params.get('room');
-    if (roomCode && roomCode.length === 5) {
-      window.location.replace(`/coaster/coop/${roomCode.toUpperCase()}`);
-    }
+    const frame = requestAnimationFrame(() => {
+      refreshSavedParks();
+      const params = new URLSearchParams(window.location.search);
+      const roomCode = params.get('room');
+      if (roomCode && roomCode.length === 5) {
+        window.location.replace(`/coaster/coop/${roomCode.toUpperCase()}`);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [refreshSavedParks]);
 
   const handleExitGame = () => {
@@ -349,20 +353,21 @@ function CoasterPageContent() {
         </main>
       </CoasterProvider>
     ) : isChecking ? (
-      <main className="min-h-screen bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex items-center justify-center">
+      <main className="min-h-screen bg-[linear-gradient(135deg,#041813_0%,#06251f_50%,#071713_100%)] flex items-center justify-center">
         <div className="text-white/60">Loading...</div>
       </main>
     ) : (
       <>
-        <main className="min-h-screen bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-950 flex items-center justify-center p-4 sm:p-8 overflow-x-hidden">
+        <main className="min-h-screen bg-[linear-gradient(135deg,#041813_0%,#06251f_50%,#071713_100%)] flex items-center justify-center p-4 sm:p-8 overflow-x-hidden">
           <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             {/* Left - Title and Buttons */}
-            <div className="flex flex-col items-center lg:items-start justify-center space-y-8 lg:space-y-12">
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light tracking-wider text-white/90">
-                IsoCoaster
+            <div className="flex flex-col items-center lg:items-start justify-center space-y-8 lg:space-y-10">
+              <h1 className="text-6xl lg:text-7xl font-light leading-[0.92] tracking-[0.04em] text-white drop-shadow-[0_18px_42px_rgba(0,0,0,0.55)]">
+                <span className="block">IsoRoller</span>
+                <span className="block">Coaster</span>
               </h1>
 
-              <div className="flex flex-col gap-3 w-full max-w-64">
+              <div className="flex flex-col gap-3 w-full max-w-72 rounded-md border border-white/10 bg-emerald-950/30 p-3 shadow-2xl backdrop-blur-sm">
                 <Button 
                   onClick={() => {
                     if (hasSaved && savedParks.length > 0) {
@@ -374,7 +379,7 @@ function CoasterPageContent() {
                     }
                     setShowGame(true);
                   }}
-                  className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+                  className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-medium tracking-wide bg-emerald-300 text-emerald-950 hover:bg-emerald-200 border border-emerald-100/70 rounded-md transition-all duration-200 shadow-[0_18px_48px_rgba(52,211,153,0.16)]"
                 >
                   {hasSaved ? 'Continue' : 'New Park'}
                 </Button>
@@ -387,7 +392,7 @@ function CoasterPageContent() {
                       setShowGame(true);
                     }}
                     variant="outline"
-                    className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/60 hover:text-white border border-white/20 rounded-none transition-all duration-300"
+                    className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-medium tracking-wide bg-transparent hover:bg-white/[0.08] text-white/55 hover:text-white/80 border border-white/15 rounded-md transition-all duration-200"
                   >
                     New Park
                   </Button>
@@ -396,7 +401,7 @@ function CoasterPageContent() {
                 <Button 
                   onClick={() => setShowCoopModal(true)}
                   variant="outline"
-                  className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/15 rounded-none transition-all duration-300"
+                  className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-medium tracking-wide bg-white/[0.06] hover:bg-white/[0.11] text-white/75 hover:text-white border border-white/15 rounded-md transition-all duration-200"
                 >
                   Co-op
                 </Button>
@@ -416,22 +421,22 @@ function CoasterPageContent() {
                     }
                   }}
                   variant="outline"
-                  className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
+                  className="w-full py-6 sm:py-8 text-xl sm:text-2xl font-medium tracking-wide bg-transparent hover:bg-white/[0.08] text-white/45 hover:text-white/75 border border-white/10 rounded-md transition-all duration-200"
                 >
                   Load Example
                 </Button>
 
-                <a
+                <Link
                   href="/"
-                  className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                  className="w-full text-center py-2 text-sm font-light tracking-wide text-white/45 hover:text-white/75 transition-colors duration-200"
                 >
                   Back to IsoCity
-                </a>
+                </Link>
                 <a
                   href="https://github.com/amilich/isometric-city"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full text-center py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
+                  className="w-full text-center py-2 text-sm font-light tracking-wide text-white/45 hover:text-white/75 transition-colors duration-200"
                 >
                   Open GitHub
                 </a>
@@ -439,7 +444,7 @@ function CoasterPageContent() {
 
               {/* Saved Parks */}
               {savedParks.length > 0 && (
-                <div className="w-full max-w-64">
+                <div className="w-full max-w-72">
                   <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
                     Saved Parks
                   </h2>
@@ -468,7 +473,7 @@ function CoasterPageContent() {
             </div>
 
             {/* Right - Sprite Gallery */}
-            <div className="flex justify-center lg:justify-end">
+            <div className="flex justify-center lg:justify-end rounded-md border border-white/10 bg-white/[0.025] p-3 shadow-2xl">
               <CoasterSpriteGallery count={16} />
             </div>
           </div>

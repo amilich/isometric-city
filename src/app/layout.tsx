@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, DM_Sans } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { getLocale } from "gt-next/server";
 import { GTProvider } from "gt-next";
+import { AppProviders } from './providers';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -84,7 +84,13 @@ export default async function RootLayout({ children }: {children: React.ReactNod
         type="image/webp" />
 
       </head>
-      <body className="bg-background text-foreground antialiased font-sans overflow-hidden"><GTProvider>{children}<Analytics /></GTProvider></body>
+      <body className="bg-background text-foreground antialiased font-sans overflow-hidden">
+        <GTProvider>
+          <AppProviders>
+            {children}
+          </AppProviders>
+        </GTProvider>
+      </body>
     </html>
   );
 }

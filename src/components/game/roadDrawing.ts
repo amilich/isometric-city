@@ -410,7 +410,7 @@ export function drawRoad(
   // DRAW LANE MARKINGS AND MEDIANS
   // ============================================
   if (currentZoom >= LANE_MARKINGS_MIN_ZOOM) {
-    const connectionCount = (north ? 1 : 0) + (east ? 1 : 0) + (south ? 1 : 0) + (west ? 1 : 0);
+    const connectionCount = Number(north) + Number(east) + Number(south) + Number(west);
     const isIntersection = connectionCount >= 3;
     
     // For merged roads, draw white lane divider lines instead of yellow center
@@ -530,10 +530,10 @@ export function drawRoad(
       const isAdjIntersection = (adjX: number, adjY: number): boolean => {
         if (!hasRoad(adjX, adjY)) return false;
         const adjCount =
-          (hasRoad(adjX - 1, adjY) ? 1 : 0) +
-          (hasRoad(adjX, adjY - 1) ? 1 : 0) +
-          (hasRoad(adjX + 1, adjY) ? 1 : 0) +
-          (hasRoad(adjX, adjY + 1) ? 1 : 0);
+          Number(hasRoad(adjX - 1, adjY)) +
+          Number(hasRoad(adjX, adjY - 1)) +
+          Number(hasRoad(adjX + 1, adjY)) +
+          Number(hasRoad(adjX, adjY + 1));
         return adjCount >= 3;
       };
       

@@ -410,7 +410,7 @@ export function drawRoad(
   // DRAW LANE MARKINGS AND MEDIANS
   // ============================================
   if (currentZoom >= LANE_MARKINGS_MIN_ZOOM) {
-    const connectionCount = [north, east, south, west].filter(Boolean).length;
+    const connectionCount = (north ? 1 : 0) + (east ? 1 : 0) + (south ? 1 : 0) + (west ? 1 : 0);
     const isIntersection = connectionCount >= 3;
     
     // For merged roads, draw white lane divider lines instead of yellow center
@@ -520,8 +520,7 @@ export function drawRoad(
     
     // Draw yellow center dashes for non-intersection roads only
     // Skip if this tile IS an intersection (3+ adjacent roads)
-    const thisIsIntersection = [north, east, south, west].filter(Boolean).length >= 3;
-    if (!thisIsIntersection) {
+    if (!isIntersection) {
       ctx.strokeStyle = ROAD_COLORS.CENTER_LINE;
       ctx.lineWidth = 0.8;
       ctx.setLineDash([1.5, 2]);
@@ -530,11 +529,12 @@ export function drawRoad(
       // Helper to check if adjacent tile is an intersection
       const isAdjIntersection = (adjX: number, adjY: number): boolean => {
         if (!hasRoad(adjX, adjY)) return false;
-        const aN = hasRoad(adjX - 1, adjY);
-        const aE = hasRoad(adjX, adjY - 1);
-        const aS = hasRoad(adjX + 1, adjY);
-        const aW = hasRoad(adjX, adjY + 1);
-        return [aN, aE, aS, aW].filter(Boolean).length >= 3;
+        const adjCount =
+          (hasRoad(adjX - 1, adjY) ? 1 : 0) +
+          (hasRoad(adjX, adjY - 1) ? 1 : 0) +
+          (hasRoad(adjX + 1, adjY) ? 1 : 0) +
+          (hasRoad(adjX, adjY + 1) ? 1 : 0);
+        return adjCount >= 3;
       };
       
       // Line stops before sidewalk markers if approaching intersection, otherwise extends

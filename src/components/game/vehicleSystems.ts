@@ -94,6 +94,13 @@ export function useVehicleSystems(
 
   const { worldStateRef, gridVersionRef, cachedRoadTileCountRef, cachedIntersectionMapRef, state, isMobile } = systemState;
 
+  // Cache full-grid finder results for the current grid version.
+  // Spawn systems can call these many times per frame (batch spawns), so caching avoids repeated O(n^2) scans.
+  const residentialCacheRef = useRef<{ version: number; value: { x: number; y: number }[] }>({ version: -1, value: [] });
+  const destinationCacheRef = useRef<{ version: number; value: { x: number; y: number; type: PedestrianDestType }[] }>({ version: -1, value: [] });
+  const busStopCacheRef = useRef<{ version: number; value: { x: number; y: number }[] }>({ version: -1, value: [] });
+  const beachTileCacheRef = useRef<{ version: number; value: ReturnType<typeof findBeachTiles> }>({ version: -1, value: [] });
+
   const spawnRandomCar = useCallback(() => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
     if (!currentGrid || currentGridSize <= 0) return false;
@@ -137,18 +144,45 @@ export function useVehicleSystems(
 
   const findResidentialBuildingsCallback = useCallback((): { x: number; y: number }[] => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
-    return findResidentialBuildings(currentGrid, currentGridSize);
-  }, [worldStateRef]);
+    if (!currentGrid || currentGridSize <= 0) return [];
+
+    const currentVersion = gridVersionRef.current;
+    if (residentialCacheRef.current.version === currentVersion) {
+      return residentialCacheRef.current.value;
+    }
+
+    const value = findResidentialBuildings(currentGrid, currentGridSize);
+    residentialCacheRef.current = { version: currentVersion, value };
+    return value;
+  }, [worldStateRef, gridVersionRef]);
 
   const findPedestrianDestinationsCallback = useCallback((): { x: number; y: number; type: PedestrianDestType }[] => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
-    return findPedestrianDestinations(currentGrid, currentGridSize);
-  }, [worldStateRef]);
+    if (!currentGrid || currentGridSize <= 0) return [];
+
+    const currentVersion = gridVersionRef.current;
+    if (destinationCacheRef.current.version === currentVersion) {
+      return destinationCacheRef.current.value;
+    }
+
+    const value = findPedestrianDestinations(currentGrid, currentGridSize);
+    destinationCacheRef.current = { version: currentVersion, value };
+    return value;
+  }, [worldStateRef, gridVersionRef]);
 
   const findBusStopsCallback = useCallback((): { x: number; y: number }[] => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
-    return findBusStops(currentGrid, currentGridSize);
-  }, [worldStateRef]);
+    if (!currentGrid || currentGridSize <= 0) return [];
+
+    const currentVersion = gridVersionRef.current;
+    if (busStopCacheRef.current.version === currentVersion) {
+      return busStopCacheRef.current.value;
+    }
+
+    const value = findBusStops(currentGrid, currentGridSize);
+    busStopCacheRef.current = { version: currentVersion, value };
+    return value;
+  }, [worldStateRef, gridVersionRef]);
 
   const buildBusRoute = useCallback(() => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
@@ -251,8 +285,17 @@ export function useVehicleSystems(
   // Find beach tiles (water tiles adjacent to land)
   const findBeachTilesCallback = useCallback(() => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
-    return findBeachTiles(currentGrid, currentGridSize);
-  }, [worldStateRef]);
+    if (!currentGrid || currentGridSize <= 0) return [];
+
+    const currentVersion = gridVersionRef.current;
+    if (beachTileCacheRef.current.version === currentVersion) {
+      return beachTileCacheRef.current.value;
+    }
+
+    const value = findBeachTiles(currentGrid, currentGridSize);
+    beachTileCacheRef.current = { version: currentVersion, value };
+    return value;
+  }, [worldStateRef, gridVersionRef]);
 
   const spawnPedestrian = useCallback(() => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;

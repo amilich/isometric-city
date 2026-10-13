@@ -6,6 +6,7 @@ import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { GRID_EXPANSION_STEP, MAX_GRID_SIZE, MIN_GRID_SIZE } from '@/lib/gameLimits';
 import {
   CloseIcon,
   RoadIcon,
@@ -224,6 +225,8 @@ const UI_LABELS = {
   statistics: msg('Statistics'),
   advisors: msg('Advisors'),
   settings: msg('Settings'),
+  cannotExpand: msg('Cannot expand city further - maximum size reached.'),
+  cannotShrink: msg('Cannot shrink city further - minimum size reached.'),
 };
 
 const toolCategories = {
@@ -249,11 +252,13 @@ interface MobileToolbarProps {
 
 export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMode }: MobileToolbarProps) {
   const { state, setTool, expandCity, shrinkCity } = useGame();
-  const { selectedTool, stats } = state;
+  const { selectedTool, stats, gridSize } = state;
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [expandCityExpanded, setExpandCityExpanded] = useState(false);
   const m = useMessages();
+  const canExpandCity = gridSize + GRID_EXPANSION_STEP * 2 <= MAX_GRID_SIZE;
+  const canShrinkCity = gridSize > MIN_GRID_SIZE;
 
   const handleCategoryClick = (category: string) => {
     if (expandedCategory === category) {
@@ -536,14 +541,28 @@ export function MobileToolbar({ onOpenPanel, overlayMode = 'none', setOverlayMod
                             <Button
                               variant="ghost"
                               className="w-full justify-start gap-3 h-11"
-                              onClick={() => { expandCity(); setShowMenu(false); }}
+                              onClick={() => {
+                                const success = expandCity();
+                                if (!success) {
+                                  alert(String(m(UI_LABELS.cannotExpand)));
+                                }
+                                setShowMenu(false);
+                              }}
+                              disabled={!canExpandCity}
                             >
                               <span className="flex-1 text-left">{m(TOOL_INFO['expand_city'].name)}</span>
                             </Button>
                             <Button
                               variant="ghost"
                               className="w-full justify-start gap-3 h-11"
-                              onClick={() => { shrinkCity(); setShowMenu(false); }}
+                              onClick={() => {
+                                const success = shrinkCity();
+                                if (!success) {
+                                  alert(String(m(UI_LABELS.cannotShrink)));
+                                }
+                                setShowMenu(false);
+                              }}
+                              disabled={!canShrinkCity}
                             >
                               <span className="flex-1 text-left">{m(TOOL_INFO['shrink_city'].name)}</span>
                             </Button>

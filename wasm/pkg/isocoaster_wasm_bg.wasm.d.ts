@@ -1,0 +1,32 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_game_free: (a: number, b: number) => void;
+export const game_get_cash: (a: number) => bigint;
+export const game_get_current_tool: (a: number) => [number, number];
+export const game_get_grid_size: (a: number) => number;
+export const game_get_guest_count: (a: number) => number;
+export const game_get_park_rating: (a: number) => number;
+export const game_get_speed: (a: number) => number;
+export const game_get_time_string: (a: number) => [number, number];
+export const game_handle_click: (a: number, b: number, c: number) => void;
+export const game_handle_mouse_down: (a: number, b: number, c: number) => void;
+export const game_handle_mouse_move: (a: number, b: number, c: number) => void;
+export const game_handle_mouse_up: (a: number, b: number, c: number) => void;
+export const game_handle_wheel: (a: number, b: number, c: number, d: number) => void;
+export const game_load_sprite_sheet: (a: number, b: number, c: number, d: any, e: any) => [number, number];
+export const game_load_water_texture: (a: number, b: any) => [number, number];
+export const game_new: (a: any, b: number, c: number) => [number, number, number];
+export const game_render: (a: number) => [number, number];
+export const game_resize: (a: number, b: number, c: number, d: number) => void;
+export const game_set_speed: (a: number, b: number) => void;
+export const game_set_tool: (a: number, b: number, c: number) => void;
+export const game_tick: (a: number) => void;
+export const __wbindgen_exn_store: (a: number) => void;
+export const __externref_table_alloc: () => number;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __externref_table_dealloc: (a: number) => void;
+export const __wbindgen_start: () => void;

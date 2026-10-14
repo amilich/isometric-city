@@ -228,7 +228,7 @@ export function getAdjacentRail(
  */
 export function getTrackType(connections: RailConnection): TrackType {
   const { north, east, south, west } = connections;
-  const count = [north, east, south, west].filter(Boolean).length;
+  const count = Number(north) + Number(east) + Number(south) + Number(west);
 
   // 4-way crossing
   if (count === 4) return 'junction_cross';

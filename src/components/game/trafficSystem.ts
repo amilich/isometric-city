@@ -903,6 +903,24 @@ export function drawCrosswalks(params: CrosswalkParams): void {
   
   if (zoom < 0.75) return;
   
+  // Helper to check if adjacent tile is an intersection
+  const isAdjacentIntersection = (adjX: number, adjY: number): boolean => {
+    if (!hasRoad(adjX, adjY)) return false;
+    const adjCount =
+      Number(hasRoad(adjX - 1, adjY)) +
+      Number(hasRoad(adjX, adjY - 1)) +
+      Number(hasRoad(adjX + 1, adjY)) +
+      Number(hasRoad(adjX, adjY + 1));
+    return adjCount >= 3;
+  };
+  
+  const northAdj = adj.north && isAdjacentIntersection(gridX - 1, gridY);
+  const eastAdj = adj.east && isAdjacentIntersection(gridX, gridY - 1);
+  const southAdj = adj.south && isAdjacentIntersection(gridX + 1, gridY);
+  const westAdj = adj.west && isAdjacentIntersection(gridX, gridY + 1);
+  
+  if (!northAdj && !eastAdj && !southAdj && !westAdj) return;
+  
   const w = TILE_WIDTH;
   const h = TILE_HEIGHT;
   const cx = x + w / 2;
@@ -933,23 +951,6 @@ export function drawCrosswalks(params: CrosswalkParams): void {
   const southDy = (southEdgeY - cy) / Math.hypot(southEdgeX - cx, southEdgeY - cy);
   const westDx = (westEdgeX - cx) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
   const westDy = (westEdgeY - cy) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
-  
-  // Helper to check if adjacent tile is an intersection
-  const isAdjacentIntersection = (adjX: number, adjY: number): boolean => {
-    if (!hasRoad(adjX, adjY)) return false;
-    const adjNorth = hasRoad(adjX - 1, adjY);
-    const adjEast = hasRoad(adjX, adjY - 1);
-    const adjSouth = hasRoad(adjX + 1, adjY);
-    const adjWest = hasRoad(adjX, adjY + 1);
-    return [adjNorth, adjEast, adjSouth, adjWest].filter(Boolean).length >= 3;
-  };
-  
-  const northAdj = adj.north && isAdjacentIntersection(gridX - 1, gridY);
-  const eastAdj = adj.east && isAdjacentIntersection(gridX, gridY - 1);
-  const southAdj = adj.south && isAdjacentIntersection(gridX + 1, gridY);
-  const westAdj = adj.west && isAdjacentIntersection(gridX, gridY + 1);
-  
-  if (!northAdj && !eastAdj && !southAdj && !westAdj) return;
   
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
   ctx.lineWidth = 0.7;

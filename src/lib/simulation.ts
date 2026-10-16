@@ -23,6 +23,7 @@ import {
   TOOL_INFO,
 } from '@/types/game';
 import { generateCityName, generateWaterName } from './names';
+import { averageServiceCoverageOnDevelopedTiles } from './serviceCoverageAverages';
 import { isMobile } from 'react-device-detect';
 
 // Default grid size for new games
@@ -1754,7 +1755,9 @@ function evolveBuilding(grid: Tile[][], x: number, y: number, services: ServiceC
 
 // Calculate city stats
 // effectiveTaxRate is the lagged tax rate used for demand calculations
-function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage): Stats {
+// DeepSource JS-0067 treats module-level function declarations as global; keep
+// declaration form for hoist/readability consistency with neighboring helpers.
+function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: number, effectiveTaxRate: number, services: ServiceCoverage): Stats { // skipcq: JS-0067, JS-R1005
   let population = 0;
   let jobs = 0;
   let totalPollution = 0;
@@ -1906,11 +1909,15 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
   expenses += Math.floor(budget.power.cost * budget.power.funding / 100);
   expenses += Math.floor(budget.water.cost * budget.water.funding / 100);
 
-  // Calculate ratings
-  const avgPoliceCoverage = calculateAverageCoverage(services.police);
-  const avgFireCoverage = calculateAverageCoverage(services.fire);
-  const avgHealthCoverage = calculateAverageCoverage(services.health);
-  const avgEducationCoverage = calculateAverageCoverage(services.education);
+  // Calculate ratings from developed buildings only (not empty map tiles).
+  // Averaging over the full grid dilutes coverage on large maps — a fully
+  // served small town on a 50x50 grid would report ~4% instead of ~100%.
+  const {
+    police: avgPoliceCoverage,
+    fire: avgFireCoverage,
+    health: avgHealthCoverage,
+    education: avgEducationCoverage,
+  } = averageServiceCoverageOnDevelopedTiles(services, grid, size);
 
   const safety = Math.min(100, avgPoliceCoverage * 0.7 + avgFireCoverage * 0.3);
   const health = Math.min(100, avgHealthCoverage * 0.8 + (100 - totalPollution / (size * size)) * 0.2);
@@ -1947,18 +1954,6 @@ function calculateStats(grid: Tile[][], size: number, budget: Budget, taxRate: n
       industrial: industrialDemand,
     },
   };
-}
-
-function calculateAverageCoverage(coverage: number[][]): number {
-  let total = 0;
-  let count = 0;
-  for (const row of coverage) {
-    for (const value of row) {
-      total += value;
-      count++;
-    }
-  }
-  return count > 0 ? total / count : 0;
 }
 
 // PERF: Update budget costs based on buildings - single pass through grid

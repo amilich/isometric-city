@@ -253,7 +253,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const gridVersionRef = useRef(0);
   
   // Performance: Cache road merge analysis (expensive calculation done per-road-tile)
-  const roadAnalysisCacheRef = useRef<Map<string, ReturnType<typeof analyzeMergedRoad>>>(new Map());
+  const roadAnalysisCacheRef = useRef<Map<number, ReturnType<typeof analyzeMergedRoad>>>(new Map());
   const roadAnalysisCacheVersionRef = useRef(-1);
 
   // PERF: Cache background gradient - only recreate when canvas height changes
@@ -1125,7 +1125,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         roadAnalysisCacheVersionRef.current = currentVersion;
       }
       
-      const key = `${gx},${gy}`;
+      const key = gy * gridSize + gx;
       let info = roadAnalysisCacheRef.current.get(key);
       if (!info) {
         info = analyzeMergedRoad(grid, gridSize, gx, gy);

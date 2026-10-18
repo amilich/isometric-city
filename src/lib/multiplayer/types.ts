@@ -101,6 +101,58 @@ export interface RoomData {
   cityName: string;
   createdAt: number;
   playerCount: number;
+  maxPlayers?: number;
+  isPublic?: boolean;
+  sourceOfTruth?: MultiplayerSourceOfTruth;
+}
+
+export type MultiplayerSourceOfTruth =
+  | 'local-only'
+  | 'supabase-room-state'
+  | 'glitch-lobby-event-log'
+  | 'glitch-dedicated-server';
+
+export interface MultiplayerCreateRoomOptions {
+  maxPlayers?: number;
+  isPublic?: boolean;
+  cityType?: 'single-player' | 'multiplayer';
+}
+
+export interface MultiplayerRoomSummary {
+  roomCode: string;
+  cityName: string;
+  playerCount: number;
+  maxPlayers: number;
+  isPublic: boolean;
+  updatedAt: number;
+  sourceOfTruth: MultiplayerSourceOfTruth;
+}
+
+export interface MultiplayerChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  text: string;
+  sentAt: number;
+  sequence?: number;
+  isLocal?: boolean;
+}
+
+export type MultiplayerVoiceStatus =
+  | 'idle'
+  | 'joining'
+  | 'connected'
+  | 'muted'
+  | 'deafened'
+  | 'unsupported'
+  | 'error';
+
+export interface MultiplayerVoiceState {
+  status: MultiplayerVoiceStatus;
+  muted: boolean;
+  deafened: boolean;
+  speaking: boolean;
+  error: string | null;
 }
 
 // Awareness state for each player (used in Supabase Presence)

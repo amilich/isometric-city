@@ -477,7 +477,8 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     const isHost = multiplayer?.connectionState === 'connected' && multiplayer?.roomCode && !multiplayer?.initialState;
     if (isHost && !hasShownShareModalRef.current) {
       hasShownShareModalRef.current = true;
-      setShowShareModal(true);
+      const frame = requestAnimationFrame(() => setShowShareModal(true));
+      return () => cancelAnimationFrame(frame);
     }
   }, [multiplayer?.connectionState, multiplayer?.roomCode, multiplayer?.initialState]);
   const m = useMessages();
@@ -564,17 +565,17 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
   ], []);
   
   return (
-    <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-screen fixed left-0 top-0 z-40">
-      <div className="px-4 py-4 border-b border-sidebar-border">
+    <div className="w-56 bg-slate-950/95 border-r border-white/10 flex flex-col h-screen fixed left-0 top-0 z-40 shadow-[12px_0_35px_rgba(0,0,0,0.24)] backdrop-blur-md">
+      <div className="px-4 py-4 border-b border-white/10 bg-white/[0.02]">
         <div className="flex items-center justify-between">
-          <span className="text-sidebar-foreground font-bold tracking-tight">ISOCITY</span>
+          <span className="text-sidebar-foreground font-bold tracking-[0.08em]">ISOCITY</span>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={openCommandMenu}
               title="Search (⌘K)"
-              className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+              className="h-7 w-7 rounded-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/10"
             >
               <svg 
                 className="w-4 h-4" 
@@ -592,7 +593,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 size="icon-sm"
                 onClick={() => setShowShareModal(true)}
                 title="Invite Players"
-                className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+                className="h-7 w-7 rounded-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/10"
               >
                 <Users className="w-4 h-4" />
               </Button>
@@ -603,7 +604,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 size="icon-sm"
                 onClick={() => setShowExitDialog(true)}
                 title="Exit to Main Menu"
-                className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+                className="h-7 w-7 rounded-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/10"
               >
                 <svg 
                   className="w-4 h-4 -scale-x-100" 
@@ -643,8 +644,8 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                     onClick={() => setTool(tool)}
                     disabled={!canAfford && info.cost > 0}
                     variant={isSelected ? 'default' : 'ghost'}
-                    className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm ${
-                      isSelected ? 'bg-primary text-primary-foreground' : ''
+                    className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm rounded-sm border ${
+                      isSelected ? 'bg-primary text-primary-foreground border-white/15 shadow-[0_0_18px_rgba(125,211,252,0.12)]' : 'border-transparent hover:border-white/10'
                     }`}
                     title={`${m(info.description)}${info.cost > 0 ? ` - Cost: $${info.cost}` : ''}`}
                   >
@@ -702,7 +703,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
         </div>
       </ScrollArea>
       
-      <div className="border-t border-sidebar-border p-2">
+      <div className="border-t border-white/10 bg-white/[0.02] p-2">
         <div className="grid grid-cols-4 gap-1">
           {[
             { panel: 'budget' as const, icon: <BudgetIcon size={16} />, labelKey: 'budget' as const },
@@ -715,7 +716,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
               onClick={() => setActivePanel(activePanel === panel ? 'none' : panel)}
               variant={activePanel === panel ? 'default' : 'ghost'}
               size="icon-sm"
-              className="w-full"
+              className="w-full rounded-sm"
               title={String(m(UI_LABELS[labelKey]))}
             >
               {icon}

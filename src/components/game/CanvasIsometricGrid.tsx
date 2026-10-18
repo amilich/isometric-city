@@ -611,6 +611,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const key = e.key.toLowerCase();
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
         pressed.add(key);
@@ -621,6 +622,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       pressed.delete(key);
+    };
+
+    const handleBlur = () => {
+      pressed.clear();
     };
 
     let animationFrameId = 0;
@@ -661,11 +666,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
     animationFrameId = requestAnimationFrame(tick);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
       cancelAnimationFrame(animationFrameId);
       pressed.clear();
     };

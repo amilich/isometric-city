@@ -1,5 +1,10 @@
 import nextConfig from "eslint-config-next";
 
-const config = [...nextConfig];
+const config = [
+  {
+    ignores: [".glitch-build/**"],
+  },
+  ...nextConfig,
+];
 
 export default config;

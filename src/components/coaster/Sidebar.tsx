@@ -623,17 +623,18 @@ export function Sidebar({ onExit }: SidebarProps) {
     const isHost = multiplayer?.connectionState === 'connected' && multiplayer?.roomCode && !multiplayer?.initialState;
     if (isHost && !hasShownShareModalRef.current) {
       hasShownShareModalRef.current = true;
-      setShowShareModal(true);
+      const frame = requestAnimationFrame(() => setShowShareModal(true));
+      return () => cancelAnimationFrame(frame);
     }
   }, [multiplayer?.connectionState, multiplayer?.roomCode, multiplayer?.initialState]);
   
   return (
-    <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col h-screen fixed left-0 top-0 z-40">
+    <div className="w-56 bg-slate-950/95 border-r border-white/10 flex flex-col h-screen fixed left-0 top-0 z-40 shadow-[12px_0_35px_rgba(0,0,0,0.24)] backdrop-blur-md">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-sidebar-border">
+      <div className="px-4 py-4 border-b border-white/10 bg-white/[0.02]">
         <div className="flex items-center justify-between">
-          <span className="text-sidebar-foreground font-bold tracking-tight">
-            ISOCOASTER
+          <span className="text-sidebar-foreground font-bold tracking-[0.08em] text-[13px]">
+            ISOROLLERCOASTER
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -641,7 +642,7 @@ export function Sidebar({ onExit }: SidebarProps) {
               size="icon"
               onClick={openCoasterCommandMenu}
               title="Search (⌘K)"
-              className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+              className="h-7 w-7 rounded-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/10"
             >
               <svg 
                 className="w-4 h-4" 
@@ -658,7 +659,7 @@ export function Sidebar({ onExit }: SidebarProps) {
                 size="icon"
                 onClick={() => setShowShareModal(true)}
                 title="Invite Players"
-                className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+                className="h-7 w-7 rounded-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/10"
               >
                 <Users className="w-4 h-4" />
               </Button>
@@ -669,7 +670,7 @@ export function Sidebar({ onExit }: SidebarProps) {
                 size="icon"
                 onClick={() => setShowExitDialog(true)}
                 title="Exit to Menu"
-                className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
+                className="h-7 w-7 rounded-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/10"
               >
                 <svg
                   className="w-4 h-4 -scale-x-100"
@@ -691,13 +692,13 @@ export function Sidebar({ onExit }: SidebarProps) {
       </div>
       
       {/* Weather Display */}
-      <div className="px-2 py-2 border-b border-sidebar-border">
+      <div className="px-2 py-2 border-b border-white/10 bg-white/[0.015]">
         <WeatherDisplay weather={weather} />
       </div>
       
       {/* Active Coaster Type with Track Tools */}
       {buildingCoasterType && (
-        <div className="px-2 py-2 border-b border-sidebar-border bg-primary/10">
+        <div className="px-2 py-2 border-b border-white/10 bg-primary/10">
           {/* Coaster type header */}
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-md mb-2">
             <div 
@@ -740,8 +741,8 @@ export function Sidebar({ onExit }: SidebarProps) {
                   onClick={() => setTool(tool)}
                   disabled={!canAfford && info.cost > 0}
                   variant={isSelected ? 'default' : 'ghost'}
-                  className={`w-full justify-start gap-2 px-3 py-1.5 h-auto text-xs ${
-                    isSelected ? 'bg-primary text-primary-foreground' : ''
+                  className={`w-full justify-start gap-2 px-3 py-1.5 h-auto text-xs rounded-sm border ${
+                    isSelected ? 'bg-primary text-primary-foreground border-white/15 shadow-[0_0_18px_rgba(52,211,153,0.12)]' : 'border-transparent hover:border-white/10'
                   }`}
                   title={info.description}
                 >
@@ -775,8 +776,8 @@ export function Sidebar({ onExit }: SidebarProps) {
                 key={tool}
                 onClick={() => handleSelectTool(tool)}
                 variant={isSelected ? 'default' : 'ghost'}
-                className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm ${
-                  isSelected ? 'bg-primary text-primary-foreground' : ''
+                className={`w-full justify-start gap-2 px-3 py-2 h-auto text-sm rounded-sm border ${
+                  isSelected ? 'bg-primary text-primary-foreground border-white/15 shadow-[0_0_18px_rgba(52,211,153,0.12)]' : 'border-transparent hover:border-white/10'
                 }`}
                 title={info.description}
               >

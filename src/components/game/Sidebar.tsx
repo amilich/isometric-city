@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { msg, useMessages } from 'gt-next';
+import { useGT } from 'gt-next/client';
 import { useGame } from '@/context/GameContext';
 import { Tool, TOOL_INFO } from '@/types/game';
 
@@ -481,7 +482,8 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     }
   }, [multiplayer?.connectionState, multiplayer?.roomCode, multiplayer?.initialState]);
   const m = useMessages();
-  
+  const gt = useGT();
+
   const handleSaveAndExit = useCallback(() => {
     saveCity();
     setShowExitDialog(false);
@@ -573,13 +575,13 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
               variant="ghost"
               size="icon-sm"
               onClick={openCommandMenu}
-              title="Search (⌘K)"
+              title={gt('Search (⌘K)')}
               className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
             >
-              <svg 
-                className="w-4 h-4" 
-                fill="none" 
-                viewBox="0 0 24 24" 
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -591,7 +593,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setShowShareModal(true)}
-                title="Invite Players"
+                title={gt('Invite Players')}
                 className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
               >
                 <Users className="w-4 h-4" />
@@ -602,7 +604,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setShowExitDialog(true)}
-                title="Exit to Main Menu"
+                title={gt('Exit to Main Menu')}
                 className="h-7 w-7 text-muted-foreground hover:text-sidebar-foreground"
               >
                 <svg 

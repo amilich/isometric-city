@@ -18,6 +18,8 @@ import {
   bulldozeTile,
   createInitialGameState,
   DEFAULT_GRID_SIZE,
+  GRID_EXPANSION_STEP,
+  MAX_GRID_SIZE,
   expandGrid,
   shrinkGrid,
   placeBuilding,
@@ -77,7 +79,7 @@ type GameContextValue = {
   loadState: (stateString: string) => boolean;
   exportState: () => string;
   generateRandomCity: () => void;
-  expandCity: () => void;
+  expandCity: () => boolean;
   shrinkCity: () => boolean;
   hasExistingGame: boolean;
   isStateReady: boolean; // True when initial state loading is complete
@@ -109,6 +111,44 @@ const GameContext = createContext<GameContextValue | null>(null);
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function createEmptyServices(size: number): GameState['services'] {
+  const createNumberGrid = (): number[][] => Array.from({ length: size }, () => new Array(size).fill(0));
+  const createBooleanGrid = (): boolean[][] => Array.from({ length: size }, () => new Array(size).fill(false));
+
+  return {
+    power: createBooleanGrid(),
+    water: createBooleanGrid(),
+    fire: createNumberGrid(),
+    police: createNumberGrid(),
+    health: createNumberGrid(),
+    education: createNumberGrid(),
+  };
+}
+
+// Keep oversized saves playable by shrinking them down to a supported limit.
+function normalizeLoadedGridSize(state: GameState): GameState {
+  if (!state?.grid || state.gridSize <= MAX_GRID_SIZE) return state;
+
+  let nextState = state;
+
+  while (nextState.gridSize > MAX_GRID_SIZE) {
+    const result = shrinkGrid(nextState.grid, nextState.gridSize, GRID_EXPANSION_STEP);
+    if (!result || result.newSize >= nextState.gridSize) {
+      break;
+    }
+
+    nextState = {
+      ...nextState,
+      grid: result.grid,
+      gridSize: result.newSize,
+      services: createEmptyServices(result.newSize),
+      speed: 0, // Start paused after forced resize to avoid immediate heavy simulation.
+    };
+  }
+
+  return nextState;
 }
 
 const toolBuildingMap: Partial<Record<Tool, BuildingType>> = {
@@ -286,7 +326,7 @@ function loadGameState(): GameState | null {
         if (!parsed.id) {
           parsed.id = generateUUID();
         }
-        return parsed as GameState;
+        return normalizeLoadedGridSize(parsed as GameState);
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -514,7 +554,7 @@ function loadSavedCityState(): GameState | null {
     if (saved) {
       const parsed = decompressSavedCity(saved);
       if (parsed?.state && parsed.state.grid && parsed.state.gridSize && parsed.state.stats) {
-        return parsed.state as GameState;
+        return normalizeLoadedGridSize(parsed.state as GameState);
       }
     }
   } catch (e) {
@@ -626,7 +666,7 @@ function loadCityState(cityId: string): GameState | null {
       
       const parsed = JSON.parse(jsonString);
       if (parsed && parsed.grid && parsed.gridSize && parsed.stats) {
-        return parsed as GameState;
+        return normalizeLoadedGridSize(parsed as GameState);
       }
     }
   } catch (e) {
@@ -1201,9 +1241,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
             }
           }
         }
+        const normalized = normalizeLoadedGridSize(parsed as GameState);
+
         // Increment gameVersion to clear vehicles/entities when loading a new state
         setState((prev) => ({
-          ...(parsed as GameState),
+          ...normalized,
           gameVersion: (prev.gameVersion ?? 0) + 1,
         }));
         return true;
@@ -1228,10 +1270,17 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }));
   }, []);
 
-  // Expand the city grid by 15 tiles on each side (30x30 total increase)
-  const expandCity = useCallback(() => {
+  // Expand the city grid by GRID_EXPANSION_STEP tiles on each side.
+  const expandCity = useCallback((): boolean => {
+    let success = false;
     setState((prev) => {
-      const { grid: newGrid, newSize } = expandGrid(prev.grid, prev.gridSize, 15);
+      const nextSize = prev.gridSize + GRID_EXPANSION_STEP * 2;
+      if (nextSize > MAX_GRID_SIZE) {
+        return prev;
+      }
+
+      success = true;
+      const { grid: newGrid, newSize } = expandGrid(prev.grid, prev.gridSize, GRID_EXPANSION_STEP);
       
       // Create new service grids with expanded size (all initialized to 0)
       const createServiceGrid = (): number[][] => {
@@ -1251,10 +1300,10 @@ export function GameProvider({ children, startFresh = false }: { children: React
         return grid;
       };
       
-      // Copy old service values to new positions (offset by 15)
+      // Copy old service values to new positions (offset by expansion amount)
       const expandServiceGrid = (oldGrid: number[][]): number[][] => {
         const newServiceGrid = createServiceGrid();
-        const offset = 15;
+        const offset = GRID_EXPANSION_STEP;
         // Safely iterate through the old grid
         if (oldGrid && Array.isArray(oldGrid)) {
           for (let y = 0; y < prev.gridSize; y++) {
@@ -1272,10 +1321,10 @@ export function GameProvider({ children, startFresh = false }: { children: React
         return newServiceGrid;
       };
       
-      // Copy old boolean grid values to new positions (offset by 15)
+      // Copy old boolean grid values to new positions (offset by expansion amount)
       const expandBoolGrid = (oldGrid: boolean[][]): boolean[][] => {
         const newBoolGrid = createBoolGrid();
-        const offset = 15;
+        const offset = GRID_EXPANSION_STEP;
         if (oldGrid && Array.isArray(oldGrid)) {
           for (let y = 0; y < prev.gridSize; y++) {
             const row = oldGrid[y];
@@ -1316,13 +1365,14 @@ export function GameProvider({ children, startFresh = false }: { children: React
         gameVersion: (prev.gameVersion ?? 0) + 1,
       };
     });
+    return success;
   }, []);
 
   // Shrink the city grid by 15 tiles on each side (30x30 total reduction)
   const shrinkCity = useCallback((): boolean => {
     let success = false;
     setState((prev) => {
-      const result = shrinkGrid(prev.grid, prev.gridSize, 15);
+      const result = shrinkGrid(prev.grid, prev.gridSize, GRID_EXPANSION_STEP);
       
       // If shrink failed (grid too small), return previous state unchanged
       if (!result) {
@@ -1353,7 +1403,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
       // Copy old service values from interior positions (offset by 15)
       const shrinkServiceGrid = (oldGrid: number[][]): number[][] => {
         const newServiceGrid = createServiceGrid();
-        const offset = 15;
+        const offset = GRID_EXPANSION_STEP;
         // Safely iterate through the new grid
         if (oldGrid && Array.isArray(oldGrid)) {
           for (let y = 0; y < newSize; y++) {
@@ -1374,7 +1424,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
       // Copy old boolean grid values from interior positions (offset by 15)
       const shrinkBoolGrid = (oldGrid: boolean[][]): boolean[][] => {
         const newBoolGrid = createBoolGrid();
-        const offset = 15;
+        const offset = GRID_EXPANSION_STEP;
         if (oldGrid && Array.isArray(oldGrid)) {
           for (let y = 0; y < newSize; y++) {
             const oldRow = oldGrid[y + offset];
@@ -1524,56 +1574,58 @@ export function GameProvider({ children, startFresh = false }: { children: React
     const cityState = loadCityState(cityId);
     if (!cityState) return false;
     
+    const normalizedCityState = normalizeLoadedGridSize(cityState);
+
     // Ensure the loaded state has an ID
-    if (!cityState.id) {
-      cityState.id = cityId;
+    if (!normalizedCityState.id) {
+      normalizedCityState.id = cityId;
     }
     
     // Perform migrations for backward compatibility
-    if (!cityState.adjacentCities) {
-      cityState.adjacentCities = [];
+    if (!normalizedCityState.adjacentCities) {
+      normalizedCityState.adjacentCities = [];
     }
-    for (const city of cityState.adjacentCities) {
+    for (const city of normalizedCityState.adjacentCities) {
       if (city.discovered === undefined) {
         city.discovered = true;
       }
     }
-    if (!cityState.waterBodies) {
-      cityState.waterBodies = [];
+    if (!normalizedCityState.waterBodies) {
+      normalizedCityState.waterBodies = [];
     }
     // Ensure cities exists for multi-city support
-    if (!cityState.cities) {
-      cityState.cities = [{
-        id: cityState.id || 'default-city',
-        name: cityState.cityName || 'City',
+    if (!normalizedCityState.cities) {
+      normalizedCityState.cities = [{
+        id: normalizedCityState.id || 'default-city',
+        name: normalizedCityState.cityName || 'City',
         bounds: {
           minX: 0,
           minY: 0,
-          maxX: (cityState.gridSize || 50) - 1,
-          maxY: (cityState.gridSize || 50) - 1,
+          maxX: (normalizedCityState.gridSize || 50) - 1,
+          maxY: (normalizedCityState.gridSize || 50) - 1,
         },
         economy: {
-          population: cityState.stats?.population || 0,
-          jobs: cityState.stats?.jobs || 0,
-          income: cityState.stats?.income || 0,
-          expenses: cityState.stats?.expenses || 0,
-          happiness: cityState.stats?.happiness || 50,
+          population: normalizedCityState.stats?.population || 0,
+          jobs: normalizedCityState.stats?.jobs || 0,
+          income: normalizedCityState.stats?.income || 0,
+          expenses: normalizedCityState.stats?.expenses || 0,
+          happiness: normalizedCityState.stats?.happiness || 50,
           lastCalculated: 0,
         },
         color: '#3b82f6',
       }];
     }
-    if (cityState.effectiveTaxRate === undefined) {
-      cityState.effectiveTaxRate = cityState.taxRate ?? 9;
+    if (normalizedCityState.effectiveTaxRate === undefined) {
+      normalizedCityState.effectiveTaxRate = normalizedCityState.taxRate ?? 9;
     }
-    if (cityState.grid) {
-      for (let y = 0; y < cityState.grid.length; y++) {
-        for (let x = 0; x < cityState.grid[y].length; x++) {
-          if (cityState.grid[y][x]?.building && cityState.grid[y][x].building.constructionProgress === undefined) {
-            cityState.grid[y][x].building.constructionProgress = 100;
+    if (normalizedCityState.grid) {
+      for (let y = 0; y < normalizedCityState.grid.length; y++) {
+        for (let x = 0; x < normalizedCityState.grid[y].length; x++) {
+          if (normalizedCityState.grid[y][x]?.building && normalizedCityState.grid[y][x].building.constructionProgress === undefined) {
+            normalizedCityState.grid[y][x].building.constructionProgress = 100;
           }
-          if (cityState.grid[y][x]?.building && cityState.grid[y][x].building.abandoned === undefined) {
-            cityState.grid[y][x].building.abandoned = false;
+          if (normalizedCityState.grid[y][x]?.building && normalizedCityState.grid[y][x].building.abandoned === undefined) {
+            normalizedCityState.grid[y][x].building.abandoned = false;
           }
         }
       }
@@ -1581,12 +1633,12 @@ export function GameProvider({ children, startFresh = false }: { children: React
     
     skipNextSaveRef.current = true;
     setState((prev) => ({
-      ...cityState,
+      ...normalizedCityState,
       gameVersion: (prev.gameVersion ?? 0) + 1,
     }));
     
     // Also update the current game in local storage
-    saveGameState(cityState);
+    saveGameState(normalizedCityState);
     
     return true;
   }, []);

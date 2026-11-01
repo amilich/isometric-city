@@ -20,6 +20,10 @@ import {
   spawnPedestrianAtBeach,
 } from './pedestrianSystem';
 
+// PERF: Module-level Set for building types to skip in vehicle occlusion checks
+// Avoids allocating a new array on every isVehicleBehindBuilding() call
+const VEHICLE_SKIP_BUILDING_TYPES = new Set<BuildingType>(['road', 'grass', 'empty', 'water', 'tree']);
+
 /** Train type for crossing detection (minimal interface) */
 export interface TrainForCrossing {
   tileX: number;
@@ -971,14 +975,19 @@ export function useVehicleSystems(
     // Build spatial index of cars by tile for efficient collision detection
     // PERF: Use numeric keys (y * gridSize + x) instead of string keys
     const carsByTile = new Map<number, Car[]>();
-    for (const car of carsRef.current) {
-      const key = car.tileY * currentGridSize + car.tileX;
-      if (!carsByTile.has(key)) carsByTile.set(key, []);
-      carsByTile.get(key)!.push(car);
+    for (let ci = 0; ci < carsRef.current.length; ci++) {
+      const c = carsRef.current[ci];
+      const key = c.tileY * currentGridSize + c.tileX;
+      const bucket = carsByTile.get(key);
+      if (bucket) bucket.push(c);
+      else carsByTile.set(key, [c]);
     }
     
+    // PERF: Iterate original array directly instead of spreading to a copy
+    const sourceCars = carsRef.current;
     const updatedCars: Car[] = [];
-    for (const car of [...carsRef.current]) {
+    for (let ci = 0; ci < sourceCars.length; ci++) {
+      const car = sourceCars[ci];
       // Update car age and remove if too old
       car.age += delta * speedMultiplier;
       if (car.age > car.maxAge) {
@@ -1215,7 +1224,10 @@ export function useVehicleSystems(
 
     const updatedBuses: Bus[] = [];
 
-    for (const bus of [...busesRef.current]) {
+    // PERF: Iterate original array directly instead of spreading to a copy
+    const sourceBuses = busesRef.current;
+    for (let bi = 0; bi < sourceBuses.length; bi++) {
+      const bus = sourceBuses[bi];
       bus.age += delta * speedMultiplier;
       if (bus.age > bus.maxAge) {
         continue;
@@ -1440,13 +1452,29 @@ export function useVehicleSystems(
     ctx.scale(dpr * currentZoom, dpr * currentZoom);
     ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
     
-    carsRef.current.forEach(car => {
+    // PERF: Compute viewport bounds for culling off-screen cars
+    const viewWidth = canvas.width / (dpr * currentZoom);
+    const viewHeight = canvas.height / (dpr * currentZoom);
+    const viewLeft = -currentOffset.x / currentZoom - TILE_WIDTH;
+    const viewTop = -currentOffset.y / currentZoom - TILE_HEIGHT * 2;
+    const viewRight = viewWidth - currentOffset.x / currentZoom + TILE_WIDTH;
+    const viewBottom = viewHeight - currentOffset.y / currentZoom + TILE_HEIGHT * 2;
+    
+    // PERF: Use for loop instead of forEach to avoid closure allocation per car
+    const cars = carsRef.current;
+    for (let i = 0; i < cars.length; i++) {
+      const car = cars[i];
       const { screenX, screenY } = gridToScreen(car.tileX, car.tileY, 0, 0);
       const centerX = screenX + TILE_WIDTH / 2;
       const centerY = screenY + TILE_HEIGHT / 2;
       const meta = DIRECTION_META[car.direction];
       const carX = centerX + meta.vec.dx * car.progress + meta.normal.nx * car.laneOffset;
       const carY = centerY + meta.vec.dy * car.progress + meta.normal.ny * car.laneOffset;
+      
+      // PERF: Skip cars outside viewport
+      if (carX < viewLeft - 20 || carX > viewRight + 20 || carY < viewTop - 20 || carY > viewBottom + 20) {
+        continue;
+      }
       
       ctx.save();
       ctx.translate(carX, carY);
@@ -1471,7 +1499,7 @@ export function useVehicleSystems(
       ctx.fillRect(-10 * scale, -4 * scale, 2.4 * scale, 8 * scale);
       
       ctx.restore();
-    });
+    }
     
     ctx.restore();
   }, [worldStateRef, carsRef, isMobile]);
@@ -1500,7 +1528,10 @@ export function useVehicleSystems(
     const viewRight = viewWidth - currentOffset.x / currentZoom + TILE_WIDTH;
     const viewBottom = viewHeight - currentOffset.y / currentZoom + TILE_HEIGHT * 2;
 
-    busesRef.current.forEach(bus => {
+    // PERF: Use for loop instead of forEach to avoid closure allocation per bus
+    const buses = busesRef.current;
+    for (let i = 0; i < buses.length; i++) {
+      const bus = buses[i];
       const { screenX, screenY } = gridToScreen(bus.tileX, bus.tileY, 0, 0);
       const centerX = screenX + TILE_WIDTH / 2;
       const centerY = screenY + TILE_HEIGHT / 2;
@@ -1509,7 +1540,7 @@ export function useVehicleSystems(
       const busY = centerY + meta.vec.dy * bus.progress + meta.normal.ny * bus.laneOffset;
 
       if (busX < viewLeft - 60 || busX > viewRight + 60 || busY < viewTop - 80 || busY > viewBottom + 80) {
-        return;
+        continue;
       }
 
       ctx.save();
@@ -1527,8 +1558,8 @@ export function useVehicleSystems(
       ctx.fillRect(-length * 0.8, -width * 0.7, length * 1.4, width * 0.9);
 
       ctx.fillStyle = 'rgba(191, 219, 254, 0.8)';
-      for (let i = 0; i < 4; i++) {
-        const wx = -length * 0.7 + i * length * 0.45;
+      for (let j = 0; j < 4; j++) {
+        const wx = -length * 0.7 + j * length * 0.45;
         ctx.fillRect(wx, -width * 0.55, length * 0.25, width * 1.1);
       }
 
@@ -1539,7 +1570,7 @@ export function useVehicleSystems(
       ctx.fillRect(length * 0.85, -width * 0.35, length * 0.1, width * 0.7);
 
       ctx.restore();
-    });
+    }
 
     ctx.restore();
   }, [worldStateRef, busesRef]);
@@ -1652,8 +1683,8 @@ export function useVehicleSystems(
           if (!tile) continue;
           
           const buildingType = tile.building.type;
-          const skipTypes: BuildingType[] = ['road', 'grass', 'empty', 'water', 'tree'];
-          if (skipTypes.includes(buildingType)) {
+          // PERF: Use module-level Set instead of allocating array every call
+          if (VEHICLE_SKIP_BUILDING_TYPES.has(buildingType)) {
             continue;
           }
           
@@ -1667,7 +1698,10 @@ export function useVehicleSystems(
       return false;
     };
     
-    emergencyVehiclesRef.current.forEach(vehicle => {
+    // PERF: Use for loop instead of forEach to avoid closure allocation per vehicle
+    const vehicles = emergencyVehiclesRef.current;
+    for (let i = 0; i < vehicles.length; i++) {
+      const vehicle = vehicles[i];
       const { screenX, screenY } = gridToScreen(vehicle.tileX, vehicle.tileY, 0, 0);
       const centerX = screenX + TILE_WIDTH / 2;
       const centerY = screenY + TILE_HEIGHT / 2;
@@ -1676,7 +1710,7 @@ export function useVehicleSystems(
       const vehicleY = centerY + meta.vec.dy * vehicle.progress + meta.normal.ny * vehicle.laneOffset;
       
       if (vehicleX < viewLeft - 40 || vehicleX > viewRight + 40 || vehicleY < viewTop - 60 || vehicleY > viewBottom + 60) {
-        return;
+        continue;
       }
       
       ctx.save();
@@ -1739,7 +1773,7 @@ export function useVehicleSystems(
       ctx.fillRect(-length * scale, -4 * scale, 2 * scale, 8 * scale);
       
       ctx.restore();
-    });
+    }
     
     ctx.restore();
   }, [worldStateRef, emergencyVehiclesRef]);

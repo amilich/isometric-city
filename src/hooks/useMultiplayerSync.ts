@@ -127,7 +127,7 @@ export function useMultiplayerSync() {
       case 'bulldoze': {
         const savedTool = game.state.selectedTool;
         game.setTool('bulldoze');
-        game.placeAtTile(action.x, action.y, true); // isRemote = true
+        game.placeAtTile(action.x, action.y, true, { underground: action.underground }); // isRemote = true
         game.setTool(savedTool);
         break;
       }
@@ -218,11 +218,11 @@ export function useMultiplayerSync() {
       return;
     }
     
-    game.setPlaceCallback(({ x, y, tool }: { x: number; y: number; tool: Tool }) => {
+    game.setPlaceCallback(({ x, y, tool, underground }: { x: number; y: number; tool: Tool; underground?: boolean }) => {
       if (tool === 'bulldoze') {
         // Bulldoze is sent immediately (not batched)
         flushPlacements(); // Flush any pending placements first
-        multiplayer.dispatchAction({ type: 'bulldoze', x, y });
+        multiplayer.dispatchAction({ type: 'bulldoze', x, y, underground });
       } else if (tool !== 'select') {
         // Add to batch
         placementBufferRef.current.push({ x, y, tool });

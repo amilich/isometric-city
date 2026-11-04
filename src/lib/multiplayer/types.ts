@@ -18,7 +18,7 @@ interface BaseAction {
 export type GameAction =
   | (BaseAction & { type: 'place'; x: number; y: number; tool: MultiplayerTool })
   | (BaseAction & { type: 'placeBatch'; placements: Array<{ x: number; y: number; tool: MultiplayerTool }> })
-  | (BaseAction & { type: 'bulldoze'; x: number; y: number })
+  | (BaseAction & { type: 'bulldoze'; x: number; y: number; underground?: boolean })
   | (BaseAction & { type: 'setTaxRate'; rate: number })
   | (BaseAction & { type: 'setBudget'; key: keyof Budget; funding: number })
   | (BaseAction & { type: 'setSpeed'; speed: 0 | 1 | 2 | 3 })
@@ -34,7 +34,7 @@ export type GameAction =
 // Action input types (without timestamp and playerId, which are added automatically)
 export type PlaceAction = { type: 'place'; x: number; y: number; tool: MultiplayerTool };
 export type PlaceBatchAction = { type: 'placeBatch'; placements: Array<{ x: number; y: number; tool: MultiplayerTool }> };
-export type BulldozeAction = { type: 'bulldoze'; x: number; y: number };
+export type BulldozeAction = { type: 'bulldoze'; x: number; y: number; underground?: boolean };
 export type SetTaxRateAction = { type: 'setTaxRate'; rate: number };
 export type SetBudgetAction = { type: 'setBudget'; key: keyof Budget; funding: number };
 export type SetSpeedAction = { type: 'setSpeed'; speed: 0 | 1 | 2 | 3 };

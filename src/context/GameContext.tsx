@@ -22,6 +22,7 @@ import {
   shrinkGrid,
   placeBuilding,
   placeSubway,
+  removeSubway,
   placeWaterTerraform,
   placeLandTerraform,
   checkForDiscoverableCities,
@@ -65,8 +66,9 @@ type GameContextValue = {
   setActivePanel: (panel: GameState['activePanel']) => void;
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
   upgradeServiceBuilding: (x: number, y: number) => boolean; // Returns true if upgrade succeeded
-  placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
-  setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => void;
+  // underground: act on the subway layer instead of the surface (bulldoze only)
+  placeAtTile: (x: number, y: number, isRemote?: boolean, options?: { underground?: boolean }) => void;
+  setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool; underground?: boolean }) => void) | null) => void;
   finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void; // Create bridges after road/rail drag
   setBridgeCallback: (callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => void;
   connectToCity: (cityId: string) => void;
@@ -657,7 +659,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
   const hasLoadedRef = useRef(false);
   
   // Callback for multiplayer action broadcast
-  const placeCallbackRef = useRef<((args: { x: number; y: number; tool: Tool }) => void) | null>(null);
+  const placeCallbackRef = useRef<((args: { x: number; y: number; tool: Tool; underground?: boolean }) => void) | null>(null);
   const bridgeCallbackRef = useRef<((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null>(null);
   
   // Sprite pack state
@@ -870,10 +872,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
     [],
   );
 
-  const placeAtTile = useCallback((x: number, y: number, isRemote = false) => {
+  const placeAtTile = useCallback((x: number, y: number, isRemote = false, options?: { underground?: boolean }) => {
     // For multiplayer broadcast, we need to capture the tool synchronously
     // before React batches the setState. We read from the latest state ref.
     const currentTool = latestStateRef.current.selectedTool;
+    const underground = options?.underground === true;
     
     setState((prev) => {
       const tool = prev.selectedTool;
@@ -885,6 +888,18 @@ export function GameProvider({ children, startFresh = false }: { children: React
 
       if (!tile) return prev;
       if (cost > 0 && prev.stats.money < cost) return prev;
+
+      // Bulldozing while the subway layer is shown removes the subway only,
+      // leaving whatever is built on the surface untouched
+      if (tool === 'bulldoze' && underground) {
+        const nextState = removeSubway(prev, x, y);
+        if (nextState === prev) return prev;
+
+        return {
+          ...nextState,
+          stats: { ...nextState.stats, money: nextState.stats.money - cost },
+        };
+      }
 
       // Prevent wasted spend if nothing would change
       if (tool === 'bulldoze' && tile.building.type === 'grass' && tile.zone === 'none') {
@@ -970,7 +985,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     // Broadcast to multiplayer if this is a local action (not remote)
     // We use the tool captured before setState since React 18 batches async
     if (!isRemote && currentTool !== 'select' && placeCallbackRef.current) {
-      placeCallbackRef.current({ x, y, tool: currentTool });
+      placeCallbackRef.current({ x, y, tool: currentTool, underground });
     }
   }, []);
 
@@ -1097,7 +1112,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     setState((prev) => ({ ...prev, disastersEnabled: enabled }));
   }, []);
   
-  const setPlaceCallback = useCallback((callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => {
+  const setPlaceCallback = useCallback((callback: ((args: { x: number; y: number; tool: Tool; underground?: boolean }) => void) | null) => {
     placeCallbackRef.current = callback;
   }, []);
 

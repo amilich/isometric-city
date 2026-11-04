@@ -125,7 +125,12 @@ export interface CanvasIsometricGridProps {
 
 // Canvas-based Isometric Grid - HIGH PERFORMANCE
 export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  const { state, latestStateRef, placeAtTile: placeAtTileInGame, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+  // While the subway overlay is shown, the bulldozer works on the underground layer
+  const isUndergroundView = overlayMode === 'subway';
+  const placeAtTile = useCallback((x: number, y: number) => {
+    placeAtTileInGame(x, y, false, { underground: isUndergroundView });
+  }, [placeAtTileInGame, isUndergroundView]);
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   
   // PERF: Use latestStateRef for real-time grid access in animation loops

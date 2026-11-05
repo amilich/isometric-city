@@ -35,6 +35,8 @@ import {
 import { MiniMap } from '@/components/game/MiniMap';
 import { TopBar, StatsPanel } from '@/components/game/TopBar';
 import { CanvasIsometricGrid } from '@/components/game/CanvasIsometricGrid';
+import { City3DView } from '@/components/game3d/City3DView';
+import { ViewModeToggle, ViewMode } from '@/components/game/ViewModeToggle';
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg('containers'), msg('bulk materials'), msg('oil')];
@@ -51,6 +53,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
   const [showShareModal, setShowShareModal] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const multiplayer = useMultiplayerOptional();
   
   // Cheat code system
@@ -261,13 +264,22 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           
           {/* Main canvas area - fills remaining space, with padding for top/bottom bars */}
           <div className="flex-1 relative overflow-hidden" style={{ paddingTop: '72px', paddingBottom: '76px' }}>
-            <CanvasIsometricGrid 
-              overlayMode={overlayMode} 
-              selectedTile={selectedTile} 
-              setSelectedTile={setSelectedTile}
-              isMobile={true}
-              onBargeDelivery={handleBargeDelivery}
-            />
+            {viewMode === '3d' ? (
+              <City3DView
+                selectedTile={selectedTile}
+                setSelectedTile={setSelectedTile}
+                isMobile
+              />
+            ) : (
+              <CanvasIsometricGrid 
+                overlayMode={overlayMode} 
+                selectedTile={selectedTile} 
+                setSelectedTile={setSelectedTile}
+                isMobile
+                onBargeDelivery={handleBargeDelivery}
+              />
+            )}
+            <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} className="absolute top-2 left-2 z-20" />
             
             {/* Multiplayer Players Indicator - Mobile */}
             {isMultiplayer && (
@@ -343,17 +355,25 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           <TopBar />
           <StatsPanel />
           <div className="flex-1 relative overflow-visible">
-            <CanvasIsometricGrid 
-              overlayMode={overlayMode} 
-              selectedTile={selectedTile} 
-              setSelectedTile={setSelectedTile}
-              navigationTarget={navigationTarget}
-              onNavigationComplete={() => setNavigationTarget(null)}
-              onViewportChange={setViewport}
-              onBargeDelivery={handleBargeDelivery}
-            />
-            <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
-            <MiniMap onNavigate={(x, y) => setNavigationTarget({ x, y })} viewport={viewport} />
+            {viewMode === '3d' ? (
+              <City3DView
+                selectedTile={selectedTile}
+                setSelectedTile={setSelectedTile}
+              />
+            ) : (
+              <CanvasIsometricGrid 
+                overlayMode={overlayMode} 
+                selectedTile={selectedTile} 
+                setSelectedTile={setSelectedTile}
+                navigationTarget={navigationTarget}
+                onNavigationComplete={() => setNavigationTarget(null)}
+                onViewportChange={setViewport}
+                onBargeDelivery={handleBargeDelivery}
+              />
+            )}
+            <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} className="absolute top-4 left-4 z-30" />
+            {viewMode === '2d' && <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />}
+            {viewMode === '2d' && <MiniMap onNavigate={(x, y) => setNavigationTarget({ x, y })} viewport={viewport} />}
             
             {/* Multiplayer Players Indicator */}
             {isMultiplayer && (
